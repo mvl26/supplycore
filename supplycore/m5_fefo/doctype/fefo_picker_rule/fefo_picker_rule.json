@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "autoname": "format:SC-FEFO-{#####}",
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "track_changes": 1,
+ "field_order": [
+  "section_main",
+  "title",
+  "enabled",
+  "priority",
+  "section_scope",
+  "warehouse",
+  "item_group",
+  "section_rule",
+  "strict_mode",
+  "min_shelf_life_days",
+  "column_break_1",
+  "warning_days",
+  "critical_days",
+  "section_other",
+  "remarks"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin chung"},
+  {"fieldname": "title", "fieldtype": "Data", "label": "Tiêu đề rule", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Đang sử dụng", "default": "1", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "priority", "fieldtype": "Int", "label": "Priority (cao thắng)", "default": "100", "description": "Khi nhiều rule match, chọn priority cao nhất"},
+
+  {"fieldname": "section_scope", "fieldtype": "Section Break", "label": "Phạm vi áp dụng"},
+  {"fieldname": "warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho", "in_list_view": 1, "description": "Để trống = global (mọi kho)"},
+  {"fieldname": "item_group", "fieldtype": "Link", "options": "SC Item Group", "label": "Nhóm vật tư", "in_list_view": 1, "description": "Để trống = mọi nhóm"},
+
+  {"fieldname": "section_rule", "fieldtype": "Section Break", "label": "Quy tắc"},
+  {"fieldname": "strict_mode", "fieldtype": "Check", "label": "Strict mode (block FEFO violation)", "default": "1", "description": "1 = throw lỗi nếu vi phạm FEFO, 0 = chỉ warn"},
+  {"fieldname": "min_shelf_life_days", "fieldtype": "Int", "label": "Hạn dùng tối thiểu khi nhập (ngày)", "default": "30"},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "warning_days", "fieldtype": "Int", "label": "Cảnh báo Yellow (ngày)", "default": "90"},
+  {"fieldname": "critical_days", "fieldtype": "Int", "label": "Cảnh báo Red (ngày)", "default": "30"},
+
+  {"fieldname": "section_other", "fieldtype": "Section Break", "collapsible": 1},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1},
+  {"role": "Warehouse Officer", "read": 1}
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M5 FEFO",
+ "name": "FEFO Picker Rule",
+ "title_field": "title",
+ "sort_field": "priority",
+ "sort_order": "DESC"
+}

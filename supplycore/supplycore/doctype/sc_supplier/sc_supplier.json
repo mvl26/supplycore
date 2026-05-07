@@ -1,0 +1,57 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "format:SC-SUP-{#####}", "track_changes": 1,
+ "field_order": [
+  "section_main", "supplier_name", "supplier_code", "tax_id",
+  "column_break_1", "supplier_type", "disabled", "blacklist_flag",
+  "section_contact", "email_id", "mobile_no", "column_break_2", "address", "remarks",
+  "section_payment", "payment_terms", "credit_limit", "column_break_3",
+  "section_compliance", "gpp_certificate_no", "gpp_expiry", "iso_certificate_no",
+  "section_rating", "rating", "rating_history_count"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin chung"},
+  {"fieldname": "supplier_name", "fieldtype": "Data", "label": "Tên NCC", "reqd": 1, "in_list_view": 1, "search_index": 1},
+  {"fieldname": "supplier_code", "fieldtype": "Data", "label": "Mã NCC", "unique": 1, "in_list_view": 1},
+  {"fieldname": "tax_id", "fieldtype": "Data", "label": "MST", "in_list_view": 1, "search_index": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "supplier_type", "fieldtype": "Select",
+   "options": "\nNhà sản xuất\nNhà phân phối\nĐại lý\nKhác",
+   "label": "Loại NCC", "in_standard_filter": 1},
+  {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0", "in_standard_filter": 1},
+  {"fieldname": "blacklist_flag", "fieldtype": "Check", "label": "Blacklist", "default": "0", "in_list_view": 1, "in_standard_filter": 1,
+   "description": "1 = block tạo PO mới"},
+
+  {"fieldname": "section_contact", "fieldtype": "Section Break", "label": "Liên hệ"},
+  {"fieldname": "email_id", "fieldtype": "Data", "options": "Email", "label": "Email"},
+  {"fieldname": "mobile_no", "fieldtype": "Data", "options": "Phone", "label": "Điện thoại"},
+  {"fieldname": "column_break_2", "fieldtype": "Column Break"},
+  {"fieldname": "address", "fieldtype": "Small Text", "label": "Địa chỉ"},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
+
+  {"fieldname": "section_payment", "fieldtype": "Section Break", "label": "Thanh toán"},
+  {"fieldname": "payment_terms", "fieldtype": "Data", "label": "Điều khoản thanh toán", "description": "VD: Net 30, COD, 50/50"},
+  {"fieldname": "credit_limit", "fieldtype": "Currency", "label": "Hạn mức tín dụng", "options": "VND"},
+  {"fieldname": "column_break_3", "fieldtype": "Column Break"},
+
+  {"fieldname": "section_compliance", "fieldtype": "Section Break", "label": "Chứng chỉ", "collapsible": 1},
+  {"fieldname": "gpp_certificate_no", "fieldtype": "Data", "label": "Số GPP/GDP"},
+  {"fieldname": "gpp_expiry", "fieldtype": "Date", "label": "Hết hạn GPP"},
+  {"fieldname": "iso_certificate_no", "fieldtype": "Data", "label": "Số ISO"},
+
+  {"fieldname": "section_rating", "fieldtype": "Section Break", "label": "Đánh giá NCC"},
+  {"fieldname": "rating", "fieldtype": "Float", "precision": "2", "label": "Điểm trung bình (0-5)", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "rating_history_count", "fieldtype": "Int", "label": "Số lần đánh giá", "read_only": 1, "default": "0"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "export": 1, "print": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Purchaser", "read": 1, "write": 1, "create": 1, "report": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC Supplier", "title_field": "supplier_name",
+ "search_fields": "supplier_name,supplier_code,tax_id",
+ "sort_field": "modified", "sort_order": "DESC"
+}

@@ -1,0 +1,63 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "format:SC-TR-{YYYY}-{#####}", "is_submittable": 1, "track_changes": 1,
+ "field_order": [
+  "section_main", "request_date", "transfer_type", "required_by",
+  "column_break_1", "requested_by", "requested_for_department", "requires_manager_approval",
+  "section_warehouse", "from_warehouse", "to_warehouse",
+  "section_items", "items",
+  "section_status", "status", "stock_entry",
+  "column_break_status", "approved_by", "approved_at",
+  "section_total", "total_qty",
+  "section_other", "remarks", "amended_from"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Phiếu luân chuyển"},
+  {"fieldname": "request_date", "fieldtype": "Date", "label": "Ngày yêu cầu", "reqd": 1, "default": "Today", "in_list_view": 1},
+  {"fieldname": "transfer_type", "fieldtype": "Select",
+   "options": "Routine\nUrgent\nReplenishment\nReturn to Main",
+   "label": "Loại chuyển kho", "reqd": 1, "default": "Routine", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "required_by", "fieldtype": "Date", "label": "Ngày cần", "reqd": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "requested_by", "fieldtype": "Link", "options": "User", "label": "Người yêu cầu"},
+  {"fieldname": "requested_for_department", "fieldtype": "Link", "options": "SC Department", "label": "Khoa phòng yêu cầu", "in_standard_filter": 1},
+  {"fieldname": "requires_manager_approval", "fieldtype": "Check", "label": "Cần phê duyệt Manager", "default": "1",
+   "description": "Tự bật cho transfer cross-tier (Sub → Department)"},
+
+  {"fieldname": "section_warehouse", "fieldtype": "Section Break", "label": "Kho nguồn → Kho đích"},
+  {"fieldname": "from_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho nguồn", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "to_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho đích", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+
+  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Vật tư cần chuyển"},
+  {"fieldname": "items", "fieldtype": "Table", "options": "SC Transfer Request Item", "reqd": 1, "label": "Items"},
+
+  {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Trạng thái"},
+  {"fieldname": "status", "fieldtype": "Select",
+   "options": "Draft\nPending Approval\nApproved\nIn Transit\nReceived\nCancelled",
+   "label": "Trạng thái", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "stock_entry", "fieldtype": "Link", "options": "SC Stock Entry", "label": "Stock Entry tạo từ TR", "read_only": 1, "no_copy": 1},
+  {"fieldname": "column_break_status", "fieldtype": "Column Break"},
+  {"fieldname": "approved_by", "fieldtype": "Link", "options": "User", "label": "Người duyệt", "read_only": 1, "no_copy": 1},
+  {"fieldname": "approved_at", "fieldtype": "Datetime", "label": "Thời điểm duyệt", "read_only": 1, "no_copy": 1},
+
+  {"fieldname": "section_total", "fieldtype": "Section Break", "label": "Tổng hợp"},
+  {"fieldname": "total_qty", "fieldtype": "Float", "label": "Tổng SL yêu cầu", "read_only": 1, "in_list_view": 1},
+
+  {"fieldname": "section_other", "fieldtype": "Section Break", "label": "Khác", "collapsible": 1},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
+  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Transfer Request", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
+  {"role": "Warehouse Officer", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Ward Staff", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1},
+  {"role": "Pharmacy Officer", "read": 1, "write": 1, "create": 1, "report": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "M6 Transfer", "name": "SC Transfer Request",
+ "search_fields": "from_warehouse,to_warehouse,status",
+ "sort_field": "modified", "sort_order": "DESC"
+}

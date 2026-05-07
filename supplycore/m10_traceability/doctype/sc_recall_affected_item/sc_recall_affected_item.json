@@ -1,0 +1,148 @@
+{
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "location_type",
+  "warehouse",
+  "department",
+  "patient",
+  "column_break_1",
+  "voucher_type",
+  "voucher_no",
+  "voucher_date",
+  "section_qty",
+  "qty_dispensed",
+  "recovered_qty",
+  "destroyed_qty",
+  "column_break_qty",
+  "outstanding_qty",
+  "status",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "location_type",
+   "fieldtype": "Select",
+   "options": "Warehouse\nDepartment\nPatient",
+   "label": "Loại vị trí",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "options": "SC Warehouse",
+   "label": "Kho",
+   "in_list_view": 1,
+   "columns": 2,
+   "depends_on": "eval:doc.location_type=='Warehouse'"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "options": "SC Department",
+   "label": "Khoa",
+   "depends_on": "eval:doc.location_type=='Department'"
+  },
+  {
+   "fieldname": "patient",
+   "fieldtype": "Link",
+   "options": "SC Patient",
+   "label": "Bệnh nhân",
+   "depends_on": "eval:doc.location_type=='Patient'"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Data",
+   "label": "Loại chứng từ",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Data",
+   "label": "Số chứng từ",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "voucher_date",
+   "fieldtype": "Date",
+   "label": "Ngày",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_qty",
+   "fieldtype": "Section Break",
+   "label": "Số lượng"
+  },
+  {
+   "fieldname": "qty_dispensed",
+   "fieldtype": "Float",
+   "label": "SL đã cấp/tồn",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "recovered_qty",
+   "fieldtype": "Float",
+   "label": "SL thu hồi",
+   "non_negative": 1,
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "destroyed_qty",
+   "fieldtype": "Float",
+   "label": "SL hủy",
+   "non_negative": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "column_break_qty",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "outstanding_qty",
+   "fieldtype": "Float",
+   "label": "Còn chưa thu",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "\nNotified\nIn Progress\nRecovered\nDestroyed\nUsed (No Recovery)",
+   "label": "Trạng thái",
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Data",
+   "label": "Ghi chú",
+   "allow_on_submit": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M10 Traceability",
+ "name": "SC Recall Affected Item",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

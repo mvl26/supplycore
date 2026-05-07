@@ -1,0 +1,45 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "field:warehouse_name", "track_changes": 1, "is_tree": 1, "nsm_parent_field": "parent_warehouse",
+ "field_order": [
+  "section_main", "warehouse_name", "warehouse_code",
+  "column_break_1", "warehouse_type", "is_group", "disabled",
+  "section_hierarchy", "parent_warehouse", "department",
+  "section_meta", "address", "phone", "remarks"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin"},
+  {"fieldname": "warehouse_name", "fieldtype": "Data", "label": "Tên kho", "reqd": 1, "unique": 1, "in_list_view": 1},
+  {"fieldname": "warehouse_code", "fieldtype": "Data", "label": "Mã kho", "in_list_view": 1, "search_index": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "warehouse_type", "fieldtype": "Select",
+   "options": "\nMain\nSub\nDepartment\nQuarantine\nTransit",
+   "label": "Loại kho", "default": "Main", "in_list_view": 1, "in_standard_filter": 1,
+   "description": "Main=Kho tổng, Sub=Kho con, Department=Kho khoa, Quarantine=Cách ly QC, Transit=Trung chuyển"},
+  {"fieldname": "is_group", "fieldtype": "Check", "label": "Là nhóm", "default": "0", "description": "Group warehouse: chỉ chứa con, không chứa stock"},
+  {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0", "in_standard_filter": 1},
+
+  {"fieldname": "section_hierarchy", "fieldtype": "Section Break", "label": "Phân cấp"},
+  {"fieldname": "parent_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho cha", "search_index": 1, "in_list_view": 1,
+   "description": "Cấu trúc 3 tầng: Kho tổng → Kho con → Kho khoa phòng"},
+  {"fieldname": "department", "fieldtype": "Link", "options": "SC Department", "label": "Khoa phòng",
+   "description": "Set nếu warehouse_type=Department"},
+
+  {"fieldname": "section_meta", "fieldtype": "Section Break", "label": "Liên hệ", "collapsible": 1},
+  {"fieldname": "address", "fieldtype": "Small Text", "label": "Địa chỉ"},
+  {"fieldname": "phone", "fieldtype": "Data", "label": "Điện thoại"},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "report": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1},
+  {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1},
+  {"role": "SupplyCore Ward Staff", "read": 1, "report": 1},
+  {"role": "Pharmacy Officer", "read": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC Warehouse", "title_field": "warehouse_name",
+ "search_fields": "warehouse_name,warehouse_code",
+ "sort_field": "modified", "sort_order": "DESC"
+}

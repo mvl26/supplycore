@@ -1,0 +1,14 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB", "istable": 1,
+ "field_order": ["specification", "status", "value", "is_critical", "remarks"],
+ "fields": [
+  {"fieldname": "specification", "fieldtype": "Data", "label": "Tiêu chí", "reqd": 1, "in_list_view": 1, "columns": 4},
+  {"fieldname": "status", "fieldtype": "Select", "options": "\nAccepted\nRejected", "label": "Kết quả", "in_list_view": 1, "columns": 1},
+  {"fieldname": "value", "fieldtype": "Data", "label": "Giá trị đo (nếu có)", "in_list_view": 1, "columns": 2},
+  {"fieldname": "is_critical", "fieldtype": "Check", "label": "Critical", "in_list_view": 1, "columns": 1},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC QI Reading", "permissions": [],
+ "sort_field": "modified", "sort_order": "DESC"
+}

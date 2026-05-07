@@ -1,0 +1,1 @@
+# Frappe & ERPNext are managed by `bench`, not pip — do not pin them here.

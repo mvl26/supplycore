@@ -1,0 +1,63 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "format:SC-ALR-{YYYY}-{########}", "track_changes": 1,
+ "field_order": [
+  "section_main", "alert_date", "alert_rule",
+  "column_break_1", "alert_type", "severity",
+  "section_subject", "title", "message",
+  "section_link", "reference_doctype", "reference_name",
+  "column_break_link", "due_date", "value_amount",
+  "section_resolve", "resolved", "resolution_action",
+  "column_break_resolve", "resolved_by", "resolved_at",
+  "section_meta", "snooze_until", "remarks"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Cảnh báo"},
+  {"fieldname": "alert_date", "fieldtype": "Datetime", "label": "Thời điểm", "reqd": 1, "default": "now", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "alert_rule", "fieldtype": "Link", "options": "SC Alert Rule", "label": "Rule", "in_standard_filter": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "alert_type", "fieldtype": "Data", "label": "Loại", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "severity", "fieldtype": "Select",
+   "options": "Critical\nWarning\nInfo",
+   "label": "Mức độ", "reqd": 1, "default": "Warning", "in_list_view": 1, "in_standard_filter": 1},
+
+  {"fieldname": "section_subject", "fieldtype": "Section Break", "label": "Nội dung"},
+  {"fieldname": "title", "fieldtype": "Data", "label": "Tiêu đề", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "message", "fieldtype": "Small Text", "label": "Chi tiết"},
+
+  {"fieldname": "section_link", "fieldtype": "Section Break", "label": "Link tham chiếu"},
+  {"fieldname": "reference_doctype", "fieldtype": "Link", "options": "DocType", "label": "DocType"},
+  {"fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "label": "Document"},
+  {"fieldname": "column_break_link", "fieldtype": "Column Break"},
+  {"fieldname": "due_date", "fieldtype": "Date", "label": "Hạn xử lý"},
+  {"fieldname": "value_amount", "fieldtype": "Currency", "options": "VND", "label": "Giá trị liên quan"},
+
+  {"fieldname": "section_resolve", "fieldtype": "Section Break", "label": "Xử lý"},
+  {"fieldname": "resolved", "fieldtype": "Check", "label": "Đã xử lý", "default": "0", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "resolution_action", "fieldtype": "Select",
+   "options": "\nAcknowledged\nActed Upon\nDismissed\nEscalated",
+   "label": "Hành động"},
+  {"fieldname": "column_break_resolve", "fieldtype": "Column Break"},
+  {"fieldname": "resolved_by", "fieldtype": "Link", "options": "User", "label": "Người xử lý", "read_only": 1},
+  {"fieldname": "resolved_at", "fieldtype": "Datetime", "label": "Thời điểm xử lý", "read_only": 1},
+
+  {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
+  {"fieldname": "snooze_until", "fieldtype": "Datetime", "label": "Tạm ẩn đến"},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "report": 1},
+  {"role": "SupplyCore Executive", "read": 1, "write": 1, "report": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "report": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "report": 1},
+  {"role": "SupplyCore Ward Staff", "read": 1, "report": 1},
+  {"role": "Pharmacy Officer", "read": 1, "write": 1, "report": 1},
+  {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "M11 Dashboard", "name": "SC Alert",
+ "title_field": "title",
+ "search_fields": "title,alert_type,severity",
+ "sort_field": "alert_date", "sort_order": "DESC"
+}

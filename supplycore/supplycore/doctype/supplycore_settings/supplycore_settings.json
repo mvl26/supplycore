@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "creation": "2026-05-06 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_general",
+  "default_company",
+  "default_warehouse",
+  "column_break_general",
+  "po_approval_threshold",
+  "audit_log_retention_days",
+  "section_fefo",
+  "fefo_strict_mode",
+  "fefo_min_shelf_life_days",
+  "column_break_fefo",
+  "expiry_alert_days_critical",
+  "expiry_alert_days_warning",
+  "section_planning",
+  "default_safety_stock_pct",
+  "contract_expiry_alert_days",
+  "section_bhyt",
+  "bhyt_auto_calculate",
+  "section_alerts",
+  "email_alert_recipients",
+  "section_integration",
+  "his_endpoint",
+  "bhyt_endpoint",
+  "section_legacy",
+  "enforce_fefo",
+  "expiry_alert_days"
+ ],
+ "fields": [
+  {"fieldname": "section_general", "fieldtype": "Section Break", "label": "Chung"},
+  {"fieldname": "default_company", "fieldtype": "Link", "options": "Company", "label": "Đơn vị mặc định"},
+  {"fieldname": "default_warehouse", "fieldtype": "Link", "options": "Warehouse", "label": "Kho tổng mặc định"},
+  {"fieldname": "column_break_general", "fieldtype": "Column Break"},
+  {"fieldname": "po_approval_threshold", "fieldtype": "Currency", "options": "VND", "label": "Ngưỡng duyệt PO (VND)", "default": "50000000", "description": "PO ≥ ngưỡng → cần Lãnh đạo duyệt"},
+  {"fieldname": "audit_log_retention_days", "fieldtype": "Int", "label": "Lưu audit log (ngày)", "default": "2555", "description": "Mặc định 7 năm theo quy định kế toán"},
+
+  {"fieldname": "section_fefo", "fieldtype": "Section Break", "label": "FEFO & Hạn dùng"},
+  {"fieldname": "fefo_strict_mode", "fieldtype": "Check", "label": "FEFO nghiêm ngặt", "default": "1", "description": "1 = throw lỗi khi vi phạm FEFO. 0 = chỉ warn."},
+  {"fieldname": "fefo_min_shelf_life_days", "fieldtype": "Int", "label": "Hạn dùng tối thiểu khi nhập (ngày)", "default": "30"},
+  {"fieldname": "column_break_fefo", "fieldtype": "Column Break"},
+  {"fieldname": "expiry_alert_days_critical", "fieldtype": "Int", "label": "Cảnh báo Critical (ngày)", "default": "30"},
+  {"fieldname": "expiry_alert_days_warning", "fieldtype": "Int", "label": "Cảnh báo Warning (ngày)", "default": "90"},
+
+  {"fieldname": "section_planning", "fieldtype": "Section Break", "label": "Kế hoạch & Hợp đồng"},
+  {"fieldname": "default_safety_stock_pct", "fieldtype": "Percent", "label": "Safety stock mặc định (%)", "default": "20"},
+  {"fieldname": "contract_expiry_alert_days", "fieldtype": "Int", "label": "Cảnh báo HĐ hết hạn (ngày)", "default": "30"},
+
+  {"fieldname": "section_bhyt", "fieldtype": "Section Break", "label": "BHYT"},
+  {"fieldname": "bhyt_auto_calculate", "fieldtype": "Check", "label": "Tự tính BHYT khi save Patient Dispensing", "default": "1"},
+
+  {"fieldname": "section_alerts", "fieldtype": "Section Break", "label": "Email cảnh báo"},
+  {"fieldname": "email_alert_recipients", "fieldtype": "Small Text", "label": "Email nhận cảnh báo", "description": "Phân cách bằng dấu phẩy. Để trống = gửi cho tất cả role SC-Manager/Storekeeper"},
+
+  {"fieldname": "section_integration", "fieldtype": "Section Break", "label": "Tích hợp", "collapsible": 1},
+  {"fieldname": "his_endpoint", "fieldtype": "Data", "label": "HIS Endpoint URL"},
+  {"fieldname": "bhyt_endpoint", "fieldtype": "Data", "label": "Cổng BHYT Endpoint URL"},
+
+  {"fieldname": "section_legacy", "fieldtype": "Section Break", "label": "Legacy (deprecated)", "collapsible": 1, "collapsible_depends_on": "0", "description": "Field cũ giữ tương thích — sẽ remove ở v0.2"},
+  {"fieldname": "enforce_fefo", "fieldtype": "Check", "label": "(Legacy) Enforce FEFO", "hidden": 1},
+  {"fieldname": "expiry_alert_days", "fieldtype": "Int", "label": "(Legacy) Expiry alert days", "hidden": 1}
+ ],
+ "issingle": 1,
+ "modified": "2026-05-07 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Supplycore",
+ "name": "SupplyCore Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

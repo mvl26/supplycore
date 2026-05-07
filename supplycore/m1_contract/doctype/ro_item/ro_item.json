@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "fc_item",
+  "item_code",
+  "item_name",
+  "uom",
+  "column_break_1",
+  "qty",
+  "available_qty",
+  "section_price",
+  "unit_price",
+  "amount"
+ ],
+ "fields": [
+  {"fieldname": "fc_item", "fieldtype": "Link", "options": "FC Item", "label": "Dòng HĐK", "hidden": 1, "no_copy": 1, "description": "Reference đến row trong Framework Contract"},
+  {"fieldname": "item_code", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
+  {"fieldname": "item_name", "fieldtype": "Data", "label": "Tên vật tư", "fetch_from": "item_code.item_name", "read_only": 1, "in_list_view": 1, "columns": 3},
+  {"fieldname": "uom", "fieldtype": "Link", "options": "SC UOM", "label": "Đơn vị", "reqd": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "qty", "fieldtype": "Float", "label": "SL gọi", "reqd": 1, "in_list_view": 1, "non_negative": 1, "columns": 1},
+  {"fieldname": "available_qty", "fieldtype": "Float", "label": "Còn theo HĐK", "read_only": 1, "no_copy": 1, "description": "Số lượng còn lại của FC Item tương ứng"},
+  {"fieldname": "section_price", "fieldtype": "Section Break"},
+  {"fieldname": "unit_price", "fieldtype": "Currency", "label": "Đơn giá HĐK", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "amount", "fieldtype": "Currency", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1}
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M1 Contract",
+ "name": "RO Item",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -1,0 +1,11 @@
+# Patches chạy 1 lần khi `bench migrate`
+# Format: supplycore.patches.<package>.<module>
+supplycore.patches.v0_1.create_supplycore_roles
+supplycore.patches.v0_1.create_m1_custom_fields
+supplycore.patches.v0_1.fix_fc_status
+supplycore.patches.v0_1.create_m2_custom_fields
+supplycore.patches.v0_1.create_m3_custom_fields
+supplycore.patches.v0_1.create_m4_custom_fields
+supplycore.patches.v0_1.create_m5_custom_fields
+supplycore.patches.v0_1.init_supplycore_settings
+supplycore.patches.v0_2.seed_master_data

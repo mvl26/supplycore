@@ -1,0 +1,15 @@
+SupplyCore,SupplyCore
+Framework Contract,Hợp đồng khung
+Release Order,Đơn gọi hàng
+Procurement Plan,Kế hoạch mua sắm
+QC Checklist Template,Mẫu Checklist QC
+Bin Location,Vị trí kệ kho
+Putaway Rule,Quy tắc nhập kho
+FEFO Picker Rule,Quy tắc FEFO
+Transfer Request,Phiếu luân chuyển
+Dispensing Request,Phiếu yêu cầu cấp phát
+Patient Dispensing,Cấp phát cho bệnh nhân
+BHYT Claim,Hồ sơ BHYT
+Inventory Count Sheet,Phiếu kiểm kê
+Recall Notice,Thông báo thu hồi
+SupplyCore Settings,Cấu hình SupplyCore

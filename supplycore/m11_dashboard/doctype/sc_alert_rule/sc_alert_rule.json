@@ -1,0 +1,55 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "format:SC-AR-{#####}", "track_changes": 1,
+ "field_order": [
+  "section_main", "title", "alert_type", "severity",
+  "column_break_1", "enabled", "frequency",
+  "section_threshold", "threshold_value", "threshold_operator", "threshold_unit",
+  "section_recipients", "recipient_roles", "extra_emails",
+  "section_meta", "description", "last_triggered_at", "last_alert_count"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Quy tắc cảnh báo"},
+  {"fieldname": "title", "fieldtype": "Data", "label": "Tiêu đề", "reqd": 1, "in_list_view": 1, "search_index": 1},
+  {"fieldname": "alert_type", "fieldtype": "Select",
+   "options": "low_stock\nexpiring_batch\ncontract_expiring\nfc_remaining_low\noverdue_payment\nqc_pending\nrecall_outstanding",
+   "label": "Loại cảnh báo", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "severity", "fieldtype": "Select",
+   "options": "Critical\nWarning\nInfo",
+   "label": "Mức độ", "default": "Warning", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "enabled", "fieldtype": "Check", "label": "Đang sử dụng", "default": "1", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "frequency", "fieldtype": "Select",
+   "options": "Daily\nHourly\nRealtime",
+   "label": "Tần suất quét", "default": "Daily", "in_list_view": 1},
+
+  {"fieldname": "section_threshold", "fieldtype": "Section Break", "label": "Ngưỡng"},
+  {"fieldname": "threshold_value", "fieldtype": "Float", "label": "Giá trị ngưỡng", "default": "30",
+   "description": "VD: 30 ngày cho expiring_batch / contract_expiring"},
+  {"fieldname": "threshold_operator", "fieldtype": "Select",
+   "options": "<\n<=\n=\n>=\n>",
+   "label": "Phép so sánh", "default": "<="},
+  {"fieldname": "threshold_unit", "fieldtype": "Select",
+   "options": "\ndays\npercent\nVND\nqty",
+   "label": "Đơn vị", "default": "days"},
+
+  {"fieldname": "section_recipients", "fieldtype": "Section Break", "label": "Người nhận"},
+  {"fieldname": "recipient_roles", "fieldtype": "Small Text", "label": "Roles nhận",
+   "description": "Phân cách dấu phẩy. VD: SupplyCore Manager,SupplyCore Storekeeper"},
+  {"fieldname": "extra_emails", "fieldtype": "Small Text", "label": "Email bổ sung",
+   "description": "Email cụ thể, phân cách dấu phẩy"},
+
+  {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
+  {"fieldname": "description", "fieldtype": "Small Text", "label": "Mô tả"},
+  {"fieldname": "last_triggered_at", "fieldtype": "Datetime", "label": "Lần fire gần nhất", "read_only": 1},
+  {"fieldname": "last_alert_count", "fieldtype": "Int", "label": "Số alert gần nhất", "read_only": 1, "default": "0"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "M11 Dashboard", "name": "SC Alert Rule",
+ "title_field": "title",
+ "sort_field": "modified", "sort_order": "DESC"
+}

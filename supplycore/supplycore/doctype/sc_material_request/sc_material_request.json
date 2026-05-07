@@ -1,0 +1,49 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "format:SC-MR-{YYYY}-{#####}", "is_submittable": 1, "track_changes": 1,
+ "field_order": [
+  "section_main", "request_type", "transaction_date", "schedule_date",
+  "column_break_1", "department", "warehouse", "requested_by",
+  "section_link", "procurement_plan", "auto_generated",
+  "section_items", "items",
+  "section_status", "status", "total_qty", "total_estimated_cost",
+  "amended_from", "remarks"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Yêu cầu vật tư"},
+  {"fieldname": "request_type", "fieldtype": "Select", "options": "Purchase\nInternal Transfer\nUrgent",
+   "label": "Loại yêu cầu", "reqd": 1, "default": "Purchase", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "transaction_date", "fieldtype": "Date", "label": "Ngày yêu cầu", "reqd": 1, "default": "Today", "in_list_view": 1},
+  {"fieldname": "schedule_date", "fieldtype": "Date", "label": "Ngày cần", "reqd": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "department", "fieldtype": "Link", "options": "SC Department", "label": "Khoa phòng yêu cầu", "in_standard_filter": 1},
+  {"fieldname": "warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho đích", "in_standard_filter": 1},
+  {"fieldname": "requested_by", "fieldtype": "Link", "options": "User", "label": "Người yêu cầu"},
+
+  {"fieldname": "section_link", "fieldtype": "Section Break", "label": "Liên kết", "collapsible": 1},
+  {"fieldname": "procurement_plan", "fieldtype": "Link", "options": "Procurement Plan", "label": "Procurement Plan", "in_standard_filter": 1},
+  {"fieldname": "auto_generated", "fieldtype": "Check", "label": "Auto-generated", "default": "0"},
+
+  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Items"},
+  {"fieldname": "items", "fieldtype": "Table", "options": "SC Material Request Item", "reqd": 1, "label": "Items"},
+
+  {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Trạng thái"},
+  {"fieldname": "status", "fieldtype": "Select", "options": "Draft\nPending\nApproved\nOrdered\nReceived\nCancelled",
+   "label": "Status", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "total_qty", "fieldtype": "Float", "label": "Tổng SL", "read_only": 1},
+  {"fieldname": "total_estimated_cost", "fieldtype": "Currency", "options": "VND", "label": "Tổng ước tính", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Material Request", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Ward Staff", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "report": 1},
+  {"role": "SupplyCore Purchaser", "read": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC Material Request",
+ "sort_field": "modified", "sort_order": "DESC"
+}

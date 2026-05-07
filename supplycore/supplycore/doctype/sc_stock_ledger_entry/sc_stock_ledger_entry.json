@@ -1,0 +1,53 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "format:SC-SLE-{YYYY}-{########}", "track_changes": 0, "in_create": 1,
+ "field_order": [
+  "section_main", "posting_date", "posting_time", "company",
+  "column_break_1", "voucher_type", "voucher_no", "voucher_detail_no",
+  "section_item", "item", "warehouse", "bin_location", "batch",
+  "section_qty", "qty_change", "balance_qty",
+  "column_break_qty", "valuation_rate", "stock_value", "stock_value_difference",
+  "section_meta", "is_cancelled", "remarks"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Posting"},
+  {"fieldname": "posting_date", "fieldtype": "Date", "label": "Ngày", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "posting_time", "fieldtype": "Time", "label": "Giờ"},
+  {"fieldname": "company", "fieldtype": "Data", "label": "Đơn vị"},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "voucher_type", "fieldtype": "Data", "label": "Loại chứng từ", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1,
+   "description": "VD: SC Stock Entry / SC Purchase Receipt"},
+  {"fieldname": "voucher_no", "fieldtype": "Data", "label": "Số chứng từ", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "voucher_detail_no", "fieldtype": "Data", "label": "Detail row name"},
+
+  {"fieldname": "section_item", "fieldtype": "Section Break", "label": "Item & Vị trí"},
+  {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Vật tư", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "bin_location", "fieldtype": "Link", "options": "Bin Location", "label": "Bin"},
+  {"fieldname": "batch", "fieldtype": "Link", "options": "SC Batch", "label": "Lô", "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+
+  {"fieldname": "section_qty", "fieldtype": "Section Break", "label": "Số lượng"},
+  {"fieldname": "qty_change", "fieldtype": "Float", "label": "Δ Qty", "reqd": 1, "in_list_view": 1,
+   "description": "Số dương = nhập, âm = xuất"},
+  {"fieldname": "balance_qty", "fieldtype": "Float", "label": "Tồn sau giao dịch", "in_list_view": 1, "read_only": 1},
+  {"fieldname": "column_break_qty", "fieldtype": "Column Break"},
+  {"fieldname": "valuation_rate", "fieldtype": "Currency", "label": "Đơn giá", "options": "VND"},
+  {"fieldname": "stock_value", "fieldtype": "Currency", "label": "Giá trị tồn sau GD", "options": "VND", "read_only": 1},
+  {"fieldname": "stock_value_difference", "fieldtype": "Currency", "label": "Δ Stock Value", "options": "VND", "read_only": 1},
+
+  {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
+  {"fieldname": "is_cancelled", "fieldtype": "Check", "label": "Cancelled", "default": "0", "in_standard_filter": 1, "read_only": 1},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú", "read_only": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "report": 1, "export": 1, "print": 1},
+  {"role": "SupplyCore Manager", "read": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1},
+  {"role": "Warehouse Officer", "read": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC Stock Ledger Entry",
+ "search_fields": "voucher_no,item,warehouse,batch",
+ "sort_field": "posting_date", "sort_order": "DESC"
+}

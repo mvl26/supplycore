@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "autoname": "format:SC-RO-{YYYY}-{#####}",
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "field_order": [
+  "section_main",
+  "framework_contract",
+  "supplier",
+  "supplier_name",
+  "column_break_1",
+  "release_date",
+  "required_by",
+  "section_items",
+  "items",
+  "section_status",
+  "status",
+  "purchase_order",
+  "column_break_2",
+  "total_amount",
+  "remaining_value_at_release",
+  "section_other",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin chung"},
+  {"fieldname": "framework_contract", "fieldtype": "Link", "options": "Framework Contract", "label": "Hợp đồng khung", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "supplier", "fieldtype": "Link", "options": "SC Supplier", "label": "Nhà cung cấp", "fetch_from": "framework_contract.supplier", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "supplier_name", "fieldtype": "Data", "label": "Tên NCC", "fetch_from": "framework_contract.supplier_name", "read_only": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "release_date", "fieldtype": "Date", "label": "Ngày lệnh", "reqd": 1, "default": "Today", "in_list_view": 1},
+  {"fieldname": "required_by", "fieldtype": "Date", "label": "Ngày cần giao", "reqd": 1},
+
+  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Danh mục vật tư cần gọi"},
+  {"fieldname": "items", "fieldtype": "Table", "options": "RO Item", "label": "Danh mục", "reqd": 1},
+
+  {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Trạng thái"},
+  {"fieldname": "status", "fieldtype": "Select", "options": "Draft\nApproved\nConverted\nCancelled", "label": "Trạng thái", "default": "Draft", "in_list_view": 1, "in_standard_filter": 1, "read_only": 1, "search_index": 1},
+  {"fieldname": "purchase_order", "fieldtype": "Link", "options": "SC Purchase Order", "label": "Purchase Order tạo từ RO", "read_only": 1, "no_copy": 1},
+  {"fieldname": "column_break_2", "fieldtype": "Column Break"},
+  {"fieldname": "total_amount", "fieldtype": "Currency", "label": "Tổng giá trị (VND)", "options": "VND", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "remaining_value_at_release", "fieldtype": "Currency", "label": "HĐK còn lại tại thời điểm tạo", "options": "VND", "read_only": 1, "no_copy": 1, "description": "Snapshot remaining_value của HĐK khi RO được tạo"},
+
+  {"fieldname": "section_other", "fieldtype": "Section Break", "label": "Khác", "collapsible": 1},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
+  {"fieldname": "amended_from", "fieldtype": "Link", "options": "Release Order", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1, "share": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Purchaser", "read": 1, "write": 1, "create": 1, "report": 1, "print": 1},
+  {"role": "Warehouse Officer", "read": 1, "report": 1}
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M1 Contract",
+ "name": "Release Order",
+ "search_fields": "framework_contract,supplier,status",
+ "title_field": "framework_contract",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

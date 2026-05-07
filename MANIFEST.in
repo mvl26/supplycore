@@ -1,0 +1,17 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include supplycore *.css
+recursive-include supplycore *.csv
+recursive-include supplycore *.html
+recursive-include supplycore *.ico
+recursive-include supplycore *.js
+recursive-include supplycore *.json
+recursive-include supplycore *.md
+recursive-include supplycore *.png
+recursive-include supplycore *.py
+recursive-include supplycore *.svg
+recursive-include supplycore *.txt

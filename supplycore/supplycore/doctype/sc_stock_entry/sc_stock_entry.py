@@ -1,0 +1,239 @@
+"""SC Stock Entry — chứng từ di chuyển kho.
+
+Submit → ghi SC Stock Ledger Entry (1 entry per item-warehouse-batch-bin).
+Material Receipt: tạo +qty ở to_warehouse.
+Material Issue: tạo -qty ở from_warehouse.
+Material Transfer: tạo cả -qty (from) và +qty (to).
+Cancel → tạo SLE đối ứng + đánh dấu is_cancelled.
+"""
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from frappe.utils import flt, getdate, today
+
+
+ISSUE_TYPES = ("Material Issue", "Material Transfer")
+
+
+class SCStockEntry(Document):
+
+    def validate(self):
+        self._validate_warehouses()
+        self._validate_items_and_compute()
+        self._validate_bin_consistency()
+        self._enforce_fefo_rules()
+
+    def on_submit(self):
+        self._post_stock_ledger()
+        self._notify_linked_transfer_request("submit")
+
+    def on_cancel(self):
+        self._reverse_stock_ledger()
+        self._notify_linked_transfer_request("cancel")
+
+    def _notify_linked_transfer_request(self, event: str):
+        """Update linked SC Transfer Request status (M6 luân chuyển nội bộ)."""
+        if not self.get("transfer_request"):
+            return
+        try:
+            from supplycore.m6_transfer.doctype.sc_transfer_request.sc_transfer_request import (
+                update_tr_on_se_submit, update_tr_on_se_cancel,
+            )
+            if event == "submit":
+                update_tr_on_se_submit(self)
+            elif event == "cancel":
+                update_tr_on_se_cancel(self)
+        except Exception as e:
+            frappe.log_error(message=f"M6 TR sync failed SE={self.name}: {e}",
+                              title="M6 TR sync")
+
+    # ------------------------------------------------------------------
+    def _validate_warehouses(self):
+        if self.entry_type in ("Material Issue", "Material Transfer") and not self.from_warehouse:
+            frappe.throw(_("Cần from_warehouse cho {0}").format(self.entry_type))
+        if self.entry_type in ("Material Receipt", "Material Transfer") and not self.to_warehouse:
+            frappe.throw(_("Cần to_warehouse cho {0}").format(self.entry_type))
+        if self.from_warehouse == self.to_warehouse and self.entry_type == "Material Transfer":
+            frappe.throw(_("Material Transfer phải có from_warehouse khác to_warehouse"))
+
+    def _validate_items_and_compute(self):
+        total_qty = 0
+        total_value = 0
+        for row in self.items:
+            row.amount = flt(row.qty) * flt(row.valuation_rate)
+            total_qty += flt(row.qty)
+            total_value += flt(row.amount)
+            # Batch phải thuộc đúng item
+            if row.batch:
+                batch_item = frappe.db.get_value("SC Batch", row.batch, "item")
+                if batch_item and batch_item != row.item:
+                    frappe.throw(_("Row {0}: batch {1} không thuộc item {2}")
+                                 .format(row.idx, row.batch, row.item))
+            # has_batch_no = 1 → bắt buộc nhập batch
+            has_batch = frappe.db.get_value("SC Item", row.item, "has_batch_no")
+            if has_batch and not row.batch:
+                frappe.throw(_("Row {0}: item {1} bắt buộc có batch").format(row.idx, row.item))
+        self.total_qty = total_qty
+        self.total_value = total_value
+
+    def _validate_bin_consistency(self):
+        for row in self.items:
+            for fld, wh_fld in (("source_bin", "from_warehouse"), ("target_bin", "to_warehouse")):
+                bin_name = row.get(fld)
+                if not bin_name:
+                    continue
+                bin_data = frappe.db.get_value("Bin Location", bin_name,
+                                                ["warehouse", "enabled", "is_quarantine"], as_dict=True)
+                if not bin_data:
+                    continue
+                wh = self.get(wh_fld)
+                if wh and bin_data.warehouse != wh:
+                    frappe.throw(_("Row {0}: {1} {2} không thuộc kho {3}")
+                                 .format(row.idx, fld, bin_name, wh))
+                if not bin_data.enabled:
+                    frappe.throw(_("Row {0}: bin {1} đã disable").format(row.idx, bin_name))
+                if fld == "source_bin" and bin_data.is_quarantine:
+                    frappe.msgprint(_("Row {0}: source_bin {1} là quarantine — chỉ xuất sau QC")
+                                     .format(row.idx, bin_name), indicator="orange", alert=True)
+
+    # ------------------------------------------------------------------
+    # M5 FEFO enforcement
+    # ------------------------------------------------------------------
+    def _enforce_fefo_rules(self):
+        if self.docstatus != 0:
+            return
+        if self.entry_type not in ISSUE_TYPES:
+            return
+
+        today_d = getdate(today())
+        selected = {}
+        for row in self.items:
+            if row.batch and row.item and self.from_warehouse:
+                key = (row.item, self.from_warehouse)
+                selected.setdefault(key, set()).add(row.batch)
+
+        for row in self.items:
+            if not (row.batch and row.item and self.from_warehouse):
+                continue
+            batch = frappe.db.get_value("SC Batch", row.batch,
+                                         ["expiry_date", "blocked", "block_reason"], as_dict=True)
+            if not batch:
+                continue
+            if batch.expiry_date and getdate(batch.expiry_date) < today_d:
+                frappe.throw(_("Batch {0} đã hết hạn ({1})").format(row.batch, batch.expiry_date),
+                             title="SC-E003 EXPIRY_TOO_CLOSE")
+            if batch.blocked:
+                frappe.throw(_("Batch {0} bị block: {1}").format(row.batch, batch.block_reason or ""),
+                             title="SC-E008 BATCH_RECALLED")
+            if not batch.expiry_date:
+                continue
+
+            used = selected.get((row.item, self.from_warehouse), set())
+            earlier = frappe.db.sql("""
+                SELECT b.name AS batch, b.expiry_date,
+                       COALESCE(SUM(sle.qty_change), 0) AS qty
+                FROM `tabSC Batch` b
+                LEFT JOIN `tabSC Stock Ledger Entry` sle
+                    ON sle.batch = b.name AND sle.warehouse = %(wh)s AND sle.is_cancelled = 0
+                WHERE b.item = %(item)s
+                  AND b.disabled = 0
+                  AND COALESCE(b.blocked, 0) = 0
+                  AND b.name != %(curr)s
+                  AND b.expiry_date IS NOT NULL
+                  AND b.expiry_date < %(curr_exp)s
+                  AND b.expiry_date >= CURDATE()
+                GROUP BY b.name, b.expiry_date
+                HAVING qty > 0
+                ORDER BY b.expiry_date ASC LIMIT 5
+            """, {"wh": self.from_warehouse, "item": row.item,
+                  "curr": row.batch, "curr_exp": batch.expiry_date}, as_dict=True)
+
+            unused_earlier = [b for b in earlier if b.batch not in used]
+            if not unused_earlier:
+                continue
+
+            if not row.fefo_override:
+                strict = _is_fefo_strict()
+                msg = _("Row {0} item {1} batch {2}: còn lô gần hết hạn hơn — {3}").format(
+                    row.idx, row.item, row.batch,
+                    ", ".join(f"{b.batch}({b.expiry_date})" for b in unused_earlier[:3])
+                )
+                if strict:
+                    frappe.throw(msg + "\n" + _("Tick FEFO Override + ghi lý do"),
+                                 title="SC-E001 FEFO_OVERRIDE")
+                else:
+                    frappe.msgprint(msg, indicator="orange", alert=True)
+            elif not row.fefo_override_reason:
+                frappe.throw(_("FEFO Override row {0} cần ghi lý do").format(row.idx),
+                             title="SC-E001 FEFO_OVERRIDE")
+
+    # ------------------------------------------------------------------
+    # SLE posting
+    # ------------------------------------------------------------------
+    def _post_stock_ledger(self):
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        for row in self.items:
+            if self.entry_type == "Material Receipt":
+                SCStockLedgerEntry.post(
+                    item=row.item, warehouse=self.to_warehouse,
+                    qty_change=flt(row.qty), valuation_rate=flt(row.valuation_rate),
+                    voucher_type="SC Stock Entry", voucher_no=self.name, voucher_detail_no=row.name,
+                    batch=row.batch, bin_location=row.target_bin,
+                    posting_date=self.posting_date, posting_time=self.posting_time,
+                )
+            elif self.entry_type == "Material Issue":
+                SCStockLedgerEntry.post(
+                    item=row.item, warehouse=self.from_warehouse,
+                    qty_change=-flt(row.qty), valuation_rate=flt(row.valuation_rate),
+                    voucher_type="SC Stock Entry", voucher_no=self.name, voucher_detail_no=row.name,
+                    batch=row.batch, bin_location=row.source_bin,
+                    posting_date=self.posting_date, posting_time=self.posting_time,
+                )
+            elif self.entry_type == "Material Transfer":
+                SCStockLedgerEntry.post(
+                    item=row.item, warehouse=self.from_warehouse,
+                    qty_change=-flt(row.qty), valuation_rate=flt(row.valuation_rate),
+                    voucher_type="SC Stock Entry", voucher_no=self.name, voucher_detail_no=row.name,
+                    batch=row.batch, bin_location=row.source_bin,
+                    posting_date=self.posting_date, posting_time=self.posting_time,
+                )
+                SCStockLedgerEntry.post(
+                    item=row.item, warehouse=self.to_warehouse,
+                    qty_change=flt(row.qty), valuation_rate=flt(row.valuation_rate),
+                    voucher_type="SC Stock Entry", voucher_no=self.name, voucher_detail_no=row.name,
+                    batch=row.batch, bin_location=row.target_bin,
+                    posting_date=self.posting_date, posting_time=self.posting_time,
+                )
+
+    def _reverse_stock_ledger(self):
+        """Cancel: insert SLE đối ứng + đánh dấu original is_cancelled."""
+        sles = frappe.get_all(
+            "SC Stock Ledger Entry",
+            filters={"voucher_type": "SC Stock Entry", "voucher_no": self.name, "is_cancelled": 0},
+            fields=["name", "item", "warehouse", "batch", "bin_location",
+                    "qty_change", "valuation_rate"],
+        )
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        for s in sles:
+            SCStockLedgerEntry.post(
+                item=s.item, warehouse=s.warehouse, qty_change=-flt(s.qty_change),
+                valuation_rate=flt(s.valuation_rate),
+                voucher_type="SC Stock Entry", voucher_no=self.name,
+                voucher_detail_no=s.name + "-CANCEL",
+                batch=s.batch, bin_location=s.bin_location,
+                remarks=f"Cancel của SLE {s.name}",
+            )
+            frappe.db.set_value("SC Stock Ledger Entry", s.name, "is_cancelled", 1)
+
+
+def _is_fefo_strict():
+    """Resolve FEFO strict mode từ SupplyCore Settings."""
+    for fname in ("fefo_strict_mode", "enforce_fefo"):
+        try:
+            v = frappe.db.get_single_value("SupplyCore Settings", fname)
+            if v is not None:
+                return bool(v)
+        except Exception:
+            pass
+    return True  # Default strict
