@@ -16,6 +16,9 @@ from frappe.utils import flt, today, getdate
 class SCPurchaseReceipt(Document):
 
     def validate(self):
+        from supplycore.utils.validators import validate_supplier, validate_warehouse
+        validate_supplier(self.supplier)
+        validate_warehouse(self.to_warehouse, label=_("Kho đích"))
         self._compute_totals()
         self._validate_expiry()
         if self.docstatus == 0 and not self.qc_status:

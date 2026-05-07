@@ -31,9 +31,8 @@ class SCPurchaseOrder(Document):
         self.grand_total = total
 
     def _validate_supplier(self):
-        s = frappe.db.get_value("SC Supplier", self.supplier, ["disabled", "blacklist_flag"], as_dict=True)
-        if s and s.disabled:
-            frappe.throw(_("NCC {0} đang disabled").format(self.supplier))
+        from supplycore.utils.validators import validate_supplier
+        s = validate_supplier(self.supplier)
         if s and s.blacklist_flag and self.docstatus == 0:
             frappe.msgprint(_("⚠ NCC này trong blacklist — cần xác nhận lãnh đạo"),
                              indicator="orange", alert=True)

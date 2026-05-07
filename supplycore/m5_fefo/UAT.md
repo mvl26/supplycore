@@ -8,5 +8,5 @@
 |---|---|---|---|
 | 1 | API get_suggested_batches | PASS | batches=5, total_avail=150.0, fully=True |
 | 2 | API check_batch_status | PASS | batch=M11SMK-EXPIRE-3fbO expired=False severity=Critical |
-| 3 | [Edge] FEFO với qty=0 (only listing) | PASS | batches=21, total_avail=1335.0 |
+| 3 | [Edge] FEFO với qty=0 (only listing) | PASS | batches=25, total_avail=1670.0 |
 | 4 | [Negative] FEFO với warehouse invalid | PASS | Note: API không validate warehouse tồn tại — trả empty |

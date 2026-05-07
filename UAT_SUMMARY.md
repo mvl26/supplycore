@@ -8,7 +8,7 @@
 
 | Module | Steps | PASS | FAIL | Trạng thái |
 |---|---|---|---|---|
-| M1 — Hợp đồng khung | 7 | 6 | 1 | ⚠️ 1 BUG |
+| M1 — Hợp đồng khung | 7 | 7 | 0 | ✅ |
 | M2 — Kế hoạch & Đặt hàng | 6 | 6 | 0 | ✅ |
 | M3 — Tiếp nhận & QC | 4 | 4 | 0 | ✅ |
 | M4 — WMS / Stock Entry | 5 | 5 | 0 | ✅ |
@@ -19,11 +19,11 @@
 | M9 — Kiểm kê | 2 | 2 | 0 | ✅ |
 | M10 — Truy xuất & Recall | 3 | 3 | 0 | ✅ |
 | M11 — Dashboard & Alert | 5 | 5 | 0 | ✅ |
-| **TỔNG** | **44** | **43** | **1** | **97.7% PASS** |
+| **TỔNG** | **44** | **44** | **0** | **100% PASS** |
 
 ## Bug log
 
-### BUG-M1-01 — Framework Contract không validate Link integrity của supplier
+### BUG-M1-01 — Framework Contract không validate Link integrity của supplier ✅ FIXED 2026-05-07
 
 **Severity:** Medium
 **Module:** M1 — Hợp đồng khung
@@ -58,6 +58,29 @@ curl -X POST http://localhost:8000/api/resource/Framework%20Contract \
 - Kiểm tra trong `framework_contract.py validate()`: thêm `frappe.db.exists("SC Supplier", self.supplier)` raise `frappe.LinkValidationError` nếu không tồn tại.
 - Hoặc ép validation chuẩn của Frappe Link bằng cách bỏ override `validate()` chặn link validation (nếu có).
 - So sánh với `Release Order` (validate đúng) để tìm root cause.
+
+**Root cause (đã xác định):**
+Frappe v15 `BaseDocument.get_invalid_links()` có nhánh:
+```python
+if not fields_to_fetch:
+    values = _dict(name=frappe.db.get_value(doctype, docname, "name", cache=True))
+else:
+    values = frappe.db.get_value(doctype, docname, [...], as_dict=True)
+```
+Khi Link không tồn tại VÀ có sibling field `fetch_from: <link>.foo`, nhánh `else` chạy → `values=None` → `if values:` False → bỏ qua append `invalid_links` → silent pass.
+
+Pattern này ảnh hưởng tới mọi DocType có sibling fetch_from xuống Link missing: FC/PO/PR/PI/PE đều bị (chỉ RO không bị do `fetch_from` của RO trỏ tới `framework_contract.supplier` chứ không phải `supplier.<...>`).
+
+**Fix đã apply (commit sau 904b52f):**
+1. Tạo helper chung `supplycore/utils/validators.py`:
+   - `validate_link(doctype, name, label)` — bù validation cho lỗ hổng Frappe
+   - `validate_supplier(name)` — link + disabled + return blacklist_flag
+   - `validate_warehouse(name)` — link + disabled
+   - `validate_item(name)` — link + disabled
+2. Refactor `validate()` của 6 controller để gọi `validate_supplier()`:
+   - Framework Contract, SC Purchase Order, SC Purchase Receipt,
+     SC Purchase Invoice, SC Payment Entry, Release Order
+3. Verify: insert 6 doctypes với supplier không tồn tại — cả 6 đều `LinkValidationError` đúng.
 
 ## Coverage chi tiết theo module
 

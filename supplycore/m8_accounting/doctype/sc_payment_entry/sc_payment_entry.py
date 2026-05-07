@@ -12,6 +12,8 @@ EXEC_THRESHOLD_DEFAULT = 50_000_000
 class SCPaymentEntry(Document):
 
     def validate(self):
+        from supplycore.utils.validators import validate_supplier
+        validate_supplier(self.supplier)
         self._compute_allocated_total()
         self._validate_references()
         self._determine_approval_level()

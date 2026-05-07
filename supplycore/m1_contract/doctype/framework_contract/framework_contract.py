@@ -36,12 +36,9 @@ class FrameworkContract(Document):
             frappe.throw(_("Ngày ký không được sau ngày hiệu lực"), title="SC-E-DATE")
 
     def _validate_supplier_active(self):
-        disabled = frappe.db.get_value("SC Supplier", self.supplier, "disabled")
-        if disabled:
-            frappe.throw(_("NCC {0} đang bị vô hiệu hóa").format(self.supplier))
-        # Check blacklist (blacklist_flag custom field — sẽ tạo qua patch)
-        blacklist = frappe.db.get_value("SC Supplier", self.supplier, "blacklist_flag") or 0
-        if blacklist and self.docstatus == 0:
+        from supplycore.utils.validators import validate_supplier
+        sup = validate_supplier(self.supplier)
+        if sup and sup.blacklist_flag and self.docstatus == 0:
             frappe.msgprint(_("Cảnh báo: NCC này đang trong blacklist. Cần xác nhận từ Lãnh đạo."),
                             indicator="orange", alert=True)
 

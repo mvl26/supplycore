@@ -15,6 +15,8 @@ DEFAULT_EXEC_THRESHOLD = 50_000_000
 class SCPurchaseInvoice(Document):
 
     def validate(self):
+        from supplycore.utils.validators import validate_supplier
+        validate_supplier(self.supplier)
         self._compute_totals()
         self._auto_due_date()
         self._three_way_match()

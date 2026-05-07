@@ -9,6 +9,10 @@ from frappe.utils import getdate, today, flt
 class ReleaseOrder(Document):
 
     def validate(self):
+        from supplycore.utils.validators import validate_link, validate_supplier
+        validate_link("Framework Contract", self.framework_contract,
+                       label=_("Hợp đồng khung"), error_title="SC-E-FC")
+        validate_supplier(self.supplier)
         self._auto_fill_items_from_fc_if_empty()
         self._validate_dates()
         self._validate_against_contract()
