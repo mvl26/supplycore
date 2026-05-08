@@ -1,6 +1,6 @@
 # SupplyCore — End-to-end FLOW chuỗi cung ứng VTYT
 
-**Cập nhật:** 2026-05-08 — slice 1 procurement automation đã wire MR→PO→PR→PI→GL.
+**Cập nhật:** 2026-05-08 — slice 1 (procurement MR→PO→PR→PI→GL) + slice 2 (alert→action).
 
 ## Sơ đồ tổng thể
 
@@ -173,7 +173,7 @@ GL Σ Dr = Σ Cr = 55, 3-way match = "Match".
 [4] Outstanding=0 → Recall.status = Completed
 ```
 
-## Alert + KPI (M11) — observability
+## Alert + KPI (M11) — observability + actionable
 
 - **Daily 02:00**: `m11_dashboard.tasks.scan_alerts` quét 7 alert types
   (expiring_batch, contract_expiring, fc_remaining_low, low_stock,
@@ -181,6 +181,13 @@ GL Σ Dr = Σ Cr = 55, 3-way match = "Match".
   rule × reference × 7-day window.
 - **Daily 03:00**: `send_daily_kpi` email 6 KPI tới EXEC + MGR.
 - **API `get_executive_dashboard`** — JSON 6 KPI realtime.
+
+**Alert → Action (slice 2)**: trên SC Alert form, button context-sensitive:
+- `expiring_batch` → "Chuyển vào Kho Cách ly" → SC Stock Entry Material Transfer
+- `low_stock` → "Tạo Material Request" → SC MR draft (qty = safety_stock × 2)
+- `overdue_payment` → "Tạo Payment Entry" → SC PE draft (auto-fill PI ref)
+
+Sau action: `action_taken=1`, link đến doc đã tạo, alert auto-resolve.
 
 ## Phase 1.1+ (defer)
 
@@ -190,7 +197,7 @@ GL Σ Dr = Σ Cr = 55, 3-way match = "Match".
 - M7: BHYT settlement report (báo cáo thanh quyết toán theo period)
 - M6/M9: Multi-level approval workflows (Frappe Workflow config)
 - M3: Auto-create Return PR khi QI Rejected (schema đã ready)
-- M11→M6: low_stock alert auto-create Transfer Request
+- ~~M11→M6: low_stock alert auto-create Transfer Request~~ ✅ slice 2 (alert→MR thay vì TR; xem section "Alert + KPI" phía trên)
 - Print formats: defer toàn bộ (visual polish)
 
 ## Test coverage
@@ -199,6 +206,7 @@ GL Σ Dr = Σ Cr = 55, 3-way match = "Match".
 |---|---|---|
 | `tests/smoke_m1..m11.py` | Đơn module — 11 file | ✅ 88 steps |
 | `tests/smoke_integration.py` | Cross-module FC→MR→PO→PR→PI→GL | ✅ 8 steps |
+| `tests/smoke_alert_action.py` | Alert → Action (M11 actionable) | ✅ 6 steps |
 | `tests/uat/uat_runner.py` | UAT REST API (HTTP) cho 11 module | ✅ 44 steps, 100% |
 
 ## Vận hành

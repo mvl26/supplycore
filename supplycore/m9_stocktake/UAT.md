@@ -6,5 +6,5 @@
 
 | # | Step | Status | Detail / Error |
 |---|---|---|---|
-| 1 | Tạo SC Inventory Count Sheet | PASS | SC-ICS-2026-01119 |
+| 1 | Tạo SC Inventory Count Sheet | PASS | SC-ICS-2026-01257 |
 | 2 | Đọc lại ICS | PASS | status=Draft, items=1 |

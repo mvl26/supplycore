@@ -7,4 +7,4 @@
 | # | Step | Status | Detail / Error |
 |---|---|---|---|
 | 1 | API three_way_match cho 1 PI giả định | PASS | status=Match, po_total=150000.0, pr_total=150000.0, var=0.0% |
-| 2 | API supplier_balance | PASS | supplier=SC-SUP-00055, outstanding=220.0, overdue=0.0 |
+| 2 | API supplier_balance | PASS | supplier=SC-SUP-00055, outstanding=275.0, overdue=0.0 |

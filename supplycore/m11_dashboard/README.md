@@ -110,6 +110,25 @@ Theo SCR-01 Executive Dashboard (Phase 3 design):
 
 Frontend (Frappe Workspace + Number Cards) — defer; v1 chỉ cung cấp API JSON.
 
+## Alert → Action (slice 2 — 2026-05-08)
+
+Mỗi alert có thể trigger 1 action cụ thể tuỳ `alert_type`:
+
+| Alert type | Button trên Alert form | Action method | Tạo doc |
+|---|---|---|---|
+| `expiring_batch` | "Chuyển vào Kho Cách ly" | `action_quarantine_batch` | SC Stock Entry (Material Transfer) |
+| `low_stock` | "Tạo Material Request bổ sung" | `action_create_material_request` | SC Material Request (qty=safety×2) |
+| `overdue_payment` | "Tạo Payment Entry" | `action_create_payment` | SC Payment Entry |
+| Khác | "Đánh dấu đã xử lý" / "Bỏ qua" | (resolve thủ công) | — |
+
+Sau action:
+- `Alert.action_taken=1`, `action_doctype/action_name` link đến doc đã tạo
+- `Alert.resolved=1`, `resolution_action='Acted Upon'`
+- `Alert.resolved_by/resolved_at` auto set
+- Idempotent: gọi action 2 lần → throw "Đã có action"
+
+Test: `tests/smoke_alert_action.py` — verify expiring_batch + low_stock đầy đủ.
+
 ## Vận hành
 
 ```

@@ -6,6 +6,6 @@
 
 | # | Step | Status | Detail / Error |
 |---|---|---|---|
-| 1 | API get_batch_trace | PASS | batch=INTEG-BATCH-CLAYOf, movements=1, remaining=50.0 |
+| 1 | API get_batch_trace | PASS | batch=ALRTACT-EXP-ly2gqU, movements=1, remaining=30.0 |
 | 2 | API get_audit_trail | PASS | entries=0 |
-| 3 | Tạo SC Recall Notice | PASS | SC-RCL-2026-01120 |
+| 3 | Tạo SC Recall Notice | PASS | SC-RCL-2026-01258 |

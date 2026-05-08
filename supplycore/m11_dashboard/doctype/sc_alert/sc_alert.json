@@ -7,6 +7,8 @@
   "section_subject", "title", "message",
   "section_link", "reference_doctype", "reference_name",
   "column_break_link", "due_date", "value_amount",
+  "section_action", "action_taken", "action_doctype",
+  "column_break_action", "action_name",
   "section_resolve", "resolved", "resolution_action",
   "column_break_resolve", "resolved_by", "resolved_at",
   "section_meta", "snooze_until", "remarks"
@@ -31,6 +33,12 @@
   {"fieldname": "column_break_link", "fieldtype": "Column Break"},
   {"fieldname": "due_date", "fieldtype": "Date", "label": "Hạn xử lý"},
   {"fieldname": "value_amount", "fieldtype": "Currency", "options": "VND", "label": "Giá trị liên quan"},
+
+  {"fieldname": "section_action", "fieldtype": "Section Break", "label": "Hành động đã thực hiện", "collapsible": 1},
+  {"fieldname": "action_taken", "fieldtype": "Check", "label": "Đã có hành động", "default": "0", "read_only": 1},
+  {"fieldname": "action_doctype", "fieldtype": "Link", "options": "DocType", "label": "Loại document tạo", "read_only": 1},
+  {"fieldname": "column_break_action", "fieldtype": "Column Break"},
+  {"fieldname": "action_name", "fieldtype": "Dynamic Link", "options": "action_doctype", "label": "Document đã tạo", "read_only": 1},
 
   {"fieldname": "section_resolve", "fieldtype": "Section Break", "label": "Xử lý"},
   {"fieldname": "resolved", "fieldtype": "Check", "label": "Đã xử lý", "default": "0", "in_list_view": 1, "in_standard_filter": 1},
