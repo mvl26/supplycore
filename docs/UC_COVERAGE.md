@@ -18,7 +18,7 @@
 
 | UC | Tên | Module | Status | Note |
 |---|---|---|---|---|
-| UC-01 | Search & Evaluate Suppliers | M1 | ✅ | SC Supplier list view + Frappe filter |
+| UC-01 | Search & Evaluate Suppliers | M1 | ✅ **enhanced 2026-05-08** | SC Supplier có province + default_item_group + scorecard panel + Script Report `Supplier Performance` (export Excel/CSV/PDF) |
 | UC-02 | Create / Update Supplier | M1 | ✅ | SC Supplier CRUD |
 | UC-03 | Create & Manage Framework Contract | M1 | ✅ | FC + slice 1 wired RO + auto-PO |
 | UC-04 | Track Contract Status & Renewal | M1 | ✅ | Daily scheduler check_contract_expiry + email 30/15/7d |
@@ -102,6 +102,33 @@
 **Effort no-code Workspace:** 2-3h.
 
 ## Cải tiến đã thực hiện trong session này
+
+### UC-01 enhanced — Search + Scorecard + Script Report (commit 2026-05-08)
+
+**Files:**
+- `sc_supplier.json` — thêm `province`, `default_item_group` field; set `in_list_view` cho `supplier_type/rating/province`
+- `sc_supplier.py` — `get_scorecard(supplier)` whitelisted method (instance + module-level)
+- `sc_supplier.js` — render Scorecard panel trên form load + button "Mở báo cáo Supplier Performance"
+- `sc_supplier_dashboard.py` — Connections panel (FC, RO, PO, PR, Batch, PI, PE, Recall)
+- `report/supplier_performance/` — Script Report mới với 14 cols + 6 filter + color-coded formatter
+
+**Scorecard 12 tháng gần nhất:**
+- rating, blacklist_flag
+- active_contracts + remaining_value
+- total_pos_12m + total_value_12m
+- on_time_delivery_pct: PR.posting_date ≤ PO.schedule_date
+- qc_pass_pct: QI Accepted / total submitted
+- ap_outstanding (chưa Paid)
+- open_alerts (qua reference_name là supplier/PI/FC)
+
+**Script Report `/app/query-report/Supplier Performance`:**
+- Filters: supplier / supplier_type / province / default_item_group / from_date / to_date (default 12m)
+- Cột: 14 (mã, tên, loại, tỉnh, rating, HĐ active, HĐ còn lại, PO 12t, giá trị, on-time%, QC pass%, công nợ, blacklist, hết hạn GPP)
+- Sort: rating desc, on-time% desc
+- Export: Excel/CSV/PDF builtin Frappe
+- Color-coded: rating ≥4 xanh / ≥3 cam / <3 đỏ; on-time/QC ≥95 xanh / ≥80 cam / <80 đỏ
+
+**Verify thực tế:** SC-SUP-00055 (DHG) → 3 active contracts, 36 PO 12t (35.5tr), on-time 100%, QC pass 83.33%, AP 440đ. REST endpoint `POST /api/method/...sc_supplier.get_scorecard` hoạt động.
 
 ### UC-11 wire-up — auto-tạo Return PR khi QI Rejected (commit 2026-05-08)
 

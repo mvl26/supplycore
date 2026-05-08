@@ -3,8 +3,8 @@
  "autoname": "format:SC-SUP-{#####}", "track_changes": 1,
  "field_order": [
   "section_main", "supplier_name", "supplier_code", "tax_id",
-  "column_break_1", "supplier_type", "disabled", "blacklist_flag",
-  "section_contact", "email_id", "mobile_no", "column_break_2", "address", "remarks",
+  "column_break_1", "supplier_type", "default_item_group", "disabled", "blacklist_flag",
+  "section_contact", "email_id", "mobile_no", "column_break_2", "address", "province", "remarks",
   "section_payment", "payment_terms", "credit_limit", "column_break_3",
   "section_compliance", "gpp_certificate_no", "gpp_expiry", "iso_certificate_no",
   "section_rating", "rating", "rating_history_count"
@@ -17,7 +17,10 @@
   {"fieldname": "column_break_1", "fieldtype": "Column Break"},
   {"fieldname": "supplier_type", "fieldtype": "Select",
    "options": "\nNhà sản xuất\nNhà phân phối\nĐại lý\nKhác",
-   "label": "Loại NCC", "in_standard_filter": 1},
+   "label": "Loại NCC", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "default_item_group", "fieldtype": "Link", "options": "SC Item Group",
+   "label": "Loại vật tư cung ứng chính", "in_standard_filter": 1, "search_index": 1,
+   "description": "Item Group cung ứng chủ yếu — dùng filter danh sách + báo cáo theo nhóm hàng"},
   {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0", "in_standard_filter": 1},
   {"fieldname": "blacklist_flag", "fieldtype": "Check", "label": "Blacklist", "default": "0", "in_list_view": 1, "in_standard_filter": 1,
    "description": "1 = block tạo PO mới"},
@@ -27,6 +30,9 @@
   {"fieldname": "mobile_no", "fieldtype": "Data", "options": "Phone", "label": "Điện thoại"},
   {"fieldname": "column_break_2", "fieldtype": "Column Break"},
   {"fieldname": "address", "fieldtype": "Small Text", "label": "Địa chỉ"},
+  {"fieldname": "province", "fieldtype": "Data", "label": "Tỉnh/Thành phố",
+   "in_list_view": 1, "in_standard_filter": 1, "search_index": 1,
+   "description": "VD: Hà Nội, TP.HCM, Đà Nẵng"},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
 
   {"fieldname": "section_payment", "fieldtype": "Section Break", "label": "Thanh toán"},
@@ -52,6 +58,6 @@
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
  "module": "Supplycore", "name": "SC Supplier", "title_field": "supplier_name",
- "search_fields": "supplier_name,supplier_code,tax_id",
+ "search_fields": "supplier_name,supplier_code,tax_id,province",
  "sort_field": "modified", "sort_order": "DESC"
 }
