@@ -46,13 +46,62 @@ class SCQualityInspection(Document):
         frappe.db.set_value("SC Purchase Receipt", pr.name, "qc_status", new_status)
 
     def _handle_rejected(self):
-        # Auto block batch nếu reject
+        # 1. Auto block batch
         if self.batch:
             frappe.db.set_value("SC Batch", self.batch, {
                 "blocked": 1,
                 "block_reason": f"QC Rejected by {self.name}: {self.failure_reason or '—'}",
             })
-        # TODO: tạo SC Purchase Receipt is_return=1 draft (defer)
+        # 2. Auto-tạo SC Purchase Receipt Return (draft) cho ACC review + gửi NCC (UC-11)
+        if self.purchase_receipt:
+            self._create_return_pr()
+
+    def _create_return_pr(self):
+        """Tạo PR Return draft (is_return=1) khi QI Reject — implement UC-11."""
+        from frappe.utils import today
+        # Skip nếu đã có PR Return draft cho QI này
+        existing = frappe.db.exists("SC Purchase Receipt", {
+            "is_return": 1,
+            "remarks": ["like", f"%QI {self.name}%"],
+            "docstatus": ["!=", 2],
+        })
+        if existing:
+            return
+        try:
+            orig = frappe.get_doc("SC Purchase Receipt", self.purchase_receipt)
+            ret_pr = frappe.new_doc("SC Purchase Receipt")
+            ret_pr.supplier = orig.supplier
+            ret_pr.purchase_order = orig.purchase_order
+            ret_pr.posting_date = today()
+            ret_pr.is_return = 1
+            ret_pr.to_warehouse = orig.to_warehouse  # kho gốc — sẽ -qty
+            ret_pr.qc_required = 0  # return không cần QC lại
+            ret_pr.remarks = (f"Auto từ QI {self.name} Rejected. "
+                              f"Lý do: {self.failure_reason or 'QC Reject'}. "
+                              f"Original PR: {orig.name}")
+            # Append item rejected: chỉ row tương ứng pr_item_ref nếu có, else cả row
+            for it in orig.items:
+                if self.pr_item_ref and it.name != self.pr_item_ref:
+                    continue
+                if it.item != self.item:
+                    continue
+                ret_pr.append("items", {
+                    "item": it.item,
+                    "qty": float(self.received_qty or it.qty),
+                    "uom": it.uom,
+                    "rate": it.rate,
+                    "warehouse": it.warehouse or orig.to_warehouse,
+                    "batch_no": self.batch,
+                })
+            if ret_pr.items:
+                ret_pr.flags.ignore_permissions = True
+                ret_pr.insert()
+                frappe.msgprint(
+                    frappe._("Đã tạo PR Return draft {0} — ACC review + submit để trả NCC").format(
+                        f'<a href="/app/sc-purchase-receipt/{ret_pr.name}">{ret_pr.name}</a>'),
+                    indicator="orange", alert=True)
+        except Exception as e:
+            frappe.log_error(message=str(e)[:1000], title="QI auto-Return PR")
 
 
 class SCQIReading(Document): pass

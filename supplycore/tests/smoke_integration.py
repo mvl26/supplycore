@@ -33,17 +33,17 @@ def run():
     results = []
     ts = random_string(6)
 
-    # Cleanup: cancel FCs từ INTEG runs trước (để FC mới với price=1 là cheapest)
-    old_fcs = frappe.get_all("Framework Contract",
-        filters={"contract_number": ["like", "INTEG-FC-%"], "docstatus": 1},
-        fields=["name"])
-    for f in old_fcs:
-        try:
-            d = frappe.get_doc("Framework Contract", f.name)
-            d.flags.ignore_permissions = True
-            d.cancel()
-        except Exception:
-            pass
+    # Cleanup: cancel FCs từ test runs trước (để FC mới với price=1 là cheapest)
+    for prefix in ("INTEG-FC-%", "UAT-DOC-%", "UAT-FC-%", "UAT-BUG-%"):
+        for f in frappe.get_all("Framework Contract",
+                filters={"contract_number": ["like", prefix], "docstatus": 1},
+                fields=["name"]):
+            try:
+                d = frappe.get_doc("Framework Contract", f.name)
+                d.flags.ignore_permissions = True
+                d.cancel()
+            except Exception:
+                pass
     frappe.db.commit()
 
     # === Step 1: tạo FC Active ===
