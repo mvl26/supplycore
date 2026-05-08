@@ -3,7 +3,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import flt, today
 
 
 class SCPurchaseOrder(Document):
@@ -67,3 +67,59 @@ class SCPurchaseOrder(Document):
                 "purchase_order": self.name if self.docstatus == 1 else None,
                 "status": new_status,
             })
+
+    @frappe.whitelist()
+    def make_purchase_receipt(self):
+        """Wrapper instance method — gọi từ JS frm.call('make_purchase_receipt')."""
+        return make_pr_from_po(self.name)
+
+
+@frappe.whitelist()
+def make_pr_from_po(po_name: str) -> str:
+    """Tạo SC Purchase Receipt draft từ PO submitted, fetch info tự động.
+
+    Quy tắc:
+    - PO phải docstatus=1 (submitted)
+    - PO chưa fully Received (status != "Received")
+    - Mỗi PO item có (qty - received_qty) > 0 → append vào PR items với
+      qty = remaining, rate/uom/warehouse fetch từ PO item
+    - to_warehouse = warehouse của PO item đầu tiên còn chưa nhận
+    - has_batch_no item: KHÔNG pre-fill batch — user nhập khi nhận thực tế
+
+    Returns: tên SC Purchase Receipt draft.
+    """
+    po = frappe.get_doc("SC Purchase Order", po_name)
+    if po.docstatus != 1:
+        frappe.throw(_("PO chưa submit"), title="SC-E-PO")
+    if po.status == "Received":
+        frappe.throw(_("PO {0} đã nhận đủ — không tạo PR mới").format(po.name),
+                      title="SC-E-PO-RECEIVED")
+
+    pending = []
+    for poi in po.items:
+        remaining = flt(poi.qty) - flt(poi.received_qty or 0)
+        if remaining > 0:
+            pending.append((poi, remaining))
+    if not pending:
+        frappe.throw(_("Không còn item nào chưa nhận trên PO {0}").format(po.name),
+                      title="SC-E-PO-RECEIVED")
+
+    first_wh = pending[0][0].warehouse
+    pr = frappe.new_doc("SC Purchase Receipt")
+    pr.supplier = po.supplier
+    pr.purchase_order = po.name
+    pr.posting_date = today()
+    pr.to_warehouse = first_wh
+    pr.qc_required = 1  # default — user có thể tắt nếu không cần QC
+    pr.remarks = f"Auto từ PO {po.name}"
+    for poi, remaining in pending:
+        pr.append("items", {
+            "item": poi.item,
+            "qty": remaining,
+            "uom": poi.uom,
+            "rate": flt(poi.rate),
+            "warehouse": poi.warehouse or first_wh,
+        })
+    pr.flags.ignore_permissions = True
+    pr.insert()
+    return pr.name
