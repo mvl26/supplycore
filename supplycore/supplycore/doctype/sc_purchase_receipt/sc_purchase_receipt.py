@@ -139,6 +139,7 @@ class SCPurchaseReceipt(Document):
         if not self.purchase_order:
             return
         po = frappe.get_doc("SC Purchase Order", self.purchase_order)
+        # received_qty per PO Item = SUM(qty) across all submitted PR linked
         for poi in po.items:
             received = frappe.db.sql("""
                 SELECT COALESCE(SUM(pri.qty), 0)
@@ -147,8 +148,11 @@ class SCPurchaseReceipt(Document):
                 WHERE pr.purchase_order = %s AND pri.item = %s
                   AND pr.docstatus = 1 AND pr.is_return = 0
             """, (self.purchase_order, poi.item))[0][0]
-            frappe.db.set_value("SC Purchase Order Item", poi.name, "received_qty", flt(received))
-        # Auto status
+            frappe.db.set_value("SC Purchase Order Item", poi.name,
+                                  "received_qty", flt(received), update_modified=False)
+            # Cập nhật in-memory để compute status đúng
+            poi.received_qty = flt(received)
+        # Auto status — dùng giá trị received_qty vừa update
         all_received = all(flt(p.received_qty) >= flt(p.qty) for p in po.items)
         partial = any(flt(p.received_qty) > 0 for p in po.items)
         new_status = "Received" if all_received else ("Partially Received" if partial else po.status)

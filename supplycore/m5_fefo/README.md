@@ -134,3 +134,17 @@ Severity scale:
 - `/app/batch-expiry-alert?resolved=0` → list cảnh báo cần xử lý
 - `/app/fefo-picker-rule` → cấu hình strict_mode per warehouse/group
 - SupplyCore Settings → `fefo_strict_mode` global default
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- M3 PR auto-tạo SC Batch + ghi qc_status từ M3 QI
+- M10 Recall Notice.on_submit → set Batch.blocked=1
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- FEFO sort → M6 TR + M7 DR + bất kỳ Stock Entry Issue
+- API `get_suggested_batches` → return FEFO order với severity (Critical/Warning/OK)
+- Daily scheduler `scan_expiring_batches` → M11 Alert (expiring_batch)
+- SE validate: block expired/blocked batch (SC-E001 / SC-E008)
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

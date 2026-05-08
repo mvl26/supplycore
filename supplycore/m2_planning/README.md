@@ -89,3 +89,16 @@ Cho mỗi SC Item is_stock_item=1, is_purchase_item=1:
 - `/app/procurement-plan/new` → tạo plan, click "Tự nạp" → review → submit → Tạo MR
 - `/app/sc-material-request` → list MR phát sinh
 - Email cảnh báo ROP gửi đến role `SupplyCore Storekeeper` + `SupplyCore Manager`
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- Khoa/SK tạo SC Material Request manual qua UI
+- M5 SC Stock Ledger Entry → tính avg_monthly cho ROP
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- MR.on_submit → status=Approved (chờ user click 'Tạo PO')
+- `MR.create_purchase_orders()` → SC Purchase Order draft (M1+M2 wiring)
+- Daily scheduler `check_reorder_levels` → email + có thể tích hợp M11 alert
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

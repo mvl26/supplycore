@@ -95,3 +95,16 @@ Module quản lý **Framework Contract** (hợp đồng khung) và **Release Ord
 - `/app/framework-contract/new` → tạo HĐK draft
 - `/app/release-order/new` → gọi hàng từ HĐK đã Active
 - `/app/sc-purchase-order` → đơn đặt hàng phát sinh từ RO
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- M2 `SC Material Request.create_purchase_orders()` → đọc FC để tìm cheapest unit_price
+- M8 `SC Purchase Order.on_submit` → trigger `FC.recalculate_used_value()`
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- FC.remaining_value gate cho M2 PO suggest (SC-E002 nếu vượt)
+- FC.unit_price làm rate mặc định cho SC PO Item
+- Daily scheduler email cảnh báo 30/15/7 ngày → M11 Alert (contract_expiring)
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

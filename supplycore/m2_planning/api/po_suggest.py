@@ -1,0 +1,156 @@
+"""M2 → M1 wiring: suggest+tạo SC Purchase Order draft từ SC Material Request đã approved.
+
+Endpoint:
+    POST /api/method/supplycore.m2_planning.api.po_suggest.suggest_po_from_mr
+    payload: {"mr_name": "SC-MR-2026-####"}
+
+Logic:
+    1. Đọc MR (phải docstatus=1, status=Approved/Pending).
+    2. Với mỗi MR item → tìm Framework Contract Active có:
+       - FC Item.item_code == item
+       - FC Item.remaining_qty ≥ MR qty
+       - FC.remaining_value ≥ qty × unit_price
+       Pick FC theo unit_price thấp nhất (tiêu chí cost optimization).
+    3. Group MR items theo (supplier, framework_contract) → tạo 1 draft PO/group.
+    4. Items không match FC → trả về `unmatched_items` (user phải tạo PO không-FC manually).
+    5. Validate trước khi tạo: ΣPO ≤ FC.remaining_value (BR-M1-03 / SC-E002).
+"""
+
+import frappe
+from frappe import _
+from frappe.utils import flt, today, getdate, add_days
+
+
+@frappe.whitelist()
+def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
+    """Trả về plan tạo PO từ MR. Nếu auto_create=1 thì insert luôn draft PO.
+
+    Returns:
+        {
+          "mr": "SC-MR-...",
+          "groups": [
+            {"supplier": "...", "framework_contract": "SC-FC-...",
+             "items": [{...}], "subtotal": float, "po_name": "SC-PO-..." (if created)}
+          ],
+          "unmatched_items": [{"item": "...", "qty": float, "reason": "..."}],
+          "created_pos": ["SC-PO-...", ...]
+        }
+    """
+    mr = frappe.get_doc("SC Material Request", mr_name)
+    if mr.docstatus != 1:
+        frappe.throw(_("MR {0} chưa submit").format(mr_name), title="SC-E-MR")
+
+    # Group MR items theo best (supplier, FC)
+    groups: dict = {}
+    unmatched = []
+
+    for row in mr.items:
+        match = _find_best_fc_for_item(row.item, flt(row.qty))
+        if not match:
+            unmatched.append({
+                "item": row.item, "qty": flt(row.qty), "uom": row.uom,
+                "reason": "Không có HĐK Active phù hợp với item + qty",
+            })
+            continue
+        key = (match["supplier"], match["fc"])
+        g = groups.setdefault(key, {
+            "supplier": match["supplier"],
+            "framework_contract": match["fc"],
+            "items": [],
+            "subtotal": 0,
+        })
+        amount = flt(row.qty) * flt(match["unit_price"])
+        g["items"].append({
+            "mr_item": row.name,
+            "item": row.item,
+            "qty": flt(row.qty),
+            "uom": row.uom,
+            "rate": flt(match["unit_price"]),
+            "amount": amount,
+            "warehouse": mr.warehouse or "",
+            "schedule_date": row.schedule_date or mr.schedule_date,
+        })
+        g["subtotal"] += amount
+
+    # Validate ΣPO theo FC.remaining_value
+    fc_subtotals = {}
+    for (sup, fc), g in groups.items():
+        fc_subtotals[fc] = fc_subtotals.get(fc, 0) + g["subtotal"]
+    for fc, total in fc_subtotals.items():
+        rem = flt(frappe.db.get_value("Framework Contract", fc, "remaining_value"))
+        if total > rem + 1:  # +1 buffer chống lỗi rounding
+            frappe.throw(_("HĐK {0}: tổng PO đề xuất ({1}) vượt remaining_value ({2})").format(
+                fc, frappe.format(total, {"fieldtype": "Currency"}),
+                frappe.format(rem, {"fieldtype": "Currency"})),
+                title="SC-E002 FC_BUDGET")
+
+    created = []
+    if int(auto_create or 0) == 1:
+        for (sup, fc), g in groups.items():
+            po = _create_draft_po(mr, sup, fc, g["items"])
+            g["po_name"] = po
+            created.append(po)
+        if created:
+            mr.db_set("status", "Ordered")
+
+    return {
+        "mr": mr_name,
+        "groups": [
+            {"supplier": k[0], "framework_contract": k[1], **v}
+            for k, v in groups.items()
+        ],
+        "unmatched_items": unmatched,
+        "created_pos": created,
+    }
+
+
+def _find_best_fc_for_item(item: str, qty: float) -> dict:
+    """Trả {supplier, fc, unit_price, fc_item_name} cho FC Active rẻ nhất phù hợp."""
+    rows = frappe.db.sql("""
+        SELECT fc.name AS fc, fc.supplier, fci.name AS fci_name,
+               fci.unit_price, fci.remaining_qty
+        FROM `tabFramework Contract` fc
+        JOIN `tabFC Item` fci ON fci.parent = fc.name
+        WHERE fc.docstatus = 1
+          AND fc.status = 'Active'
+          AND fc.valid_to >= CURDATE()
+          AND fci.item_code = %s
+          AND fci.remaining_qty >= %s
+        ORDER BY fci.unit_price ASC
+        LIMIT 1
+    """, (item, qty), as_dict=True)
+    if not rows:
+        return None
+    r = rows[0]
+    return {"supplier": r.supplier, "fc": r.fc,
+            "unit_price": flt(r.unit_price), "fc_item_name": r.fci_name}
+
+
+def _create_draft_po(mr, supplier: str, fc: str, items: list) -> str:
+    """Tạo SC Purchase Order draft. Không submit — user review rồi submit."""
+    po = frappe.new_doc("SC Purchase Order")
+    po.supplier = supplier
+    po.framework_contract = fc
+    po.material_request = mr.name
+    po.transaction_date = today()
+    po.schedule_date = add_days(today(), 14)  # default 14d delivery
+    po.remarks = f"Tự tạo từ MR {mr.name}"
+    for it in items:
+        po.append("items", {
+            "item": it["item"],
+            "qty": it["qty"],
+            "uom": it["uom"],
+            "rate": it["rate"],
+            "amount": it["amount"],
+            "warehouse": it["warehouse"] or mr.warehouse,
+            "schedule_date": it.get("schedule_date") or po.schedule_date,
+        })
+    po.flags.ignore_permissions = True
+    po.insert()
+    return po.name
+
+
+@frappe.whitelist()
+def get_po_suggestion_preview(mr_name: str) -> dict:
+    """Alias không auto-create — UI hiển thị preview."""
+    return suggest_po_from_mr(mr_name, auto_create=0)

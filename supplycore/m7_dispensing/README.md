@@ -145,3 +145,18 @@ Bước 6: Submit PD → record vào hồ sơ BN
 3. Workflow phê duyệt DR: WARD draft → Pharmacy/MGR approve → SK issue
 4. Print phiếu cấp phát + bảng kê BHYT
 5. Auto-tạo PD từ SE Issue submit (hook trigger)
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- BS đặt thuốc cho BN (UI tạo DR)
+- M5 FEFO → batch suggestion cho dispensing
+- M1 FC pricing → dùng làm unit_cost mặc định cho PD
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- DR Approved → SE Material Issue (FEFO bắt buộc)
+- PD auto-calc BHYT N01-N09 (ceiling_price + effective_rate)
+- PD submit → SLE (-qty) + ghi nhận hồ sơ BN
+- PD Item → M10 trace (recall locate patient)
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

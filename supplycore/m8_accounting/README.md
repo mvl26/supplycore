@@ -181,3 +181,17 @@ GET /api/method/supplycore.api.accounting.supplier_balance?supplier=X
 3. BHYT reconciliation report (đã có khái niệm trong M7, cần tổng hợp ở M8)
 4. Foreign currency support
 5. Bank reconciliation
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- M3 PR + M1 PO → 3-way match input
+- PI button từ M3 PR form (`make_invoice_from_pr`)
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- PI.on_submit → SC GL Entry (Dr 152 + Dr 1331 / Cr 331) — VAS
+- PE.on_submit → SC GL Entry (Dr 331 / Cr 1121)
+- PE update PI.outstanding + status
+- API `three_way_match`, `supplier_balance` → M11 KPI
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

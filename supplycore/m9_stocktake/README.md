@@ -106,3 +106,16 @@ POST .../auto_load_items (method on doc)
 3. Cycle counting (kiểm kê quay vòng theo nhóm thay vì 1 lần toàn kho)
 4. Báo cáo lịch sử kiểm kê + tỷ lệ chính xác kho theo thời gian
 5. Print format phiếu kiểm kê (chuẩn TT 200 form)
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- SK trigger ICS (manual hoặc cron `create_periodic_count`)
+- M4 SLE → snapshot system_qty
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- ICS → SC Stock Reconciliation (SR draft)
+- SR.on_submit → SLE adjustment (±diff_qty) + GL (Dr 152 / Cr 642 hoặc đảo)
+- SR diff > recount_threshold_pct → recount workflow
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

@@ -126,3 +126,18 @@ Frontend (Frappe Workspace + Number Cards) — defer; v1 chỉ cung cấp API JS
    - /app/sc-alert?resolved=0 — alert center
    - api/method/supplycore.api.kpi.get_executive_dashboard — JSON cho dashboard UI custom
 ```
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- Mọi module SC* (qua SQL query trên các table)
+- M3 PR.qc_status, M1 FC.valid_to, M5 Batch.expiry_date, M8 PI.due_date, …
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- API `get_executive_dashboard` → 6 KPI cho UI dashboard
+- API `get_warehouse_dashboard` → KPI per warehouse cho SK
+- Daily scheduler `scan_alerts` → SC Alert (7 alert types, dedup)
+- Daily scheduler `send_daily_kpi` → email EXEC + MGR
+- Phase 1.1+: alert action button (low_stock → tạo TR, expiring → tạo write-off SE)
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

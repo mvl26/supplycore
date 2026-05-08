@@ -185,6 +185,46 @@ def _resolve_account(code: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Helper: tạo PI draft từ 1 SC Purchase Receipt (M3 → M8 wiring)
+# ---------------------------------------------------------------------------
+@frappe.whitelist()
+def make_invoice_from_pr(pr_name: str) -> str:
+    """Tạo SC Purchase Invoice draft từ PR đã submit + accepted QC.
+
+    Returns: tên PI draft (chưa submit — user review rồi submit để post GL).
+    """
+    pr = frappe.get_doc("SC Purchase Receipt", pr_name)
+    if pr.docstatus != 1:
+        frappe.throw(_("PR {0} chưa submit").format(pr_name), title="SC-E-PR")
+    if pr.qc_status == "Rejected":
+        frappe.throw(_("PR {0} bị QC Rejected — không tạo PI").format(pr_name),
+                      title="SC-E007 QC_REJECTED")
+    # Check duplicate
+    existing = frappe.db.get_value("SC Purchase Invoice",
+                                     {"purchase_receipt": pr_name, "docstatus": ["!=", 2]}, "name")
+    if existing:
+        frappe.throw(_("PI đã tồn tại cho PR này: {0}").format(existing),
+                      title="SC-E007 PI_DUPLICATE")
+
+    pi = frappe.new_doc("SC Purchase Invoice")
+    pi.supplier = pr.supplier
+    pi.purchase_order = pr.purchase_order
+    pi.purchase_receipt = pr_name
+    pi.supplier_invoice_no = f"AUTO-{pr_name}"  # placeholder, user sửa lại
+    pi.invoice_date = today()
+    pi.due_date = add_days(today(), 30)
+    pi.vat_rate = 10  # default VAT VN
+    for r in pr.items:
+        pi.append("items", {
+            "item": r.item, "qty": r.qty, "uom": r.uom,
+            "rate": r.rate, "amount": flt(r.qty) * flt(r.rate),
+        })
+    pi.flags.ignore_permissions = True
+    pi.insert()
+    return pi.name
+
+
+# ---------------------------------------------------------------------------
 # Update outstanding khi Payment Entry sync (gọi từ SC Payment Entry)
 # ---------------------------------------------------------------------------
 def update_outstanding(invoice_name: str):

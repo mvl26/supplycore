@@ -101,3 +101,18 @@ Logic chính nằm trong CONTROLLER `sc_purchase_receipt.py` và `sc_quality_ins
 - `/app/qc-checklist-template/new` → tạo mẫu checklist cho mỗi SC Item Group
 - `/app/sc-purchase-receipt/new` → nhận hàng từ NCC
 - `/app/sc-quality-inspection?docstatus=0` → list QI chờ check
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- M1 SC Purchase Order — PR.purchase_order link tham chiếu
+- M4 SC Warehouse — to_warehouse + Bin Location
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- PR.on_submit → SC Stock Ledger Entry (+qty, M4/M5)
+- PR.on_submit → SC Quality Inspection auto-tạo (nếu qc_required=1)
+- PR.on_submit → SC PO Item.received_qty + PO.status
+- PR form button 'Tạo Purchase Invoice' → `make_invoice_from_pr()` (M8 wiring)
+- PR.on_submit → SC Batch auto-tạo (nếu item.has_batch_no=1)
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

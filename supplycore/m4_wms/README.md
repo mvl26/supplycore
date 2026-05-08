@@ -108,3 +108,18 @@ SC Warehouse (warehouse_type)
 - `/app/bin-location/new` → tạo bin cho từng warehouse
 - `/app/sc-item` → set `default_bin_location` để auto-suggest
 - `/pda` (mở trên mobile) → scan + putaway
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- M3 PR.on_submit → post SLE (M4 immutable ledger)
+- M5 FEFO API → trả batch theo expiry_date
+- M6 TR / M7 DR → SC Stock Entry (Material Transfer / Issue)
+- M9 SR.on_submit → SLE adjustment
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- SLE balance_qty → M11 KPI stock_value
+- Bin Location capacity → M3 putaway suggest
+- PDA API: `scan_barcode` → resolve item/batch/bin
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

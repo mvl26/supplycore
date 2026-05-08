@@ -114,3 +114,16 @@ Module quản lý **SC Transfer Request** (phiếu yêu cầu chuyển kho có p
 2. Print format phiếu chuyển kho PDF
 3. Auto-tạo TR từ alert tồn kho khoa thấp (M11)
 4. SC Stock Reconciliation cho M9 (điều chỉnh tồn kho sau kiểm kê)
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- Khoa request bổ sung (UI tạo TR manual)
+- M11 low_stock alert có thể trigger TR auto (Phase 1.1+)
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- TR Approved → make_stock_entry() → SC Stock Entry Material Transfer (draft)
+- SE submit → 2 SLE rows ±qty (M4)
+- TR.status=Received khi SE submitted
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.

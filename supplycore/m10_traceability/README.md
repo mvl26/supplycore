@@ -87,3 +87,18 @@ GET /api/method/supplycore.api.trace.get_audit_trail?item=X&warehouse=Y&from_dat
 4. Theo dõi: nhập recovered_qty per row khi khoa trả về
 5. status = Completed khi outstanding = 0
 ```
+
+## Integration với module khác
+
+**Incoming events (module này nhận trigger từ):**
+- QC/SK quyết định recall → tạo SC Recall Notice
+- M5 SC Batch (lô cần thu hồi)
+- M4 SLE + M7 PD Item → populate_affected_items
+
+**Outgoing events (module này trigger / cung cấp data cho):**
+- Recall.on_submit → Batch.blocked=1 (chặn M5/M6/M7 issue → SC-E008)
+- API `get_batch_trace` → trace lifecycle batch (source PR + movements + patients)
+- API `get_audit_trail` → SLE history cho UC-31 thất thoát
+- Daily scheduler quét recall_outstanding → M11 Alert
+
+Xem [`FLOW.md`](../../FLOW.md) cho sơ đồ tổng thể.
