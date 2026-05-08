@@ -55,12 +55,19 @@ Không cần migration phức tạp — `bench migrate` sau JSON edit là đủ.
 
 ## Email logic
 
-### Trigger
+### Trigger + populate ordering
+
+`Recall.on_submit` hiện chỉ làm: set `batch.blocked=1`, `status="Issued"`. User phải click button "Populate Affected Items" **trước khi submit** để có data. Spec này:
+
+1. Gọi `self.populate_affected_items()` ở đầu `on_submit` nếu `affected_items` rỗng — auto-populate trước khi notify, đảm bảo email luôn có context (kể cả khi user submit thẳng không populate).
+2. Sau đó: `batch.blocked=1`, `status="Issued"`, `notify_caregivers()`.
 
 ```python
 # m10_traceability/doctype/sc_recall_notice/sc_recall_notice.py
 def on_submit(self):
-    # ... existing: batch.blocked=1, status="Issued", populate if not yet
+    if not self.affected_items:
+        self.populate_affected_items()  # auto-populate trước notify
+    # ... existing: batch.blocked=1, status="Issued"
     self.notify_caregivers()  # NEW
 
 @frappe.whitelist()
