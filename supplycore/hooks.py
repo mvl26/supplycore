@@ -44,6 +44,7 @@ scheduler_events = {
         "supplycore.m1_contract.tasks.check_contract_expiry",
         "supplycore.m2_planning.tasks.check_reorder_levels",
         "supplycore.m2_planning.tasks.check_po_response",
+        "supplycore.m3_receiving.tasks.check_return_responses",
         "supplycore.m5_fefo.api.fefo_picker.scan_expiring_batches",
         "supplycore.m11_dashboard.tasks.scan_alerts",
         "supplycore.m11_dashboard.tasks.send_daily_kpi",

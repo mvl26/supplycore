@@ -36,6 +36,9 @@ class SCPurchaseReceipt(Document):
                 frappe.throw(_(
                     "SC-E-NO-PO-REASON: PR không có PO — vui lòng nhập 'Lý do không có PO'"
                 ))
+        if self.is_return:
+            if not (self.return_reason and str(self.return_reason).strip()):
+                frappe.throw(_("SC-E-RETURN-REASON: Phải nhập 'Lý do trả hàng'"))
 
     def on_submit(self):
         self._create_batches_if_needed()
@@ -43,6 +46,16 @@ class SCPurchaseReceipt(Document):
         if self.qc_required and not self.is_return:
             self._auto_create_qi()
         self._update_po_received_qty()
+        if self.is_return:
+            if not self.return_status:
+                self.db_set("return_status", "Pending Supplier Response")
+            self._send_return_notification()
+            # Auto-tạo Debit Note (skip nếu đã có)
+            if not self.debit_note:
+                try:
+                    self.make_debit_note()
+                except Exception as e:
+                    frappe.log_error(message=str(e)[:1000], title="UC-11 auto make_debit_note")
 
     def on_cancel(self):
         self._reverse_stock_ledger()
@@ -73,6 +86,116 @@ class SCPurchaseReceipt(Document):
                 indicator="orange", alert=True,
             )
 
+    # ------------------------------------------------------------------
+    # UC-11 — Return handling
+    # ------------------------------------------------------------------
+    @frappe.whitelist()
+    def make_debit_note(self):
+        if self.docstatus != 1:
+            frappe.throw(_("SC-E-RETURN-NOT-SUBMITTED: Return PR phải submitted"))
+        if not self.is_return:
+            frappe.throw(_("Chỉ Return PR (is_return=1) tạo được Debit Note"))
+        if self.debit_note:
+            frappe.throw(_("SC-E-RETURN-DN-EXISTS: Đã có Debit Note: {0}").format(self.debit_note))
+        pi = frappe.new_doc("SC Purchase Invoice")
+        pi.supplier = self.supplier
+        pi.supplier_invoice_no = f"DN-{self.name}"
+        pi.invoice_date = today()
+        pi.due_date = today()
+        pi.purchase_receipt = self.name
+        pi.is_debit_note = 1
+        pi.return_against_pr = self.name
+        for r in self.items:
+            pi.append("items", {
+                "item": r.item, "qty": flt(r.qty), "uom": r.uom,
+                "rate": flt(r.rate), "amount": flt(r.qty) * flt(r.rate),
+            })
+        pi.remarks = f"Debit Note for Return {self.name} — {self.return_reason or ''}"
+        pi.flags.ignore_permissions = True
+        pi.insert()
+        self.db_set("debit_note", pi.name)
+        return pi.name
+
+    @frappe.whitelist()
+    def make_credit_note(self):
+        if self.docstatus != 1:
+            frappe.throw(_("SC-E-RETURN-NOT-SUBMITTED: Return PR phải submitted"))
+        if not self.is_return:
+            frappe.throw(_("Chỉ Return PR (is_return=1) tạo được Credit Note"))
+        if self.credit_note:
+            frappe.throw(_("SC-E-RETURN-CN-EXISTS: Đã có Credit Note: {0}").format(self.credit_note))
+        pi = frappe.new_doc("SC Purchase Invoice")
+        pi.supplier = self.supplier
+        pi.supplier_invoice_no = f"CN-{self.name}"
+        pi.invoice_date = today()
+        pi.due_date = today()
+        pi.purchase_receipt = self.name
+        pi.is_credit_note = 1
+        pi.return_against_pr = self.name
+        for r in self.items:
+            pi.append("items", {
+                "item": r.item, "qty": flt(r.qty), "uom": r.uom,
+                "rate": flt(r.rate), "amount": flt(r.qty) * flt(r.rate),
+            })
+        pi.remarks = f"Credit Note (refund) for Return {self.name}"
+        pi.flags.ignore_permissions = True
+        pi.insert()
+        self.db_set("credit_note", pi.name)
+        self.db_set("return_status", "Refunded")
+        return pi.name
+
+    @frappe.whitelist()
+    def link_replacement(self, replacement_pr_name: str):
+        if self.docstatus != 1:
+            frappe.throw(_("Return PR phải submitted"))
+        if not self.is_return:
+            frappe.throw(_("Chỉ Return PR mới link replacement"))
+        rep = frappe.get_doc("SC Purchase Receipt", replacement_pr_name)
+        if rep.is_return:
+            frappe.throw(_(
+                "SC-E-RETURN-REPLACE-INVALID: PR đổi hàng phải là PR thường (is_return=0)"
+            ))
+        self.db_set("replacement_pr", replacement_pr_name)
+        self.db_set("return_status", "Replaced")
+        return {"replacement_pr": replacement_pr_name, "return_status": "Replaced"}
+
+    @frappe.whitelist()
+    def send_return_notification(self):
+        self._send_return_notification(force=1)
+        return {"sent_to": frappe.db.get_value("SC Supplier", self.supplier, "email_id")}
+
+    def _send_return_notification(self, force: int = 0):
+        if not self.is_return:
+            return
+        if self.notification_sent_at and not force:
+            return
+        email = frappe.db.get_value("SC Supplier", self.supplier, "email_id")
+        if not email:
+            return
+        items_html = "".join(
+            f"<tr><td>{r.item}</td><td>{r.qty}</td><td>{r.uom}</td></tr>"
+            for r in self.items
+        )
+        sup_name = frappe.db.get_value("SC Supplier", self.supplier, "supplier_name") or self.supplier
+        msg = (f"<p>Kính gửi {sup_name},</p>"
+               f"<p>Bệnh viện trả hàng theo Phiếu trả <b>{self.name}</b>:</p>"
+               f"<table border='1' cellpadding='6'>"
+               f"<tr><th>Mã VT</th><th>SL</th><th>UOM</th></tr>{items_html}</table>"
+               f"<p><b>Lý do:</b> {frappe.utils.escape_html(self.return_reason or '—')}</p>"
+               f"<p>Tổng giá trị hoàn trả: {frappe.format(self.total_value, {'fieldtype':'Currency'})}</p>"
+               f"<p>Vui lòng xác nhận đổi hàng / hoàn tiền trong 7 ngày làm việc.</p>")
+        # Set timestamp trước để track intent — sendmail có thể fail trong env không SMTP
+        self.db_set("notification_sent_at", frappe.utils.now())
+        try:
+            frappe.sendmail(
+                recipients=[email],
+                subject=f"[SupplyCore] Phiếu trả hàng {self.name}",
+                message=msg, delayed=False,
+            )
+        except Exception as e:
+            frappe.log_error(message=str(e)[:1000], title="UC-11 _send_return_notification")
+
+    # ------------------------------------------------------------------
     @frappe.whitelist()
     def create_backorder(self):
         """UC-09 bước 8: tạo Draft PR mới cho phần còn thiếu."""
