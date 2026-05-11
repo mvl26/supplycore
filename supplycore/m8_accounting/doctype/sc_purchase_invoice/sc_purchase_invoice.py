@@ -20,9 +20,42 @@ class SCPurchaseInvoice(Document):
         self._compute_totals()
         self._auto_due_date()
         self._three_way_match()
+        self._set_payment_hold()
         self._determine_approval_level()
+        self._validate_duplicate_invoice()
         if self.docstatus == 0:
             self.status = "Draft"
+
+    def before_submit(self):
+        # UC-24 step 6: mismatch/force approved → require explanation
+        if self.three_way_match_status in ("Mismatch", "Force Approved"):
+            if not (self.mismatch_explanation and str(self.mismatch_explanation).strip()):
+                frappe.throw(_(
+                    "SC-E-PI-MISMATCH-EXPLANATION: Phải nhập 'Giải trình chênh lệch' "
+                    "khi 3-way match không khớp"
+                ))
+
+    def _validate_duplicate_invoice(self):
+        """UC-24 ngoại lệ: unique (supplier, supplier_invoice_no)."""
+        if not (self.supplier and self.supplier_invoice_no):
+            return
+        existing = frappe.db.sql("""
+            SELECT name FROM `tabSC Purchase Invoice`
+            WHERE supplier = %s AND supplier_invoice_no = %s
+              AND name != %s AND docstatus != 2
+            LIMIT 1
+        """, (self.supplier, self.supplier_invoice_no, self.name or ""))
+        if existing:
+            frappe.throw(_(
+                "SC-E-PI-DUPLICATE: HĐ NCC số '{0}' của NCC {1} đã có trong PI {2}"
+            ).format(self.supplier_invoice_no, self.supplier, existing[0][0]))
+
+    def _set_payment_hold(self):
+        """UC-24 6a: auto payment_hold khi Mismatch."""
+        if self.three_way_match_status == "Mismatch":
+            self.payment_hold = 1
+        elif self.three_way_match_status not in ("Force Approved",):
+            self.payment_hold = 0
 
     def on_submit(self):
         self._post_gl_entries()
@@ -118,7 +151,10 @@ class SCPurchaseInvoice(Document):
             self.approval_required_by = "Executive"
         elif flt(self.grand_total) >= threshold:
             self.approval_required_by = "Executive"
-        elif self.three_way_match_status in ("Match", "Not Applicable"):
+        elif self.three_way_match_status == "Match":
+            # UC-24 step 5: Match → Auto (kế toán submit không cần thêm duyệt)
+            self.approval_required_by = "Auto"
+        elif self.three_way_match_status == "Not Applicable":
             self.approval_required_by = "Manager"
         else:
             self.approval_required_by = "Auto"

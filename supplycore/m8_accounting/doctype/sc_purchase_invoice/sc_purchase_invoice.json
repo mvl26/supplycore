@@ -10,6 +10,7 @@
   "section_totals", "subtotal", "vat_rate", "vat_amount",
   "column_break_totals", "grand_total", "outstanding_amount", "paid_amount",
   "section_match", "three_way_match_status", "match_variance_amount",
+  "mismatch_explanation", "payment_hold",
   "column_break_match", "approval_required_by", "approved_by", "approved_at",
   "section_status", "status", "amended_from", "remarks"
  ],
@@ -48,6 +49,8 @@
    "options": "\nPending\nMatch\nMismatch\nForce Approved\nNot Applicable",
    "label": "Trạng thái 3-way", "default": "Pending", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
   {"fieldname": "match_variance_amount", "fieldtype": "Currency", "options": "VND", "label": "Sai lệch (VND)", "read_only": 1},
+  {"fieldname": "mismatch_explanation", "fieldtype": "Small Text", "label": "Giải trình chênh lệch", "depends_on": "eval:doc.three_way_match_status=='Mismatch' || doc.three_way_match_status=='Force Approved'", "description": "Bắt buộc khi 3-way match không khớp"},
+  {"fieldname": "payment_hold", "fieldtype": "Check", "label": "Tạm hold thanh toán", "read_only": 1, "default": "0", "description": "Auto-set khi 3-way mismatch (UC-24 6a)"},
   {"fieldname": "column_break_match", "fieldtype": "Column Break"},
   {"fieldname": "approval_required_by", "fieldtype": "Select",
    "options": "\nAuto\nManager\nExecutive",
