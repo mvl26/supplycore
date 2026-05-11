@@ -220,6 +220,53 @@ def _send_reorder_summary(pairs: list, drafts: list, skipped: list):
         frappe.log_error(message=str(e)[:1000], title="UC-07 _send_reorder_summary")
 
 
+def check_po_response():
+    """Daily (UC-08 ngoại lệ): nhắc NCC nếu PO Sent to Supplier > X ngày không phản hồi.
+
+    Settings.po_response_reminder_days (default 3) quy định ngưỡng.
+    Dedup: chỉ gửi reminder cách lần trước ≥ ngưỡng ngày.
+    """
+    days = int(frappe.db.get_single_value("SupplyCore Settings", "po_response_reminder_days") or 3)
+    rows = frappe.db.sql("""
+        SELECT po.name, po.supplier, po.supplier_name, po.sent_to_supplier_at,
+               po.last_reminder_sent_at, s.email_id
+        FROM `tabSC Purchase Order` po
+        JOIN `tabSC Supplier` s ON s.name = po.supplier
+        WHERE po.docstatus = 1
+          AND po.status = 'Sent to Supplier'
+          AND COALESCE(po.supplier_confirmation_received, 0) = 0
+          AND po.sent_to_supplier_at IS NOT NULL
+          AND DATEDIFF(NOW(), po.sent_to_supplier_at) >= %s
+          AND s.email_id IS NOT NULL AND s.email_id != ''
+          AND (
+              po.last_reminder_sent_at IS NULL
+              OR DATEDIFF(NOW(), po.last_reminder_sent_at) >= %s
+          )
+        LIMIT 100
+    """, (days, days), as_dict=True)
+
+    sent = 0
+    for po in rows:
+        try:
+            frappe.sendmail(
+                recipients=[po.email_id],
+                subject=f"[SupplyCore] Nhắc nhở PO {po.name} chờ xác nhận",
+                message=(f"<p>Kính gửi {po.supplier_name or po.supplier},</p>"
+                         f"<p>PO <b>{po.name}</b> đã gửi lúc {po.sent_to_supplier_at} nhưng chưa nhận được xác nhận. "
+                         f"Vui lòng phản hồi sớm nhất có thể.</p>"
+                         f"<p>Link: /app/sc-purchase-order/{po.name}</p>"),
+                delayed=False,
+            )
+            frappe.db.set_value("SC Purchase Order", po.name,
+                                 "last_reminder_sent_at", frappe.utils.now())
+            sent += 1
+        except Exception as e:
+            frappe.log_error(message=f"po={po.name}: {str(e)[:500]}",
+                              title="UC-08 check_po_response")
+    frappe.db.commit()
+    return {"reminders_sent": sent, "candidates": len(rows)}
+
+
 def generate_procurement_forecast():
     """Weekly: placeholder cho auto Plan generation (defer Phase 2)."""
     frappe.logger().info("M2: generate_procurement_forecast scheduled placeholder")
