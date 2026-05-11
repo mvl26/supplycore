@@ -287,3 +287,174 @@ def _get_recipients(roles: list) -> list:
         WHERE r.role IN ({roles_in})
           AND u.enabled = 1 AND u.email IS NOT NULL AND u.email != ''
     """.format(roles_in=", ".join(["%s"] * len(roles))), tuple(roles)) or []
+
+
+# =====================================================================
+# UC-34: lifecycle scheduler tasks
+# =====================================================================
+def auto_resolve_alerts():
+    """UC-34 step 6: re-evaluate điều kiện; resolve nếu không còn áp dụng."""
+    open_alerts = frappe.db.sql("""
+        SELECT name, alert_type, reference_doctype, reference_name, alert_rule
+        FROM `tabSC Alert`
+        WHERE resolved = 0
+          AND (snooze_until IS NULL OR snooze_until < NOW())
+        LIMIT 500
+    """, as_dict=True)
+    resolved_count = 0
+    for a in open_alerts:
+        try:
+            if _is_condition_lifted(a):
+                frappe.db.set_value("SC Alert", a.name, {
+                    "resolved": 1,
+                    "resolution_action": "Acknowledged",
+                    "resolved_by": "Administrator",
+                    "resolved_at": now(),
+                    "remarks": "Auto-resolved: condition không còn áp dụng",
+                })
+                resolved_count += 1
+        except Exception as e:
+            frappe.log_error(message=f"{a.name}: {str(e)[:300]}",
+                              title="UC-34 auto_resolve_alerts")
+    if resolved_count:
+        frappe.db.commit()
+    return resolved_count
+
+
+def _is_condition_lifted(alert) -> bool:
+    """Trả True nếu điều kiện trigger không còn áp dụng."""
+    t = alert.alert_type
+    ref_dt = alert.reference_doctype
+    ref_nm = alert.reference_name
+    if not (ref_dt and ref_nm and frappe.db.exists(ref_dt, ref_nm)):
+        return True  # Reference đã bị xóa → resolve
+
+    if t == "low_stock" and ref_dt == "SC Item":
+        # Compare current qty vs safety_stock
+        safety = flt(frappe.db.get_value("SC Item", ref_nm, "safety_stock") or 0)
+        if safety <= 0:
+            return True
+        qty = flt(frappe.db.sql("""
+            SELECT COALESCE(SUM(qty_change), 0)
+            FROM `tabSC Stock Ledger Entry`
+            WHERE item = %s AND is_cancelled = 0
+        """, ref_nm)[0][0])
+        return qty >= safety
+
+    if t == "expiring_batch" and ref_dt == "SC Batch":
+        blocked = int(frappe.db.get_value("SC Batch", ref_nm, "blocked") or 0)
+        if blocked:
+            return True
+        # Hết stock của batch
+        qty = flt(frappe.db.sql("""
+            SELECT COALESCE(SUM(qty_change), 0)
+            FROM `tabSC Stock Ledger Entry`
+            WHERE batch = %s AND is_cancelled = 0
+        """, ref_nm)[0][0])
+        return qty <= 0
+
+    if t == "contract_expiring" and ref_dt == "Framework Contract":
+        status = frappe.db.get_value("Framework Contract", ref_nm, "status")
+        return status != "Active"
+
+    if t == "fc_remaining_low" and ref_dt == "Framework Contract":
+        fc = frappe.db.get_value("Framework Contract", ref_nm,
+            ["status", "total_value", "remaining_value"], as_dict=True)
+        if not fc or fc.status != "Active":
+            return True
+        if not fc.total_value:
+            return True
+        threshold = 20  # default
+        if alert.alert_rule:
+            tv = frappe.db.get_value("SC Alert Rule", alert.alert_rule, "threshold_value")
+            threshold = flt(tv) or 20
+        pct = (flt(fc.remaining_value) / flt(fc.total_value)) * 100
+        return pct > threshold
+
+    if t == "overdue_payment" and ref_dt == "SC Purchase Invoice":
+        pi = frappe.db.get_value("SC Purchase Invoice", ref_nm,
+            ["status", "outstanding_amount"], as_dict=True)
+        if not pi:
+            return True
+        return (pi.status == "Paid") or (flt(pi.outstanding_amount) <= 0.01)
+
+    if t == "qc_pending" and ref_dt == "SC Purchase Receipt":
+        qc = frappe.db.get_value("SC Purchase Receipt", ref_nm, "qc_status")
+        return qc != "Pending"
+
+    if t == "recall_outstanding" and ref_dt == "SC Recall Notice":
+        outstanding = flt(frappe.db.get_value("SC Recall Notice", ref_nm, "outstanding_qty") or 0)
+        return outstanding <= 0.01
+
+    return False  # Default: keep open
+
+
+def escalate_overdue_alerts(threshold_hours: int = 48):
+    """UC-34 ngoại lệ: alerts > X giờ chưa resolve → escalate.
+
+    - Set escalated=1, escalated_at, escalated_to
+    - Bump severity về Critical
+    - Email tới escalated_to
+    """
+    from frappe.utils import add_to_date
+    cutoff = add_to_date(now(), hours=-int(threshold_hours))
+    rows = frappe.db.sql("""
+        SELECT name, title, severity, alert_type, alert_date, assigned_to
+        FROM `tabSC Alert`
+        WHERE resolved = 0
+          AND escalated = 0
+          AND severity IN ('Critical', 'Warning')
+          AND alert_date < %s
+        LIMIT 200
+    """, cutoff, as_dict=True)
+
+    escalation_user = _get_escalation_user()
+    if not escalation_user:
+        return 0
+
+    escalated_count = 0
+    for a in rows:
+        try:
+            frappe.db.set_value("SC Alert", a.name, {
+                "escalated": 1,
+                "escalated_at": now(),
+                "escalated_to": escalation_user,
+                "severity": "Critical",  # Bump
+            })
+            try:
+                frappe.sendmail(
+                    recipients=[escalation_user],
+                    subject=f"[ESCALATED] {a.title}",
+                    message=(
+                        f"<p>Alert <b>{a.name}</b> đã không được resolve trong "
+                        f"{threshold_hours} giờ.</p>"
+                        f"<p>Title: {a.title}</p>"
+                        f"<p>Type: {a.alert_type} / Severity: {a.severity}</p>"
+                        f"<p>Vui lòng xem: /app/sc-alert/{a.name}</p>"
+                    ),
+                    queue=True, now=False,
+                )
+            except Exception:
+                pass
+            escalated_count += 1
+        except Exception as e:
+            frappe.log_error(message=f"{a.name}: {str(e)[:300]}",
+                              title="UC-34 escalate_overdue_alerts")
+    if escalated_count:
+        frappe.db.commit()
+    return escalated_count
+
+
+def _get_escalation_user() -> str:
+    """Tìm user có role SupplyCore Executive (ưu tiên) → Manager → System Manager."""
+    for role in ("SupplyCore Executive", "SupplyCore Manager", "System Manager"):
+        u = frappe.db.sql("""
+            SELECT u.name FROM `tabUser` u
+            JOIN `tabHas Role` r ON r.parent = u.name
+            WHERE r.role = %s AND u.enabled = 1
+              AND u.name NOT IN ('Administrator', 'Guest')
+            LIMIT 1
+        """, role)
+        if u:
+            return u[0][0]
+    return None

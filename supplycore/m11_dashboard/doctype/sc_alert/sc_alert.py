@@ -26,6 +26,193 @@ class SCAlert(Document):
             self.resolved_by = frappe.session.user
             self.resolved_at = now()
 
+    # ==================================================================
+    # UC-34 step 5: mark resolved + ghi chú
+    # ==================================================================
+    @frappe.whitelist()
+    def mark_resolved(self, action: str = "Acknowledged", remarks: str = None):
+        """Đánh dấu alert đã xử lý kèm ghi chú hành động."""
+        if self.resolved:
+            frappe.throw(_("SC-E-ALERT-RESOLVED: Alert đã được xử lý"))
+        if action not in ("Acknowledged", "Acted Upon", "Dismissed", "Escalated"):
+            action = "Acknowledged"
+        new_remarks = self.remarks or ""
+        if remarks:
+            new_remarks = (new_remarks + f"\n[{now()}] {remarks}").strip()
+        self.db_set({
+            "resolved": 1,
+            "resolution_action": action,
+            "resolved_by": frappe.session.user
+                if frappe.session.user not in (None, "", "Guest") else "Administrator",
+            "resolved_at": now(),
+            "remarks": new_remarks,
+        })
+        return {"resolved": True, "resolution_action": action}
+
+    # ==================================================================
+    # UC-34 5a: snooze với lý do
+    # ==================================================================
+    @frappe.whitelist()
+    def snooze_alert(self, hours, reason: str = None):
+        """Tạm ẩn alert X giờ kèm lý do."""
+        if self.resolved:
+            frappe.throw(_("SC-E-ALERT-RESOLVED: Không thể snooze alert đã resolved"))
+        try:
+            hrs = int(hours)
+        except (TypeError, ValueError):
+            hrs = 0
+        if hrs <= 0:
+            frappe.throw(_("SC-E-ALERT-SNOOZE-HOURS: hours phải > 0"))
+        snooze_until = frappe.utils.add_to_date(now(), hours=hrs)
+        self.db_set({
+            "snooze_until": snooze_until,
+            "snooze_reason": (reason or "(không lý do)")[:280],
+        })
+        return {"snooze_until": str(snooze_until), "hours": hrs}
+
+    # ==================================================================
+    # UC-34 4a: assign cho user khác
+    # ==================================================================
+    @frappe.whitelist()
+    def assign_alert(self, user: str, note: str = None):
+        if not user or not frappe.db.exists("User", user):
+            frappe.throw(_(
+                "SC-E-ALERT-NO-USER: User {0} không tồn tại"
+            ).format(user))
+        if self.resolved:
+            frappe.throw(_("SC-E-ALERT-RESOLVED: Alert đã resolved"))
+        self.db_set("assigned_to", user)
+        # Tạo Frappe ToDo (built-in assignment)
+        try:
+            from frappe.desk.form.assign_to import add as _assign_add
+            _assign_add({
+                "assign_to": [user],
+                "doctype": "SC Alert",
+                "name": self.name,
+                "description": f"Alert {self.title}\n{note or ''}",
+            })
+        except Exception:
+            pass
+        return {"assigned_to": user}
+
+    # ==================================================================
+    # UC-34 step 4 actions
+    # ==================================================================
+    @frappe.whitelist()
+    def action_create_purchase_order(self):
+        """Tạo SC Purchase Order draft khi alert là low_stock có MR linked."""
+        if self.alert_type != "low_stock":
+            frappe.throw(_("Action chỉ áp dụng cho low_stock"))
+        if self.action_taken and self.action_doctype != "SC Material Request":
+            frappe.throw(_("Alert đã có action: {0} {1}").format(
+                self.action_doctype, self.action_name))
+        if self.action_doctype == "SC Material Request" and self.action_name:
+            mr_name = self.action_name
+        else:
+            # No MR yet - cần tạo MR trước
+            frappe.throw(_(
+                "Trước tiên gọi action_create_material_request để có MR, "
+                "sau đó tạo PO từ MR đó"
+            ))
+        mr = frappe.get_doc("SC Material Request", mr_name)
+        # Find item supplier (best-effort)
+        item_code = self.reference_name
+        supplier = frappe.db.get_value("SC Item", item_code, "preferred_supplier") \
+            or frappe.db.get_value("SC Supplier", {"disabled": 0}, "name")
+        if not supplier:
+            frappe.throw(_("Không có supplier để tạo PO"))
+        po = frappe.new_doc("SC Purchase Order")
+        po.supplier = supplier
+        po.transaction_date = today()
+        po.schedule_date = add_days(today(), 7)
+        for r in mr.items:
+            po.append("items", {
+                "item": r.item, "uom": r.uom,
+                "qty": flt(r.qty),
+                "rate": 0,
+                "warehouse": mr.warehouse,
+                "schedule_date": r.schedule_date or add_days(today(), 7),
+            })
+        po.remarks = f"Auto từ Alert {self.name}: tạo PO từ MR {mr.name}"
+        po.flags.ignore_permissions = True
+        po.insert()
+        # Update action link to PO
+        self.db_set({
+            "action_taken": 1,
+            "action_doctype": "SC Purchase Order",
+            "action_name": po.name,
+            "resolved": 1,
+            "resolution_action": "Acted Upon",
+            "resolved_by": frappe.session.user
+                if frappe.session.user not in (None, "", "Guest") else "Administrator",
+            "resolved_at": now(),
+        })
+        return {"po": po.name, "url": f"/app/sc-purchase-order/{po.name}"}
+
+    @frappe.whitelist()
+    def action_priority_dispense(self, note: str = None):
+        """expiring_batch → đánh dấu batch cần ưu tiên cấp phát.
+        Hiện tại: ghi vào remarks + resolution_action=Acted Upon.
+        Future: set batch.priority_pickup=1 khi field tồn tại."""
+        if self.alert_type != "expiring_batch":
+            frappe.throw(_("Action chỉ áp dụng cho expiring_batch"))
+        if self.resolved:
+            frappe.throw(_("SC-E-ALERT-RESOLVED"))
+        remark = f"Đã đánh dấu ưu tiên cấp phát batch {self.reference_name}"
+        if note:
+            remark += f": {note}"
+        new_remarks = (self.remarks or "") + f"\n[{now()}] {remark}"
+        self.db_set({
+            "remarks": new_remarks.strip(),
+            "resolved": 1,
+            "resolution_action": "Acted Upon",
+            "resolved_by": frappe.session.user
+                if frappe.session.user not in (None, "", "Guest") else "Administrator",
+            "resolved_at": now(),
+        })
+        return {"batch": self.reference_name, "priority": True}
+
+    @frappe.whitelist()
+    def action_contact_supplier(self, message: str = None):
+        """Gửi email contact tới supplier liên quan."""
+        # Resolve supplier theo reference type
+        supplier = None
+        if self.reference_doctype == "SC Batch":
+            supplier = frappe.db.get_value("SC Batch", self.reference_name, "supplier")
+        elif self.reference_doctype == "SC Purchase Receipt":
+            supplier = frappe.db.get_value("SC Purchase Receipt", self.reference_name, "supplier")
+        elif self.reference_doctype == "SC Purchase Invoice":
+            supplier = frappe.db.get_value("SC Purchase Invoice", self.reference_name, "supplier")
+        elif self.reference_doctype == "Framework Contract":
+            supplier = frappe.db.get_value("Framework Contract", self.reference_name, "supplier")
+        if not supplier:
+            frappe.throw(_(
+                "Không xác định được NCC từ reference {0} {1}"
+            ).format(self.reference_doctype, self.reference_name))
+        supplier_email = frappe.db.get_value("SC Supplier", supplier, "email_id")
+        if not supplier_email:
+            frappe.throw(_("NCC {0} không có email").format(supplier))
+        try:
+            frappe.sendmail(
+                recipients=[supplier_email],
+                subject=f"[SupplyCore] {self.title}",
+                message=(
+                    f"<p>Kính gửi {supplier},</p>"
+                    f"<p>{message or self.message or self.title}</p>"
+                    f"<p>Reference: {self.reference_doctype} {self.reference_name}</p>"
+                    f"<p>Vui lòng phản hồi sớm.</p>"
+                ),
+                queue=True, now=False,
+            )
+        except Exception as e:
+            frappe.log_error(message=str(e)[:1000],
+                              title=f"UC-34 contact_supplier {self.name}")
+        new_remarks = (self.remarks or "") + (
+            f"\n[{now()}] Đã gửi email cho NCC {supplier} ({supplier_email})"
+        )
+        self.db_set("remarks", new_remarks.strip())
+        return {"supplier": supplier, "email": supplier_email}
+
     # ------------------------------------------------------------------
     # Actions — whitelisted để gọi từ JS button trên Alert form
     # ------------------------------------------------------------------

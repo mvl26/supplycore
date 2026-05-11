@@ -48,6 +48,8 @@ scheduler_events = {
         "supplycore.m5_fefo.api.fefo_picker.scan_expiring_batches",
         "supplycore.m11_dashboard.tasks.scan_alerts",
         "supplycore.m11_dashboard.tasks.send_daily_kpi",
+        "supplycore.m11_dashboard.tasks.auto_resolve_alerts",
+        "supplycore.m11_dashboard.tasks.escalate_overdue_alerts",
     ],
     "weekly": [
         "supplycore.m2_planning.tasks.generate_procurement_forecast",

@@ -7,11 +7,15 @@
   "section_subject", "title", "message",
   "section_link", "reference_doctype", "reference_name",
   "column_break_link", "due_date", "value_amount",
+  "section_assign", "assigned_to",
+  "column_break_assign", "snooze_until", "snooze_reason",
   "section_action", "action_taken", "action_doctype",
   "column_break_action", "action_name",
   "section_resolve", "resolved", "resolution_action",
   "column_break_resolve", "resolved_by", "resolved_at",
-  "section_meta", "snooze_until", "remarks"
+  "section_escalation", "escalated", "escalated_at",
+  "column_break_escalation", "escalated_to", "original_alert",
+  "section_meta", "remarks"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Cảnh báo"},
@@ -34,6 +38,13 @@
   {"fieldname": "due_date", "fieldtype": "Date", "label": "Hạn xử lý"},
   {"fieldname": "value_amount", "fieldtype": "Currency", "options": "VND", "label": "Giá trị liên quan"},
 
+  {"fieldname": "section_assign", "fieldtype": "Section Break", "label": "Phân công & Snooze", "collapsible": 1},
+  {"fieldname": "assigned_to", "fieldtype": "Link", "options": "User", "label": "Người phụ trách",
+   "in_list_view": 1, "in_standard_filter": 1,
+   "description": "UC-34 4a: chuyển cảnh báo cho user khác"},
+  {"fieldname": "column_break_assign", "fieldtype": "Column Break"},
+  {"fieldname": "snooze_reason", "fieldtype": "Small Text", "label": "Lý do snooze", "depends_on": "snooze_until"},
+
   {"fieldname": "section_action", "fieldtype": "Section Break", "label": "Hành động đã thực hiện", "collapsible": 1},
   {"fieldname": "action_taken", "fieldtype": "Check", "label": "Đã có hành động", "default": "0", "read_only": 1},
   {"fieldname": "action_doctype", "fieldtype": "Link", "options": "DocType", "label": "Loại document tạo", "read_only": 1},
@@ -48,6 +59,16 @@
   {"fieldname": "column_break_resolve", "fieldtype": "Column Break"},
   {"fieldname": "resolved_by", "fieldtype": "Link", "options": "User", "label": "Người xử lý", "read_only": 1},
   {"fieldname": "resolved_at", "fieldtype": "Datetime", "label": "Thời điểm xử lý", "read_only": 1},
+
+  {"fieldname": "section_escalation", "fieldtype": "Section Break", "label": "Escalation (UC-34)", "collapsible": 1},
+  {"fieldname": "escalated", "fieldtype": "Check", "label": "Đã escalate", "default": "0",
+   "in_standard_filter": 1, "read_only": 1,
+   "description": "Tự động set bởi scheduler khi alert > 48h chưa resolve"},
+  {"fieldname": "escalated_at", "fieldtype": "Datetime", "label": "Thời điểm escalate", "read_only": 1, "depends_on": "escalated"},
+  {"fieldname": "column_break_escalation", "fieldtype": "Column Break"},
+  {"fieldname": "escalated_to", "fieldtype": "Link", "options": "User", "label": "Escalate cho", "read_only": 1, "depends_on": "escalated"},
+  {"fieldname": "original_alert", "fieldtype": "Link", "options": "SC Alert", "label": "Alert gốc", "read_only": 1,
+   "description": "Link tới alert gốc nếu document này là duplicate khi escalate"},
 
   {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
   {"fieldname": "snooze_until", "fieldtype": "Datetime", "label": "Tạm ẩn đến"},
