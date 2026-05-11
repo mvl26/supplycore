@@ -24,6 +24,14 @@ class SCTransferRequest(Document):
             self.status = "Draft"
 
     def on_submit(self):
+        # UC-18 step 5: cross-tier → enforce Manager role
+        if self.requires_manager_approval:
+            user_roles = set(frappe.get_roles(frappe.session.user))
+            if not (user_roles & {"SupplyCore Manager", "System Manager"}):
+                frappe.throw(_(
+                    "SC-E-TRANSFER-MANAGER-REQUIRED: TR cross-tier yêu cầu role "
+                    "SupplyCore Manager để submit"
+                ))
         self.db_set("status", "Approved")
         self.db_set("approved_by", frappe.session.user
                     if frappe.session.user not in (None, "", "Guest") else "Administrator")
@@ -73,9 +81,10 @@ class SCTransferRequest(Document):
                 row.approved_qty = row.requested_qty
             # Validate qty không vượt available (chỉ khi submit)
             if self.docstatus == 1 and flt(row.approved_qty) > available:
-                frappe.throw(_("Item {0}: SL duyệt {1} > tồn kho nguồn {2}").format(
-                    row.item, row.approved_qty, available),
-                    title="SC-E005 STOCK_INSUFFICIENT")
+                frappe.throw(_(
+                    "SC-E-TRANSFER-INSUFFICIENT: Item {0}: SL duyệt {1} > "
+                    "tồn kho nguồn {2}. Tối đa có thể chuyển: {2}"
+                ).format(row.item, row.approved_qty, available))
 
     def _compute_total(self):
         self.total_qty = sum(flt(r.requested_qty) for r in self.items)
@@ -127,6 +136,33 @@ class SCTransferRequest(Document):
         self.db_set("stock_entry", se.name)
         self.db_set("status", "In Transit")
         return se.name
+
+    @frappe.whitelist()
+    def get_transfer_slip_data(self):
+        """UC-18 step 7: data cho in phiếu chuyển kho qua Frappe Print Format."""
+        items = [{
+            "item": r.item, "uom": r.uom, "batch": r.batch,
+            "requested_qty": flt(r.requested_qty),
+            "approved_qty": flt(r.approved_qty),
+            "transferred_qty": flt(r.transferred_qty or 0),
+            "available_at_source": flt(r.available_at_source or 0),
+        } for r in self.items]
+        return {
+            "name": self.name,
+            "request_date": str(self.request_date) if self.request_date else "",
+            "transfer_type": self.transfer_type,
+            "required_by": str(self.required_by) if self.required_by else "",
+            "from_warehouse": self.from_warehouse,
+            "to_warehouse": self.to_warehouse,
+            "requested_by": self.requested_by,
+            "approved_by": self.approved_by,
+            "approved_at": str(self.approved_at) if self.approved_at else "",
+            "stock_entry": self.stock_entry,
+            "status": self.status,
+            "items": items,
+            "total_qty": flt(self.total_qty),
+            "url": f"/app/sc-transfer-request/{self.name}",
+        }
 
 
 # ---------------------------------------------------------------------------
