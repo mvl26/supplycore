@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sc-primary-dark: #1F4E79;
+  --sc-primary: #2E75B6;
+  --sc-primary-light: #5B9BD5;
+  --sc-bg: #F7F9FC;
+  --sc-surface: #FFFFFF;
+  --sc-border: #E5E9F0;
+  --sc-text: #1F2937;
+  --sc-text-muted: #6B7280;
+}
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  background-color: var(--sc-bg);
+  color: var(--sc-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Component utilities */
+@layer components {
+  .sc-card {
+    @apply bg-white rounded-lg shadow-sc-sm border border-sc-border;
+  }
+  .sc-btn-primary {
+    @apply bg-sc-royal hover:bg-sc-navy text-white px-4 py-2 rounded-md transition font-medium;
+  }
+  .sc-btn-secondary {
+    @apply bg-white hover:bg-sc-bg text-sc-navy border border-sc-border px-4 py-2 rounded-md transition font-medium;
+  }
+  .sc-btn-ghost {
+    @apply text-sc-navy hover:bg-sc-bg px-3 py-1.5 rounded-md transition;
+  }
+  .sc-badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+  .sc-badge-critical { @apply bg-red-100 text-red-800; }
+  .sc-badge-warning { @apply bg-amber-100 text-amber-800; }
+  .sc-badge-info { @apply bg-sky-100 text-sky-800; }
+  .sc-badge-success { @apply bg-green-100 text-green-800; }
+  .sc-badge-neutral { @apply bg-gray-100 text-gray-700; }
+
+  .sc-input {
+    @apply w-full bg-white border border-sc-border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sc-royal focus:border-transparent;
+  }
+
+  .sc-table {
+    @apply w-full text-sm;
+  }
+  .sc-table thead {
+    @apply bg-sc-bg text-sc-text-muted font-medium text-xs uppercase;
+  }
+  .sc-table th, .sc-table td {
+    @apply px-4 py-2 text-left border-b border-sc-border;
+  }
+  .sc-table tr:hover {
+    @apply bg-sc-bg;
+  }
+}

@@ -8,6 +8,8 @@ __pycache__/
 *.log
 .env
 .idea/
+frontend/dist/
+supplycore/public/frontend/
 .vscode/
 build/
 dist/

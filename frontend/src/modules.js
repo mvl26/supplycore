@@ -1,0 +1,40 @@
+// 11 modules theo M1..M11
+export const MODULES = [
+  { id: 'm1',  code: 'M1',  name: 'Hợp đồng',         icon: '📑', route: '/m1',  group: 'Strategic' },
+  { id: 'm2',  code: 'M2',  name: 'Kế hoạch & Mua',    icon: '🛒', route: '/m2',  group: 'Strategic' },
+  { id: 'm3',  code: 'M3',  name: 'Tiếp nhận',         icon: '📦', route: '/m3',  group: 'Operations' },
+  { id: 'm4',  code: 'M4',  name: 'Quản lý kho',       icon: '🏬', route: '/m4',  group: 'Operations' },
+  { id: 'm5',  code: 'M5',  name: 'FEFO',              icon: '⏱️', route: '/m5',  group: 'Operations' },
+  { id: 'm6',  code: 'M6',  name: 'Chuyển kho',        icon: '🔁', route: '/m6',  group: 'Operations' },
+  { id: 'm7',  code: 'M7',  name: 'Cấp phát',          icon: '💉', route: '/m7',  group: 'Operations' },
+  { id: 'm8',  code: 'M8',  name: 'Kế toán',           icon: '💰', route: '/m8',  group: 'Finance' },
+  { id: 'm9',  code: 'M9',  name: 'Kiểm kê',           icon: '📋', route: '/m9',  group: 'Quality' },
+  { id: 'm10', code: 'M10', name: 'Truy xuất',         icon: '🔍', route: '/m10', group: 'Quality' },
+  { id: 'm11', code: 'M11', name: 'Dashboard & Alert', icon: '📊', route: '/m11', group: 'Insights' },
+]
+
+// Module → DocType lists để hub page
+export const MODULE_DOCTYPES = {
+  m1:  [{ dt: 'Framework Contract',         label: 'HĐ khung' }],
+  m2:  [{ dt: 'SC Material Request',        label: 'Yêu cầu mua hàng' },
+         { dt: 'SC Purchase Order',          label: 'Đơn mua' }],
+  m3:  [{ dt: 'SC Purchase Receipt',        label: 'Phiếu nhập' },
+         { dt: 'SC Quality Inspection',      label: 'Kiểm tra chất lượng' }],
+  m4:  [{ dt: 'SC Warehouse',               label: 'Kho' },
+         { dt: 'SC Stock Ledger Entry',      label: 'Sổ kho' },
+         { dt: 'SC Batch',                   label: 'Lô' }],
+  m5:  [{ dt: 'SC Batch',                   label: 'Lô (FEFO)' }],
+  m6:  [{ dt: 'SC Transfer Request',        label: 'Yêu cầu chuyển kho' },
+         { dt: 'SC Stock Entry',             label: 'Phiếu chuyển kho' }],
+  m7:  [{ dt: 'SC Dispensing Request',      label: 'Yêu cầu cấp phát' },
+         { dt: 'SC Patient Dispensing',      label: 'Cấp phát BN' }],
+  m8:  [{ dt: 'SC Purchase Invoice',        label: 'Hóa đơn mua' },
+         { dt: 'SC Payment Entry',           label: 'Thanh toán' },
+         { dt: 'SC GL Entry',                label: 'Bút toán GL' }],
+  m9:  [{ dt: 'SC Inventory Count Sheet',   label: 'Phiếu kiểm kê' },
+         { dt: 'SC Stock Reconciliation',    label: 'Đối soát kho' }],
+  m10: [{ dt: 'SC Recall Notice',           label: 'Thu hồi' },
+         { dt: 'SC Investigation Report',    label: 'Điều tra' }],
+  m11: [{ dt: 'SC Alert',                   label: 'Cảnh báo' },
+         { dt: 'SC Alert Rule',              label: 'Cấu hình rule' }],
+}

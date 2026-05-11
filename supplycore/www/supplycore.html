@@ -1,0 +1,27 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("SupplyCore") }}{% endblock %}
+
+{% block page_content %}
+<div id="app"></div>
+{% endblock %}
+
+{% block style %}
+<style>
+  body, .page_content, main {
+    margin: 0; padding: 0; max-width: 100%;
+    background: #F7F9FC;
+  }
+  .navbar, .web-footer, #page-footer, #navbar-search { display: none !important; }
+  .page-content-wrapper { padding: 0 !important; max-width: 100%; }
+  #app { min-height: 100vh; }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+  window.csrf_token = '{{ frappe.session.csrf_token if frappe.session else "" }}';
+</script>
+<link rel="stylesheet" href="/assets/supplycore/frontend/index.css" />
+<script type="module" src="/assets/supplycore/frontend/index.js"></script>
+{% endblock %}
