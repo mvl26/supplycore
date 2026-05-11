@@ -112,6 +112,37 @@ def auto_pick_fefo(item_code: str, warehouse: str, qty: float) -> dict:
 
 
 @frappe.whitelist()
+def get_expiring_dashboard(warehouse: str = None, limit: int = 10) -> dict:
+    """UC-17 step 4: dashboard widget — counts by severity + top batches."""
+    cond = "AND warehouse = %(wh)s" if warehouse else ""
+    params = {"wh": warehouse} if warehouse else {}
+    counts = frappe.db.sql(f"""
+        SELECT severity, COUNT(*) AS cnt
+        FROM `tabBatch Expiry Alert`
+        WHERE resolved = 0 {cond}
+        GROUP BY severity
+    """, params, as_dict=True)
+    by_sev = {r["severity"]: r["cnt"] for r in counts}
+
+    params2 = dict(params); params2["lim"] = int(limit)
+    batches = frappe.db.sql(f"""
+        SELECT name, batch_no, item_code, item_name, expiry_date,
+               days_to_expiry, severity, warehouse, current_qty
+        FROM `tabBatch Expiry Alert`
+        WHERE resolved = 0 {cond}
+        ORDER BY days_to_expiry ASC LIMIT %(lim)s
+    """, params2, as_dict=True)
+
+    return {
+        "critical":  by_sev.get("Critical", 0),
+        "warning":   by_sev.get("Warning", 0),
+        "info":      by_sev.get("Info", 0),
+        "total":     sum(by_sev.values()),
+        "batches":   batches,
+    }
+
+
+@frappe.whitelist()
 def check_batch_status(batch_no: str) -> dict:
     """Trả thông tin nhanh về 1 batch — phục vụ UI validate trước khi submit."""
     b = frappe.db.get_value("SC Batch", batch_no,

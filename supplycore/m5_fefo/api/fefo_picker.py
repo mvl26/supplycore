@@ -1,11 +1,4 @@
-"""M5 FEFO — internal helpers + scheduler tasks.
-
-Public API endpoints ở `supplycore/api/fefo.py` (theo Phase 2 API §4.1).
-Module này chứa:
-- `register_batch` (hook Batch.after_insert)
-- `scan_expiring_batches` (scheduler daily)
-- `suggest_batches` (alias cho compatibility với hooks cũ)
-"""
+"""M5 FEFO — internal helpers + scheduler tasks (UC-17)."""
 
 import frappe
 from frappe import _
@@ -13,17 +6,11 @@ from frappe.utils import flt, getdate, today, date_diff, now
 from supplycore.api.fefo import get_suggested_batches
 
 
-# ---------------------------------------------------------------------------
-# Public alias — referenced trong cấu trúc cũ của hooks
-# ---------------------------------------------------------------------------
 @frappe.whitelist()
 def suggest_batches(item_code: str, warehouse: str, qty: float = 0):
     return get_suggested_batches(item_code, warehouse, qty)
 
 
-# ---------------------------------------------------------------------------
-# Hook: Batch.after_insert
-# ---------------------------------------------------------------------------
 def register_batch(doc, method=None):
     """after_insert Batch — validate expiry + log."""
     if not doc.expiry_date:
@@ -39,72 +26,80 @@ def register_batch(doc, method=None):
                         indicator="orange", alert=True)
 
 
-# ---------------------------------------------------------------------------
-# Scheduler: daily expiry scan (BR-M5-02)
-# ---------------------------------------------------------------------------
 def scan_expiring_batches():
-    """Daily: find batches expiring trong window cấu hình → tạo Batch Expiry Alert + email."""
+    """UC-17 Daily: scan batches expiry trong info_window, phân loại theo
+    severity Critical(<30d)/Warning(30-90d)/Info(90-180d). Tạo Batch Expiry
+    Alert per (batch, warehouse). Email summary."""
     settings = frappe.get_single("SupplyCore Settings")
     critical = int(settings.get("expiry_alert_days_critical") or 30)
     warning = int(settings.get("expiry_alert_days_warning") or 90)
+    info_window = 180
 
     rows = frappe.db.sql("""
         SELECT b.name AS batch_no, b.item AS item_code, i.item_name,
                b.expiry_date,
-               DATEDIFF(b.expiry_date, CURDATE()) AS days_left
+               DATEDIFF(b.expiry_date, CURDATE()) AS days_left,
+               sle.warehouse,
+               COALESCE(SUM(sle.qty_change), 0) AS current_qty
         FROM `tabSC Batch` b
         JOIN `tabSC Item` i ON i.name = b.item
+        LEFT JOIN `tabSC Stock Ledger Entry` sle
+            ON sle.batch = b.name AND sle.is_cancelled = 0
         WHERE b.disabled = 0
           AND COALESCE(b.blocked, 0) = 0
           AND b.expiry_date IS NOT NULL
           AND b.expiry_date >= CURDATE()
           AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL %s DAY)
+        GROUP BY b.name, sle.warehouse
+        HAVING current_qty > 0
         ORDER BY b.expiry_date ASC
         LIMIT 500
-    """, warning, as_dict=True)
-
-    if not rows:
-        return
+    """, info_window, as_dict=True)
 
     created_count = 0
     for r in rows:
-        severity = "Critical" if r.days_left < critical else "Warning"
-        # Skip nếu đã có alert OPEN trong tuần qua cho cùng batch + severity
-        existing = frappe.db.exists("Batch Expiry Alert", {
-            "batch_no": r.batch_no,
-            "severity": severity,
-            "resolved": 0,
+        if r.days_left < critical:
+            severity = "Critical"
+        elif r.days_left < warning:
+            severity = "Warning"
+        else:
+            severity = "Info"
+
+        if frappe.db.exists("Batch Expiry Alert", {
+            "batch_no": r.batch_no, "warehouse": r.warehouse,
+            "severity": severity, "resolved": 0,
             "alert_date": [">=", frappe.utils.add_days(today(), -7)],
-        })
-        if existing:
+        }):
             continue
         try:
-            cur_qty = _get_batch_total_qty(r.batch_no)
-            alert = frappe.new_doc("Batch Expiry Alert")
-            alert.alert_date = today()
-            alert.batch_no = r.batch_no
-            alert.item_code = r.item_code
-            alert.item_name = r.item_name
-            alert.expiry_date = r.expiry_date
-            alert.days_to_expiry = r.days_left
-            alert.severity = severity
-            alert.current_qty = cur_qty
-            alert.flags.ignore_permissions = True
-            alert.insert()
+            a = frappe.new_doc("Batch Expiry Alert")
+            a.alert_date = today()
+            a.batch_no = r.batch_no
+            a.item_code = r.item_code
+            a.item_name = r.item_name
+            a.expiry_date = r.expiry_date
+            a.days_to_expiry = r.days_left
+            a.severity = severity
+            a.warehouse = r.warehouse
+            a.current_qty = flt(r.current_qty)
+            a.flags.ignore_permissions = True
+            a.insert()
             created_count += 1
         except Exception as e:
-            frappe.log_error(message=f"BatchExpiryAlert insert failed batch={r.batch_no}: {e}",
-                             title="M5 scan_expiring_batches")
+            frappe.log_error(message=f"BatchExpiryAlert failed batch={r.batch_no}: {e}",
+                              title="UC-17 scan_expiring_batches")
 
     if created_count:
         _send_expiry_email(rows, critical)
+    return {"created": created_count, "scanned": len(rows)}
 
 
 def _get_batch_total_qty(batch_no: str) -> float:
+    """SC SLE-based tổng qty của batch (across warehouses)."""
     return flt(frappe.db.sql("""
-        SELECT COALESCE(SUM(actual_qty), 0)
-        FROM `tabStock Ledger Entry`
-        WHERE batch_no = %s AND is_cancelled = 0
+        SELECT COALESCE(SUM(qty_change), 0)
+        FROM `tabSC Stock Ledger Entry`
+        WHERE batch = %s AND is_cancelled = 0
     """, batch_no)[0][0])
 
 
@@ -132,17 +127,22 @@ def _send_expiry_email(rows, critical_days):
 
     body = "".join(
         f"<tr><td>{r.batch_no}</td><td>{r.item_code}</td><td>{r.item_name or ''}</td>"
-        f"<td>{r.expiry_date}</td><td style='color:{'#DC3545' if r.days_left < critical_days else '#FFC107'};font-weight:bold'>{r.days_left}</td></tr>"
+        f"<td>{r.warehouse or '—'}</td>"
+        f"<td>{r.expiry_date}</td>"
+        f"<td style='color:{'#DC3545' if r.days_left < critical_days else '#FFC107'};"
+        f"font-weight:bold'>{r.days_left}</td>"
+        f"<td>{flt(r.current_qty)}</td></tr>"
         for r in rows
     )
     msg = f"""
         <h3>SupplyCore — Cảnh báo lô hàng sắp hết hạn</h3>
-        <p>Có <b>{len(rows)}</b> lô hàng sắp hết hạn cần xử lý ưu tiên (FEFO/trả NCC/hủy).</p>
+        <p>Có <b>{len(rows)}</b> lô hàng sắp hết hạn cần xử lý ưu tiên.</p>
         <table border="1" cellpadding="6" cellspacing="0">
-            <tr><th>Lô</th><th>Mã VT</th><th>Tên</th><th>Hạn dùng</th><th>Số ngày còn</th></tr>
+            <tr><th>Lô</th><th>Mã VT</th><th>Tên</th><th>Kho</th>
+                <th>Hạn dùng</th><th>Ngày còn</th><th>SL</th></tr>
             {body}
         </table>
-        <p><a href="/app/batch-expiry-alert?resolved=0">Xem danh sách Batch Expiry Alert</a></p>
+        <p><a href="/app/batch-expiry-alert?resolved=0">Xem danh sách Alert</a></p>
     """
     try:
         frappe.sendmail(
@@ -151,4 +151,5 @@ def _send_expiry_email(rows, critical_days):
             message=msg, delayed=False,
         )
     except Exception as e:
-        frappe.log_error(message=f"Email scan_expiring failed: {e}", title="M5 scan_expiring_batches")
+        frappe.log_error(message=f"Email scan_expiring failed: {e}",
+                          title="UC-17 _send_expiry_email")
