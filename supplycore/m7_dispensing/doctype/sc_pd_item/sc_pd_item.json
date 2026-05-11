@@ -5,7 +5,8 @@
   "column_break_1", "qty", "unit_cost", "total_cost",
   "section_batch", "batch",
   "section_bhyt", "bhyt_code", "bhyt_group", "bhyt_rate", "ceiling_price",
-  "column_break_bhyt", "bhyt_amount", "ceiling_overage", "patient_pays"
+  "column_break_bhyt", "bhyt_amount", "ceiling_overage", "patient_pays",
+  "bhyt_config_changed"
  ],
  "fields": [
   {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
@@ -29,7 +30,8 @@
   {"fieldname": "column_break_bhyt", "fieldtype": "Column Break"},
   {"fieldname": "bhyt_amount", "fieldtype": "Currency", "options": "VND", "label": "BHYT chi trả", "read_only": 1},
   {"fieldname": "ceiling_overage", "fieldtype": "Currency", "options": "VND", "label": "Vượt giá trần", "read_only": 1},
-  {"fieldname": "patient_pays", "fieldtype": "Currency", "options": "VND", "label": "BN tự trả", "read_only": 1}
+  {"fieldname": "patient_pays", "fieldtype": "Currency", "options": "VND", "label": "BN tự trả", "read_only": 1},
+  {"fieldname": "bhyt_config_changed", "fieldtype": "Check", "label": "BHYT config thay đổi", "read_only": 1, "default": "0", "description": "Cờ khi cfg payment_rate/ceiling khác lần cấp trước (UC-22 ngoại lệ)"}
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
  "module": "M7 Dispensing", "name": "SC PD Item", "permissions": [],
