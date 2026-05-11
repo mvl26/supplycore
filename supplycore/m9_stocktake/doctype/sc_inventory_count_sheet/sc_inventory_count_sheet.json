@@ -9,7 +9,7 @@
   "section_items", "items",
   "section_summary", "total_items", "mismatched_items",
   "column_break_summary", "total_variance_qty", "total_variance_value",
-  "section_status", "status", "stock_reconciliation",
+  "section_status", "status", "stock_reconciliation", "manager_witness",
   "amended_from", "remarks"
  ],
  "fields": [
@@ -49,6 +49,7 @@
    "options": "Draft\nIn Progress\nCounted\nReconciled\nCancelled",
    "label": "Status", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
   {"fieldname": "stock_reconciliation", "fieldtype": "Link", "options": "SC Stock Reconciliation", "label": "SR đã tạo", "read_only": 1, "no_copy": 1},
+  {"fieldname": "manager_witness", "fieldtype": "Link", "options": "User", "label": "Manager chứng kiến (đếm lần 3)", "description": "UC-27 6a: bắt buộc khi có item third_count_qty"},
   {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Inventory Count Sheet", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
  ],

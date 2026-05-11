@@ -15,9 +15,51 @@ class SCInventoryCountSheet(Document):
         if self.docstatus == 0 and not self.status:
             self.status = "Draft"
 
+    def before_submit(self):
+        """UC-27 6a: third_count_qty yêu cầu manager_witness."""
+        has_third = any(flt(r.third_count_qty) > 0 for r in self.items)
+        if has_third and not self.manager_witness:
+            frappe.throw(_(
+                "SC-E-ICS-WITNESS-REQUIRED: Đếm lần 3 yêu cầu Manager chứng kiến — "
+                "chọn 'Manager witness'"
+            ))
+
     def on_submit(self):
         # Submit = đã đếm xong, đợi reconcile
         self.db_set("status", "Counted")
+
+    @frappe.whitelist()
+    def start_counting(self):
+        """UC-27 step 4: chuyển ICS sang In Progress để track partial counting."""
+        if self.docstatus != 0:
+            frappe.throw(_("Chỉ start khi Draft"))
+        self.db_set("status", "In Progress")
+        return {"status": "In Progress"}
+
+    @frappe.whitelist()
+    def get_count_sheet_print_data(self, hide_system_qty: int = None):
+        """UC-27 step 2: data in phiếu kiểm kê. Default ẩn system_qty."""
+        hide = self.hide_system_qty if hide_system_qty is None else int(hide_system_qty)
+        items = []
+        for r in self.items:
+            row_data = {
+                "item": r.item, "item_name": r.item_name, "uom": r.uom,
+                "batch": r.batch, "bin_location": r.bin_location,
+            }
+            if not hide:
+                row_data["system_qty"] = flt(r.system_qty)
+            items.append(row_data)
+        return {
+            "name": self.name,
+            "count_date": str(self.count_date) if self.count_date else "",
+            "warehouse": self.warehouse,
+            "planned_by": self.planned_by,
+            "counted_by": self.counted_by,
+            "count_scope": self.count_scope,
+            "hide_system_qty": hide,
+            "items": items,
+            "url": f"/app/sc-inventory-count-sheet/{self.name}",
+        }
 
     def on_cancel(self):
         self.db_set("status", "Cancelled")
@@ -34,10 +76,13 @@ class SCInventoryCountSheet(Document):
     def _compute_variances(self):
         threshold = flt(self.recount_threshold_pct or 5)
         for row in self.items:
-            actual = flt(row.actual_qty if row.actual_qty is not None else 0)
-            # Nếu có recount → ưu tiên giá trị recount
-            if row.recount_actual_qty:
+            # UC-27 6a priority: third_count > recount > actual
+            if row.third_count_qty:
+                actual = flt(row.third_count_qty)
+            elif row.recount_actual_qty:
                 actual = flt(row.recount_actual_qty)
+            else:
+                actual = flt(row.actual_qty if row.actual_qty is not None else 0)
             row.difference = actual - flt(row.system_qty or 0)
             if flt(row.system_qty or 0) > 0:
                 row.variance_pct = abs(row.difference) / flt(row.system_qty) * 100

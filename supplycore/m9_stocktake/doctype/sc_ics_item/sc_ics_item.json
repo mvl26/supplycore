@@ -5,6 +5,7 @@
   "column_break_1", "batch", "bin_location",
   "section_qty", "system_qty", "actual_qty", "difference",
   "column_break_qty", "variance_pct", "needs_recount", "recount_actual_qty",
+  "third_count_qty",
   "section_value", "valuation_rate", "variance_value",
   "section_meta", "reason", "remarks"
  ],
@@ -27,6 +28,7 @@
   {"fieldname": "needs_recount", "fieldtype": "Check", "label": "Cần đếm lại", "read_only": 1,
    "description": "Auto = 1 nếu |variance_pct| > recount_threshold"},
   {"fieldname": "recount_actual_qty", "fieldtype": "Float", "label": "SL đếm lại"},
+  {"fieldname": "third_count_qty", "fieldtype": "Float", "label": "SL đếm lần 3", "non_negative": 1, "description": "UC-27 6a: đếm lần 3 khi recount vẫn chênh > threshold — cần Manager chứng kiến"},
 
   {"fieldname": "section_value", "fieldtype": "Section Break", "label": "Giá trị chênh lệch"},
   {"fieldname": "valuation_rate", "fieldtype": "Currency", "options": "VND", "label": "Đơn giá tham chiếu", "read_only": 1},
