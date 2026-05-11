@@ -241,5 +241,11 @@ def _find_checklist_template(item_code):
         tpl = frappe.db.get_value("QC Checklist Template",
                                     {"item_group": item_group, "is_default_for_group": 1, "enabled": 1}, "name")
         if tpl: return tpl
-    return frappe.db.get_value("QC Checklist Template",
-                                {"item_group": ["in", [None, ""]], "enabled": 1}, "name")
+    # Fallback: global template (item_group IS NULL or empty)
+    rows = frappe.db.sql("""
+        SELECT name FROM `tabQC Checklist Template`
+        WHERE enabled = 1
+          AND (item_group IS NULL OR item_group = '')
+        ORDER BY creation DESC LIMIT 1
+    """)
+    return rows[0][0] if rows else None

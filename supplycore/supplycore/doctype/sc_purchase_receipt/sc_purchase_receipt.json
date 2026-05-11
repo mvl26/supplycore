@@ -4,7 +4,7 @@
  "field_order": [
   "section_main", "supplier", "supplier_name", "purchase_order",
   "column_break_1", "posting_date", "to_warehouse",
-  "section_qc", "qc_required", "qc_status",
+  "section_qc", "qc_required", "qc_status", "officially_received_at",
   "section_return", "is_return", "return_against", "backorder_for",
   "section_delivery_note", "delivery_note_attachment", "no_po_reason",
   "section_items", "items",
@@ -25,6 +25,7 @@
   {"fieldname": "qc_required", "fieldtype": "Check", "label": "Yêu cầu QC", "default": "1"},
   {"fieldname": "qc_status", "fieldtype": "Select", "options": "\nPending\nPass\nFail\nPartial Pass",
    "label": "QC Status", "default": "Pending", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "officially_received_at", "fieldtype": "Datetime", "label": "Đã nhập kho chính thức lúc", "read_only": 1, "description": "Set khi QC Pass — hàng được FEFO/Dispense pick"},
 
   {"fieldname": "section_return", "fieldtype": "Section Break", "label": "Trả hàng / Backorder", "collapsible": 1},
   {"fieldname": "is_return", "fieldtype": "Check", "label": "Phiếu trả NCC", "default": "0", "in_standard_filter": 1},

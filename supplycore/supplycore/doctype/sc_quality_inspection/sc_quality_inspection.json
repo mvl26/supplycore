@@ -7,6 +7,7 @@
   "section_inspector", "inspected_by", "checklist_template",
   "column_break_2", "overall_status", "action_taken",
   "section_readings", "readings",
+  "section_equipment", "equipment_unavailable", "equipment_note",
   "section_meta", "failure_reason", "remarks", "amended_from"
  ],
  "fields": [
@@ -25,14 +26,18 @@
   {"fieldname": "checklist_template", "fieldtype": "Link", "options": "QC Checklist Template", "label": "Mẫu checklist"},
   {"fieldname": "column_break_2", "fieldtype": "Column Break"},
   {"fieldname": "overall_status", "fieldtype": "Select",
-   "options": "\nPending\nAccepted\nRejected\nConditional",
+   "options": "\nPending\nAccepted\nRejected\nConditional\nOn Hold",
    "label": "Kết quả tổng", "default": "Pending", "in_list_view": 1, "in_standard_filter": 1},
   {"fieldname": "action_taken", "fieldtype": "Select",
-   "options": "\nPending\nAccept\nConditional Accept\nReturn to Supplier",
+   "options": "\nPending\nAccept\nConditional Accept\nReturn to Supplier\nRequest Replacement",
    "label": "Hành động", "default": "Pending", "in_list_view": 1},
 
   {"fieldname": "section_readings", "fieldtype": "Section Break", "label": "Tiêu chí kiểm tra"},
   {"fieldname": "readings", "fieldtype": "Table", "options": "SC QI Reading", "label": "Readings"},
+
+  {"fieldname": "section_equipment", "fieldtype": "Section Break", "label": "Thiết bị kiểm tra", "collapsible": 1},
+  {"fieldname": "equipment_unavailable", "fieldtype": "Check", "label": "Thiếu thiết bị kiểm tra", "default": "0", "description": "Tick → overall_status=On Hold, không rollup PR"},
+  {"fieldname": "equipment_note", "fieldtype": "Small Text", "label": "Ghi chú thiết bị", "depends_on": "equipment_unavailable", "description": "Bắt buộc khi tick thiếu thiết bị"},
 
   {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
   {"fieldname": "failure_reason", "fieldtype": "Small Text", "label": "Lý do không đạt", "depends_on": "eval:doc.overall_status=='Rejected'"},
@@ -47,7 +52,7 @@
   {"role": "Warehouse Officer", "read": 1, "write": 1, "submit": 1, "report": 1},
   {"role": "SupplyCore Accountant", "read": 1, "report": 1}
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
  "module": "Supplycore", "name": "SC Quality Inspection",
  "sort_field": "modified", "sort_order": "DESC"
 }

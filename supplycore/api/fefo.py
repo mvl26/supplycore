@@ -51,6 +51,7 @@ def get_suggested_batches(item_code: str, warehouse: str, qty: float = 0, uom: s
           AND b.disabled = 0
           AND COALESCE(b.blocked, 0) = 0
           AND (b.expiry_date IS NULL OR b.expiry_date >= CURDATE())
+          AND (b.qc_status IS NULL OR b.qc_status = '' OR b.qc_status IN ('Accepted', 'Conditional'))
         HAVING available_qty > 0
         ORDER BY COALESCE(b.expiry_date, '9999-12-31') ASC, b.creation ASC
     """, {"warehouse": warehouse, "item": item_code}, as_dict=True)
