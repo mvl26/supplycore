@@ -15,11 +15,67 @@ class SCDispensingRequest(Document):
             if not r.approved_qty:
                 r.approved_qty = r.requested_qty
         self.total_qty = sum(flt(r.requested_qty) for r in self.items)
+        self._compute_estimated_value()
+        if not self.requested_by and frappe.session.user not in (None, "", "Guest"):
+            self.requested_by = frappe.session.user
         if self.docstatus == 0:
             self.status = "Draft"
 
+    def before_submit(self):
+        # UC-20 ngoại lệ: quota check
+        self._validate_quota()
+
     def on_submit(self):
         self.db_set("status", "Approved")
+
+    def _compute_estimated_value(self):
+        total = 0
+        for r in self.items:
+            rate = _last_purchase_rate(r.item)
+            if not rate:
+                # Fallback: SLE valuation_rate gần nhất (Material Receipt)
+                rate_row = frappe.db.sql("""
+                    SELECT valuation_rate FROM `tabSC Stock Ledger Entry`
+                    WHERE item = %s AND valuation_rate > 0 AND is_cancelled = 0
+                    ORDER BY posting_date DESC, creation DESC LIMIT 1
+                """, r.item)
+                rate = flt(rate_row[0][0]) if rate_row else 0
+            total += flt(r.approved_qty or r.requested_qty) * rate
+        self.total_estimated_value = total
+
+    def _validate_quota(self):
+        if not self.department:
+            return
+        quota = flt(frappe.db.get_value(
+            "SC Department", self.department, "monthly_dispensing_quota"))
+        if quota <= 0:
+            return
+        if self.quota_override_acknowledged:
+            return
+        from frappe.utils import get_first_day, get_last_day
+        month_start = get_first_day(self.request_date or today())
+        month_end = get_last_day(self.request_date or today())
+        consumed = flt(frappe.db.sql("""
+            SELECT COALESCE(SUM(total_estimated_value), 0)
+            FROM `tabSC Dispensing Request`
+            WHERE department = %s
+              AND request_date BETWEEN %s AND %s
+              AND docstatus = 1
+              AND status != 'Cancelled'
+              AND name != %s
+        """, (self.department, month_start, month_end, self.name or ""))[0][0])
+        projected = consumed + flt(self.total_estimated_value)
+        if projected > quota:
+            frappe.throw(_(
+                "SC-E-DR-QUOTA-EXCEEDED: Khoa {0} vượt hạn mức cấp phát tháng "
+                "(đã dùng {1}, DR này {2}, quota {3}). "
+                "Cần Manager tick 'Xác nhận vượt hạn mức' để submit."
+            ).format(
+                self.department,
+                frappe.format(consumed, {"fieldtype": "Currency"}),
+                frappe.format(self.total_estimated_value, {"fieldtype": "Currency"}),
+                frappe.format(quota, {"fieldtype": "Currency"}),
+            ))
 
     def on_cancel(self):
         self.db_set("status", "Cancelled")

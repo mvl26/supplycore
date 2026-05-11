@@ -7,7 +7,8 @@
   "section_warehouse", "from_warehouse",
   "section_items", "items",
   "section_status", "status", "stock_entry", "patient_dispensing",
-  "column_break_status", "total_qty", "remarks",
+  "column_break_status", "total_qty", "total_estimated_value",
+  "quota_override_acknowledged", "remarks", "reason",
   "amended_from"
  ],
  "fields": [
@@ -37,7 +38,10 @@
   {"fieldname": "patient_dispensing", "fieldtype": "Link", "options": "SC Patient Dispensing", "label": "Patient Dispensing", "read_only": 1, "no_copy": 1},
   {"fieldname": "column_break_status", "fieldtype": "Column Break"},
   {"fieldname": "total_qty", "fieldtype": "Float", "label": "Tổng SL", "read_only": 1},
+  {"fieldname": "total_estimated_value", "fieldtype": "Currency", "options": "VND", "label": "Tổng ước tính (VND)", "read_only": 1},
+  {"fieldname": "quota_override_acknowledged", "fieldtype": "Check", "label": "Xác nhận vượt hạn mức (Manager)", "default": "0", "description": "Tick khi total vượt monthly_dispensing_quota của khoa"},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
+  {"fieldname": "reason", "fieldtype": "Small Text", "label": "Lý do yêu cầu"},
   {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Dispensing Request", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
  ],
  "permissions": [
