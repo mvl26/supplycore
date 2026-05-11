@@ -9,10 +9,28 @@ from frappe.utils import flt
 class SCStockReconciliation(Document):
 
     def validate(self):
+        self._auto_fill_system_qty()
         self._compute_per_row()
         self._compute_totals()
-        if self.docstatus == 0:
+        self._validate_reason_per_row()
+        if self.docstatus == 0 and self.status not in ("Rejected",):
             self.status = "Draft"
+
+    def before_submit(self):
+        # UC-19 step 6: Manager / Accountant role bắt buộc
+        user_roles = set(frappe.get_roles(frappe.session.user))
+        allowed = {"SupplyCore Manager", "SupplyCore Accountant", "System Manager"}
+        if not (user_roles & allowed):
+            frappe.throw(_(
+                "SC-E-SR-MANAGER-REQUIRED: Submit SR yêu cầu role "
+                "SupplyCore Manager / Accountant"
+            ))
+        # UC-19 ngoại lệ: actual_qty âm
+        for r in self.items:
+            if flt(r.actual_qty) < 0:
+                frappe.throw(_(
+                    "SC-E-SR-NEGATIVE: Item {0}: actual_qty không thể âm"
+                ).format(r.item))
 
     def on_submit(self):
         self._post_stock_ledger()
@@ -31,7 +49,68 @@ class SCStockReconciliation(Document):
         if self.count_sheet:
             frappe.db.set_value("SC Inventory Count Sheet", self.count_sheet, "status", "Counted")
 
+    @frappe.whitelist()
+    def reject(self, reason: str = None):
+        """UC-19 6a: Manager reject SR Draft kèm lý do."""
+        if not reason or not str(reason).strip():
+            frappe.throw(_("SC-E-SR-REJECT-REASON: Phải nhập lý do từ chối"))
+        if self.docstatus != 0:
+            frappe.throw(_("Chỉ reject SR ở Draft"))
+        self.db_set("status", "Rejected")
+        self.db_set("rejection_reason", reason)
+        return {"status": "Rejected"}
+
+    @frappe.whitelist()
+    def load_from_count_sheet(self):
+        """UC-19 3a: copy items từ SC Inventory Count Sheet vào SR.items."""
+        if not self.count_sheet:
+            frappe.throw(_("Phải set count_sheet trước"))
+        if self.docstatus != 0:
+            frappe.throw(_("Chỉ load khi Draft"))
+        cs = frappe.get_doc("SC Inventory Count Sheet", self.count_sheet)
+        self.items = []
+        for ci in cs.items:
+            self.append("items", {
+                "item": ci.item,
+                "uom": ci.uom,
+                "batch": ci.batch,
+                "bin_location": getattr(ci, "bin_location", None),
+                "actual_qty": flt(ci.counted_qty),
+                "valuation_rate": flt(getattr(ci, "valuation_rate", 0)),
+            })
+        self._auto_fill_system_qty()
+        self._compute_per_row()
+        self._compute_totals()
+        self.save(ignore_permissions=False)
+        return {"items_loaded": len(self.items)}
+
     # ------------------------------------------------------------------
+    def _auto_fill_system_qty(self):
+        """UC-19 step 3: auto-fill system_qty từ SC SLE."""
+        for r in self.items:
+            if not (r.item and self.warehouse):
+                continue
+            qty = flt(frappe.db.sql("""
+                SELECT COALESCE(SUM(qty_change), 0)
+                FROM `tabSC Stock Ledger Entry`
+                WHERE item = %(item)s AND warehouse = %(wh)s AND is_cancelled = 0
+                  AND (%(batch)s IS NULL OR batch = %(batch)s)
+                  AND (%(bin)s IS NULL OR bin_location = %(bin)s)
+            """, {"item": r.item, "wh": self.warehouse,
+                   "batch": r.batch, "bin": r.bin_location})[0][0])
+            r.system_qty = qty
+
+    def _validate_reason_per_row(self):
+        """UC-19 step 5: row có difference≠0 phải có reason (chỉ enforce ở submit)."""
+        if self.docstatus == 0:
+            return
+        for r in self.items:
+            if abs(flt(r.difference)) > 0.01 and not r.reason:
+                frappe.throw(_(
+                    "SC-E-SR-REASON-REQUIRED: Row {0} (item {1}): "
+                    "phải nhập 'Lý do điều chỉnh' khi có chênh lệch"
+                ).format(r.idx, r.item))
+
     def _compute_per_row(self):
         for r in self.items:
             r.difference = flt(r.actual_qty) - flt(r.system_qty)

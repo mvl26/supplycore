@@ -7,7 +7,7 @@
   "section_items", "items",
   "section_total", "total_difference_qty", "total_difference_value",
   "column_break_total", "status",
-  "section_other", "amended_from", "remarks"
+  "section_other", "rejection_reason", "amended_from", "remarks"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Đối soát kho"},
@@ -28,10 +28,11 @@
    "description": "Dương = thừa (tăng tồn kho) / âm = thiếu (giảm)"},
   {"fieldname": "column_break_total", "fieldtype": "Column Break"},
   {"fieldname": "status", "fieldtype": "Select",
-   "options": "Draft\nApproved\nCancelled",
+   "options": "Draft\nApproved\nRejected\nCancelled",
    "label": "Status", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
 
   {"fieldname": "section_other", "fieldtype": "Section Break", "collapsible": 1},
+  {"fieldname": "rejection_reason", "fieldtype": "Small Text", "label": "Lý do từ chối", "read_only": 1, "depends_on": "eval:doc.status=='Rejected'"},
   {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Stock Reconciliation", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
  ],
