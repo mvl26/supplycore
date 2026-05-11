@@ -235,8 +235,12 @@ def _scan_recall_outstanding(rule) -> int:
 
 
 def _create_alerts_dedup(rule, rows, title_fn, msg_fn, ref_fn) -> int:
-    """Tạo Alert deduplicated: 1 ref → 1 open alert active."""
+    """Tạo Alert deduplicated: 1 ref → 1 open alert active.
+
+    UC-33: sau khi tạo SC Alert, gọi rule.dispatch_alert_notifications()
+    để gửi qua các channel enabled (email/sms). In-app đã được tạo qua doc."""
     created = 0
+    rule_doc = None
     for row in rows:
         ref_dt, ref_nm = ref_fn(row)
         # Check existing open alert cùng rule + reference trong 7 ngày
@@ -261,6 +265,18 @@ def _create_alerts_dedup(rule, rows, title_fn, msg_fn, ref_fn) -> int:
         a.flags.ignore_permissions = True
         a.insert()
         created += 1
+        # UC-33: dispatch email/sms qua rule
+        if rule_doc is None:
+            try:
+                rule_doc = frappe.get_doc("SC Alert Rule", rule.name)
+            except Exception:
+                rule_doc = False
+        if rule_doc:
+            try:
+                rule_doc.dispatch_alert_notifications(a)
+            except Exception as e:
+                frappe.log_error(message=str(e)[:1000],
+                                  title=f"UC-33 dispatch {rule.name}")
     return created
 
 
