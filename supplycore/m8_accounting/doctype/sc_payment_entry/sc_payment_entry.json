@@ -7,7 +7,7 @@
   "section_amount", "amount", "allocated_total",
   "column_break_amount", "approval_level", "approved_by", "approved_at",
   "section_refs", "references",
-  "section_status", "status", "amended_from", "remarks"
+  "section_status", "status", "partial_reason", "amended_from", "remarks"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thanh toán NCC"},
@@ -42,6 +42,7 @@
   {"fieldname": "status", "fieldtype": "Select",
    "options": "Draft\nPending Approval\nApproved\nCleared\nCancelled",
    "label": "Status", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "partial_reason", "fieldtype": "Small Text", "label": "Lý do thanh toán partial", "description": "UC-25 3a: khi allocated < outstanding tổng"},
   {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Payment Entry", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
  ],

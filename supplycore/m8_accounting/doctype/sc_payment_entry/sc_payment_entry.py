@@ -20,6 +20,25 @@ class SCPaymentEntry(Document):
         if self.docstatus == 0:
             self.status = "Draft"
 
+    def before_submit(self):
+        # UC-25 step 5/5a: enforce role theo approval_level
+        user_roles = set(frappe.get_roles(frappe.session.user))
+        if self.approval_level == "Executive":
+            allowed = {"SupplyCore Executive", "System Manager"}
+            if not (user_roles & allowed):
+                frappe.throw(_(
+                    "SC-E-PE-EXECUTIVE-REQUIRED: Submit PE ≥ ngưỡng yêu cầu role "
+                    "SupplyCore Executive"
+                ))
+        elif self.approval_level == "Manager":
+            allowed = {"SupplyCore Manager", "SupplyCore Executive", "System Manager"}
+            if not (user_roles & allowed):
+                frappe.throw(_(
+                    "SC-E-PE-MANAGER-REQUIRED: Submit PE yêu cầu role SupplyCore Manager"
+                ))
+        # UC-25 ngoại lệ: bank balance warning (không block)
+        self._check_bank_balance()
+
     def on_submit(self):
         self._post_gl_entries()
         self._update_invoices()
@@ -45,21 +64,52 @@ class SCPaymentEntry(Document):
                 self.allocated_total, self.amount))
 
     def _validate_references(self):
-        """Verify mỗi PI thuộc đúng supplier + outstanding ≥ allocated."""
+        """Verify mỗi PI thuộc đúng supplier + outstanding ≥ allocated + không hold."""
         for ref in self.references:
             pi = frappe.db.get_value("SC Purchase Invoice", ref.purchase_invoice,
-                                       ["supplier", "grand_total", "outstanding_amount", "docstatus"],
-                                       as_dict=True)
+                                       ["supplier", "grand_total", "outstanding_amount",
+                                        "docstatus", "payment_hold"], as_dict=True)
             if not pi or pi.docstatus != 1:
                 frappe.throw(_("PI {0} không tồn tại hoặc chưa submit").format(ref.purchase_invoice))
             if pi.supplier != self.supplier:
                 frappe.throw(_("PI {0} thuộc NCC khác: {1}").format(ref.purchase_invoice, pi.supplier))
+            # UC-25 carry from UC-24: PI hold → block
+            if pi.payment_hold:
+                frappe.throw(_(
+                    "SC-E-PE-PAYMENT-HOLD: PI {0} đang hold thanh toán "
+                    "(3-way mismatch chưa release)"
+                ).format(ref.purchase_invoice))
             ref.invoice_total = flt(pi.grand_total)
             ref.outstanding_before = flt(pi.outstanding_amount)
             if flt(ref.allocated_amount) > flt(pi.outstanding_amount) + 0.01:
                 frappe.throw(_("Phân bổ {0} cho PI {1} > còn phải trả {2}").format(
                     ref.allocated_amount, ref.purchase_invoice, pi.outstanding_amount))
             ref.outstanding_after = flt(pi.outstanding_amount) - flt(ref.allocated_amount)
+
+    def _check_bank_balance(self):
+        """UC-25 ngoại lệ: msgprint warn nếu bank balance < amount (KHÔNG block)."""
+        if self.payment_method != "Bank Transfer":
+            return
+        acc = _resolve_account("1121")
+        if not acc:
+            return
+        try:
+            balance = flt(frappe.db.sql("""
+                SELECT COALESCE(SUM(debit) - SUM(credit), 0)
+                FROM `tabSC GL Entry`
+                WHERE account = %s AND is_cancelled = 0
+            """, acc)[0][0])
+        except Exception:
+            return
+        if balance < flt(self.amount):
+            frappe.msgprint(
+                _("⚠ Số dư TK {0} hiện tại {1} thấp hơn số tiền PE ({2}). "
+                  "Tiếp tục submit nhưng cần kiểm tra dòng tiền.").format(
+                    acc,
+                    frappe.format(balance, {"fieldtype": "Currency"}),
+                    frappe.format(self.amount, {"fieldtype": "Currency"})),
+                indicator="orange", alert=True,
+            )
 
     def _determine_approval_level(self):
         threshold = _get_exec_threshold()
@@ -116,3 +166,21 @@ def _get_exec_threshold() -> float:
 def _resolve_account(code: str) -> str:
     return frappe.db.get_value("SC GL Account", code, "name") or \
            frappe.db.get_value("SC GL Account", {"account_code": code}, "name")
+
+
+@frappe.whitelist()
+def auto_load_outstanding_invoices(supplier: str, limit: int = 50) -> list:
+    """UC-25 step 2: list PI outstanding của supplier (sorted by due_date ASC).
+    Loại bỏ PI có payment_hold=1."""
+    rows = frappe.db.sql("""
+        SELECT name, supplier_invoice_no, invoice_date, due_date,
+               grand_total, paid_amount, outstanding_amount,
+               three_way_match_status, payment_hold
+        FROM `tabSC Purchase Invoice`
+        WHERE supplier = %s
+          AND docstatus = 1
+          AND outstanding_amount > 0
+          AND COALESCE(payment_hold, 0) = 0
+        ORDER BY due_date ASC LIMIT %s
+    """, (supplier, int(limit)), as_dict=True)
+    return rows
