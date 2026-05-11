@@ -137,6 +137,22 @@ def test_lead_time_zero_warns_not_throws():
         return {"pass": False, "msg": f"X threw on lead_time=0: {str(e)[:120]}"}
 
 
+def test_get_reorder_thresholds_item_fallback():
+    """No override → return item-level values."""
+    from supplycore.m2_planning.reorder import get_reorder_thresholds
+    item = _make_item("FB", safety_stock=10, reorder_level=15,
+                      max_stock=30, standard_order_qty=20, lead_time_days=7)
+    item.insert()
+    result = get_reorder_thresholds(item.name)
+    frappe.db.rollback()
+    expected = {"safety_stock": 10, "reorder_level": 15, "max_stock": 30,
+                "standard_order_qty": 20, "lead_time_days": 7}
+    for k, v in expected.items():
+        if float(result.get(k, -1)) != float(v):
+            return {"pass": False, "msg": f"X {k}: expected {v}, got {result.get(k)}"}
+    return {"pass": True, "msg": f"OK fallback returns item-level: {result}"}
+
+
 def run():
     """Run all UC-05 tests sequentially, return aggregate."""
     tests = [
@@ -146,6 +162,7 @@ def run():
         test_child_warehouse_duplicate_rejected,
         test_child_row_inversion_rejected,
         test_lead_time_zero_warns_not_throws,
+        test_get_reorder_thresholds_item_fallback,
     ]
     results = []
     for t in tests:
