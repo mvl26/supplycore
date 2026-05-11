@@ -10,6 +10,7 @@
   "column_break_summary", "outstanding_qty", "recall_resolution_pct",
   "section_action", "resolution", "resolution_date",
   "column_break_action", "approved_by", "approved_at",
+  "section_disposal", "return_pr", "write_off_entry", "clinical_notified_at",
   "section_status", "status", "amended_from", "remarks"
  ],
  "fields": [
@@ -50,6 +51,11 @@
   {"fieldname": "column_break_action", "fieldtype": "Column Break"},
   {"fieldname": "approved_by", "fieldtype": "Link", "options": "User", "label": "Người duyệt", "read_only": 1},
   {"fieldname": "approved_at", "fieldtype": "Datetime", "label": "Thời điểm duyệt", "read_only": 1},
+
+  {"fieldname": "section_disposal", "fieldtype": "Section Break", "label": "Phiếu xử lý", "collapsible": 1},
+  {"fieldname": "return_pr", "fieldtype": "Link", "options": "SC Purchase Receipt", "label": "Phiếu trả NCC", "read_only": 1, "description": "Auto-link khi gọi create_return_to_supplier()"},
+  {"fieldname": "write_off_entry", "fieldtype": "Link", "options": "SC Stock Entry", "label": "Phiếu hủy (Write Off)", "read_only": 1, "description": "Auto-link khi gọi create_write_off()"},
+  {"fieldname": "clinical_notified_at", "fieldtype": "Datetime", "label": "Thời điểm báo BS điều trị", "read_only": 1, "description": "UC-30 3a: set khi notify_clinical_staff() được gọi"},
 
   {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Trạng thái"},
   {"fieldname": "status", "fieldtype": "Select",

@@ -20,6 +20,9 @@
   "column_break_qty",
   "outstanding_qty",
   "status",
+  "recovery_date",
+  "recovered_by",
+  "clinical_notified",
   "remarks"
  ],
  "fields": [
@@ -128,6 +131,26 @@
    "label": "Trạng thái",
    "in_list_view": 1,
    "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "recovery_date",
+   "fieldtype": "Date",
+   "label": "Ngày thu hồi",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "recovered_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người thu hồi",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "clinical_notified",
+   "fieldtype": "Check",
+   "label": "Đã báo BS",
+   "default": "0",
    "allow_on_submit": 1
   },
   {

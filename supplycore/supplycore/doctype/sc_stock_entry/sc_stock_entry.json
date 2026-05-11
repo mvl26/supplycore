@@ -4,7 +4,7 @@
  "field_order": [
   "section_main", "entry_type", "posting_date", "posting_time",
   "column_break_1", "from_warehouse", "to_warehouse", "purpose",
-  "section_link", "transfer_request",
+  "section_link", "transfer_request", "recall_notice",
   "section_items", "items",
   "section_status", "total_qty", "total_value",
   "column_break_status", "pda_session_id", "remarks",
@@ -28,6 +28,9 @@
   {"fieldname": "transfer_request", "fieldtype": "Link", "options": "SC Transfer Request",
    "label": "SC Transfer Request", "in_standard_filter": 1, "read_only": 0,
    "description": "SE tạo từ TR Approved (M6)"},
+  {"fieldname": "recall_notice", "fieldtype": "Link", "options": "SC Recall Notice",
+   "label": "SC Recall Notice", "in_standard_filter": 1, "read_only": 1,
+   "description": "UC-30: SE là disposal của recall — bypass batch.blocked FEFO check"},
 
   {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Items"},
   {"fieldname": "items", "fieldtype": "Table", "options": "SC Stock Entry Item", "label": "Items", "reqd": 1},

@@ -124,7 +124,7 @@ class SCStockEntry(Document):
             if batch.expiry_date and getdate(batch.expiry_date) < today_d:
                 frappe.throw(_("Batch {0} đã hết hạn ({1})").format(row.batch, batch.expiry_date),
                              title="SC-E003 EXPIRY_TOO_CLOSE")
-            if batch.blocked:
+            if batch.blocked and not self.recall_notice:
                 frappe.throw(_("Batch {0} bị block: {1}").format(row.batch, batch.block_reason or ""),
                              title="SC-E008 BATCH_RECALLED")
             if not batch.expiry_date:

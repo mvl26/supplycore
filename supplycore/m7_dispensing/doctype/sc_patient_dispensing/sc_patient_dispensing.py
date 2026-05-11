@@ -9,8 +9,22 @@ from frappe.utils import flt
 class SCPatientDispensing(Document):
 
     def validate(self):
+        self._enforce_no_blocked_batch()
         self._calculate_bhyt()
         self._compute_totals()
+
+    def _enforce_no_blocked_batch(self):
+        """UC-30 step 4: PD không được dùng batch đang bị recall (blocked)."""
+        for row in self.items:
+            if not row.batch:
+                continue
+            b = frappe.db.get_value("SC Batch", row.batch,
+                                     ["blocked", "block_reason"], as_dict=True)
+            if b and b.blocked:
+                frappe.throw(_(
+                    "SC-E-RCL-BATCH-RECALLED: Batch {0} đang bị recall/block — {1}. "
+                    "Không thể cấp phát cho BN."
+                ).format(row.batch, b.block_reason or ""))
 
     def on_submit(self):
         if self.dispensing_request and frappe.db.exists("SC Dispensing Request", self.dispensing_request):
