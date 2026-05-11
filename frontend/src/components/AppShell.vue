@@ -84,8 +84,8 @@ async function logout() {
         <div class="flex-1"></div>
 
         <!-- User menu -->
-        <div class="relative">
-          <button @click="userMenuOpen = !userMenuOpen"
+        <div class="relative" v-click-outside="() => userMenuOpen = false">
+          <button @click.stop="userMenuOpen = !userMenuOpen"
             class="flex items-center gap-2 hover:bg-sc-bg rounded-md px-2 py-1 transition">
             <div class="w-8 h-8 rounded-full bg-sc-royal text-white flex items-center justify-center font-semibold text-sm">
               {{ (auth.user.full_name || auth.user.name || 'G').slice(0, 1).toUpperCase() }}
@@ -98,7 +98,6 @@ async function logout() {
           </button>
           <Transition name="fade">
             <div v-if="userMenuOpen"
-              v-click-outside="() => userMenuOpen = false"
               class="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-sc-lg border border-sc-border py-1 z-40">
               <div class="px-3 py-2 border-b border-sc-border">
                 <div class="text-sm font-medium">{{ auth.user.full_name || auth.user.name }}</div>

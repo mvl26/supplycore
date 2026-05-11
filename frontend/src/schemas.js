@@ -6,6 +6,152 @@
 
 export const FORM_SCHEMAS = {
   // ============================================================
+  // M0 Master Data
+  // ============================================================
+  'SC Item': {
+    sections: [
+      { title: 'Thông tin vật tư', fields: [
+        { name: 'item_code', label: 'Mã VT', type: 'Data', required: true },
+        { name: 'item_name', label: 'Tên VT', type: 'Data', required: true },
+        { name: 'item_group', label: 'Nhóm vật tư', type: 'Link', linkTo: 'SC Item Group' },
+        { name: 'uom', label: 'Đơn vị tồn kho', type: 'Link', linkTo: 'SC UOM', required: true },
+      ]},
+      { title: 'Cấu hình', fields: [
+        { name: 'is_stock_item', label: 'Quản lý tồn kho', type: 'Check', default: 1 },
+        { name: 'has_batch_no', label: 'Có quản lý lô', type: 'Check' },
+        { name: 'has_bhyt', label: 'Có BHYT', type: 'Check' },
+        { name: 'safety_stock', label: 'Tồn kho an toàn', type: 'Float' },
+        { name: 'reorder_level', label: 'Mức tái đặt', type: 'Float' },
+        { name: 'disabled', label: 'Disabled', type: 'Check' },
+      ]},
+      { title: 'Đơn vị kép (BR-BH-03)', fields: [
+        { name: 'buy_uom', label: 'Đơn vị mua (hộp/thùng)', type: 'Link', linkTo: 'SC UOM' },
+        { name: 'use_uom', label: 'Đơn vị sử dụng/BHYT', type: 'Link', linkTo: 'SC UOM' },
+        { name: 'uom_conversion_factor', label: 'Hệ số quy đổi', type: 'Float' },
+      ]},
+    ],
+  },
+  'SC Item Group': {
+    sections: [
+      { title: 'Nhóm vật tư', fields: [
+        { name: 'group_name', label: 'Tên nhóm', type: 'Data', required: true },
+        { name: 'parent_group', label: 'Nhóm cha', type: 'Link', linkTo: 'SC Item Group' },
+        { name: 'is_group', label: 'Là nhóm chứa nhóm con', type: 'Check' },
+        { name: 'description', label: 'Mô tả', type: 'Small Text' },
+      ]},
+    ],
+  },
+  'SC UOM': {
+    sections: [
+      { title: 'Đơn vị tính', fields: [
+        { name: 'uom_name', label: 'Tên UOM', type: 'Data', required: true },
+        { name: 'must_be_whole_number', label: 'Bắt buộc số nguyên', type: 'Check', default: 1 },
+      ]},
+    ],
+  },
+  'SC Supplier': {
+    sections: [
+      { title: 'Thông tin NCC', fields: [
+        { name: 'supplier_name', label: 'Tên NCC', type: 'Data', required: true },
+        { name: 'tax_id', label: 'Mã số thuế', type: 'Data', required: true },
+        { name: 'email_id', label: 'Email', type: 'Data', required: true },
+        { name: 'mobile_no', label: 'Điện thoại', type: 'Data', required: true },
+        { name: 'address', label: 'Địa chỉ', type: 'Small Text', required: true },
+      ]},
+      { title: 'Đánh giá & Trạng thái', fields: [
+        { name: 'rating', label: 'Xếp hạng (1-5)', type: 'Int' },
+        { name: 'disabled', label: 'Disabled', type: 'Check' },
+      ]},
+    ],
+  },
+  'SC Warehouse': {
+    sections: [
+      { title: 'Kho', fields: [
+        { name: 'warehouse_name', label: 'Tên kho', type: 'Data', required: true },
+        { name: 'warehouse_type', label: 'Loại kho', type: 'Select',
+          options: ['Main', 'Department', 'Quarantine', 'Damaged', 'Sample'] },
+        { name: 'parent_warehouse', label: 'Kho cha', type: 'Link', linkTo: 'SC Warehouse' },
+        { name: 'is_group', label: 'Là nhóm', type: 'Check' },
+        { name: 'disabled', label: 'Disabled', type: 'Check' },
+      ]},
+      { title: 'Thông tin liên hệ', fields: [
+        { name: 'address', label: 'Địa chỉ', type: 'Small Text' },
+        { name: 'phone', label: 'Điện thoại', type: 'Data' },
+        { name: 'in_charge', label: 'Phụ trách', type: 'Link', linkTo: 'User' },
+      ]},
+    ],
+  },
+  'SC Department': {
+    sections: [
+      { title: 'Khoa phòng', fields: [
+        { name: 'department_name', label: 'Tên khoa', type: 'Data', required: true },
+        { name: 'department_code', label: 'Mã khoa', type: 'Data' },
+        { name: 'department_type', label: 'Loại', type: 'Select',
+          options: ['Clinical', 'Surgical', 'Lab', 'Pharmacy', 'Admin', 'Other'] },
+        { name: 'disabled', label: 'Disabled', type: 'Check' },
+      ]},
+    ],
+  },
+  'SC Patient': {
+    sections: [
+      { title: 'Thông tin BN', fields: [
+        { name: 'patient_id', label: 'Mã BN', type: 'Data', required: true },
+        { name: 'patient_name', label: 'Họ tên', type: 'Data', required: true },
+        { name: 'gender', label: 'Giới tính', type: 'Select', options: ['Nam', 'Nữ', 'Khác'] },
+        { name: 'dob', label: 'Ngày sinh', type: 'Date' },
+        { name: 'phone', label: 'Điện thoại', type: 'Data' },
+        { name: 'address', label: 'Địa chỉ', type: 'Small Text' },
+      ]},
+      { title: 'BHYT', fields: [
+        { name: 'bhyt_card_no', label: 'Số thẻ BHYT', type: 'Data' },
+        { name: 'bhyt_type', label: 'Loại BHYT', type: 'Select',
+          options: ['Đúng tuyến', 'Trái tuyến', 'Không có BHYT'] },
+        { name: 'bhyt_payment_rate', label: 'Tỷ lệ BHYT (%)', type: 'Percent', default: 80 },
+        { name: 'bhyt_valid_to', label: 'Thẻ BHYT hết hạn', type: 'Date' },
+      ]},
+      { title: 'Nhập viện', fields: [
+        { name: 'current_department', label: 'Khoa hiện tại', type: 'Link', linkTo: 'SC Department' },
+        { name: 'current_bed', label: 'Giường', type: 'Data' },
+        { name: 'admission_date', label: 'Ngày nhập viện', type: 'Date' },
+        { name: 'discharge_date', label: 'Ngày xuất viện', type: 'Date' },
+      ]},
+    ],
+  },
+  'SC BHYT Code Config': {
+    sections: [
+      { title: 'Mã BHYT', fields: [
+        { name: 'bhyt_code', label: 'Mã BHYT', type: 'Data', required: true },
+        { name: 'bhyt_name', label: 'Tên BHYT', type: 'Data', required: true },
+        { name: 'bhyt_group', label: 'Nhóm BHYT', type: 'Select',
+          options: ['N01', 'N02', 'N03', 'N04', 'N05', 'N06', 'N07', 'N08', 'N09'] },
+        { name: 'payment_rate', label: 'Tỷ lệ thanh toán (%)', type: 'Percent', required: true, default: 80 },
+        { name: 'ceiling_price', label: 'Giá trần', type: 'Currency' },
+      ]},
+      { title: 'Phạm vi áp dụng', fields: [
+        { name: 'item', label: 'Vật tư', type: 'Link', linkTo: 'SC Item' },
+        { name: 'item_group', label: 'Nhóm vật tư', type: 'Link', linkTo: 'SC Item Group' },
+        { name: 'effective_from', label: 'Hiệu lực từ', type: 'Date', required: true, default: 'today' },
+        { name: 'effective_to', label: 'Hết hiệu lực', type: 'Date', hint: 'Để trống = chưa kết thúc' },
+        { name: 'is_active', label: 'Đang áp dụng', type: 'Check', default: 1 },
+      ]},
+    ],
+  },
+  'SC GL Account': {
+    sections: [
+      { title: 'Tài khoản kế toán', fields: [
+        { name: 'account_code', label: 'Số tài khoản (VAS)', type: 'Data', required: true,
+          hint: 'VD: 152, 331, 642, 1121, 1331' },
+        { name: 'account_name', label: 'Tên tài khoản', type: 'Data', required: true },
+        { name: 'account_type', label: 'Loại TK', type: 'Select',
+          options: ['Asset', 'Liability', 'Equity', 'Revenue', 'Expense'] },
+        { name: 'parent_account', label: 'TK cha', type: 'Link', linkTo: 'SC GL Account' },
+        { name: 'is_group', label: 'Là nhóm', type: 'Check' },
+        { name: 'disabled', label: 'Disabled', type: 'Check' },
+      ]},
+    ],
+  },
+
+  // ============================================================
   // M1 Contract
   // ============================================================
   'Framework Contract': {

@@ -1,6 +1,7 @@
 // 11 modules + DocType registry với column/field schema riêng
 
 export const MODULES = [
+  { id: 'm0',  code: 'M0',  name: 'Master Data',          icon: '🗄️', route: '/m0',  group: 'Setup' },
   { id: 'm1',  code: 'M1',  name: 'Hợp đồng',            icon: '📑', route: '/m1',  group: 'Strategic' },
   { id: 'm2',  code: 'M2',  name: 'Kế hoạch & Mua',       icon: '🛒', route: '/m2',  group: 'Strategic' },
   { id: 'm3',  code: 'M3',  name: 'Tiếp nhận',            icon: '📦', route: '/m3',  group: 'Operations' },
@@ -35,6 +36,113 @@ const STATUS_BADGE = {
 
 // DocType schema — fields cho List + Form + actions
 export const DT = {
+  // === M0 Master Data ===
+  'SC Item': {
+    module: 'm0', label: 'Vật tư', icon: '💊',
+    listColumns: [
+      { key: 'name', label: 'Mã VT', mono: true },
+      { key: 'item_name', label: 'Tên' },
+      { key: 'item_group', label: 'Nhóm' },
+      { key: 'uom', label: 'UOM' },
+      { key: 'is_stock_item', label: 'Tồn kho', type: 'check' },
+      { key: 'has_batch_no', label: 'Có lô', type: 'check' },
+      { key: 'safety_stock', label: 'Safety', type: 'int', align: 'right' },
+      { key: 'disabled', label: 'Disabled', type: 'check' },
+    ],
+    listFields: ['name', 'item_code', 'item_name', 'item_group', 'uom',
+                  'is_stock_item', 'has_batch_no', 'safety_stock', 'reorder_level', 'disabled'],
+  },
+  'SC Item Group': {
+    module: 'm0', label: 'Nhóm vật tư', icon: '📂',
+    listColumns: [
+      { key: 'name', label: 'Tên nhóm' },
+      { key: 'parent_group', label: 'Nhóm cha' },
+      { key: 'is_group', label: 'Là nhóm', type: 'check' },
+    ],
+    listFields: ['name', 'group_name', 'parent_group', 'is_group'],
+  },
+  'SC UOM': {
+    module: 'm0', label: 'Đơn vị tính', icon: '📏',
+    listColumns: [
+      { key: 'name', label: 'Tên UOM' },
+      { key: 'uom_name', label: 'Tên hiển thị' },
+      { key: 'must_be_whole_number', label: 'Số nguyên', type: 'check' },
+    ],
+    listFields: ['name', 'uom_name', 'must_be_whole_number'],
+  },
+  'SC Supplier': {
+    module: 'm0', label: 'Nhà cung cấp', icon: '🏢',
+    listColumns: [
+      { key: 'name', label: 'Mã NCC', mono: true },
+      { key: 'supplier_name', label: 'Tên NCC' },
+      { key: 'tax_id', label: 'MST', mono: true },
+      { key: 'email_id', label: 'Email' },
+      { key: 'mobile_no', label: 'Điện thoại' },
+      { key: 'disabled', label: 'Disabled', type: 'check' },
+    ],
+    listFields: ['name', 'supplier_name', 'tax_id', 'email_id', 'mobile_no', 'disabled'],
+  },
+  'SC Warehouse': {
+    module: 'm0', label: 'Kho', icon: '🏬',
+    listColumns: [
+      { key: 'name', label: 'Tên kho' },
+      { key: 'warehouse_type', label: 'Loại' },
+      { key: 'parent_warehouse', label: 'Kho cha' },
+      { key: 'is_group', label: 'Nhóm', type: 'check' },
+      { key: 'disabled', label: 'Disabled', type: 'check' },
+    ],
+    listFields: ['name', 'warehouse_name', 'warehouse_type', 'parent_warehouse',
+                  'is_group', 'disabled'],
+  },
+  'SC Department': {
+    module: 'm0', label: 'Khoa phòng', icon: '🏥',
+    listColumns: [
+      { key: 'name', label: 'Tên khoa' },
+      { key: 'department_code', label: 'Mã', mono: true },
+      { key: 'department_type', label: 'Loại' },
+      { key: 'disabled', label: 'Disabled', type: 'check' },
+    ],
+    listFields: ['name', 'department_name', 'department_code', 'department_type', 'disabled'],
+  },
+  'SC Patient': {
+    module: 'm0', label: 'Bệnh nhân', icon: '🧑‍⚕️',
+    listColumns: [
+      { key: 'name', label: 'Mã BN', mono: true },
+      { key: 'patient_name', label: 'Họ tên' },
+      { key: 'gender', label: 'Giới' },
+      { key: 'bhyt_card_no', label: 'Thẻ BHYT', mono: true },
+      { key: 'bhyt_type', label: 'Loại BHYT' },
+      { key: 'current_department', label: 'Khoa' },
+    ],
+    listFields: ['name', 'patient_name', 'gender', 'dob', 'bhyt_card_no',
+                  'bhyt_type', 'bhyt_payment_rate', 'current_department', 'disabled'],
+  },
+  'SC BHYT Code Config': {
+    module: 'm0', label: 'Mã BHYT', icon: '🏷️',
+    listColumns: [
+      { key: 'name', label: 'Mã', mono: true },
+      { key: 'bhyt_code', label: 'BHYT Code' },
+      { key: 'bhyt_name', label: 'Tên BHYT' },
+      { key: 'bhyt_group', label: 'Nhóm' },
+      { key: 'payment_rate', label: 'Tỷ lệ %', type: 'int', align: 'right' },
+      { key: 'ceiling_price', label: 'Giá trần', type: 'currency', align: 'right' },
+      { key: 'is_active', label: 'Active', type: 'check' },
+    ],
+    listFields: ['name', 'bhyt_code', 'bhyt_name', 'bhyt_group', 'payment_rate',
+                  'ceiling_price', 'item', 'item_group', 'is_active'],
+  },
+  'SC GL Account': {
+    module: 'm0', label: 'TK kế toán', icon: '🧾',
+    listColumns: [
+      { key: 'name', label: 'TK', mono: true },
+      { key: 'account_code', label: 'Số TK' },
+      { key: 'account_name', label: 'Tên' },
+      { key: 'account_type', label: 'Loại' },
+      { key: 'is_group', label: 'Nhóm', type: 'check' },
+    ],
+    listFields: ['name', 'account_code', 'account_name', 'account_type', 'is_group', 'disabled'],
+  },
+
   // === M1 ===
   'Framework Contract': {
     module: 'm1', label: 'Hợp đồng khung', icon: '📑',
