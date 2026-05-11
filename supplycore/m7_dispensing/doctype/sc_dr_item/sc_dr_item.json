@@ -2,7 +2,7 @@
  "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB", "istable": 1,
  "field_order": ["item", "item_name", "uom", "column_break_1",
                  "requested_qty", "approved_qty", "issued_qty",
-                 "section_batch", "batch", "remarks"],
+                 "section_batch", "batch", "shortage_note", "remarks"],
  "fields": [
   {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
   {"fieldname": "item_name", "fieldtype": "Data", "fetch_from": "item.item_name", "label": "Tên", "read_only": 1, "in_list_view": 1, "columns": 3},
@@ -13,6 +13,7 @@
   {"fieldname": "issued_qty", "fieldtype": "Float", "label": "SL đã xuất", "read_only": 1, "default": "0"},
   {"fieldname": "section_batch", "fieldtype": "Section Break"},
   {"fieldname": "batch", "fieldtype": "Link", "options": "SC Batch", "label": "Lô (FEFO sẽ pick)"},
+  {"fieldname": "shortage_note", "fieldtype": "Small Text", "label": "Ghi chú thiếu hàng", "description": "UC-21 4a: khi approved < requested"},
   {"fieldname": "remarks", "fieldtype": "Data", "label": "Ghi chú"}
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
