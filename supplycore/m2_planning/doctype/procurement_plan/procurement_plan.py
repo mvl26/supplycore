@@ -20,11 +20,14 @@ class ProcurementPlan(Document):
     def validate(self):
         self._validate_dates()
         self._compute_amounts()
+        self._validate_budget()
         if self.docstatus == 0:
             self.status = "Draft"
 
     def on_submit(self):
         self.db_set("status", "Approved")
+        if self.auto_create_mr:
+            self.make_material_request()
 
     def on_cancel(self):
         self.db_set("status", "Cancelled")
@@ -40,6 +43,21 @@ class ProcurementPlan(Document):
         for row in self.items:
             row.estimated_amount = flt(row.planned_qty) * flt(row.estimated_unit_cost)
         self.total_estimated_cost = sum(flt(r.estimated_amount) for r in self.items)
+
+    def _validate_budget(self):
+        """UC-06 5a: total > budget AND budget>0 AND not acknowledged → throw."""
+        budget = flt(self.budget)
+        if budget <= 0:
+            return
+        total = flt(self.total_estimated_cost)
+        if total > budget and not self.budget_acknowledged:
+            frappe.throw(_(
+                "SC-E-BUDGET-EXCEEDED: Tổng chi phí ({0}) vượt ngân sách ({1}). "
+                "Tick 'Xác nhận vượt ngân sách' để tiếp tục."
+            ).format(
+                frappe.format(total, {"fieldtype": "Currency"}),
+                frappe.format(budget, {"fieldtype": "Currency"}),
+            ))
 
     # ------------------------------------------------------------------
     # Action: tự nạp items với suggested qty từ consumption history
@@ -89,12 +107,13 @@ class ProcurementPlan(Document):
         for it in items:
             current_stock = self._get_current_stock(it.item_code, self.warehouse)
             avg_monthly = self._get_avg_monthly_consumption(it.item_code, self.warehouse, lookback)
+            pending_po = self._get_pending_po_qty(it.item_code, self.warehouse)
 
-            # Suggested = avg_monthly × (lead_time/30) × safety_factor − current_stock
+            # Suggested = avg × (lead_time/30) × safety_factor + item_safety − current − pending_po
             lead_months = flt(it.lead_time_days) / 30.0
             base_demand = avg_monthly * lead_months
             target_stock = base_demand * safety_factor + flt(it.item_safety_stock)
-            suggested = max(0, target_stock - current_stock)
+            suggested = max(0, target_stock - current_stock - pending_po)
 
             if suggested <= 0 and not avg_monthly:
                 continue  # đủ hàng VÀ không có lịch sử tiêu thụ → bỏ qua
@@ -104,6 +123,7 @@ class ProcurementPlan(Document):
                 "item_name": it.item_name,
                 "uom": it.stock_uom,
                 "current_stock": current_stock,
+                "pending_po_qty": round(pending_po, 2),
                 "avg_monthly_consumption": round(avg_monthly, 2),
                 "lead_time_days": it.lead_time_days,
                 "safety_stock_qty": round(it.item_safety_stock + (base_demand * (safety_factor - 1)), 2),
@@ -115,6 +135,14 @@ class ProcurementPlan(Document):
 
         self._compute_amounts()
         self.save(ignore_permissions=False)
+
+        if added == 0:
+            frappe.msgprint(
+                _("Không có dữ liệu tiêu thụ trong {0} tháng tại kho {1} — "
+                  "vui lòng nhập items thủ công.").format(lookback, self.warehouse),
+                indicator="orange", alert=True,
+            )
+
         return {"items_loaded": added, "total_estimated_cost": self.total_estimated_cost}
 
     # ------------------------------------------------------------------
@@ -253,6 +281,20 @@ class ProcurementPlan(Document):
         """, (item_code, warehouse, add_months(today(), -months)))
         total = flt(result[0][0]) if result else 0
         return total / months if months > 0 else 0
+
+    @staticmethod
+    def _get_pending_po_qty(item_code, warehouse) -> float:
+        """UC-06: tổng qty còn chờ nhận trên SC PO docstatus=1 các status pending."""
+        result = frappe.db.sql("""
+            SELECT COALESCE(SUM(GREATEST(poi.qty - COALESCE(poi.received_qty, 0), 0)), 0)
+            FROM `tabSC Purchase Order Item` poi
+            JOIN `tabSC Purchase Order` po ON po.name = poi.parent
+            WHERE poi.item = %s
+              AND poi.warehouse = %s
+              AND po.docstatus = 1
+              AND po.status IN ('Approved', 'Sent to Supplier', 'Partially Received')
+        """, (item_code, warehouse))
+        return flt(result[0][0]) if result else 0.0
 
     @staticmethod
     def _get_last_purchase_rate(item_code) -> float:
