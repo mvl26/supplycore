@@ -27,6 +27,7 @@ class SCStockEntry(Document):
     def on_submit(self):
         self._post_stock_ledger()
         self._notify_linked_transfer_request("submit")
+        self._log_fefo_override_audit()
 
     def on_cancel(self):
         self._reverse_stock_ledger()
@@ -168,6 +169,17 @@ class SCStockEntry(Document):
                 frappe.throw(_("FEFO Override row {0} cần ghi lý do").format(row.idx),
                              title="SC-E001 FEFO_OVERRIDE")
 
+        # UC-16 4a: Manager role bắt buộc khi có override
+        has_override = any(r.fefo_override and r.batch for r in self.items)
+        if has_override:
+            user_roles = set(frappe.get_roles(frappe.session.user))
+            allowed = {"SupplyCore Manager", "System Manager"}
+            if not (user_roles & allowed):
+                frappe.throw(_(
+                    "SC-E-FEFO-MANAGER-REQUIRED: FEFO Override yêu cầu xác nhận Quản lý — "
+                    "user phải có role SupplyCore Manager để submit"
+                ))
+
     # ------------------------------------------------------------------
     # SLE posting
     # ------------------------------------------------------------------
@@ -225,6 +237,22 @@ class SCStockEntry(Document):
                 remarks=f"Cancel của SLE {s.name}",
             )
             frappe.db.set_value("SC Stock Ledger Entry", s.name, "is_cancelled", 1)
+
+
+    def _log_fefo_override_audit(self):
+        """UC-16 4a: record approver + insert Frappe Comment để audit override."""
+        for row in self.items:
+            if row.fefo_override and row.batch:
+                row.db_set("fefo_override_approved_by", frappe.session.user)
+                row.db_set("fefo_override_approved_at", frappe.utils.now())
+                try:
+                    self.add_comment(
+                        "Comment",
+                        text=(f"<b>FEFO Override</b> — row {row.idx} batch {row.batch}: "
+                              f"{frappe.utils.escape_html(row.fefo_override_reason or '')}"),
+                    )
+                except Exception as e:
+                    frappe.log_error(message=str(e)[:500], title="UC-16 fefo_override audit")
 
 
 def _is_fefo_strict():

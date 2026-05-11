@@ -87,6 +87,31 @@ def get_suggested_batches(item_code: str, warehouse: str, qty: float = 0, uom: s
 
 
 @frappe.whitelist()
+def auto_pick_fefo(item_code: str, warehouse: str, qty: float) -> dict:
+    """UC-16 2a + ngoại lệ: auto-pick batches theo FEFO + split qty nếu cần.
+
+    Returns:
+      {
+        "picked": [{batch_no, qty, expiry_date, ...}, ...],
+        "single_batch": bool — chỉ 1 batch + đủ qty,
+        "fully_satisfied": bool,
+        "shortfall": float,
+        "total_picked": float
+      }
+    """
+    qty = flt(qty)
+    suggested = get_suggested_batches(item_code, warehouse, qty)
+    picked = [b for b in suggested["batches"] if flt(b["suggested_qty"]) > 0]
+    return {
+        "picked":           picked,
+        "single_batch":     len(picked) == 1 and not suggested["shortfall"],
+        "fully_satisfied":  suggested["fully_satisfied"],
+        "shortfall":        suggested["shortfall"],
+        "total_picked":     sum(flt(b["suggested_qty"]) for b in picked),
+    }
+
+
+@frappe.whitelist()
 def check_batch_status(batch_no: str) -> dict:
     """Trả thông tin nhanh về 1 batch — phục vụ UI validate trước khi submit."""
     b = frappe.db.get_value("SC Batch", batch_no,
