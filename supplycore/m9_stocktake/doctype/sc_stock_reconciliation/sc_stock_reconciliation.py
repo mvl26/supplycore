@@ -13,8 +13,28 @@ class SCStockReconciliation(Document):
         self._compute_per_row()
         self._compute_totals()
         self._validate_reason_per_row()
+        self._set_investigation_flag()
         if self.docstatus == 0 and self.status not in ("Rejected",):
             self.status = "Draft"
+
+    def _set_investigation_flag(self):
+        """UC-28 ngoại lệ: |Δ value| > threshold → flag investigation."""
+        from frappe.utils import flt as _flt
+        threshold = _flt(frappe.db.get_single_value(
+            "SupplyCore Settings", "large_variance_threshold") or 10_000_000)
+        if abs(flt(self.total_difference_value)) > threshold:
+            self.requires_investigation = 1
+            if self.is_new() and self.docstatus == 0:
+                frappe.msgprint(
+                    _("⚠ Chênh lệch giá trị {0} > {1} — yêu cầu điều tra "
+                      "trước khi submit").format(
+                        frappe.format(abs(flt(self.total_difference_value)),
+                                       {"fieldtype": "Currency"}),
+                        frappe.format(threshold, {"fieldtype": "Currency"})),
+                    indicator="orange", alert=True,
+                )
+        else:
+            self.requires_investigation = 0
 
     def before_submit(self):
         # UC-19 step 6: Manager / Accountant role bắt buộc
@@ -31,6 +51,18 @@ class SCStockReconciliation(Document):
                 frappe.throw(_(
                     "SC-E-SR-NEGATIVE: Item {0}: actual_qty không thể âm"
                 ).format(r.item))
+        # UC-28 ngoại lệ: investigation reqd
+        if self.requires_investigation:
+            if not (self.investigation_notes and str(self.investigation_notes).strip()):
+                threshold = flt(frappe.db.get_single_value(
+                    "SupplyCore Settings", "large_variance_threshold") or 10_000_000)
+                frappe.throw(_(
+                    "SC-E-SR-INVESTIGATION-REQUIRED: Chênh lệch giá trị > {0} — "
+                    "phải nhập 'Investigation notes' trước khi submit"
+                ).format(frappe.format(threshold, {"fieldtype": "Currency"})))
+            if not self.investigated_by:
+                self.investigated_by = frappe.session.user
+                self.investigated_at = frappe.utils.now()
 
     def on_submit(self):
         self._post_stock_ledger()
@@ -59,6 +91,38 @@ class SCStockReconciliation(Document):
         self.db_set("status", "Rejected")
         self.db_set("rejection_reason", reason)
         return {"status": "Rejected"}
+
+    @frappe.whitelist()
+    def get_reconciliation_minutes_data(self):
+        """UC-28 step 5: data cho biên bản đối soát + chữ ký placeholders."""
+        return {
+            "name": self.name,
+            "posting_date": str(self.posting_date) if self.posting_date else "",
+            "warehouse": self.warehouse,
+            "count_sheet": self.count_sheet,
+            "items": [{
+                "item": r.item, "uom": r.uom, "batch": r.batch,
+                "bin_location": r.bin_location,
+                "system_qty": flt(r.system_qty),
+                "actual_qty": flt(r.actual_qty),
+                "difference": flt(r.difference),
+                "amount_change": flt(r.amount_change),
+                "reason": r.reason,
+                "remarks": r.remarks,
+            } for r in self.items],
+            "total_difference_qty": flt(self.total_difference_qty),
+            "total_difference_value": flt(self.total_difference_value),
+            "requires_investigation": int(self.requires_investigation or 0),
+            "investigation_notes": self.investigation_notes,
+            "investigated_by": self.investigated_by,
+            "investigated_at": str(self.investigated_at) if self.investigated_at else "",
+            "signatures": {
+                "storekeeper": "_____________________",
+                "accountant": "_____________________",
+                "manager": "_____________________",
+            },
+            "url": f"/app/sc-stock-reconciliation/{self.name}",
+        }
 
     @frappe.whitelist()
     def load_from_count_sheet(self):

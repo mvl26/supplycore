@@ -7,7 +7,9 @@
   "section_items", "items",
   "section_total", "total_difference_qty", "total_difference_value",
   "column_break_total", "status",
-  "section_other", "rejection_reason", "amended_from", "remarks"
+  "section_other", "rejection_reason",
+  "requires_investigation", "investigation_notes", "investigated_by", "investigated_at",
+  "amended_from", "remarks"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Đối soát kho"},
@@ -33,6 +35,10 @@
 
   {"fieldname": "section_other", "fieldtype": "Section Break", "collapsible": 1},
   {"fieldname": "rejection_reason", "fieldtype": "Small Text", "label": "Lý do từ chối", "read_only": 1, "depends_on": "eval:doc.status=='Rejected'"},
+  {"fieldname": "requires_investigation", "fieldtype": "Check", "label": "Yêu cầu điều tra", "read_only": 1, "default": "0", "description": "Auto-set khi |total_difference_value| > Settings.large_variance_threshold"},
+  {"fieldname": "investigation_notes", "fieldtype": "Small Text", "label": "Ghi chú điều tra", "depends_on": "requires_investigation", "description": "Bắt buộc khi requires_investigation=1"},
+  {"fieldname": "investigated_by", "fieldtype": "Link", "options": "User", "label": "Người điều tra", "read_only": 1, "depends_on": "requires_investigation"},
+  {"fieldname": "investigated_at", "fieldtype": "Datetime", "label": "Thời điểm điều tra", "read_only": 1, "depends_on": "requires_investigation"},
   {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Stock Reconciliation", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
  ],

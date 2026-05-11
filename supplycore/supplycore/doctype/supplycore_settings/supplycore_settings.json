@@ -11,6 +11,7 @@
   "po_approval_threshold",
   "po_response_reminder_days",
   "fc_executive_threshold",
+  "large_variance_threshold",
   "audit_log_retention_days",
   "section_fefo",
   "fefo_strict_mode",
@@ -42,6 +43,7 @@
   {"fieldname": "fc_executive_threshold", "fieldtype": "Currency", "options": "VND",
    "label": "Ngưỡng Executive duyệt FC (VND)", "default": "100000000",
    "description": "Framework Contract total_value ≥ ngưỡng → cần Lãnh đạo duyệt thêm sau Quản lý"},
+  {"fieldname": "large_variance_threshold", "fieldtype": "Currency", "options": "VND", "label": "Ngưỡng chênh lệch SR lớn (VND)", "default": "10000000", "description": "UC-28: |total_difference_value| > ngưỡng → require investigation_notes trước submit"},
   {"fieldname": "audit_log_retention_days", "fieldtype": "Int", "label": "Lưu audit log (ngày)", "default": "2555", "description": "Mặc định 7 năm theo quy định kế toán"},
 
   {"fieldname": "section_fefo", "fieldtype": "Section Break", "label": "FEFO & Hạn dùng"},
