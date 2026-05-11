@@ -237,6 +237,56 @@ def test_create_po_blocked_when_pending():
         return {"pass": False, "msg": f"X setup threw: {str(e)[:120]}"}
 
 
+def test_auto_create_mr_when_below_reorder():
+    """UC-07 luồng 1a: tồn ≤ reorder_level → scheduler auto-tạo Draft MR."""
+    from frappe.utils import flt
+    from supplycore.m2_planning.tasks import check_reorder_levels
+    from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+
+    wh = _pick_warehouse()
+    item = _make_item("AUTORE", reorder_level=20, max_stock=100, standard_order_qty=50)
+
+    # Seed current stock = 5 (below reorder 20)
+    SCStockLedgerEntry.post(
+        item=item.name, warehouse=wh, qty_change=5,
+        voucher_type="Manual", voucher_no=f"UC07-AUTO-{random_string(6)}",
+        posting_date=today(),
+    )
+
+    # Clear any existing auto-generated MR for this warehouse today
+    existing = frappe.get_all("SC Material Request", filters={
+        "warehouse": wh, "auto_generated": 1, "docstatus": 0,
+        "transaction_date": today(),
+    }, pluck="name")
+    for n in existing:
+        frappe.delete_doc("SC Material Request", n, force=True, ignore_permissions=True)
+
+    res = check_reorder_levels()
+    # Find created MR
+    mrs = frappe.get_all("SC Material Request", filters={
+        "warehouse": wh, "auto_generated": 1, "docstatus": 0,
+        "transaction_date": today(),
+    }, fields=["name"])
+    matching_mr = None
+    for mr_row in mrs:
+        items = frappe.get_all("SC Material Request Item",
+            filters={"parent": mr_row.name, "item": item.name},
+            fields=["item", "qty"])
+        if items:
+            matching_mr = (mr_row.name, items[0])
+            break
+
+    frappe.db.rollback()
+
+    if not matching_mr:
+        return {"pass": False, "msg": f"X no Draft MR created for item {item.name}. result={res}"}
+    mr_name, mr_item = matching_mr
+    # Expected qty = standard_order_qty = 50
+    if abs(flt(mr_item.qty) - 50) < 0.01:
+        return {"pass": True, "msg": f"OK Draft MR {mr_name} created with qty=50 (EOQ)"}
+    return {"pass": False, "msg": f"X qty mismatch: expected 50, got {mr_item.qty}"}
+
+
 def test_fc_price_auto_fetched():
     """row.framework_contract set → estimated_unit_cost = FC unit_price."""
     from frappe.utils import flt
@@ -286,6 +336,7 @@ def run():
         test_reject_requires_reason,
         test_reject_with_reason_ok,
         test_create_po_blocked_when_pending,
+        test_auto_create_mr_when_below_reorder,
         test_fc_price_auto_fetched,
     ]
     results = []

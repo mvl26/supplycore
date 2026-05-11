@@ -33,9 +33,24 @@
 
 ## Luồng thay thế
 
-### 1a — Tồn kho ≤ Reorder Level
+### 1a — Tồn kho ≤ Reorder Level (auto-tạo Draft MR)
 
-Đã có qua UC-05/UC-06: Procurement Plan button **"Tự nạp theo Reorder Level"** tạo plan → submit → auto-MR (nếu `auto_create_mr=1` trên plan). Hoặc M11 alert `low_stock` → button "Tạo Material Request bổ sung" trên alert. **KHÔNG implement automation mới trong UC-07.**
+Daily scheduler `supplycore.m2_planning.tasks.check_reorder_levels` (đăng ký trong `hooks.py.scheduler_events.daily`):
+
+1. Enumerate cặp (item, warehouse) có `reorder_level > 0`:
+   - Per-warehouse override rows (SC Item Reorder)
+   - Item-level (SC Item) cho mọi warehouse có SLE
+2. Mỗi cặp: tính `current_qty` = SUM(SLE.qty_change). Nếu `current ≤ reorder_level` → ứng viên.
+3. Group ứng viên theo warehouse: tạo 1 Draft MR / warehouse với:
+   - `request_type=Purchase`, `auto_generated=1`, `transaction_date=today`, `schedule_date=today+14`
+   - Items: qty = `standard_order_qty` (nếu set) else `max_stock - current` else `reorder*2 - current`
+4. Dedup: skip warehouse đã có Draft auto_generated MR cùng `transaction_date=today`
+5. Skip items không có NCC (log warning, không fail task)
+6. Email summary cho Storekeeper/Manager (full danh sách + link Draft MR vừa tạo)
+
+Helpers: `_find_reorder_candidates()`, `_get_current_qty()`, `_compute_qty()`, `_create_reorder_mr()`, `_send_reorder_summary()` — all in `m2_planning/tasks.py`.
+
+User sau khi nhận email mở Draft MR → review qty → Submit → workflow chính tiếp tục từ bước 5.
 
 ### 6a — Từ chối
 
@@ -275,11 +290,11 @@ def create_purchase_orders(self):
 | `test_reject_requires_reason` | reject() không reason → SC-E-REJECT-REASON |
 | `test_reject_with_reason_ok` | reject("lý do") → status=Rejected + rejection_reason populated |
 | `test_create_po_blocked_when_pending` | submit (Pending) + create_purchase_orders → SC-E-MR-NOT-APPROVED |
+| `test_auto_create_mr_when_below_reorder` | item tồn ≤ reorder + run check_reorder_levels → Draft MR auto-tạo với qty=standard_order_qty |
 | `test_fc_price_auto_fetched` | row.framework_contract set → estimated_unit_cost = FC unit_price |
 
 ## Out-of-scope (KHÔNG làm trong UC-07)
 
-- Auto-create MR từ low-stock alert (đã có via UC-05 alert→action button)
 - UI button "Duyệt"/"Từ chối" trên form (JS — defer; method whitelisted đủ)
 - Workflow approver tier (Manager vs Executive) — chỉ 1 Manager role
 - In-app realtime notification (chỉ email)
@@ -291,4 +306,5 @@ def create_purchase_orders(self):
 2. `supplycore/supplycore/doctype/sc_material_request/sc_material_request.json` — 2 fields + status options
 3. `supplycore/supplycore/doctype/sc_material_request_item/sc_material_request_item.json` — `framework_contract` field
 4. `supplycore/supplycore/doctype/sc_material_request/sc_material_request.py` — validate guards + on_submit Pending + approve/reject + helpers + gate PO
-5. `supplycore/tests/uc07_test.py` — 10 test scenarios
+5. `supplycore/m2_planning/tasks.py` — rewrite `check_reorder_levels` dùng SC * doctypes + auto-tạo Draft MR (UC-07 luồng 1a)
+6. `supplycore/tests/uc07_test.py` — 11 test scenarios
