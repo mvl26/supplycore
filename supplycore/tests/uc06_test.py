@@ -32,6 +32,10 @@ def _make_item(suffix: str, **kwargs):
     item.is_stock_item = 1
     item.is_purchase_item = 1
     item.lead_time_days = 30
+    # UC-07 requires default_supplier cho Purchase MR
+    sup = frappe.db.get_value("SC Supplier", {"disabled": 0}, "name")
+    if sup:
+        item.default_supplier = sup
     item.flags.ignore_permissions = True
     for k, v in kwargs.items():
         setattr(item, k, v)
