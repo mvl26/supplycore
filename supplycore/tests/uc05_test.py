@@ -38,9 +38,37 @@ def test_negative_threshold_rejected():
         return {"pass": False, "msg": f"Wrong error code: {msg[:120]}"}
 
 
+def test_min_max_inversion_rejected():
+    """safety=10, reorder=5, max=20 → throw SC-E-MIN-MAX."""
+    item = _make_item("INV", safety_stock=10, reorder_level=5, max_stock=20)
+    try:
+        item.insert()
+        return {"pass": False, "msg": "X did not throw on safety>reorder"}
+    except frappe.ValidationError as e:
+        msg = str(e)
+        if "SC-E-MIN-MAX" in msg:
+            return {"pass": True, "msg": f"OK: {msg[:120]}"}
+        return {"pass": False, "msg": f"Wrong error: {msg[:120]}"}
+
+
+def test_valid_thresholds_pass():
+    """safety=5, reorder=10, max=20 → save OK."""
+    item = _make_item("OK", safety_stock=5, reorder_level=10, max_stock=20)
+    try:
+        item.insert()
+        frappe.db.rollback()
+        return {"pass": True, "msg": f"OK item {item.name} saved"}
+    except Exception as e:
+        return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
+
+
 def run():
     """Run all UC-05 tests sequentially, return aggregate."""
-    tests = [test_negative_threshold_rejected]
+    tests = [
+        test_negative_threshold_rejected,
+        test_min_max_inversion_rejected,
+        test_valid_thresholds_pass,
+    ]
     results = []
     for t in tests:
         try:
