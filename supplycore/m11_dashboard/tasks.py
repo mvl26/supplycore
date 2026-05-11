@@ -133,21 +133,60 @@ def _scan_fc_remaining_low(rule) -> int:
 
 
 def _scan_low_stock(rule) -> int:
-    rows = frappe.db.sql("""
-        SELECT i.name AS item, i.item_name, COALESCE(SUM(sle.qty_change), 0) AS qty,
+    """Scan items below safety_stock.
+
+    UC-05: support per-warehouse override via SC Item Reorder child rows.
+    - Items với override rows (safety_stock>0) → scan per (item, warehouse)
+    - Items KHÔNG có override rows → fallback item-level (logic cũ)
+    """
+    rows_wh = frappe.db.sql("""
+        SELECT r.parent AS item, i.item_name, r.warehouse,
+               COALESCE(SUM(sle.qty_change), 0) AS qty,
+               r.safety_stock
+        FROM `tabSC Item Reorder` r
+        JOIN `tabSC Item` i ON i.name = r.parent
+        LEFT JOIN `tabSC Stock Ledger Entry` sle
+            ON sle.item = r.parent AND sle.warehouse = r.warehouse
+           AND sle.is_cancelled = 0
+        WHERE i.disabled = 0 AND i.is_stock_item = 1
+          AND r.parenttype = 'SC Item'
+          AND COALESCE(r.safety_stock, 0) > 0
+        GROUP BY r.parent, r.warehouse, r.safety_stock, i.item_name
+        HAVING qty < r.safety_stock
+        LIMIT 50
+    """, as_dict=True)
+
+    rows_item = frappe.db.sql("""
+        SELECT i.name AS item, i.item_name, NULL AS warehouse,
+               COALESCE(SUM(sle.qty_change), 0) AS qty,
                i.safety_stock
         FROM `tabSC Item` i
         LEFT JOIN `tabSC Stock Ledger Entry` sle
             ON sle.item = i.name AND sle.is_cancelled = 0
-        WHERE i.disabled = 0 AND i.is_stock_item = 1 AND i.safety_stock > 0
-        GROUP BY i.name
+        WHERE i.disabled = 0 AND i.is_stock_item = 1
+          AND i.safety_stock > 0
+          AND NOT EXISTS (
+              SELECT 1 FROM `tabSC Item Reorder` r
+              WHERE r.parent = i.name AND r.parenttype = 'SC Item'
+                AND COALESCE(r.safety_stock, 0) > 0
+          )
+        GROUP BY i.name, i.item_name, i.safety_stock
         HAVING qty < i.safety_stock
         LIMIT 50
     """, as_dict=True)
-    return _create_alerts_dedup(rule, rows, lambda r:
-        f"Item {r.item} dưới safety stock",
-        lambda r: f"{r.item_name}: tồn {r.qty} < safety {r.safety_stock}",
-        lambda r: ("SC Item", r.item))
+
+    def _title(r):
+        if r.warehouse:
+            return f"Item {r.item} dưới safety stock @ {r.warehouse}"
+        return f"Item {r.item} dưới safety stock"
+
+    def _msg(r):
+        if r.warehouse:
+            return f"{r.item_name} @ {r.warehouse}: tồn {r.qty} < safety {r.safety_stock}"
+        return f"{r.item_name}: tồn {r.qty} < safety {r.safety_stock}"
+
+    return _create_alerts_dedup(rule, rows_wh + rows_item, _title, _msg,
+                                  lambda r: ("SC Item", r.item))
 
 
 def _scan_overdue_payment(rule) -> int:

@@ -192,6 +192,90 @@ def test_get_reorder_thresholds_partial_override():
     return {"pass": False, "msg": f"X mismatch: {result}"}
 
 
+def _ensure_low_stock_rule():
+    """Get or create an active SC Alert Rule for low_stock."""
+    existing = frappe.db.exists("SC Alert Rule", {"alert_type": "low_stock", "enabled": 1})
+    if existing:
+        return frappe.get_doc("SC Alert Rule", existing)
+    rule = frappe.new_doc("SC Alert Rule")
+    rule.title = "UC-05 Low Stock Test"
+    rule.alert_type = "low_stock"
+    rule.severity = "Warning"
+    rule.enabled = 1
+    rule.flags.ignore_permissions = True
+    rule.insert()
+    return rule
+
+
+def test_low_stock_alert_per_warehouse():
+    """Item có override WH-X safety=50, qty WH-X=30 → alert chỉ tạo cho (item, WH-X)."""
+    from supplycore.m11_dashboard.tasks import _scan_low_stock
+    from frappe.utils import today
+
+    wh_a = _ensure_test_warehouse("UC05 Alert WH A")
+    wh_b = _ensure_test_warehouse("UC05 Alert WH B")
+    item = _make_item("ALERTWH", safety_stock=0)  # item-level=0, only override matters
+    item.append("reorder_levels", {"warehouse": wh_a, "safety_stock": 50})
+    item.insert()
+
+    # Seed SLE: WH-A has 30 (below safety 50), WH-B has 200 (no override)
+    from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+    for (wh, qty) in [(wh_a, 30), (wh_b, 200)]:
+        SCStockLedgerEntry.post(
+            item=item.name, warehouse=wh, qty_change=qty,
+            voucher_type="Stock Entry", voucher_no=f"UC05-ALERTWH-{wh[-4:]}",
+            posting_date=today(),
+        )
+
+    frappe.db.delete("SC Alert", {"reference_doctype": "SC Item", "reference_name": item.name})
+
+    rule = _ensure_low_stock_rule()
+    rule_proxy = frappe._dict({
+        "name": rule.name, "alert_type": "low_stock", "severity": "Warning"
+    })
+    _scan_low_stock(rule_proxy)
+    alerts = frappe.get_all("SC Alert",
+        filters={"reference_doctype": "SC Item", "reference_name": item.name, "resolved": 0},
+        fields=["message"])
+    frappe.db.rollback()
+
+    if len(alerts) == 1 and wh_a in alerts[0].message:
+        return {"pass": True, "msg": f"OK 1 alert for WH-A only: {alerts[0].message[:120]}"}
+    return {"pass": False, "msg": f"X expected 1 alert {wh_a}, got {len(alerts)}: {[a.message[:60] for a in alerts]}"}
+
+
+def test_low_stock_alert_item_level_regression():
+    """Item KHÔNG có override + safety_stock=10 + qty=5 → alert tạo (logic cũ)."""
+    from supplycore.m11_dashboard.tasks import _scan_low_stock
+    from frappe.utils import today
+
+    wh = _ensure_test_warehouse("UC05 Alert WH E")
+    item = _make_item("ALERTLEG", safety_stock=10)  # no override rows
+    item.insert()
+
+    from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+    SCStockLedgerEntry.post(
+        item=item.name, warehouse=wh, qty_change=5,
+        voucher_type="Stock Entry", voucher_no="UC05-ALERTLEG-TEST",
+        posting_date=today(),
+    )
+
+    frappe.db.delete("SC Alert", {"reference_doctype": "SC Item", "reference_name": item.name})
+    rule = _ensure_low_stock_rule()
+    rule_proxy = frappe._dict({
+        "name": rule.name, "alert_type": "low_stock", "severity": "Warning"
+    })
+    _scan_low_stock(rule_proxy)
+    alerts = frappe.get_all("SC Alert",
+        filters={"reference_doctype": "SC Item", "reference_name": item.name, "resolved": 0},
+        fields=["message"])
+    frappe.db.rollback()
+
+    if len(alerts) == 1 and "@ " not in alerts[0].message:
+        return {"pass": True, "msg": f"OK item-level alert: {alerts[0].message[:120]}"}
+    return {"pass": False, "msg": f"X expected 1 item-level alert, got {len(alerts)}"}
+
+
 def run():
     """Run all UC-05 tests sequentially, return aggregate."""
     tests = [
@@ -204,6 +288,8 @@ def run():
         test_get_reorder_thresholds_item_fallback,
         test_get_reorder_thresholds_full_override,
         test_get_reorder_thresholds_partial_override,
+        test_low_stock_alert_per_warehouse,
+        test_low_stock_alert_item_level_regression,
     ]
     results = []
     for t in tests:
