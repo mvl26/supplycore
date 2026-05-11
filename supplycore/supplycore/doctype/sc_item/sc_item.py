@@ -3,6 +3,10 @@ from frappe import _
 from frappe.model.document import Document
 
 
+_THRESHOLD_FIELDS = ("safety_stock", "reorder_level", "max_stock",
+                     "standard_order_qty", "lead_time_days")
+
+
 class SCItem(Document):
 
     def validate(self):
@@ -21,12 +25,13 @@ class SCItem(Document):
         self._validate_reorder_rows()
 
     def _validate_thresholds(self):
-        """UC-05: 4 ngưỡng + lead_time không âm; nếu max_stock>0 phải safety ≤ reorder ≤ max."""
-        for fld in ("safety_stock", "reorder_level", "max_stock",
-                    "standard_order_qty", "lead_time_days"):
+        """UC-05: 5 trường ngưỡng và lead_time không được âm."""
+        meta = self.meta
+        for fld in _THRESHOLD_FIELDS:
             val = self.get(fld) or 0
             if val < 0:
-                frappe.throw(_("SC-E-NEGATIVE: {0} không được âm").format(fld))
+                label = meta.get_label(fld) or fld
+                frappe.throw(_("SC-E-NEGATIVE: {0} không được âm").format(label))
 
     def _validate_lead_time(self):
         # lead_time=0 → warning only (Task 6)

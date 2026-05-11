@@ -13,7 +13,10 @@ def _make_item(suffix: str, **kwargs) -> "frappe.model.document.Document":
     item = frappe.new_doc("SC Item")
     item.item_code = f"UC05-{suffix}-{random_string(5)}"
     item.item_name = f"UC-05 test {suffix}"
-    item.uom = frappe.db.get_value("SC UOM", {}, "name") or "Cái"
+    uom_name = frappe.db.get_value("SC UOM", {}, "name")
+    if not uom_name:
+        frappe.throw("_make_item: không tìm thấy SC UOM nào — chạy seed trước")
+    item.uom = uom_name
     item.is_stock_item = 1
     item.is_purchase_item = 1
     item.flags.ignore_permissions = True
