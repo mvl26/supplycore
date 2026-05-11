@@ -8,8 +8,10 @@
   "column_break_flags", "is_medical_supply", "inspection_required_before_purchase", "barcodes_section", "barcodes",
   "section_uom", "buy_uom", "use_uom", "uom_conversion_factor",
   "column_break_uom", "valuation_method",
-  "section_planning", "safety_stock", "lead_time_days",
-  "column_break_planning", "min_shelf_life_days", "default_supplier",
+  "section_planning", "safety_stock", "reorder_level", "max_stock",
+  "column_break_planning", "standard_order_qty", "lead_time_days",
+  "min_shelf_life_days", "default_supplier",
+  "section_reorder_overrides", "reorder_levels",
   "section_wms", "default_bin_location", "default_warehouse",
   "section_bhyt", "has_bhyt", "bhyt_code", "bhyt_group",
   "column_break_bhyt", "bhyt_payment_rate"
@@ -43,11 +45,17 @@
   {"fieldname": "valuation_method", "fieldtype": "Select", "options": "\nFIFO\nWeighted Average\nFEFO", "label": "Phương pháp tính giá", "default": "FEFO"},
 
   {"fieldname": "section_planning", "fieldtype": "Section Break", "label": "Kế hoạch & FEFO"},
-  {"fieldname": "safety_stock", "fieldtype": "Float", "label": "Safety stock"},
-  {"fieldname": "lead_time_days", "fieldtype": "Int", "label": "Lead time NCC (ngày)", "default": "30"},
+  {"fieldname": "safety_stock", "fieldtype": "Float", "label": "Tồn kho an toàn", "non_negative": 1},
+  {"fieldname": "reorder_level", "fieldtype": "Float", "label": "Mức tái đặt hàng", "non_negative": 1},
+  {"fieldname": "max_stock", "fieldtype": "Float", "label": "Tồn kho tối đa", "non_negative": 1},
   {"fieldname": "column_break_planning", "fieldtype": "Column Break"},
+  {"fieldname": "standard_order_qty", "fieldtype": "Float", "label": "Số lượng đặt hàng chuẩn (EOQ)", "non_negative": 1},
+  {"fieldname": "lead_time_days", "fieldtype": "Int", "label": "Lead time NCC (ngày)", "default": "30"},
   {"fieldname": "min_shelf_life_days", "fieldtype": "Int", "label": "Hạn dùng tối thiểu khi nhập (ngày)", "default": "30"},
   {"fieldname": "default_supplier", "fieldtype": "Link", "options": "SC Supplier", "label": "NCC mặc định"},
+
+  {"fieldname": "section_reorder_overrides", "fieldtype": "Section Break", "label": "Ngưỡng tái đặt theo kho", "collapsible": 1, "depends_on": "eval:!doc.__islocal"},
+  {"fieldname": "reorder_levels", "fieldtype": "Table", "options": "SC Item Reorder", "label": "Mức tồn theo kho"},
 
   {"fieldname": "section_wms", "fieldtype": "Section Break", "label": "WMS", "collapsible": 1},
   {"fieldname": "default_bin_location", "fieldtype": "Link", "options": "Bin Location", "label": "Bin mặc định"},
@@ -72,7 +80,7 @@
   {"role": "Pharmacy Officer", "read": 1, "write": 1, "report": 1},
   {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1}
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
  "module": "Supplycore", "name": "SC Item", "title_field": "item_name",
  "search_fields": "item_code,item_name,bhyt_code",
  "sort_field": "modified", "sort_order": "DESC"
