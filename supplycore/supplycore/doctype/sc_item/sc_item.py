@@ -46,5 +46,30 @@ class SCItem(Document):
         pass
 
     def _validate_reorder_rows(self):
-        # Per-warehouse rows — Task 5 implements
-        pass
+        """UC-05: per-warehouse override rows. Warehouse unique trong table;
+        mỗi row có max_stock>0 phải thỏa safety ≤ reorder ≤ max."""
+        seen = set()
+        for row in (self.get("reorder_levels") or []):
+            if not row.warehouse:
+                continue
+            if row.warehouse in seen:
+                frappe.throw(_(
+                    "SC-E-DUPLICATE-WAREHOUSE: Kho {0} đã có override — không trùng"
+                ).format(row.warehouse))
+            seen.add(row.warehouse)
+
+            for fld in ("safety_stock", "reorder_level",
+                        "max_stock", "standard_order_qty"):
+                val = row.get(fld) or 0
+                if val < 0:
+                    frappe.throw(_(
+                        "SC-E-NEGATIVE: row {0}.{1} không được âm"
+                    ).format(row.warehouse, fld))
+
+            safety = row.safety_stock or 0
+            reorder = row.reorder_level or 0
+            max_s = row.max_stock or 0
+            if max_s > 0 and not (safety <= reorder <= max_s):
+                frappe.throw(_(
+                    "SC-E-MIN-MAX: Row kho {0} — Safety ({1}) ≤ Reorder ({2}) ≤ Max ({3})"
+                ).format(row.warehouse, safety, reorder, max_s))
