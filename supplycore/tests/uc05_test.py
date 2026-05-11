@@ -47,6 +47,8 @@ def _ensure_test_warehouse(name: str) -> str:
     )
     if not all_wh:
         frappe.throw("_ensure_test_warehouse: không tìm thấy SC Warehouse nào — chạy seed trước")
+    if len(all_wh) < 2:
+        frappe.throw("_ensure_test_warehouse: cần ≥2 SC Warehouse trong seed (hiện chỉ có 1)")
     # Use a stable offset keyed on the last character of `name` to get distinct WHs
     idx = 0 if name.endswith("A") else 1 if name.endswith("B") else 0
     idx = min(idx, len(all_wh) - 1)
