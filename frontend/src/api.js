@@ -141,13 +141,29 @@ export async function cancelDoc(doctype, name) {
   return call('frappe.client.cancel', { doctype, name })
 }
 
-// Run a doctype-method
+// Run a doctype instance method (whitelisted via @frappe.whitelist on doc class)
 export async function runDocMethod(doctype, name, method, args = {}) {
-  return call('frappe.client.run_doc_method', {
+  // Frappe v15: use /api/method/run_doc_method (mapped to frappe.handler.run_doc_method)
+  const params = new URLSearchParams({
     method,
-    docs: JSON.stringify({ doctype, name }),
-    ...(Object.keys(args).length ? { args: JSON.stringify(args) } : {}),
+    dt: doctype,
+    dn: name,
   })
+  if (Object.keys(args).length) params.set('args', JSON.stringify(args))
+  const res = await fetch(`/api/method/run_doc_method?${params.toString()}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Accept': 'application/json',
+      'X-Frappe-CSRF-Token': _csrf || getCsrf() || '',
+    },
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = parseFrappeError(body) || `HTTP ${res.status}`
+    throw new Error(msg)
+  }
+  return body
 }
 
 // Get DocType meta (fields, options)
