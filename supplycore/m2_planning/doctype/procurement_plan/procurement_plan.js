@@ -44,6 +44,34 @@ frappe.ui.form.on("Procurement Plan", {
             }, __("Hành động"));
         }
 
+        if (frm.doc.docstatus === 0 && frm.doc.warehouse) {
+            frm.add_custom_button(__("Tự nạp theo Reorder Level (UC-05)"), () => {
+                frappe.confirm(
+                    __("Sẽ tự nạp items có tồn ≤ reorder_level tại kho {0}. Tiếp tục?",
+                       [frm.doc.warehouse]),
+                    () => {
+                        frm.call({
+                            method: "auto_load_reorder_items",
+                            doc: frm.doc,
+                            freeze: true,
+                            freeze_message: __("Đang quét reorder level..."),
+                            callback: (r) => {
+                                if (r.message) {
+                                    frappe.show_alert({
+                                        message: __("Đã nạp {0} items, tổng ước tính {1}",
+                                            [r.message.items_loaded,
+                                             format_currency(r.message.total_estimated_cost, "VND")]),
+                                        indicator: "green",
+                                    });
+                                    frm.reload_doc();
+                                }
+                            },
+                        });
+                    },
+                );
+            }, __("Hành động"));
+        }
+
         // Action: Tạo Material Request (Submitted, chưa generate)
         if (frm.doc.docstatus === 1 && frm.doc.status === "Approved" && !frm.doc.material_request) {
             frm.add_custom_button(__("Tạo Material Request"), () => {
