@@ -45,6 +45,8 @@ export const useAuthStore = defineStore('auth', {
       this.loginLoading = true
       try {
         await apiLogin(usr, pwd)
+        // Reset booted flag để boot() refresh user info từ session mới
+        this.booted = false
         await this.boot()
         return true
       } catch (e) {
