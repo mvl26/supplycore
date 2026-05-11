@@ -138,3 +138,46 @@ def calculate_cost(items, bhyt_card: str = None, patient: str = None) -> dict:
         "patient_pays":   round(total_pay, 2),
         "ceiling_overage": round(total_overage, 2),
     }
+
+
+# ----------------------------------------------------------------------
+# UC-23 — BHYT Code Config management helpers
+# ----------------------------------------------------------------------
+
+@frappe.whitelist()
+def list_bhyt_configs_for_item(item_code: str) -> dict:
+    """UC-23 step 3: list tất cả configs (active + expired) của item.
+
+    Bao gồm:
+      - Configs cụ thể (item=X)
+      - Configs theo item_group của item
+
+    Returns: {item, item_group, count, configs: [...]}
+    """
+    item_group = frappe.db.get_value("SC Item", item_code, "item_group")
+    rows = frappe.db.sql("""
+        SELECT name, bhyt_code, bhyt_name, bhyt_group,
+               payment_rate, ceiling_price,
+               item, item_group, is_active,
+               effective_from, effective_to,
+               legal_basis, modified
+        FROM `tabSC BHYT Code Config`
+        WHERE item = %(item)s
+           OR (
+               (item IS NULL OR item = '')
+               AND item_group = %(ig)s
+           )
+        ORDER BY effective_from DESC, modified DESC
+    """, {"item": item_code, "ig": item_group}, as_dict=True)
+    return {
+        "item": item_code,
+        "item_group": item_group,
+        "count": len(rows),
+        "configs": rows,
+    }
+
+
+@frappe.whitelist()
+def get_bhyt_history(item_code: str) -> dict:
+    """UC-23 step 5: alias cho list_bhyt_configs_for_item (audit view)."""
+    return list_bhyt_configs_for_item(item_code)
