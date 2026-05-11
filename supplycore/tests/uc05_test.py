@@ -50,7 +50,9 @@ def _ensure_test_warehouse(name: str) -> str:
     if len(all_wh) < 2:
         frappe.throw("_ensure_test_warehouse: cần ≥2 SC Warehouse trong seed (hiện chỉ có 1)")
     # Use a stable offset keyed on the last character of `name` to get distinct WHs
-    idx = 0 if name.endswith("A") else 1 if name.endswith("B") else 0
+    # A=0, B=1, C=2, D=3, etc. (letter→index)
+    last_char = name[-1].upper()
+    idx = ord(last_char) - ord("A") if last_char.isalpha() else 0
     idx = min(idx, len(all_wh) - 1)
     return all_wh[idx]["name"]
 
@@ -153,6 +155,43 @@ def test_get_reorder_thresholds_item_fallback():
     return {"pass": True, "msg": f"OK fallback returns item-level: {result}"}
 
 
+def test_get_reorder_thresholds_full_override():
+    """Override row > 0 cho mọi field → return override values."""
+    from supplycore.m2_planning.reorder import get_reorder_thresholds
+    wh = _ensure_test_warehouse("UC05 Test WH C")
+    item = _make_item("FULL", safety_stock=10, reorder_level=15, max_stock=30)
+    item.append("reorder_levels", {
+        "warehouse": wh, "safety_stock": 50, "reorder_level": 70,
+        "max_stock": 100, "standard_order_qty": 25,
+    })
+    item.insert()
+    result = get_reorder_thresholds(item.name, warehouse=wh)
+    frappe.db.rollback()
+    if (float(result["safety_stock"]) == 50.0
+        and float(result["reorder_level"]) == 70.0
+        and float(result["max_stock"]) == 100.0
+        and float(result["standard_order_qty"]) == 25.0):
+        return {"pass": True, "msg": f"OK full override: {result}"}
+    return {"pass": False, "msg": f"X mismatch: {result}"}
+
+
+def test_get_reorder_thresholds_partial_override():
+    """Override row chỉ set safety_stock; reorder_level/max_stock=0 →
+       fallback item-level cho field bỏ trống."""
+    from supplycore.m2_planning.reorder import get_reorder_thresholds
+    wh = _ensure_test_warehouse("UC05 Test WH D")
+    item = _make_item("PART", safety_stock=10, reorder_level=15, max_stock=30)
+    item.append("reorder_levels", {"warehouse": wh, "safety_stock": 99})
+    item.insert()
+    result = get_reorder_thresholds(item.name, warehouse=wh)
+    frappe.db.rollback()
+    if (float(result["safety_stock"]) == 99.0
+        and float(result["reorder_level"]) == 15.0
+        and float(result["max_stock"]) == 30.0):
+        return {"pass": True, "msg": f"OK partial override: {result}"}
+    return {"pass": False, "msg": f"X mismatch: {result}"}
+
+
 def run():
     """Run all UC-05 tests sequentially, return aggregate."""
     tests = [
@@ -163,6 +202,8 @@ def run():
         test_child_row_inversion_rejected,
         test_lead_time_zero_warns_not_throws,
         test_get_reorder_thresholds_item_fallback,
+        test_get_reorder_thresholds_full_override,
+        test_get_reorder_thresholds_partial_override,
     ]
     results = []
     for t in tests:
