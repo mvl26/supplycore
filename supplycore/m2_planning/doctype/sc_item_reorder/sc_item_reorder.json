@@ -1,0 +1,26 @@
+{
+ "actions": [], "creation": "2026-05-11 00:00:00", "doctype": "DocType",
+ "engine": "InnoDB", "istable": 1, "track_changes": 0,
+ "field_order": [
+  "warehouse",
+  "safety_stock", "reorder_level",
+  "column_break_1",
+  "max_stock", "standard_order_qty"
+ ],
+ "fields": [
+  {"fieldname": "warehouse", "fieldtype": "Link", "options": "SC Warehouse",
+   "label": "Kho", "reqd": 1, "in_list_view": 1, "columns": 3},
+  {"fieldname": "safety_stock", "fieldtype": "Float", "label": "Safety stock",
+   "in_list_view": 1, "columns": 2},
+  {"fieldname": "reorder_level", "fieldtype": "Float", "label": "Reorder level",
+   "in_list_view": 1, "columns": 2},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "max_stock", "fieldtype": "Float", "label": "Max stock",
+   "in_list_view": 1, "columns": 2},
+  {"fieldname": "standard_order_qty", "fieldtype": "Float",
+   "label": "Số lượng đặt chuẩn (EOQ)", "in_list_view": 1, "columns": 2}
+ ],
+ "permissions": [],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
+ "module": "M2 Planning", "name": "SC Item Reorder"
+}
