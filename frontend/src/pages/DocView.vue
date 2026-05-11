@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getDoc, runDocMethod, submitDoc, cancelDoc, updateDoc, createDoc } from '../api'
 import { DT } from '../modules'
 import PageHeader from '../components/PageHeader.vue'
+import ActionPanel from '../components/ActionPanel.vue'
 import { useToastStore } from '../stores/toast'
 
 const route = useRoute()
@@ -133,8 +134,11 @@ function backToList() {
       <button @click="backToList" class="sc-btn-secondary">← Quay lại</button>
     </div>
 
+    <!-- Custom action panel -->
+    <ActionPanel v-if="!isNew && doc" :doctype="doctype" :doc="doc" @after="load" />
+
     <!-- Main fields -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div v-if="!isNew" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
       <div class="sc-card p-5">
         <h3 class="font-semibold text-sc-navy mb-3">Thông tin chính</h3>
         <dl class="space-y-2 text-sm">
@@ -160,7 +164,7 @@ function backToList() {
     </div>
 
     <!-- Child tables -->
-    <div v-for="(child, i) in fieldGroups.items" :key="child.key" class="sc-card p-5 mb-4">
+    <div v-if="!isNew" v-for="(child, i) in fieldGroups.items" :key="child.key" class="sc-card p-5 mb-4">
       <h3 class="font-semibold text-sc-navy mb-3">{{ child.key.replace(/_/g, ' ') }} ({{ child.value.length }})</h3>
       <div v-if="child.value.length === 0" class="text-sm text-sc-text-muted">Chưa có item</div>
       <div v-else class="overflow-x-auto">
