@@ -57,6 +57,7 @@ def _make_batch(item: str, suffix: str, expiry_offset_days: int = 365):
     batch.manufacturing_date = today()
     batch.qc_status = "Accepted"
     batch.flags.ignore_permissions = True
+    batch.flags.ignore_short_expiry = 1  # UC-15 — skip short expiry block in test
     batch.insert()
     return batch
 

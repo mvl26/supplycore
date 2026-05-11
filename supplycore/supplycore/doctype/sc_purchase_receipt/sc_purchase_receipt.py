@@ -258,15 +258,15 @@ class SCPurchaseReceipt(Document):
                                      .format(r.idx, days, min_shelf), indicator="orange", alert=True)
 
     def _create_batches_if_needed(self):
-        """Nếu row có expiry_date + chưa có batch_no → tạo SC Batch tự động."""
+        """Nếu row có expiry_date + chưa có batch_no → tạo SC Batch tự động
+        với batch_id format `[item]-[YYYYMM]-[Seq]` (UC-15 step 3)."""
+        from supplycore.m5_fefo.api.batch_helpers import generate_batch_id
         for r in self.items:
             has_batch = frappe.db.get_value("SC Item", r.item, "has_batch_no")
             if not has_batch:
                 continue
             if not r.batch_no and r.expiry_date:
-                # Auto generate batch_id
-                from frappe.utils import random_string
-                bid = f"{r.item}-{getdate(r.expiry_date).strftime('%Y%m')}-{random_string(4)}"
+                bid = generate_batch_id(r.item, str(r.expiry_date))
                 b = frappe.new_doc("SC Batch")
                 b.batch_id = bid
                 b.item = r.item
@@ -275,6 +275,8 @@ class SCPurchaseReceipt(Document):
                 b.supplier = self.supplier
                 b.supplier_batch_no = r.supplier_batch_no
                 b.flags.ignore_permissions = True
+                # UC-15: PR-level đã warn user; auto-create skip short_expiry block
+                b.flags.ignore_short_expiry = 1
                 b.insert()
                 r.db_set("batch_no", b.name, update_modified=False)
 
