@@ -1,8 +1,9 @@
-"""Bin Location — vị trí vật lý chi tiết trong Warehouse (M4)."""
+"""Bin Location — vị trí vật lý chi tiết trong Warehouse (M4 / UC-12)."""
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt, now
 
 
 class BinLocation(Document):
@@ -14,27 +15,65 @@ class BinLocation(Document):
                     frappe.throw(_("Nhiệt độ max phải lớn hơn min"))
 
     def on_trash(self):
-        """Không cho xóa bin đang có hàng (TechSpec §M4)."""
-        used = frappe.db.count("Stock Entry Detail",
-                               filters={"sc_target_bin": self.name})
-        if used:
-            frappe.throw(_("Bin {0} đang có {1} giao dịch — không thể xóa")
-                         .format(self.name, used))
+        """UC-12 ngoại lệ: không cho xóa bin đang có hàng."""
+        qty = flt(frappe.db.sql("""
+            SELECT COALESCE(SUM(qty_change), 0)
+            FROM `tabSC Stock Ledger Entry`
+            WHERE bin_location = %s AND is_cancelled = 0
+        """, self.name)[0][0])
+        if qty > 0.001:
+            frappe.throw(_(
+                "SC-E-BIN-NOT-EMPTY: Bin {0} đang có {1} đơn vị — chuyển hàng trước khi xóa"
+            ).format(self.bin_code, qty))
+
+    @frappe.whitelist()
+    def recompute_occupancy(self):
+        """UC-12 bước 5: tính current_qty + occupancy_pct + status."""
+        qty = flt(frappe.db.sql("""
+            SELECT COALESCE(SUM(qty_change), 0)
+            FROM `tabSC Stock Ledger Entry`
+            WHERE bin_location = %s AND is_cancelled = 0
+        """, self.name)[0][0])
+        cap = flt(self.capacity_qty)
+        pct = (qty / cap * 100) if cap > 0 else 0
+        if qty <= 0.001:
+            st = "Empty"
+        elif cap > 0 and pct >= 95:
+            st = "Full"
+        else:
+            st = "In Use"
+        self.db_set("current_qty", qty)
+        self.db_set("occupancy_pct", pct)
+        self.db_set("status", st)
+        self.db_set("last_recomputed_at", now())
+        return {"current_qty": qty, "occupancy_pct": pct, "status": st}
+
+    @frappe.whitelist()
+    def get_barcode_label_data(self):
+        """UC-12 bước 6: trả data để in nhãn barcode qua Frappe Print Format."""
+        return {
+            "barcode": self.barcode or self.name,
+            "bin_code": self.bin_code,
+            "warehouse": self.warehouse,
+            "zone": self.zone,
+            "rack": self.rack,
+            "shelf": self.shelf,
+            "level": self.level,
+            "capacity_qty": self.capacity_qty,
+            "capacity_uom": self.capacity_uom,
+            "url": f"/app/bin-location/{self.name}",
+        }
 
     @frappe.whitelist()
     def get_current_inventory(self):
-        """Trả về items hiện ở bin này (best-effort từ Stock Entry Detail submitted)."""
+        """Trả về items hiện ở bin này từ SC SLE (recompute kèm)."""
         return frappe.db.sql("""
-            SELECT sed.item_code, i.item_name,
-                   SUM(CASE WHEN sed.sc_target_bin = %(bin)s THEN sed.qty ELSE 0 END)
-                   - SUM(CASE WHEN sed.sc_source_bin = %(bin)s THEN sed.qty ELSE 0 END) AS net_qty,
-                   sed.uom, sed.batch_no
-            FROM `tabSC Stock Entry Item` sed
-            JOIN `tabSC Stock Entry` se ON se.name = sed.parent
-            JOIN `tabSC Item` i ON i.name = sed.item_code
-            WHERE (sed.sc_target_bin = %(bin)s OR sed.sc_source_bin = %(bin)s)
-              AND se.docstatus = 1
-            GROUP BY sed.item_code, sed.uom, sed.batch_no
+            SELECT sle.item, i.item_name, sle.batch,
+                   SUM(sle.qty_change) AS net_qty
+            FROM `tabSC Stock Ledger Entry` sle
+            JOIN `tabSC Item` i ON i.name = sle.item
+            WHERE sle.bin_location = %s AND sle.is_cancelled = 0
+            GROUP BY sle.item, sle.batch
             HAVING net_qty > 0
-            ORDER BY sed.item_code
-        """, {"bin": self.name}, as_dict=True)
+            ORDER BY sle.item
+        """, self.name, as_dict=True)
