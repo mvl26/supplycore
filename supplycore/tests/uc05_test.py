@@ -276,6 +276,48 @@ def test_low_stock_alert_item_level_regression():
     return {"pass": False, "msg": f"X expected 1 item-level alert, got {len(alerts)}"}
 
 
+def test_procurement_plan_auto_load_reorder():
+    """UC-06 button: item with reorder_level=20, current=10 → load to plan,
+    suggested_qty = standard_order_qty when set."""
+    from frappe.utils import today, add_days
+
+    wh = _ensure_test_warehouse("UC05 PP WH F")
+    item = _make_item("PPRO",
+                       safety_stock=5, reorder_level=20, max_stock=100,
+                       standard_order_qty=40)
+    item.insert()
+
+    from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+    SCStockLedgerEntry.post(
+        item=item.name, warehouse=wh, qty_change=10,
+        voucher_type="Stock Entry", voucher_no="UC05-PPRO-TEST",
+        posting_date=today(),
+    )
+
+    plan = frappe.new_doc("Procurement Plan")
+    plan.plan_date = today()
+    plan.period_type = "Monthly"
+    plan.from_date = today()
+    plan.to_date = add_days(today(), 30)
+    plan.warehouse = wh
+    plan.required_by = add_days(today(), 14)
+    plan.remarks = "UC05-AUTO-LOAD"
+    plan.flags.ignore_permissions = True
+    plan.insert()
+
+    res = plan.auto_load_reorder_items()
+    plan.reload()
+    matching = [r for r in plan.items if r.item_code == item.name]
+    frappe.db.rollback()
+
+    if not matching:
+        return {"pass": False, "msg": f"X item not loaded. items={[r.item_code for r in plan.items]}"}
+    row = matching[0]
+    if abs(float(row.planned_qty) - 40.0) < 0.01:
+        return {"pass": True, "msg": f"OK loaded with qty=40 (EOQ): {row.item_code}"}
+    return {"pass": False, "msg": f"X qty mismatch: expected 40, got {row.planned_qty}"}
+
+
 def run():
     """Run all UC-05 tests sequentially, return aggregate."""
     tests = [
@@ -290,6 +332,7 @@ def run():
         test_get_reorder_thresholds_partial_override,
         test_low_stock_alert_per_warehouse,
         test_low_stock_alert_item_level_regression,
+        test_procurement_plan_auto_load_reorder,
     ]
     results = []
     for t in tests:

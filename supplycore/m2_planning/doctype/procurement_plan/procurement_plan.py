@@ -118,6 +118,75 @@ class ProcurementPlan(Document):
         return {"items_loaded": added, "total_estimated_cost": self.total_estimated_cost}
 
     # ------------------------------------------------------------------
+    # Action: tự nạp items theo reorder level (UC-05/UC-06)
+    # ------------------------------------------------------------------
+    @frappe.whitelist()
+    def auto_load_reorder_items(self):
+        """UC-05/UC-06 hybrid: load items whose current_qty <= reorder_level
+        (threshold-based, complements consumption-based auto_load_items)."""
+        from supplycore.m2_planning.reorder import get_reorder_thresholds
+
+        if self.docstatus != 0:
+            frappe.throw(_("Chỉ load items khi Plan ở Draft"))
+        if not self.warehouse:
+            frappe.throw(_("Chọn Warehouse trước"))
+
+        candidates = frappe.db.sql("""
+            SELECT i.name AS item_code, i.item_name, i.uom AS stock_uom,
+                   COALESCE(i.lead_time_days, 30) AS lead_time_days
+            FROM `tabSC Item` i
+            WHERE i.disabled = 0
+              AND i.is_stock_item = 1
+              AND i.is_purchase_item = 1
+              AND (
+                  i.reorder_level > 0
+                  OR EXISTS (
+                      SELECT 1 FROM `tabSC Item Reorder` r
+                      WHERE r.parent = i.name AND r.parenttype = 'SC Item'
+                        AND r.warehouse = %(warehouse)s AND r.reorder_level > 0
+                  )
+              )
+            ORDER BY i.item_code
+            LIMIT 500
+        """, {"warehouse": self.warehouse}, as_dict=True)
+
+        self.items = []
+        added = 0
+        for it in candidates:
+            th = get_reorder_thresholds(it.item_code, self.warehouse)
+            reorder = th["reorder_level"]
+            if reorder <= 0:
+                continue
+            current = self._get_current_stock(it.item_code, self.warehouse)
+            if current > reorder:
+                continue
+
+            if th["standard_order_qty"] > 0:
+                qty = th["standard_order_qty"]
+            elif th["max_stock"] > 0:
+                qty = max(0.0, th["max_stock"] - current)
+            else:
+                qty = max(0.0, reorder * 2 - current)
+
+            self.append("items", {
+                "item_code": it.item_code,
+                "item_name": it.item_name,
+                "uom": it.stock_uom,
+                "current_stock": current,
+                "avg_monthly_consumption": 0,
+                "lead_time_days": it.lead_time_days,
+                "safety_stock_qty": th["safety_stock"],
+                "planned_qty": round(qty, 2),
+                "estimated_unit_cost": self._get_last_purchase_rate(it.item_code),
+                "preferred_supplier": self._get_preferred_supplier(it.item_code),
+            })
+            added += 1
+
+        self._compute_amounts()
+        self.save(ignore_permissions=False)
+        return {"items_loaded": added, "total_estimated_cost": self.total_estimated_cost}
+
+    # ------------------------------------------------------------------
     # Action: tạo Material Request draft từ items đã approve
     # ------------------------------------------------------------------
     @frappe.whitelist()
