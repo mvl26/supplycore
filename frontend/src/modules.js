@@ -304,10 +304,10 @@ export const DT = {
       { key: 'request_date', label: 'Ngày', type: 'date' },
       { key: 'department', label: 'Khoa' },
       { key: 'from_warehouse', label: 'Kho' },
-      { key: 'priority', label: 'Ưu tiên' },
+      { key: 'purpose', label: 'Mục đích' },
       { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'request_date', 'department', 'from_warehouse', 'priority', 'status', 'docstatus'],
+    listFields: ['name', 'request_date', 'department', 'from_warehouse', 'purpose', 'status', 'docstatus'],
   },
   'SC Patient Dispensing': {
     module: 'm7', label: 'Cấp phát BN', icon: '💉',
@@ -447,12 +447,22 @@ export const DT = {
   },
 }
 
-// DocType list per module
+// DocType list per module — 1 doctype có thể ở nhiều module qua extraModules
 export const MODULE_DOCTYPES = (() => {
   const m = {}
   Object.entries(DT).forEach(([dt, cfg]) => {
-    m[cfg.module] = m[cfg.module] || []
-    m[cfg.module].push({ dt, label: cfg.label, icon: cfg.icon })
+    const mods = [cfg.module, ...(cfg.extraModules || [])]
+    for (const mod of mods) {
+      m[mod] = m[mod] || []
+      m[mod].push({ dt, label: cfg.label, icon: cfg.icon })
+    }
   })
+  // M5 FEFO: chia sẻ SC Batch + SC Stock Ledger Entry view (FEFO picking dùng)
+  if (!m['m5']) m['m5'] = []
+  m['m5'].push(
+    { dt: 'SC Batch', label: 'Lô FEFO', icon: '⏱️',
+      defaultOrderBy: 'expiry_date asc',
+      defaultFilters: [['blocked', '=', 0]] },
+  )
   return m
 })()

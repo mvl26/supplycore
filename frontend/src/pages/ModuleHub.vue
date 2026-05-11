@@ -13,14 +13,19 @@ const moduleInfo = computed(() => MODULES.find(m => m.id === moduleId.value))
 const doctypes = computed(() => MODULE_DOCTYPES[moduleId.value] || [])
 
 const activeDt = ref(null)
+const activeMeta = computed(() => doctypes.value.find(d => d.dt === activeDt.value))
 const rows = ref([])
 const counts = ref({})
 const loading = ref(false)
 
 async function loadCounts() {
   counts.value = {}
+  // Unique doctypes (cùng dt có thể xuất hiện 2 lần qua extraModules)
+  const seen = new Set()
   for (const d of doctypes.value) {
-    try { counts.value[d.dt] = await count(d.dt, {}) }
+    if (seen.has(d.dt)) continue
+    seen.add(d.dt)
+    try { counts.value[d.dt] = await count(d.dt, d.defaultFilters ? Object.fromEntries(d.defaultFilters.map(f => [f[0], f[2]])) : {}) }
     catch { counts.value[d.dt] = '—' }
   }
 }
@@ -29,9 +34,11 @@ async function loadRows() {
   if (!activeDt.value || !DT[activeDt.value]) return
   loading.value = true
   try {
+    const meta = activeMeta.value || {}
     rows.value = await getList(activeDt.value, {
       fields: DT[activeDt.value].listFields,
-      order_by: 'modified desc',
+      filters: meta.defaultFilters || [],
+      order_by: meta.defaultOrderBy || 'modified desc',
       limit: 10,
     })
   } catch (e) {
@@ -54,9 +61,11 @@ onMounted(init)
 function openRow(r) {
   router.push(`/doc/${encodeURIComponent(activeDt.value)}/${encodeURIComponent(r.name)}`)
 }
-
 function gotoList(dt) {
   router.push(`/list/${encodeURIComponent(dt)}`)
+}
+function newDoc(dt) {
+  router.push(`/doc/${encodeURIComponent(dt)}/new`)
 }
 </script>
 
@@ -68,32 +77,55 @@ function gotoList(dt) {
     <PageHeader :title="moduleInfo.name" :icon="moduleInfo.icon"
       :code="`${moduleInfo.code} · ${moduleInfo.group}`" />
 
-    <!-- Doctype stats -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
-      <div v-for="d in doctypes" :key="d.dt"
-        @click="activeDt = d.dt"
-        class="sc-card p-4 cursor-pointer hover:shadow-sc-md transition"
+    <!-- Doctype stats với + Tạo mới button -->
+    <div v-if="doctypes.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+      <div v-for="d in doctypes" :key="`${d.dt}-${d.label}`"
+        class="sc-card overflow-hidden"
         :class="activeDt === d.dt ? 'ring-2 ring-sc-royal' : ''">
-        <div class="flex items-center justify-between">
-          <span class="text-2xl">{{ d.icon }}</span>
-          <span class="text-xs text-sc-text-muted">{{ d.dt }}</span>
+        <div @click="activeDt = d.dt" class="p-4 cursor-pointer hover:bg-sc-bg transition">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">{{ d.icon }}</span>
+              <div>
+                <div class="text-sm font-medium text-sc-text">{{ d.label }}</div>
+                <div class="text-xs text-sc-text-muted font-mono">{{ d.dt }}</div>
+              </div>
+            </div>
+            <span class="text-2xl font-bold font-mono text-sc-navy">
+              {{ counts[d.dt] ?? '—' }}
+            </span>
+          </div>
         </div>
-        <div class="mt-2 text-sm text-sc-text-muted">{{ d.label }}</div>
-        <div class="text-2xl font-bold font-mono text-sc-navy mt-1">
-          {{ counts[d.dt] ?? '—' }}
+        <div class="border-t border-sc-border flex">
+          <button @click="newDoc(d.dt)"
+            class="flex-1 px-3 py-2 text-xs font-medium text-sc-royal hover:bg-sc-bg transition border-r border-sc-border">
+            + Tạo mới
+          </button>
+          <button @click="gotoList(d.dt)"
+            class="flex-1 px-3 py-2 text-xs font-medium text-sc-text-muted hover:bg-sc-bg transition">
+            Xem danh sách →
+          </button>
         </div>
       </div>
+    </div>
+
+    <div v-else class="sc-card p-10 text-center text-sc-text-muted">
+      Module này chưa có doctype hoạt động
     </div>
 
     <!-- Recent rows of active doctype -->
     <div v-if="activeDt && DT[activeDt]" class="sc-card overflow-hidden">
       <div class="flex items-center justify-between px-5 py-3 border-b border-sc-border">
         <h3 class="font-semibold text-sc-navy">
-          {{ DT[activeDt].label }} — 10 gần đây
+          {{ activeMeta?.label || DT[activeDt].label }} — 10 gần đây
+          <span v-if="activeMeta?.defaultFilters" class="text-xs text-sc-text-muted font-normal ml-2">
+            ({{ activeMeta.defaultFilters.map(f => `${f[0]}=${f[2]}`).join(', ') }})
+          </span>
         </h3>
-        <button @click="gotoList(activeDt)" class="text-sm text-sc-royal hover:underline">
-          Xem tất cả →
-        </button>
+        <div class="flex gap-2">
+          <button @click="newDoc(activeDt)" class="sc-btn-primary text-xs">+ Tạo mới</button>
+          <button @click="gotoList(activeDt)" class="sc-btn-secondary text-xs">Danh sách đầy đủ →</button>
+        </div>
       </div>
       <DataTable :rows="rows" :columns="DT[activeDt].listColumns"
         :loading="loading" empty="Chưa có dữ liệu" @rowClick="openRow"

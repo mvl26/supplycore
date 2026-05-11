@@ -19,21 +19,14 @@ export async function apiCall(page, method, args = {}) {
 }
 
 export async function apiGetList(page, doctype, params = {}) {
-  return page.evaluate(async ({ doctype, params }) => {
-    const usp = new URLSearchParams()
-    if (params.fields) usp.set('fields', JSON.stringify(params.fields))
-    if (params.filters) usp.set('filters', JSON.stringify(params.filters))
-    if (params.order_by) usp.set('order_by', params.order_by)
-    if (params.limit) usp.set('limit_page_length', String(params.limit))
-    const url = `/api/resource/${encodeURIComponent(doctype)}?${usp.toString()}`
-    const r = await fetch(url, { credentials: 'include', headers: { Accept: 'application/json' } })
-    if (!r.ok) {
-      const txt = await r.text().catch(() => '')
-      throw new Error(`apiGetList ${doctype} HTTP ${r.status}: ${txt.slice(0, 200)}`)
-    }
-    const d = await r.json()
-    return d.data || []
-  }, { doctype, params })
+  return apiCall(page, 'supplycore.api.frontend.list_docs', {
+    doctype,
+    fields: params.fields || ['name'],
+    filters: params.filters || {},
+    order_by: params.order_by || 'modified desc',
+    limit: params.limit || 20,
+    start: params.start || 0,
+  })
 }
 
 export async function apiGetDoc(page, doctype, name) {

@@ -339,11 +339,14 @@ export const FORM_SCHEMAS = {
     sections: [
       { title: 'Thông tin', fields: [
         { name: 'request_date', label: 'Ngày YC', type: 'Date', required: true, default: 'today' },
+        { name: 'purpose', label: 'Mục đích', type: 'Select',
+          options: ['Routine', 'Patient-Specific', 'Emergency'], default: 'Routine' },
+        { name: 'required_by', label: 'Cần trước', type: 'Date' },
         { name: 'department', label: 'Khoa yêu cầu', type: 'Link', linkTo: 'SC Department', required: true },
+        { name: 'patient', label: 'Bệnh nhân (Patient-Specific)', type: 'Link', linkTo: 'SC Patient',
+          dependOn: 'purpose' },
         { name: 'from_warehouse', label: 'Kho cấp', type: 'Link', linkTo: 'SC Warehouse', required: true },
-        { name: 'priority', label: 'Ưu tiên', type: 'Select',
-          options: ['Normal', 'Urgent', 'Emergency'], default: 'Normal' },
-        { name: 'reason', label: 'Lý do', type: 'Small Text' },
+        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
       ]},
     ],
     items: {

@@ -92,16 +92,16 @@ export async function call(method, args = {}) {
 }
 
 // === REST resources ===
+// Dùng custom backend API để bypass Frappe v15 field whitelist
 export async function getList(doctype, params = {}) {
-  const usp = new URLSearchParams()
-  if (params.fields) usp.set('fields', JSON.stringify(params.fields))
-  if (params.filters) usp.set('filters', JSON.stringify(params.filters))
-  if (params.or_filters) usp.set('or_filters', JSON.stringify(params.or_filters))
-  if (params.order_by) usp.set('order_by', params.order_by)
-  if (params.limit) usp.set('limit_page_length', String(params.limit))
-  if (params.start) usp.set('limit_start', String(params.start))
-  const data = await request(`/api/resource/${encodeURIComponent(doctype)}?${usp.toString()}`)
-  return data.data || []
+  return call('supplycore.api.frontend.list_docs', {
+    doctype,
+    fields: params.fields || ['name'],
+    filters: params.filters || {},
+    order_by: params.order_by || 'modified desc',
+    limit: params.limit || 20,
+    start: params.start || 0,
+  })
 }
 
 export async function getDoc(doctype, name) {
@@ -130,7 +130,7 @@ export async function deleteDoc(doctype, name) {
 }
 
 export async function count(doctype, filters = {}) {
-  return call('frappe.client.get_count', { doctype, filters })
+  return call('supplycore.api.frontend.count_docs', { doctype, filters })
 }
 
 export async function submitDoc(doctype, name) {
