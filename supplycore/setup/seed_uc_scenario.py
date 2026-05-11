@@ -530,12 +530,20 @@ def _phase4_receiving(ctx):
                         qi.qty_inspected = flt(r.qty)
                         qi.qty_accepted = flt(r.qty)
                         qi.qty_rejected = 0
+                        # SC QI Reading: ≥1 reading bắt buộc trước submit
+                        for spec in ("Cảm quan", "Bao bì", "Nhãn mác"):
+                            qi.append("readings", {
+                                "specification": spec,
+                                "status": "Accepted",
+                                "value": "Đạt",
+                            })
                         qi.flags.ignore_permissions = True
                         qi.insert()
                         try:
                             qi.submit()
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            frappe.log_error(message=f"QI submit: {str(e)[:200]}",
+                                              title="seed_uc phase4 qi submit")
                         qis.append(qi.name)
                     except Exception as e:
                         frappe.log_error(message=f"QI: {str(e)[:200]}",
