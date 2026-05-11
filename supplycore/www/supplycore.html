@@ -1,27 +1,31 @@
-{% extends "templates/web.html" %}
-
-{% block title %}{{ _("SupplyCore") }}{% endblock %}
-
-{% block page_content %}
-<div id="app"></div>
-{% endblock %}
-
-{% block style %}
-<style>
-  body, .page_content, main {
-    margin: 0; padding: 0; max-width: 100%;
-    background: #F7F9FC;
-  }
-  .navbar, .web-footer, #page-footer, #navbar-search { display: none !important; }
-  .page-content-wrapper { padding: 0 !important; max-width: 100%; }
-  #app { min-height: 100vh; }
-</style>
-{% endblock %}
-
-{% block script %}
-<script>
-  window.csrf_token = '{{ frappe.session.csrf_token if frappe.session else "" }}';
-</script>
-<link rel="stylesheet" href="/assets/supplycore/frontend/index.css" />
-<script type="module" src="/assets/supplycore/frontend/index.js"></script>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token }}" />
+  <meta name="theme-color" content="#1F4E79" />
+  <title>SupplyCore — Hospital Supply Chain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/supplycore/frontend/index.css?v={{ build_v }}" />
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #F7F9FC; }
+    #app { min-height: 100vh; }
+    .sc-boot { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: Inter, sans-serif; }
+    .sc-boot-spinner { width: 36px; height: 36px; border: 3px solid #E5E9F0; border-top-color: #2E75B6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="sc-boot"><div class="sc-boot-spinner"></div></div>
+  </div>
+  <script>
+    window.sc_session_user = {{ session_user_json | safe }};
+    window.sc_csrf = "{{ csrf_token }}";
+  </script>
+  <script type="module" src="/assets/supplycore/frontend/index.js?v={{ build_v }}"></script>
+</body>
+</html>

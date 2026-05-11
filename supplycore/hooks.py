@@ -63,6 +63,13 @@ scheduler_events = {
 }
 
 # ---------------------------------------------------------------------------
+# SPA route: tất cả /supplycore/* trả về same SPA shell (Vue Router xử lý)
+# ---------------------------------------------------------------------------
+website_route_rules = [
+    {"from_route": "/supplycore/<path:app_path>", "to_route": "supplycore"},
+]
+
+# ---------------------------------------------------------------------------
 # Permission hooks (target SC*)
 # ---------------------------------------------------------------------------
 permission_query_conditions = {
