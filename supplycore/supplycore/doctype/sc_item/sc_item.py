@@ -42,8 +42,12 @@ class SCItem(Document):
             ).format(safety, reorder, max_s))
 
     def _validate_lead_time(self):
-        # lead_time=0 → warning only (Task 6)
-        pass
+        """UC-05: lead_time=0 → msgprint warning màu cam, không throw."""
+        if self.lead_time_days is not None and self.lead_time_days == 0:
+            frappe.msgprint(
+                _("Lead time = 0 — nên cập nhật giá trị > 0"),
+                indicator="orange", alert=True,
+            )
 
     def _validate_reorder_rows(self):
         """UC-05: per-warehouse override rows. Warehouse unique trong table;

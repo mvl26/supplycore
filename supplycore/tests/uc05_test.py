@@ -126,6 +126,17 @@ def test_child_row_inversion_rejected():
         return {"pass": False, "msg": f"Wrong error: {msg[:120]}"}
 
 
+def test_lead_time_zero_warns_not_throws():
+    """lead_time_days=0 → save OK (msgprint warning, no throw)."""
+    item = _make_item("LT0", lead_time_days=0)
+    try:
+        item.insert()
+        frappe.db.rollback()
+        return {"pass": True, "msg": f"OK item {item.name} saved with lead_time=0"}
+    except frappe.ValidationError as e:
+        return {"pass": False, "msg": f"X threw on lead_time=0: {str(e)[:120]}"}
+
+
 def run():
     """Run all UC-05 tests sequentially, return aggregate."""
     tests = [
@@ -134,6 +145,7 @@ def run():
         test_valid_thresholds_pass,
         test_child_warehouse_duplicate_rejected,
         test_child_row_inversion_rejected,
+        test_lead_time_zero_warns_not_throws,
     ]
     results = []
     for t in tests:
