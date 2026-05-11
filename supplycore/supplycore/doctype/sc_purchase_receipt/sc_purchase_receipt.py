@@ -21,8 +21,21 @@ class SCPurchaseReceipt(Document):
         validate_warehouse(self.to_warehouse, label=_("Kho đích"))
         self._compute_totals()
         self._validate_expiry()
+        self._compute_over_receipt()
         if self.docstatus == 0 and not self.qc_status:
             self.qc_status = "Pending"
+
+    def before_submit(self):
+        if self.has_over_receipt and not self.over_receipt_acknowledged:
+            frappe.throw(_(
+                "SC-E-OVER-RECEIPT: Một số item nhận vượt SL PO. "
+                "Tick 'Xác nhận over-receipt' (cần Manager) để tiếp tục."
+            ))
+        if not self.purchase_order and not self.is_return:
+            if not (self.no_po_reason and str(self.no_po_reason).strip()):
+                frappe.throw(_(
+                    "SC-E-NO-PO-REASON: PR không có PO — vui lòng nhập 'Lý do không có PO'"
+                ))
 
     def on_submit(self):
         self._create_batches_if_needed()
@@ -42,6 +55,68 @@ class SCPurchaseReceipt(Document):
             total_qty += flt(r.qty); total_value += flt(r.amount)
         self.total_qty = total_qty
         self.total_value = total_value
+
+    def _compute_over_receipt(self):
+        """UC-09 3a: flag per-row qty > po_qty, set parent has_over_receipt."""
+        has_any = False
+        for r in self.items:
+            po_qty = flt(r.po_qty)
+            qty = flt(r.qty)
+            over = max(0.0, qty - po_qty) if po_qty > 0 else 0.0
+            r.over_received_qty = over
+            if over > 0:
+                has_any = True
+        self.has_over_receipt = 1 if has_any else 0
+        if has_any and self.docstatus == 0:
+            frappe.msgprint(
+                _("⚠ Một số item nhận vượt SL PO — cần Manager xác nhận trước khi submit"),
+                indicator="orange", alert=True,
+            )
+
+    @frappe.whitelist()
+    def create_backorder(self):
+        """UC-09 bước 8: tạo Draft PR mới cho phần còn thiếu."""
+        if self.docstatus != 1:
+            frappe.throw(_("PR phải submitted để tạo backorder"))
+        if self.is_return:
+            frappe.throw(_("Phiếu trả không tạo backorder"))
+        if not self.purchase_order:
+            frappe.throw(_("PR không có PO — không thể tạo backorder"))
+
+        short_rows = []
+        for r in self.items:
+            po_qty = flt(r.po_qty)
+            recv_qty = flt(r.qty)
+            if po_qty > 0 and recv_qty < po_qty:
+                short_rows.append({
+                    "item": r.item, "uom": r.uom, "rate": flt(r.rate),
+                    "warehouse": r.warehouse or self.to_warehouse,
+                    "remaining_qty": po_qty - recv_qty,
+                    "po_qty": po_qty - recv_qty,  # backorder's po_qty = remaining
+                })
+        if not short_rows:
+            frappe.throw(_("SC-E-BACKORDER-NOTHING: Không có item nào nhận thiếu trên PR này"))
+
+        bo = frappe.new_doc("SC Purchase Receipt")
+        bo.supplier = self.supplier
+        bo.purchase_order = self.purchase_order
+        bo.backorder_for = self.name
+        bo.posting_date = today()
+        bo.to_warehouse = self.to_warehouse
+        bo.qc_required = self.qc_required
+        bo.remarks = f"Backorder cho PR {self.name}"
+        for r in short_rows:
+            bo.append("items", {
+                "item": r["item"],
+                "qty": r["remaining_qty"],
+                "uom": r["uom"],
+                "rate": r["rate"],
+                "warehouse": r["warehouse"],
+                "po_qty": r["po_qty"],
+            })
+        bo.flags.ignore_permissions = True
+        bo.insert()
+        return bo.name
 
     def _validate_expiry(self):
         from frappe.utils import date_diff

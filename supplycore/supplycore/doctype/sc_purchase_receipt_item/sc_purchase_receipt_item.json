@@ -1,6 +1,7 @@
 {
  "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB", "istable": 1,
  "field_order": ["item", "item_name", "qty", "uom", "rate", "amount",
+                 "po_qty", "over_received_qty",
                  "section_batch", "batch_no", "manufacturing_date", "expiry_date", "supplier_batch_no",
                  "section_wms", "warehouse", "target_bin", "po_item_ref"],
  "fields": [
@@ -10,6 +11,8 @@
   {"fieldname": "uom", "fieldtype": "Link", "options": "SC UOM", "label": "UOM", "reqd": 1, "columns": 1},
   {"fieldname": "rate", "fieldtype": "Currency", "options": "VND", "label": "Đơn giá", "columns": 1},
   {"fieldname": "amount", "fieldtype": "Currency", "options": "VND", "label": "Thành tiền", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "po_qty", "fieldtype": "Float", "label": "SL PO", "read_only": 1, "default": "0", "description": "SL ordered từ PO Item — set khi tạo PR từ PO"},
+  {"fieldname": "over_received_qty", "fieldtype": "Float", "label": "SL vượt PO", "read_only": 1, "default": "0", "description": "max(0, qty - po_qty)"},
 
   {"fieldname": "section_batch", "fieldtype": "Section Break", "label": "Lô"},
   {"fieldname": "batch_no", "fieldtype": "Link", "options": "SC Batch", "label": "Lô (đã có)"},
@@ -22,7 +25,7 @@
   {"fieldname": "target_bin", "fieldtype": "Link", "options": "Bin Location", "label": "Target Bin"},
   {"fieldname": "po_item_ref", "fieldtype": "Data", "label": "PO Item ref name", "read_only": 1}
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
  "module": "Supplycore", "name": "SC Purchase Receipt Item", "permissions": [],
  "sort_field": "modified", "sort_order": "DESC"
 }

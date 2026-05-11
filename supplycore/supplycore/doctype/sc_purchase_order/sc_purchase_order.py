@@ -270,6 +270,8 @@ def make_pr_from_po(po_name: str) -> str:
             "uom": poi.uom,
             "rate": flt(poi.rate),
             "warehouse": poi.warehouse or first_wh,
+            "po_qty": flt(poi.qty),
+            "po_item_ref": poi.name,
         })
     pr.flags.ignore_permissions = True
     pr.insert()
