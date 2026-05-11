@@ -14,6 +14,17 @@
     "test:forms": "node tests/sandbox/runner.mjs 03_forms",
     "test:crud": "node tests/sandbox/runner.mjs 04_crud",
     "test:actions": "node tests/sandbox/runner.mjs 05_actions",
+    "test:uc": "node tests/sandbox/runner.mjs 10_m1,11_m2,12_m3,13_m4m5,14_m6,15_m7,16_m8,17_m9,18_m10,19_m11",
+    "test:uc:m1": "node tests/sandbox/runner.mjs 10_m1_contract",
+    "test:uc:m2": "node tests/sandbox/runner.mjs 11_m2_planning",
+    "test:uc:m3": "node tests/sandbox/runner.mjs 12_m3_receiving",
+    "test:uc:m4m5": "node tests/sandbox/runner.mjs 13_m4m5_wms_fefo",
+    "test:uc:m6": "node tests/sandbox/runner.mjs 14_m6_transfer",
+    "test:uc:m7": "node tests/sandbox/runner.mjs 15_m7_dispensing",
+    "test:uc:m8": "node tests/sandbox/runner.mjs 16_m8_accounting",
+    "test:uc:m9": "node tests/sandbox/runner.mjs 17_m9_stocktake",
+    "test:uc:m10": "node tests/sandbox/runner.mjs 18_m10_trace_recall",
+    "test:uc:m11": "node tests/sandbox/runner.mjs 19_m11_dashboard_alerts",
     "test:headed": "node tests/sandbox/runner.mjs --headed"
   },
   "dependencies": {

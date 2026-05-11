@@ -37,7 +37,8 @@ const PWD  = process.env.SC_PWD  || 'admin'
 // === Discover suites ===
 const suiteFiles = readdirSync(SUITES_DIR)
   .filter(f => f.endsWith('.mjs'))
-  .filter(f => !suiteFilter || suiteFilter.some(s => f.startsWith(s + '.') || f === s + '.mjs'))
+  .filter(f => !suiteFilter || suiteFilter.some(s =>
+    f.startsWith(s + '.') || f === s + '.mjs' || f.startsWith(s + '_') || f.startsWith(s)))
 
 if (suiteFiles.length === 0) {
   console.error('No suites match', suiteFilter)
