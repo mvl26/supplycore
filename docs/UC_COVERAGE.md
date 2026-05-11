@@ -1,6 +1,6 @@
 # UC Coverage — Phase 1 Use Cases vs Hệ thống
 
-**Cập nhật:** 2026-05-08
+**Cập nhật:** 2026-05-11
 **Source:** `SupplyCore/Phase1_Yeu-Cau-va-Phan-Tich/03_Use-Case-Diagram-and-Descriptions/UseCase_SupplyCore_v2.0.md`
 **Test method:** `tests/uc_coverage.py` — kiểm tra existence + wiring của DocType + method + scheduler cho mỗi UC.
 
@@ -22,7 +22,7 @@
 | UC-02 | Create / Update Supplier | M1 | ✅ | SC Supplier CRUD |
 | UC-03 | Create & Manage Framework Contract | M1 | ✅ | FC + slice 1 wired RO + auto-PO |
 | UC-04 | Track Contract Status & Renewal | M1 | ✅ | Daily scheduler check_contract_expiry + email 30/15/7d |
-| UC-05 | Set Min/Max Stock Levels | M2 | ✅ | SC Item.safety_stock |
+| UC-05 | Set Min/Max Stock Levels | M2 | ✅ **OK** | 2026-05-11 — full per-WH + 4 thresholds + EOQ. SC Item Reorder child doctype, get_reorder_thresholds helper, M11 per-WH alert scan, Procurement Plan auto-load button |
 | UC-06 | Create Periodic Procurement Plan | M2 | ⚠️ Partial | Doctype có nhưng `generate_procurement_forecast` scheduler là placeholder. Auto-MR creation defer (cần trend analysis/ML) |
 | UC-07 | Create Purchase Request (MR) | M2 | ✅ | SC MR submit → status=Approved (slice 1) |
 | UC-08 | Create & Approve PO | M2 | ✅ | create_purchase_orders auto từ MR; approval threshold qua Settings.po_approval_threshold (50tr) |
