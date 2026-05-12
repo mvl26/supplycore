@@ -45,9 +45,25 @@ const SECTION_LABELS = {
   affected_items:       { title: 'Items bị ảnh hưởng',icon: '⚠️', dt: null },
 }
 
+// Per-section item navigation override (vd stock_balance click → batch detail)
+const NAV_OVERRIDE = {
+  stock_balance: (row) => row.batch ? `/doc/SC Batch/${encodeURIComponent(row.batch)}` :
+                          row.item ? `/doc/SC Item/${encodeURIComponent(row.item)}` : null,
+}
+
 function openDoc(dt, recName) {
   if (!dt || !recName) return
   router.push(`/doc/${encodeURIComponent(dt)}/${encodeURIComponent(recName)}`)
+}
+
+function rowClick(sectionKey, row) {
+  const override = NAV_OVERRIDE[sectionKey]
+  if (override) {
+    const url = override(row)
+    if (url) { router.push(url); return }
+  }
+  const dt = SECTION_LABELS[sectionKey]?.dt
+  if (dt && row.name) openDoc(dt, row.name)
 }
 
 function fmt(value, key) {
@@ -92,8 +108,8 @@ function columnsFor(rows) {
             </thead>
             <tbody>
               <tr v-for="(r, idx) in rows" :key="idx"
-                :class="SECTION_LABELS[key]?.dt && r.name ? 'cursor-pointer hover:bg-sc-bg' : ''"
-                @click="r.name && openDoc(SECTION_LABELS[key]?.dt, r.name)">
+                :class="(NAV_OVERRIDE[key] || SECTION_LABELS[key]?.dt) ? 'cursor-pointer hover:bg-sc-bg' : ''"
+                @click="rowClick(key, r)">
                 <td v-for="c in columnsFor(rows)" :key="c"
                   :class="[typeof r[c] === 'number' ? 'font-mono text-right' : '',
                             c === 'name' ? 'font-mono text-xs' : '']">

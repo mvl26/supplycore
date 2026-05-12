@@ -7,6 +7,7 @@ import DocView from './pages/DocView.vue'
 import Login from './pages/Login.vue'
 import NotFound from './pages/NotFound.vue'
 import StockBalance from './pages/StockBalance.vue'
+import WarehouseList from './pages/WarehouseList.vue'
 import { useAuthStore } from './stores/auth'
 
 const router = createRouter({
@@ -20,6 +21,7 @@ const router = createRouter({
     { path: '/m:n(\\d+)', name: 'module', component: ModuleHub, meta: { title: 'Module' } },
     { path: '/stock-balance', name: 'stockBalance', component: StockBalance, meta: { title: 'Tồn kho' } },
 
+    { path: '/warehouses', name: 'warehouseList', component: WarehouseList, meta: { title: 'Kho' } },
     { path: '/list/:dt', name: 'docList', component: DocList, meta: { title: 'Danh sách' } },
     { path: '/doc/:dt/:name', name: 'docView', component: DocView, meta: { title: 'Chi tiết' } },
 

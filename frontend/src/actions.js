@@ -15,7 +15,10 @@ export const ACTIONS = {
     { method: 'reject_approval',   label: 'Từ chối',            icon: '✕',  variant: 'danger',
       when: (d) => ['Manager Review', 'Executive Review'].includes(d.approval_stage),
       args: [{ key: 'reason', label: 'Lý do từ chối', type: 'textarea', required: true }] },
-    { method: 'request_renewal',   label: 'Gia hạn HĐ',         icon: '🔄', variant: 'primary',
+    { method: 'make_material_request', label: 'Tạo Yêu cầu mua hàng', icon: '📝', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Active',
+      navigateOnSuccess: { type: 'doc', dt: 'SC Material Request', from: 'material_request' } },
+    { method: 'request_renewal',   label: 'Gia hạn HĐ',         icon: '🔄', variant: 'secondary',
       when: (d) => d.docstatus === 1 && d.status === 'Active',
       args: [
         { key: 'new_valid_to', label: 'Hết hạn mới', type: 'date', required: true },
@@ -45,12 +48,18 @@ export const ACTIONS = {
     { method: 'reject',  label: 'Từ chối',   icon: '✕', variant: 'danger',
       when: (d) => d.docstatus === 1 && (d.status === 'Pending' || !d.status),
       args: [{ key: 'reason', label: 'Lý do từ chối', type: 'textarea', required: true }] },
+    { method: 'create_purchase_orders', label: 'Tạo Đơn mua (PO)', icon: '🛒', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Approved' },
     { method: 'get_po_suggestion', label: 'Gợi ý PO', icon: '💡', variant: 'secondary',
       when: (d) => d.docstatus === 1 && d.status === 'Approved' },
   ],
 
-  // === M3 Purchase Receipt — UC-11, UC-26 ===
+  // === M3 Purchase Receipt — UC-09..14 ===
   'SC Purchase Receipt': [
+    { method: 'make_quality_inspection', label: 'Tạo Phiếu QC',     icon: '🔬', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.is_return === 0 },
+    { method: 'list_batches',            label: 'Xem Lô đã tạo',    icon: '🏷️', variant: 'secondary',
+      when: (d) => d.docstatus === 1 && d.is_return === 0 },
     { method: 'make_debit_note',     label: 'Tạo Debit Note',          icon: '📝', variant: 'primary',
       when: (d) => d.is_return === 1 && d.docstatus === 1 && !d.debit_note },
     { method: 'make_credit_note',    label: 'Tạo Credit Note',         icon: '💰', variant: 'success',

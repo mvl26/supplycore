@@ -205,6 +205,27 @@ def related_docs(doctype, name):
             fields=["name", "transaction_date", "grand_total", "status"],
             order_by="transaction_date desc", limit=10)
 
+    elif doctype == "SC Warehouse":
+        # Tồn kho tại warehouse này — top 30 items
+        out["stock_balance"] = frappe.db.sql("""
+            SELECT sle.item, i.item_name, sle.batch,
+                   COALESCE(SUM(sle.qty_change), 0) AS qty,
+                   COALESCE(SUM(sle.qty_change * sle.valuation_rate), 0) AS value,
+                   b.expiry_date, b.qc_status
+            FROM `tabSC Stock Ledger Entry` sle
+            LEFT JOIN `tabSC Item` i ON i.name = sle.item
+            LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
+            WHERE sle.warehouse = %s AND sle.is_cancelled = 0
+            GROUP BY sle.item, sle.batch
+            HAVING qty > 0
+            ORDER BY value DESC LIMIT 30
+        """, name, as_dict=True)
+        out["recent_movements"] = frappe.db.get_all("SC Stock Ledger Entry",
+            filters={"warehouse": name, "is_cancelled": 0},
+            fields=["name", "posting_date", "item", "batch", "qty_change",
+                     "voucher_type", "voucher_no"],
+            order_by="creation desc", limit=15)
+
     elif doctype == "SC Recall Notice":
         out["affected_items"] = frappe.db.get_all("SC Recall Affected Item",
             filters={"parent": name},
@@ -244,6 +265,28 @@ def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
         LIMIT 500
     """, params, as_dict=True)
     return rows
+
+
+@frappe.whitelist()
+def warehouse_summary():
+    """Liệt kê tất cả warehouse + tổng SL + tổng giá trị + số items."""
+    return frappe.db.sql("""
+        SELECT
+            w.name AS name,
+            w.warehouse_name,
+            w.warehouse_type,
+            w.is_group,
+            w.disabled,
+            COALESCE(SUM(sle.qty_change), 0) AS total_qty,
+            COALESCE(SUM(sle.qty_change * sle.valuation_rate), 0) AS total_value,
+            COUNT(DISTINCT sle.item) AS distinct_items
+        FROM `tabSC Warehouse` w
+        LEFT JOIN `tabSC Stock Ledger Entry` sle
+            ON sle.warehouse = w.name AND sle.is_cancelled = 0
+        WHERE w.is_group = 0 AND w.disabled = 0
+        GROUP BY w.name
+        ORDER BY total_value DESC
+    """, as_dict=True)
 
 
 @frappe.whitelist()

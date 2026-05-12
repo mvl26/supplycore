@@ -197,6 +197,36 @@ class SCPurchaseReceipt(Document):
 
     # ------------------------------------------------------------------
     @frappe.whitelist()
+    def make_quality_inspection(self):
+        """UC-12 luồng 3: tạo QI Draft cho items chưa có QI (manual trigger).
+
+        Auto được gọi qua _auto_create_qi trong on_submit, nhưng button này
+        để user gọi lại nếu cần (vd: thêm item sau khi PR submit, hoặc auto failed).
+        Idempotent: skip items đã có QI.
+        """
+        if self.docstatus != 1:
+            frappe.throw(_("PR phải submitted để tạo QI"))
+        self._auto_create_qi()
+        # Trả danh sách QI vừa tạo
+        qis = frappe.get_all("SC Quality Inspection",
+            filters={"purchase_receipt": self.name},
+            fields=["name", "item", "batch", "overall_status", "docstatus"])
+        return {"quality_inspections": qis, "count": len(qis)}
+
+    @frappe.whitelist()
+    def list_batches(self):
+        """Trả danh sách lô đã tạo từ PR này."""
+        batches = []
+        for r in self.items:
+            if r.batch_no:
+                b = frappe.db.get_value("SC Batch", r.batch_no,
+                    ["name", "item", "supplier_batch_no", "expiry_date", "qc_status", "blocked"],
+                    as_dict=True)
+                if b:
+                    batches.append(b)
+        return {"batches": batches, "count": len(batches)}
+
+    @frappe.whitelist()
     def create_backorder(self):
         """UC-09 bước 8: tạo Draft PR mới cho phần còn thiếu."""
         if self.docstatus != 1:

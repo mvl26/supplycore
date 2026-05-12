@@ -1,10 +1,13 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ACTIONS } from '../actions'
 import { runDocMethod } from '../api'
 import { useToastStore } from '../stores/toast'
 import Modal from './Modal.vue'
 import FieldInput from './FieldInput.vue'
+
+const router = useRouter()
 
 const props = defineProps({
   doctype: String,
@@ -38,12 +41,31 @@ async function runAction(a, argsObj) {
   result.value = null
   try {
     const r = await runDocMethod(props.doctype, props.doc.name, a.method, argsObj)
-    // Frappe wraps result: { message: { ... } }
     const msg = r?.message ?? r
     result.value = typeof msg === 'object' ? msg : { result: msg }
     toast.success(`Đã thực hiện: ${a.label}`)
     selected.value = null
     emit('after', a, result.value)
+
+    // Auto-navigate nếu action có navigateOnSuccess
+    if (a.navigateOnSuccess && result.value) {
+      const nav = a.navigateOnSuccess
+      if (nav.type === 'doc' && nav.from && result.value[nav.from]) {
+        setTimeout(() => {
+          router.push(`/doc/${encodeURIComponent(nav.dt)}/${encodeURIComponent(result.value[nav.from])}`)
+        }, 600)
+      }
+    }
+    // Auto-navigate cho các method có URL field trả về
+    else if (result.value?.url) {
+      const url = result.value.url
+      const m = url.match(/\/supplycore\/(doc|list)\/([^/]+)(?:\/(.+))?/)
+      if (m) {
+        setTimeout(() => {
+          router.push(`/${m[1]}/${m[2]}${m[3] ? '/' + m[3] : ''}`)
+        }, 600)
+      }
+    }
   } catch (e) {
     toast.error(e.message)
   } finally {
