@@ -84,8 +84,8 @@ export const tests = [
     run: async ({ page, BASE, OUT, name }) => {
       await navigateTo(page, BASE, '/alerts')
       await page.waitForTimeout(1500)
-      // Click Warning filter
-      await page.locator('button:has-text("Warning")').first().click()
+      // Click Warning filter (UI sau dịch hiển thị "Cảnh báo")
+      await page.locator('button:has-text("Cảnh báo")').first().click()
       await page.waitForTimeout(1200)
       await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
       const alerts = await apiGetList(page, 'SC Alert', {

@@ -52,6 +52,10 @@ const sevCls = (s) => ({
   Critical: 'sc-badge-critical', Warning: 'sc-badge-warning', Info: 'sc-badge-info',
 }[s] || 'sc-badge-neutral')
 
+const sevLabel = (s) => ({
+  Critical: 'Nghiêm trọng', Warning: 'Cảnh báo', Info: 'Thông tin',
+}[s] || s)
+
 const fmt = (d) => d ? new Date(d).toLocaleString('vi-VN') : ''
 
 function openAction(a, type) {
@@ -75,7 +79,7 @@ async function performAction() {
       await runDocMethod(dt, nm, 'snooze_alert', {
         hours: actionInput.value.hours, reason: actionInput.value.reason,
       })
-      toast.success(`Snoozed ${actionInput.value.hours}h`)
+      toast.success(`Đã tạm ẩn ${actionInput.value.hours}h`)
     } else if (actionType.value === 'assign') {
       await runDocMethod(dt, nm, 'assign_alert', {
         user: actionInput.value.user, note: actionInput.value.remarks,
@@ -97,10 +101,10 @@ function openRef(a) {
 </script>
 
 <template>
-  <PageHeader title="Alert Center" icon="🔔" code="SCR-13"
+  <PageHeader title="Trung tâm cảnh báo" icon="🔔" code="SCR-13"
     :subtitle="`${counts.all} cảnh báo trong bộ lọc hiện tại`">
     <template #actions>
-      <button @click="load" class="sc-btn-secondary text-sm">↻ Refresh</button>
+      <button @click="load" class="sc-btn-secondary text-sm">↻ Tải lại</button>
     </template>
   </PageHeader>
 
@@ -118,7 +122,7 @@ function openRef(a) {
         @click="severityFilter = s; load()"
         class="px-3 py-1.5 rounded-md text-sm transition"
         :class="severityFilter === s ? 'bg-sc-royal text-white' : 'bg-white border border-sc-border hover:bg-sc-bg'">
-        {{ s === 'all' ? 'Tất cả mức' : s }}
+        {{ s === 'all' ? 'Tất cả mức' : sevLabel(s) }}
       </button>
     </div>
   </div>
@@ -131,15 +135,15 @@ function openRef(a) {
     <div v-for="a in alerts" :key="a.name" class="sc-card p-4 hover:shadow-sc-md transition">
       <div class="flex items-start gap-3">
         <div class="flex-shrink-0 mt-1">
-          <span :class="['sc-badge', sevCls(a.severity)]">{{ a.severity }}</span>
+          <span :class="['sc-badge', sevCls(a.severity)]">{{ sevLabel(a.severity) }}</span>
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
             <h4 class="font-semibold text-sc-navy">{{ a.title }}</h4>
-            <span v-if="a.escalated" class="sc-badge sc-badge-critical">↑ ESCALATED</span>
-            <span v-if="a.resolved" class="sc-badge sc-badge-success">✓ Resolved</span>
+            <span v-if="a.escalated" class="sc-badge sc-badge-critical">↑ ĐÃ ĐẨY LÊN</span>
+            <span v-if="a.resolved" class="sc-badge sc-badge-success">✓ Đã xử lý</span>
             <span v-if="a.snooze_until && !a.resolved" class="sc-badge sc-badge-neutral">
-              💤 Snoozed → {{ fmt(a.snooze_until) }}
+              💤 Tạm ẩn → {{ fmt(a.snooze_until) }}
             </span>
             <span v-if="a.assigned_to" class="sc-badge sc-badge-info">👤 {{ a.assigned_to }}</span>
           </div>
@@ -153,9 +157,9 @@ function openRef(a) {
           </div>
         </div>
         <div v-if="!a.resolved" class="flex gap-2 flex-wrap">
-          <button @click="openAction(a, 'resolve')" class="sc-btn-primary text-xs">✓ Resolve</button>
-          <button @click="openAction(a, 'snooze')" class="sc-btn-secondary text-xs">💤 Snooze</button>
-          <button @click="openAction(a, 'assign')" class="sc-btn-secondary text-xs">👤 Assign</button>
+          <button @click="openAction(a, 'resolve')" class="sc-btn-primary text-xs">✓ Xử lý</button>
+          <button @click="openAction(a, 'snooze')" class="sc-btn-secondary text-xs">💤 Tạm ẩn</button>
+          <button @click="openAction(a, 'assign')" class="sc-btn-secondary text-xs">👤 Phân công</button>
         </div>
       </div>
     </div>
@@ -175,10 +179,10 @@ function openRef(a) {
         placeholder="VD: Đang chờ NCC xác nhận" />
     </template>
     <template v-else-if="actionType === 'assign'">
-      <FieldInput v-model="actionInput.user" label="Email user" required
-        placeholder="user@example.com" />
+      <FieldInput v-model="actionInput.user" label="Email người phụ trách" required
+        placeholder="email@bệnhviện.vn" />
       <div class="h-3"></div>
-      <FieldInput v-model="actionInput.remarks" label="Ghi chú (tùy chọn)" type="textarea" />
+      <FieldInput v-model="actionInput.remarks" label="Ghi chú (tuỳ chọn)" type="textarea" />
     </template>
     <template #footer>
       <button @click="closeAction" class="sc-btn-secondary text-sm">Hủy</button>

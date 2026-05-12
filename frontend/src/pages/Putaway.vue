@@ -82,11 +82,11 @@ async function saveAll() {
 </script>
 
 <template>
-  <PageHeader title="Phiếu xếp hàng lên kệ (Putaway)" icon="📦"
-    code="Bin Assignment"
+  <PageHeader title="Phiếu xếp hàng lên kệ" icon="📦"
+    code="Gán vị trí"
     :subtitle="`${items.length} dòng chờ xếp${filterWh ? ` tại ${filterWh}` : ''}`">
     <template #actions>
-      <button @click="loadPending" class="sc-btn-secondary text-sm">↻ Refresh</button>
+      <button @click="loadPending" class="sc-btn-secondary text-sm">↻ Tải lại</button>
       <button @click="saveAll" :disabled="saving || selectedCount === 0"
         class="sc-btn-primary text-sm disabled:opacity-50">
         💾 Lưu {{ selectedCount }} dòng
@@ -105,7 +105,7 @@ async function saveAll() {
   <div v-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải...</div>
   <div v-else-if="!items.length" class="sc-card p-10 text-center text-sc-text-muted">
     ✓ Không có hàng chờ xếp lên kệ
-    <div class="text-xs mt-1">(Hàng vừa nhận qua PR/SE chưa có bin_location)</div>
+    <div class="text-xs mt-1">(Hàng vừa nhận qua PR/SE chưa được gán vị trí)</div>
   </div>
   <div v-else class="sc-card overflow-hidden">
     <table class="sc-table">
@@ -113,14 +113,14 @@ async function saveAll() {
         <tr>
           <th>Chứng từ</th>
           <th>Ngày</th>
-          <th>Item</th>
+          <th>Mã VT</th>
           <th>Tên SP</th>
           <th>Kho</th>
           <th>Lô</th>
           <th>HD</th>
-          <th>QC</th>
+          <th>KCS</th>
           <th class="text-right">SL</th>
-          <th class="w-48">📍 Chọn Bin</th>
+          <th class="w-48">📍 Chọn vị trí</th>
         </tr>
       </thead>
       <tbody>
@@ -138,13 +138,13 @@ async function saveAll() {
           <td>
             <span v-if="r.qc_status" :class="['sc-badge',
               r.qc_status === 'Accepted' ? 'sc-badge-success' : 'sc-badge-warning']">
-              {{ r.qc_status }}
+              {{ r.qc_status === 'Accepted' ? 'Đạt' : r.qc_status === 'Rejected' ? 'Không đạt' : r.qc_status }}
             </span>
           </td>
           <td class="text-right font-mono font-semibold">{{ fmtNumber(r.qty) }}</td>
           <td>
             <select v-model="assignments[r.sle_name]" class="sc-input py-1 text-xs">
-              <option value="">— Chọn bin —</option>
+              <option value="">— Chọn vị trí —</option>
               <option v-for="b in bins.filter(b => b.name && (!r.warehouse || true))"
                 :key="b.name" :value="b.name">
                 {{ b.name }} {{ b.bin_code && b.bin_code !== b.name ? `(${b.bin_code})` : '' }}

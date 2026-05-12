@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { call } from '../api'
+import { statusLabel } from '../modules'
 import KpiCard from '../components/KpiCard.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { useToastStore } from '../stores/toast'
@@ -91,8 +92,8 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
 </script>
 
 <template>
-  <PageHeader title="Executive Dashboard" icon="📊" code="SCR-01"
-    :subtitle="lastRefresh ? `Cập nhật ${lastRefresh}${dashboard?.cached ? ' (cached 5p)' : ''}` : 'Đang tải...'">
+  <PageHeader title="Dashboard điều hành" icon="📊" code="SCR-01"
+    :subtitle="lastRefresh ? `Cập nhật ${lastRefresh}${dashboard?.cached ? ' (đã cache 5 phút)' : ''}` : 'Đang tải...'">
     <template #actions>
       <select v-model="period" @change="load(1)" class="sc-input max-w-[160px] text-sm">
         <option value="today">Hôm nay</option>
@@ -101,7 +102,7 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
         <option value="this_quarter">Quý này</option>
         <option value="this_year">Năm nay</option>
       </select>
-      <button @click="load(1)" class="sc-btn-secondary text-sm">↻ Refresh</button>
+      <button @click="load(1)" class="sc-btn-secondary text-sm">↻ Tải lại</button>
     </template>
   </PageHeader>
 
@@ -124,8 +125,8 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
       <KpiCard label="Lô sắp hết hạn (30 ngày)"
         :value="dashboard.kpis.expiring_soon" unit="lô" icon="⏰" variant="warning"
         @click="gotoDrill('expiring_soon')" class="cursor-pointer" />
-      <KpiCard label="Items dưới safety stock"
-        :value="dashboard.kpis.low_stock_items" unit="items" icon="📉" variant="warning"
+      <KpiCard label="Vật tư dưới tồn an toàn"
+        :value="dashboard.kpis.low_stock_items" unit="vật tư" icon="📉" variant="warning"
         @click="gotoDrill('low_stock_items')" class="cursor-pointer" />
       <KpiCard label="HĐ sắp hết hạn"
         :value="dashboard.kpis.contract_expiring_30d" unit="HĐ" icon="📑"
@@ -159,7 +160,7 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
           <div class="space-y-2">
             <div v-for="(c, sev) in dashboard.open_alerts" :key="sev"
               class="flex items-center justify-between text-sm">
-              <span :class="['sc-badge', severityColor(sev)]">{{ sev }}</span>
+              <span :class="['sc-badge', severityColor(sev)]">{{ statusLabel(sev) }}</span>
               <span class="font-mono">{{ c }}</span>
             </div>
           </div>

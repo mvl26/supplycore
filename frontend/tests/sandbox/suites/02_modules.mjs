@@ -1,7 +1,7 @@
 // Suite 02: 12 module hubs M0..M11
 
 const MODULES = [
-  ['m0', 'Master Data'],
+  ['m0', 'Dữ liệu nền'],
   ['m1', 'Hợp đồng'],
   ['m2', 'Kế hoạch & Mua'],
   ['m3', 'Tiếp nhận'],
@@ -11,8 +11,8 @@ const MODULES = [
   ['m7', 'Cấp phát'],
   ['m8', 'Kế toán'],
   ['m9', 'Kiểm kê'],
-  ['m10', 'Truy xuất & Recall'],
-  ['m11', 'Dashboard & Alert'],
+  ['m10', 'Truy xuất & Thu hồi'],
+  ['m11', 'Dashboard & Cảnh báo'],
 ]
 
 export const tests = MODULES.map(([id, expectedTitle]) => ({

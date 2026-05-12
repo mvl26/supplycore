@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { statusLabel } from '../modules'
 
 const props = defineProps({
   modelValue: [String, Number, Boolean, Date],
@@ -44,7 +45,7 @@ function update(v) {
         @change="e => update(e.target.value)" class="sc-input"
         :class="{ 'pl-8': prefix }">
         <option value="">{{ placeholder || '— Chọn —' }}</option>
-        <option v-for="o in options" :key="o.value ?? o" :value="o.value ?? o">{{ o.label ?? o }}</option>
+        <option v-for="o in options" :key="o.value ?? o" :value="o.value ?? o">{{ o.label ?? statusLabel(o) }}</option>
       </select>
       <label v-else-if="type === 'check'" class="flex items-center gap-2 cursor-pointer py-1.5">
         <input type="checkbox" :checked="!!modelValue" :disabled="readonly"

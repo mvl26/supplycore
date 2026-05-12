@@ -37,7 +37,7 @@ async function logout() {
         <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-xl">🏥</div>
         <div>
           <div class="text-base font-bold tracking-tight leading-tight">SupplyCore</div>
-          <div class="text-xs text-white/60 leading-tight">Hospital Supply Chain</div>
+          <div class="text-xs text-white/60 leading-tight">Chuỗi cung ứng Bệnh viện</div>
         </div>
       </div>
 
@@ -53,7 +53,7 @@ async function logout() {
           class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
           :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/alerts') }">
           <span class="text-base">🔔</span>
-          <span class="text-sm font-medium">Alert Center</span>
+          <span class="text-sm font-medium">Cảnh báo</span>
         </router-link>
 
         <router-link to="/stock-balance"

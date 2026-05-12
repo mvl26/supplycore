@@ -1,18 +1,18 @@
 // 11 modules + DocType registry với column/field schema riêng
 
 export const MODULES = [
-  { id: 'm0',  code: 'M0',  name: 'Master Data',          icon: '🗄️', route: '/m0',  group: 'Setup' },
-  { id: 'm1',  code: 'M1',  name: 'Hợp đồng',            icon: '📑', route: '/m1',  group: 'Strategic' },
-  { id: 'm2',  code: 'M2',  name: 'Kế hoạch & Mua',       icon: '🛒', route: '/m2',  group: 'Strategic' },
-  { id: 'm3',  code: 'M3',  name: 'Tiếp nhận',            icon: '📦', route: '/m3',  group: 'Operations' },
-  { id: 'm4',  code: 'M4',  name: 'Quản lý kho',          icon: '🏬', route: '/m4',  group: 'Operations' },
-  { id: 'm5',  code: 'M5',  name: 'FEFO',                 icon: '⏱️', route: '/m5',  group: 'Operations' },
-  { id: 'm6',  code: 'M6',  name: 'Chuyển kho',           icon: '🔁', route: '/m6',  group: 'Operations' },
-  { id: 'm7',  code: 'M7',  name: 'Cấp phát',             icon: '💉', route: '/m7',  group: 'Operations' },
-  { id: 'm8',  code: 'M8',  name: 'Kế toán',              icon: '💰', route: '/m8',  group: 'Finance' },
-  { id: 'm9',  code: 'M9',  name: 'Kiểm kê',              icon: '📋', route: '/m9',  group: 'Quality' },
-  { id: 'm10', code: 'M10', name: 'Truy xuất & Recall',   icon: '🔍', route: '/m10', group: 'Quality' },
-  { id: 'm11', code: 'M11', name: 'Dashboard & Alert',    icon: '📊', route: '/m11', group: 'Insights' },
+  { id: 'm0',  code: 'M0',  name: 'Dữ liệu nền',          icon: '🗄️', route: '/m0',  group: 'Thiết lập' },
+  { id: 'm1',  code: 'M1',  name: 'Hợp đồng',             icon: '📑', route: '/m1',  group: 'Chiến lược' },
+  { id: 'm2',  code: 'M2',  name: 'Kế hoạch & Mua',       icon: '🛒', route: '/m2',  group: 'Chiến lược' },
+  { id: 'm3',  code: 'M3',  name: 'Tiếp nhận',            icon: '📦', route: '/m3',  group: 'Vận hành' },
+  { id: 'm4',  code: 'M4',  name: 'Quản lý kho',          icon: '🏬', route: '/m4',  group: 'Vận hành' },
+  { id: 'm5',  code: 'M5',  name: 'FEFO',                 icon: '⏱️', route: '/m5',  group: 'Vận hành' },
+  { id: 'm6',  code: 'M6',  name: 'Chuyển kho',           icon: '🔁', route: '/m6',  group: 'Vận hành' },
+  { id: 'm7',  code: 'M7',  name: 'Cấp phát',             icon: '💉', route: '/m7',  group: 'Vận hành' },
+  { id: 'm8',  code: 'M8',  name: 'Kế toán',              icon: '💰', route: '/m8',  group: 'Tài chính' },
+  { id: 'm9',  code: 'M9',  name: 'Kiểm kê',              icon: '📋', route: '/m9',  group: 'Chất lượng' },
+  { id: 'm10', code: 'M10', name: 'Truy xuất & Thu hồi',  icon: '🔍', route: '/m10', group: 'Chất lượng' },
+  { id: 'm11', code: 'M11', name: 'Dashboard & Cảnh báo', icon: '📊', route: '/m11', group: 'Báo cáo' },
 ]
 
 // Status → badge class mapping
@@ -29,9 +29,75 @@ const STATUS_BADGE = {
   Accepted: 'sc-badge-success',
   Critical: 'sc-badge-critical', Warning: 'sc-badge-warning', Info: 'sc-badge-info',
   Pending: 'sc-badge-warning', 'Sent to Supplier': 'sc-badge-info',
-  'Partially Received': 'sc-badge-warning',
+  'Partially Received': 'sc-badge-warning', Received: 'sc-badge-success',
   'Material Receipt': 'sc-badge-success', 'Material Issue': 'sc-badge-warning',
   'Material Transfer': 'sc-badge-info',
+  Pass: 'sc-badge-success', Fail: 'sc-badge-critical', 'Partial Pass': 'sc-badge-warning',
+  Conditional: 'sc-badge-warning',
+  Open: 'sc-badge-warning', 'On Hold': 'sc-badge-warning',
+  High: 'sc-badge-critical', Medium: 'sc-badge-warning', Low: 'sc-badge-info',
+}
+
+// Status / option enum → Vietnamese label mapping. Backend stores English keys;
+// frontend displays Vietnamese. Used by DataTable badge column và DocView status.
+export const STATUS_LABEL = {
+  // Docstatus / workflow
+  Draft: 'Nháp', Pending: 'Chờ duyệt', Submitted: 'Đã gửi',
+  Approved: 'Đã duyệt', Rejected: 'Từ chối', Cancelled: 'Đã huỷ',
+  Active: 'Hiệu lực', Expired: 'Hết hạn', Terminated: 'Kết thúc',
+  Issued: 'Đã phát hành', 'In Progress': 'Đang xử lý',
+  Completed: 'Hoàn tất', Resolved: 'Đã xử lý',
+  Investigating: 'Đang điều tra', Closed: 'Đã đóng',
+  Paid: 'Đã thanh toán', Unpaid: 'Chưa thanh toán',
+  // QC outcomes
+  Accepted: 'Đạt', Pass: 'Đạt', Fail: 'Không đạt',
+  'Partial Pass': 'Đạt một phần', Conditional: 'Có điều kiện',
+  // Severity
+  Critical: 'Nghiêm trọng', High: 'Cao', Medium: 'Trung bình',
+  Low: 'Thấp', Warning: 'Cảnh báo', Info: 'Thông tin',
+  // PO flow
+  'Sent to Supplier': 'Đã gửi NCC',
+  'Partially Received': 'Nhận một phần', Received: 'Đã nhận',
+  // Stock Entry types
+  'Material Receipt': 'Nhập kho', 'Material Issue': 'Xuất kho',
+  'Material Transfer': 'Chuyển kho', Manufacture: 'Sản xuất', Repack: 'Đóng gói lại',
+  // MR request types
+  Purchase: 'Mua', 'Material Transfer Request': 'Yêu cầu chuyển kho',
+  // Alert action results
+  Open: 'Đang mở', Acknowledged: 'Đã ghi nhận', 'Acted Upon': 'Đã xử lý',
+  Dismissed: 'Bỏ qua', Escalated: 'Đã đẩy lên',
+  // Warehouse types
+  Main: 'Kho chính', Department: 'Kho khoa', Quarantine: 'Cách ly',
+  Damaged: 'Hỏng', Sample: 'Mẫu',
+  // Recall severity
+  'Class I (Critical)': 'Mức I (Nghiêm trọng)',
+  'Class II (High)': 'Mức II (Cao)',
+  'Class III (Low)': 'Mức III (Thấp)',
+  Voluntary: 'Tự nguyện', Mandatory: 'Bắt buộc', Precautionary: 'Phòng ngừa',
+  // Count types
+  Full: 'Toàn bộ', Cycle: 'Định kỳ', Adhoc: 'Đột xuất',
+  // Investigation types
+  'Stock Loss': 'Mất hàng', Discrepancy: 'Chênh lệch',
+  Fraud: 'Gian lận', 'System Error': 'Lỗi hệ thống',
+  // Payment methods
+  'Bank Transfer': 'Chuyển khoản', Cash: 'Tiền mặt', Cheque: 'Séc',
+  // Variance reason
+  'Counting Error': 'Lỗi đếm', Damage: 'Hư hỏng',
+  Theft: 'Mất cắp', Expiry: 'Hết hạn',
+  // Alert frequency
+  Realtime: 'Thời gian thực', Hourly: 'Theo giờ',
+  Daily: 'Hàng ngày', Weekly: 'Hàng tuần',
+  // Days of week
+  Mon: 'T2', Tue: 'T3', Wed: 'T4', Thu: 'T5',
+  Fri: 'T6', Sat: 'T7', Sun: 'CN',
+  // Department types
+  Clinical: 'Lâm sàng', Surgical: 'Ngoại khoa', Lab: 'Xét nghiệm',
+  Pharmacy: 'Nhà thuốc', Admin: 'Hành chính', Other: 'Khác',
+}
+
+export function statusLabel(value) {
+  if (value == null || value === '') return ''
+  return STATUS_LABEL[value] ?? value
 }
 
 // DocType schema — fields cho List + Form + actions
@@ -43,11 +109,11 @@ export const DT = {
       { key: 'name', label: 'Mã VT', mono: true },
       { key: 'item_name', label: 'Tên' },
       { key: 'item_group', label: 'Nhóm' },
-      { key: 'uom', label: 'UOM' },
+      { key: 'uom', label: 'ĐVT' },
       { key: 'is_stock_item', label: 'Tồn kho', type: 'check' },
       { key: 'has_batch_no', label: 'Có lô', type: 'check' },
-      { key: 'safety_stock', label: 'Safety', type: 'int', align: 'right' },
-      { key: 'disabled', label: 'Disabled', type: 'check' },
+      { key: 'safety_stock', label: 'Tồn an toàn', type: 'int', align: 'right' },
+      { key: 'disabled', label: 'Vô hiệu', type: 'check' },
     ],
     listFields: ['name', 'item_code', 'item_name', 'item_group', 'uom',
                   'is_stock_item', 'has_batch_no', 'safety_stock', 'reorder_level', 'disabled'],
@@ -64,8 +130,8 @@ export const DT = {
   'SC UOM': {
     module: 'm0', label: 'Đơn vị tính', icon: '📏',
     listColumns: [
-      { key: 'name', label: 'Tên UOM' },
-      { key: 'uom_name', label: 'Tên hiển thị' },
+      { key: 'name', label: 'Mã ĐVT' },
+      { key: 'uom_name', label: 'Tên ĐVT' },
       { key: 'must_be_whole_number', label: 'Số nguyên', type: 'check' },
     ],
     listFields: ['name', 'uom_name', 'must_be_whole_number'],
@@ -78,7 +144,7 @@ export const DT = {
       { key: 'tax_id', label: 'MST', mono: true },
       { key: 'email_id', label: 'Email' },
       { key: 'mobile_no', label: 'Điện thoại' },
-      { key: 'disabled', label: 'Disabled', type: 'check' },
+      { key: 'disabled', label: 'Vô hiệu', type: 'check' },
     ],
     listFields: ['name', 'supplier_name', 'tax_id', 'email_id', 'mobile_no', 'disabled'],
   },
@@ -89,7 +155,7 @@ export const DT = {
       { key: 'warehouse_type', label: 'Loại' },
       { key: 'parent_warehouse', label: 'Kho cha' },
       { key: 'is_group', label: 'Nhóm', type: 'check' },
-      { key: 'disabled', label: 'Disabled', type: 'check' },
+      { key: 'disabled', label: 'Vô hiệu', type: 'check' },
     ],
     listFields: ['name', 'warehouse_name', 'warehouse_type', 'parent_warehouse',
                   'is_group', 'disabled'],
@@ -100,7 +166,7 @@ export const DT = {
       { key: 'name', label: 'Tên khoa' },
       { key: 'department_code', label: 'Mã', mono: true },
       { key: 'department_type', label: 'Loại' },
-      { key: 'disabled', label: 'Disabled', type: 'check' },
+      { key: 'disabled', label: 'Vô hiệu', type: 'check' },
     ],
     listFields: ['name', 'department_name', 'department_code', 'department_type', 'disabled'],
   },
@@ -126,7 +192,7 @@ export const DT = {
       { key: 'bhyt_group', label: 'Nhóm' },
       { key: 'payment_rate', label: 'Tỷ lệ %', type: 'int', align: 'right' },
       { key: 'ceiling_price', label: 'Giá trần', type: 'currency', align: 'right' },
-      { key: 'is_active', label: 'Active', type: 'check' },
+      { key: 'is_active', label: 'Hiệu lực', type: 'check' },
     ],
     listFields: ['name', 'bhyt_code', 'bhyt_name', 'bhyt_group', 'payment_rate',
                   'ceiling_price', 'item', 'item_group', 'is_active'],
@@ -154,7 +220,7 @@ export const DT = {
       { key: 'valid_to', label: 'Đến', type: 'date' },
       { key: 'total_value', label: 'Tổng', type: 'currency', align: 'right' },
       { key: 'remaining_value', label: 'Còn lại', type: 'currency', align: 'right' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'contract_number', 'supplier_name', 'valid_from', 'valid_to',
                   'total_value', 'remaining_value', 'status', 'docstatus'],
@@ -184,7 +250,7 @@ export const DT = {
       { key: 'request_type', label: 'Loại' },
       { key: 'warehouse', label: 'Kho' },
       { key: 'schedule_date', label: 'Ngày cần', type: 'date' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'transaction_date', 'request_type', 'warehouse', 'schedule_date', 'status', 'docstatus'],
   },
@@ -196,7 +262,7 @@ export const DT = {
       { key: 'supplier', label: 'NCC' },
       { key: 'schedule_date', label: 'Ngày giao', type: 'date' },
       { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'transaction_date', 'supplier', 'schedule_date', 'grand_total', 'status', 'docstatus'],
     actions: ['submit', 'cancel', 'send_to_supplier'],
@@ -222,7 +288,7 @@ export const DT = {
       { key: 'name', label: 'Mã QI', mono: true },
       { key: 'inspection_date', label: 'Ngày', type: 'date' },
       { key: 'purchase_receipt', label: 'PR', mono: true },
-      { key: 'item', label: 'Item' },
+      { key: 'item', label: 'Vật tư' },
       { key: 'overall_status', label: 'Kết quả', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'inspection_date', 'purchase_receipt', 'item', 'overall_status', 'docstatus'],
@@ -235,7 +301,7 @@ export const DT = {
       { key: 'name', label: 'Tên kho' },
       { key: 'warehouse_type', label: 'Loại' },
       { key: 'is_group', label: 'Nhóm', type: 'check' },
-      { key: 'disabled', label: 'Disabled', type: 'check' },
+      { key: 'disabled', label: 'Vô hiệu', type: 'check' },
     ],
     listFields: ['name', 'warehouse_name', 'warehouse_type', 'is_group', 'disabled'],
   },
@@ -244,7 +310,7 @@ export const DT = {
     listColumns: [
       { key: 'name', label: 'SLE', mono: true },
       { key: 'posting_date', label: 'Ngày', type: 'date' },
-      { key: 'item', label: 'Item' },
+      { key: 'item', label: 'Vật tư' },
       { key: 'warehouse', label: 'Kho' },
       { key: 'batch', label: 'Lô', mono: true },
       { key: 'qty_change', label: 'Δ Qty', type: 'int', align: 'right' },
@@ -259,12 +325,12 @@ export const DT = {
     module: 'm4', label: 'Lô', icon: '🏷️',
     listColumns: [
       { key: 'name', label: 'Mã lô', mono: true },
-      { key: 'item', label: 'Item' },
+      { key: 'item', label: 'Vật tư' },
       { key: 'supplier_batch_no', label: 'Số lô NCC' },
       { key: 'manufacturing_date', label: 'SX', type: 'date' },
       { key: 'expiry_date', label: 'HD', type: 'date' },
       { key: 'qc_status', label: 'QC', type: 'badge', badgeMap: STATUS_BADGE },
-      { key: 'blocked', label: 'Blocked', type: 'check' },
+      { key: 'blocked', label: 'Khoá', type: 'check' },
     ],
     listFields: ['name', 'item', 'supplier_batch_no', 'manufacturing_date', 'expiry_date',
                   'qc_status', 'blocked', 'supplier'],
@@ -278,7 +344,7 @@ export const DT = {
       { key: 'request_date', label: 'Ngày', type: 'date' },
       { key: 'from_warehouse', label: 'Từ' },
       { key: 'to_warehouse', label: 'Đến' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'request_date', 'from_warehouse', 'to_warehouse', 'status', 'docstatus'],
   },
@@ -305,7 +371,7 @@ export const DT = {
       { key: 'department', label: 'Khoa' },
       { key: 'from_warehouse', label: 'Kho' },
       { key: 'purpose', label: 'Mục đích' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'request_date', 'department', 'from_warehouse', 'purpose', 'status', 'docstatus'],
   },
@@ -334,7 +400,7 @@ export const DT = {
       { key: 'purchase_receipt', label: 'PR', mono: true },
       { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
       { key: 'outstanding_amount', label: 'Còn lại', type: 'currency', align: 'right' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'invoice_date', 'supplier', 'purchase_receipt', 'grand_total',
                   'outstanding_amount', 'status', 'docstatus'],
@@ -371,7 +437,7 @@ export const DT = {
       { key: 'posting_date', label: 'Ngày', type: 'date' },
       { key: 'warehouse', label: 'Kho' },
       { key: 'count_type', label: 'Loại' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'posting_date', 'warehouse', 'count_type', 'status', 'docstatus'],
   },
@@ -384,7 +450,7 @@ export const DT = {
       { key: 'total_difference_qty', label: 'Δ Qty', type: 'int', align: 'right' },
       { key: 'total_difference_value', label: 'Δ Giá trị', type: 'currency', align: 'right' },
       { key: 'requires_investigation', label: 'Điều tra', type: 'check' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'posting_date', 'warehouse', 'total_difference_qty',
                   'total_difference_value', 'requires_investigation', 'status', 'docstatus'],
@@ -396,10 +462,10 @@ export const DT = {
     listColumns: [
       { key: 'name', label: 'RCL', mono: true },
       { key: 'recall_date', label: 'Ngày', type: 'date' },
-      { key: 'item', label: 'Item' },
+      { key: 'item', label: 'Vật tư' },
       { key: 'batch_no', label: 'Lô', mono: true },
       { key: 'severity', label: 'Mức độ', type: 'badge', badgeMap: STATUS_BADGE },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'recall_date', 'item', 'batch_no', 'severity', 'status',
                   'total_affected_qty', 'recovered_qty', 'docstatus'],
@@ -410,9 +476,9 @@ export const DT = {
       { key: 'name', label: 'INV', mono: true },
       { key: 'investigation_date', label: 'Ngày', type: 'date' },
       { key: 'investigation_type', label: 'Loại' },
-      { key: 'item', label: 'Item' },
+      { key: 'item', label: 'Vật tư' },
       { key: 'variance_qty', label: 'Δ Qty', type: 'int', align: 'right' },
-      { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'investigation_date', 'investigation_type', 'item',
                   'variance_qty', 'variance_value', 'status', 'docstatus'],
@@ -427,7 +493,7 @@ export const DT = {
       { key: 'alert_type', label: 'Loại' },
       { key: 'title', label: 'Tiêu đề' },
       { key: 'resolved', label: 'Xử lý', type: 'check' },
-      { key: 'escalated', label: 'Escalate', type: 'check' },
+      { key: 'escalated', label: 'Đẩy lên', type: 'check' },
     ],
     listFields: ['name', 'alert_date', 'severity', 'alert_type', 'title',
                   'resolved', 'escalated', 'assigned_to', 'reference_doctype', 'reference_name'],

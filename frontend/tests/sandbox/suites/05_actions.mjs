@@ -27,13 +27,13 @@ export const tests = [
     run: async ({ page, BASE, OUT, name }) => {
       await page.goto(`${BASE}/supplycore/alerts`)
       await page.waitForTimeout(1500)
-      // Click filter "Warning"
-      await page.getByRole('button', { name: 'Warning' }).first().click()
+      // Click filter "Cảnh báo" (Warning sau dịch)
+      await page.getByRole('button', { name: 'Cảnh báo', exact: true }).first().click()
       await page.waitForTimeout(1200)
       await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
-      const cards = await page.locator('.sc-card').filter({ hasText: /Warning/ }).count()
+      const cards = await page.locator('.sc-card').filter({ hasText: /Cảnh báo/ }).count()
       return cards >= 1
-        ? { ok: true, detail: `${cards} Warning alerts` }
+        ? { ok: true, detail: `${cards} cảnh báo mức Warning` }
         : { ok: false, detail: 'No filtered cards' }
     },
   },

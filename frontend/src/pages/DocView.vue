@@ -12,6 +12,8 @@ import FefoPickGuide from '../components/FefoPickGuide.vue'
 import WarehouseStockPanel from '../components/WarehouseStockPanel.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDateTime, fmtNumber } from '../utils'
+import { statusLabel } from '../modules'
+import { fieldLabel } from '../i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -56,9 +58,9 @@ onMounted(load)
 const statusBadge = computed(() => {
   if (!doc.value) return null
   const ds = doc.value.docstatus
-  if (ds === 1) return { text: 'Submitted', cls: 'sc-badge-success' }
-  if (ds === 2) return { text: 'Cancelled', cls: 'sc-badge-critical' }
-  return { text: 'Draft', cls: 'sc-badge-neutral' }
+  if (ds === 1) return { text: 'Đã gửi', cls: 'sc-badge-success' }
+  if (ds === 2) return { text: 'Đã huỷ', cls: 'sc-badge-critical' }
+  return { text: 'Nháp', cls: 'sc-badge-neutral' }
 })
 
 async function save() {
@@ -129,11 +131,19 @@ const fieldGroups = computed(() => {
   return { main, items }
 })
 
+const STATUS_KEYS = new Set([
+  'status', 'qc_status', 'overall_status', 'severity', 'request_type',
+  'warehouse_type', 'department_type', 'count_type', 'recall_type',
+  'investigation_type', 'variance_reason', 'payment_method',
+  'bhyt_type', 'entry_type', 'alert_type', 'approval_stage',
+])
+
 function displayField(value, key) {
   if (value == null || value === '') return '—'
   if (typeof value === 'object') return JSON.stringify(value).slice(0, 100)
   if (/_date$/.test(key) && value) return new Date(value).toLocaleDateString('vi-VN')
   if (/_at$/.test(key) && value) return new Date(value).toLocaleString('vi-VN')
+  if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value)
   if (/value|amount|total|cost|rate/.test(key) && typeof value === 'number') {
     return fmtNumber(value)
   }
@@ -176,7 +186,7 @@ function displayField(value, key) {
           <button v-if="doc.docstatus === 0 && schema"
             @click="editing = true" class="sc-btn-secondary text-sm">✎ Sửa</button>
           <button v-if="doc.docstatus === 0" @click="doSubmit"
-            :disabled="saving" class="sc-btn-primary text-sm">Submit</button>
+            :disabled="saving" class="sc-btn-primary text-sm">Gửi duyệt</button>
           <button v-if="doc.docstatus === 1" @click="doCancel"
             :disabled="saving" class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium text-sm">
             Hủy
@@ -216,7 +226,7 @@ function displayField(value, key) {
           <dl class="space-y-2 text-sm">
             <div v-for="f in fieldGroups.main.slice(0, 12)" :key="f.key"
               class="grid grid-cols-[140px_1fr] gap-2">
-              <dt class="text-sc-text-muted truncate">{{ f.key.replace(/_/g, ' ') }}</dt>
+              <dt class="text-sc-text-muted truncate">{{ fieldLabel(f.key) }}</dt>
               <dd class="text-sc-text font-medium break-all">{{ displayField(f.value, f.key) }}</dd>
             </div>
           </dl>
@@ -226,7 +236,7 @@ function displayField(value, key) {
           <dl class="space-y-2 text-sm">
             <div v-for="f in fieldGroups.main.slice(12)" :key="f.key"
               class="grid grid-cols-[140px_1fr] gap-2">
-              <dt class="text-sc-text-muted truncate">{{ f.key.replace(/_/g, ' ') }}</dt>
+              <dt class="text-sc-text-muted truncate">{{ fieldLabel(f.key) }}</dt>
               <dd class="text-sc-text font-medium break-all">{{ displayField(f.value, f.key) }}</dd>
             </div>
           </dl>
@@ -237,15 +247,15 @@ function displayField(value, key) {
       <RelatedDocs v-if="!isNew && doc?.name" :doctype="doctype" :name="doc.name" />
 
       <div v-for="child in fieldGroups.items" :key="child.key" class="sc-card p-5 mb-4">
-        <h3 class="font-semibold text-sc-navy mb-3">{{ child.key.replace(/_/g, ' ') }} ({{ child.value.length }})</h3>
-        <div v-if="child.value.length === 0" class="text-sm text-sc-text-muted">Chưa có item</div>
+        <h3 class="font-semibold text-sc-navy mb-3">{{ fieldLabel(child.key) }} ({{ child.value.length }})</h3>
+        <div v-if="child.value.length === 0" class="text-sm text-sc-text-muted">Chưa có dòng nào</div>
         <div v-else class="overflow-x-auto">
           <table class="sc-table">
             <thead>
               <tr>
                 <th class="w-8">#</th>
                 <th v-for="k in Object.keys(child.value[0] || {}).filter(k => !['doctype','parent','parentfield','parenttype','idx','owner','creation','modified','modified_by','docstatus','name'].includes(k)).slice(0, 8)" :key="k">
-                  {{ k.replace(/_/g, ' ') }}
+                  {{ fieldLabel(k) }}
                 </th>
               </tr>
             </thead>

@@ -1,7 +1,7 @@
 // Suite 06: Module hubs phải có nội dung + button Tạo mới
 
 const MODULES_WITH_CREATE = [
-  ['m0', 'Master Data', 8],
+  ['m0', 'Dữ liệu nền', 8],
   ['m1', 'Hợp đồng', 1],
   ['m2', 'Kế hoạch & Mua', 2],
   ['m3', 'Tiếp nhận', 2],
@@ -11,8 +11,8 @@ const MODULES_WITH_CREATE = [
   ['m7', 'Cấp phát', 2],
   ['m8', 'Kế toán', 3],
   ['m9', 'Kiểm kê', 2],
-  ['m10', 'Truy xuất & Recall', 2],
-  ['m11', 'Dashboard & Alert', 2],
+  ['m10', 'Truy xuất & Thu hồi', 2],
+  ['m11', 'Dashboard & Cảnh báo', 2],
 ]
 
 export const tests = MODULES_WITH_CREATE.flatMap(([id, expectedTitle, minCards]) => [

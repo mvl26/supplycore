@@ -26,20 +26,20 @@ async function submit() {
           🏥
         </div>
         <h1 class="text-3xl font-bold text-white tracking-tight">SupplyCore</h1>
-        <p class="text-white/70 text-sm mt-1">Hospital Supply Chain Management</p>
+        <p class="text-white/70 text-sm mt-1">Quản lý chuỗi cung ứng Bệnh viện</p>
       </div>
 
       <div class="bg-white rounded-2xl shadow-2xl p-8">
         <h2 class="text-xl font-semibold text-sc-navy mb-1">Đăng nhập</h2>
-        <p class="text-sm text-sc-text-muted mb-5">Nhập email/username và mật khẩu</p>
+        <p class="text-sm text-sc-text-muted mb-5">Nhập email/tên đăng nhập và mật khẩu</p>
 
         <form @submit.prevent="submit" class="space-y-3">
           <div>
-            <label class="text-xs font-medium text-sc-text-muted block mb-1">Email / Username</label>
+            <label class="text-xs font-medium text-sc-text-muted block mb-1">Email / Tên đăng nhập</label>
             <input v-model="usr" type="text" required autofocus
               autocomplete="username"
               class="sc-input"
-              placeholder="user@example.com hoặc Administrator" />
+              placeholder="email@bệnhviện.vn hoặc Administrator" />
           </div>
           <div>
             <label class="text-xs font-medium text-sc-text-muted block mb-1">Mật khẩu</label>
@@ -67,7 +67,7 @@ async function submit() {
         </form>
 
         <div class="mt-5 text-center text-xs text-sc-text-muted">
-          © 2026 SupplyCore · Hospital Supply Chain v0.1
+          © 2026 SupplyCore · Chuỗi cung ứng Bệnh viện v0.1
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { statusLabel } from '../modules'
 
 const props = defineProps({
   rows:    { type: Array, default: () => [] },
@@ -23,7 +24,8 @@ function fmt(value, col) {
   if (col.type === 'badge') {
     const map = col.badgeMap || {}
     const cls = map[value] || 'sc-badge-neutral'
-    return { __html: `<span class="sc-badge ${cls}">${value || '—'}</span>` }
+    const text = statusLabel(value) || '—'
+    return { __html: `<span class="sc-badge ${cls}">${text}</span>` }
   }
   return value
 }

@@ -45,20 +45,20 @@ const isBelowSafety = (r) => r.safety_stock > 0 && r.qty < r.safety_stock
     </div>
     <div v-if="loading" class="p-6 text-center text-sc-text-muted text-sm">Đang tải...</div>
     <div v-else-if="!rows.length" class="p-6 text-center text-sc-text-muted text-sm">
-      Kho trống{{ item ? ` cho item ${item}` : '' }}
+      Kho trống{{ item ? ` cho vật tư ${item}` : '' }}
     </div>
     <div v-else class="overflow-x-auto">
       <table class="sc-table text-sm">
         <thead>
           <tr>
-            <th>Item</th>
+            <th>Mã VT</th>
             <th>Tên</th>
             <th>Lô</th>
-            <th>Bin</th>
-            <th>QC</th>
+            <th>Vị trí</th>
+            <th>KCS</th>
             <th>HD</th>
             <th class="text-right">SL tồn</th>
-            <th class="text-right">Safety</th>
+            <th class="text-right">Tồn an toàn</th>
           </tr>
         </thead>
         <tbody>
@@ -77,9 +77,9 @@ const isBelowSafety = (r) => r.safety_stock > 0 && r.qty < r.safety_stock
               <span v-if="r.qc_status" :class="['sc-badge',
                 r.qc_status === 'Accepted' ? 'sc-badge-success' :
                 r.qc_status === 'Rejected' ? 'sc-badge-critical' : 'sc-badge-warning']">
-                {{ r.qc_status }}
+                {{ r.qc_status === 'Accepted' ? 'Đạt' : r.qc_status === 'Rejected' ? 'Không đạt' : r.qc_status }}
               </span>
-              <span v-if="r.blocked" class="sc-badge sc-badge-critical ml-1">Blocked</span>
+              <span v-if="r.blocked" class="sc-badge sc-badge-critical ml-1">Khoá</span>
             </td>
             <td class="text-xs">{{ r.expiry_date ? fmtDate(r.expiry_date) : '—' }}</td>
             <td class="text-right font-mono font-semibold"

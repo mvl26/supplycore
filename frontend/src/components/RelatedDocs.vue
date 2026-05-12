@@ -3,6 +3,8 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { call } from '../api'
 import { fmtDate, fmtNumber, fmtShort } from '../utils'
+import { fieldLabel } from '../i18n'
+import { statusLabel } from '../modules'
 
 const props = defineProps({
   doctype: { type: String, required: true },
@@ -42,8 +44,11 @@ const SECTION_LABELS = {
   dispensings:          { title: 'Lịch sử cấp phát',  icon: '💉', dt: 'SC Patient Dispensing' },
   patient_dispensings:  { title: 'Cấp phát BN từ DR', icon: '💉', dt: 'SC Patient Dispensing' },
   framework_contracts:  { title: 'HĐ khung',           icon: '📑', dt: 'Framework Contract' },
-  affected_items:       { title: 'Items bị ảnh hưởng',icon: '⚠️', dt: null },
+  affected_items:       { title: 'Vật tư bị ảnh hưởng', icon: '⚠️', dt: null },
 }
+
+const STATUS_KEYS = new Set(['status', 'qc_status', 'overall_status', 'severity',
+  'request_type', 'warehouse_type', 'entry_type', 'alert_type', 'bhyt_type'])
 
 // Per-section item navigation override (vd stock_balance click → batch detail)
 const NAV_OVERRIDE = {
@@ -69,6 +74,7 @@ function rowClick(sectionKey, row) {
 function fmt(value, key) {
   if (value == null || value === '') return '—'
   if (/_date$/.test(key)) return fmtDate(value)
+  if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value)
   if (/total|value|amount|qty|cost|balance|pays/.test(key) && typeof value === 'number') {
     return fmtShort(value)
   }
@@ -102,7 +108,7 @@ function columnsFor(rows) {
           <table class="sc-table text-sm">
             <thead>
               <tr>
-                <th v-for="c in columnsFor(rows)" :key="c">{{ c.replace(/_/g, ' ') }}</th>
+                <th v-for="c in columnsFor(rows)" :key="c">{{ fieldLabel(c) }}</th>
                 <th v-if="SECTION_LABELS[key]?.dt" class="w-12"></th>
               </tr>
             </thead>

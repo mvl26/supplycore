@@ -9,7 +9,7 @@ export const tests = [
       await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
       const title = await page.locator('h1').first().textContent()
       const cards = await page.locator('.sc-card').filter({ hasText: /Vật tư|UOM|NCC|Kho|BHYT/ }).count()
-      return title?.includes('Master Data') && cards >= 5
+      return title?.includes('Dữ liệu nền') && cards >= 5
         ? { ok: true, detail: `Title="${title}", ${cards} doctype cards` }
         : { ok: false, detail: `Title="${title}", ${cards} cards` }
     },

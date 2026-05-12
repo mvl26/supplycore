@@ -63,13 +63,16 @@ const isExpiringSoon = (date) => {
   return days < 30 && days >= 0
 }
 const isExpired = (date) => date && new Date(date) < new Date()
+const qcLabel = (s) => ({
+  Accepted: 'Đạt', Rejected: 'Không đạt', Conditional: 'Có điều kiện',
+}[s] || s)
 </script>
 
 <template>
-  <PageHeader title="Tồn kho hiện tại" icon="📊" code="Stock Balance"
-    :subtitle="`${rows.length} bản ghi · ${totals.distinctItems} items · ${totals.distinctBatches} batches`">
+  <PageHeader title="Tồn kho hiện tại" icon="📊" code="Tồn kho"
+    :subtitle="`${rows.length} bản ghi · ${totals.distinctItems} vật tư · ${totals.distinctBatches} lô`">
     <template #actions>
-      <button @click="load" class="sc-btn-secondary text-sm">↻ Refresh</button>
+      <button @click="load" class="sc-btn-secondary text-sm">↻ Tải lại</button>
     </template>
   </PageHeader>
 
@@ -77,9 +80,9 @@ const isExpired = (date) => date && new Date(date) < new Date()
   <div class="sc-card p-4 mb-4">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Item</label>
+        <label class="text-xs text-sc-text-muted block mb-1">Vật tư</label>
         <select v-model="filters.item" @change="load" class="sc-input">
-          <option value="">— Tất cả items —</option>
+          <option value="">— Tất cả vật tư —</option>
           <option v-for="i in itemSuggestions" :key="i.name" :value="i.name">
             {{ i.name }} {{ i.item_name ? `· ${i.item_name}` : '' }}
           </option>
@@ -93,9 +96,9 @@ const isExpired = (date) => date && new Date(date) < new Date()
         </select>
       </div>
       <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Lô (batch)</label>
+        <label class="text-xs text-sc-text-muted block mb-1">Lô</label>
         <input v-model="filters.batch" @keyup.enter="load"
-          class="sc-input" placeholder="Mã lô (Enter để search)" />
+          class="sc-input" placeholder="Nhập mã lô (Enter để tìm)" />
       </div>
     </div>
   </div>
@@ -111,11 +114,11 @@ const isExpired = (date) => date && new Date(date) < new Date()
       <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ fmtShort(totals.totalValue) }} VND</div>
     </div>
     <div class="sc-card p-4">
-      <div class="text-xs text-sc-text-muted">Items</div>
+      <div class="text-xs text-sc-text-muted">Số vật tư</div>
       <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ totals.distinctItems }}</div>
     </div>
     <div class="sc-card p-4">
-      <div class="text-xs text-sc-text-muted">Lô</div>
+      <div class="text-xs text-sc-text-muted">Số lô</div>
       <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ totals.distinctBatches }}</div>
     </div>
   </div>
@@ -124,17 +127,17 @@ const isExpired = (date) => date && new Date(date) < new Date()
   <div class="sc-card overflow-hidden">
     <div v-if="loading" class="p-10 text-center text-sc-text-muted">Đang tải...</div>
     <div v-else-if="!rows.length" class="p-10 text-center text-sc-text-muted">
-      Không có tồn kho match bộ lọc
+      Không có tồn kho khớp với bộ lọc
     </div>
     <div v-else class="overflow-x-auto">
       <table class="sc-table">
         <thead>
           <tr>
-            <th>Item</th>
+            <th>Mã VT</th>
             <th>Tên</th>
             <th>Kho</th>
             <th>Lô</th>
-            <th>QC</th>
+            <th>KCS</th>
             <th>HD</th>
             <th class="text-right">SL tồn</th>
             <th class="text-right">Giá trị (VND)</th>
@@ -150,9 +153,9 @@ const isExpired = (date) => date && new Date(date) < new Date()
             <td class="font-mono text-xs" @click="openBatch(r.batch)">{{ r.batch || '—' }}</td>
             <td>
               <span v-if="r.qc_status" :class="['sc-badge', r.qc_status === 'Accepted' ? 'sc-badge-success' : r.qc_status === 'Rejected' ? 'sc-badge-critical' : 'sc-badge-warning']">
-                {{ r.qc_status }}
+                {{ qcLabel(r.qc_status) }}
               </span>
-              <span v-if="r.blocked" class="sc-badge sc-badge-critical ml-1">Blocked</span>
+              <span v-if="r.blocked" class="sc-badge sc-badge-critical ml-1">Khoá</span>
             </td>
             <td>
               <span :class="{ 'text-sc-danger font-semibold': isExpired(r.expiry_date),
