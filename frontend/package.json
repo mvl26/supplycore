@@ -27,7 +27,9 @@
     "test:uc:m10": "node tests/sandbox/runner.mjs 18_m10_trace_recall",
     "test:uc:m11": "node tests/sandbox/runner.mjs 19_m11_dashboard_alerts",
     "test:approval": "node tests/sandbox/runner.mjs 20_approval_workflow",
-    "test:headed": "node tests/sandbox/runner.mjs --headed"
+    "test:headed": "node tests/sandbox/runner.mjs --headed",
+    "e2e": "node tests/sandbox/scenarios/e2e_main_flow.mjs",
+    "e2e:headed": "node tests/sandbox/scenarios/e2e_main_flow.mjs --headed"
   },
   "dependencies": {
     "chart.js": "^4.4.2",

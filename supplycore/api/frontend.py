@@ -59,3 +59,48 @@ def count_docs(doctype, filters=None):
     if isinstance(filters, str):
         filters = json.loads(filters)
     return frappe.db.count(doctype, filters=filters or {})
+
+
+@frappe.whitelist()
+def submit_doc(doctype, name):
+    """Submit doc — tránh TimestampMismatchError do client-side fetch dance.
+
+    frappe.client.submit() yêu cầu pass full doc dict + modified timestamp;
+    nếu doc bị modify giữa fetch và submit → TimestampMismatchError.
+    Wrapper này fetch fresh + submit trong cùng request.
+    """
+    if not frappe.has_permission(doctype, "submit", doc=name):
+        frappe.throw(_("Không có quyền submit {0} {1}").format(doctype, name),
+                      frappe.PermissionError)
+    doc = frappe.get_doc(doctype, name)
+    doc.submit()
+    return doc.as_dict()
+
+
+@frappe.whitelist()
+def cancel_doc(doctype, name):
+    """Cancel doc — tương tự submit_doc."""
+    if not frappe.has_permission(doctype, "cancel", doc=name):
+        frappe.throw(_("Không có quyền cancel {0} {1}").format(doctype, name),
+                      frappe.PermissionError)
+    doc = frappe.get_doc(doctype, name)
+    doc.cancel()
+    return doc.as_dict()
+
+
+@frappe.whitelist()
+def save_doc(doctype, name, fields):
+    """Update doc fields + save (Draft only). Tránh TimestampMismatch."""
+    import json
+    if isinstance(fields, str):
+        fields = json.loads(fields)
+    if not frappe.has_permission(doctype, "write", doc=name):
+        frappe.throw(_("Không có quyền sửa {0} {1}").format(doctype, name),
+                      frappe.PermissionError)
+    doc = frappe.get_doc(doctype, name)
+    for k, v in (fields or {}).items():
+        if k not in ("name", "doctype", "owner", "creation", "modified", "modified_by",
+                     "docstatus", "idx", "parent", "parentfield", "parenttype"):
+            doc.set(k, v)
+    doc.save()
+    return doc.as_dict()

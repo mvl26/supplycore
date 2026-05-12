@@ -134,11 +134,12 @@ export async function count(doctype, filters = {}) {
 }
 
 export async function submitDoc(doctype, name) {
-  return call('frappe.client.submit', { doc: { doctype, name } })
+  // Dùng backend wrapper để tránh TimestampMismatchError
+  return call('supplycore.api.frontend.submit_doc', { doctype, name })
 }
 
 export async function cancelDoc(doctype, name) {
-  return call('frappe.client.cancel', { doctype, name })
+  return call('supplycore.api.frontend.cancel_doc', { doctype, name })
 }
 
 // Run a doctype instance method (whitelisted via @frappe.whitelist on doc class)

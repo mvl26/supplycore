@@ -27,9 +27,49 @@ class SCPatientDispensing(Document):
                 ).format(row.batch, b.block_reason or ""))
 
     def on_submit(self):
+        self._post_stock_ledger()
         if self.dispensing_request and frappe.db.exists("SC Dispensing Request", self.dispensing_request):
             frappe.db.set_value("SC Dispensing Request", self.dispensing_request,
                                  "status", "Dispensed")
+
+    def on_cancel(self):
+        self._reverse_stock_ledger()
+
+    def _post_stock_ledger(self):
+        """UC-22: PD submit → SLE âm để giảm tồn kho per item+batch+warehouse."""
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        for r in self.items:
+            if not (r.item and r.qty and r.warehouse):
+                continue
+            SCStockLedgerEntry.post(
+                item=r.item, warehouse=r.warehouse,
+                qty_change=-flt(r.qty),
+                valuation_rate=flt(r.unit_cost),
+                voucher_type="SC Patient Dispensing",
+                voucher_no=self.name, voucher_detail_no=r.name,
+                batch=r.batch,
+                posting_date=self.dispensing_date,
+                remarks=f"Cấp phát BN {self.patient}",
+            )
+
+    def _reverse_stock_ledger(self):
+        """Cancel PD → post SLE đảo dấu."""
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        sles = frappe.get_all("SC Stock Ledger Entry",
+            filters={"voucher_type": "SC Patient Dispensing", "voucher_no": self.name,
+                      "is_cancelled": 0},
+            fields=["name", "item", "warehouse", "batch", "qty_change", "valuation_rate"])
+        for s in sles:
+            SCStockLedgerEntry.post(
+                item=s.item, warehouse=s.warehouse,
+                qty_change=-flt(s.qty_change),
+                valuation_rate=flt(s.valuation_rate),
+                voucher_type="SC Patient Dispensing", voucher_no=self.name,
+                voucher_detail_no=s.name + "-CANCEL",
+                batch=s.batch,
+                remarks=f"Cancel PD {self.name}",
+            )
+            frappe.db.set_value("SC Stock Ledger Entry", s.name, "is_cancelled", 1)
 
     def _calculate_bhyt(self):
         """Per-row BHYT calc với UC-22 luồng 2a + ngoại lệ config thay đổi."""
@@ -55,7 +95,7 @@ class SCPatientDispensing(Document):
                 row.bhyt_config_changed = 0
                 continue
 
-            cfg = get_active_config(row.item, on_date=self.dispensing_date)
+            cfg = get_active_config(row.item, on_date=str(self.dispensing_date) if self.dispensing_date else None)
             if not cfg:
                 # UC-22 3a: VT không có BHYT config → BN trả 100%
                 row.bhyt_code = None
