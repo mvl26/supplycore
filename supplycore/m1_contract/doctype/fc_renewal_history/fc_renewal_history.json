@@ -1,0 +1,32 @@
+{
+ "actions": [], "creation": "2026-05-08 00:00:00", "doctype": "DocType",
+ "engine": "InnoDB", "istable": 1, "track_changes": 0,
+ "field_order": [
+  "request_date", "old_valid_to", "new_valid_to",
+  "renewed_by", "approval_status",
+  "approved_by", "approved_at",
+  "reason"
+ ],
+ "fields": [
+  {"fieldname": "request_date", "fieldtype": "Datetime", "label": "Yêu cầu", "reqd": 1,
+   "in_list_view": 1, "default": "now", "columns": 2},
+  {"fieldname": "old_valid_to", "fieldtype": "Date", "label": "Hết hạn cũ",
+   "in_list_view": 1, "read_only": 1, "columns": 1},
+  {"fieldname": "new_valid_to", "fieldtype": "Date", "label": "Hết hạn mới",
+   "reqd": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "renewed_by", "fieldtype": "Link", "options": "User",
+   "label": "Yêu cầu bởi", "read_only": 1, "in_list_view": 1, "columns": 2},
+  {"fieldname": "approval_status", "fieldtype": "Select",
+   "options": "Pending\nApproved\nRejected", "label": "Trạng thái",
+   "default": "Pending", "in_list_view": 1, "columns": 1},
+  {"fieldname": "approved_by", "fieldtype": "Link", "options": "User",
+   "label": "Người duyệt", "read_only": 1, "columns": 2},
+  {"fieldname": "approved_at", "fieldtype": "Datetime",
+   "label": "Thời điểm duyệt", "read_only": 1},
+  {"fieldname": "reason", "fieldtype": "Small Text", "label": "Lý do gia hạn", "reqd": 1, "columns": 3}
+ ],
+ "permissions": [],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-08 00:00:00",
+ "module": "M1 Contract", "name": "FC Renewal History",
+ "sort_field": "request_date", "sort_order": "DESC"
+}

@@ -19,10 +19,10 @@
 | UC | Tên | Module | Status | Note |
 |---|---|---|---|---|
 | UC-01 | Search & Evaluate Suppliers | M1 | ✅ **enhanced 2026-05-08** | SC Supplier có province + default_item_group + scorecard panel + Script Report `Supplier Performance` (export Excel/CSV/PDF) |
-| UC-02 | Create / Update Supplier | M1 | ✅ | SC Supplier CRUD |
-| UC-03 | Create & Manage Framework Contract | M1 | ✅ | FC + slice 1 wired RO + auto-PO |
-| UC-04 | Track Contract Status & Renewal | M1 | ✅ | Daily scheduler check_contract_expiry + email 30/15/7d |
-| UC-05 | Set Min/Max Stock Levels | M2 | ✅ **OK** | 2026-05-11 — full per-WH + 4 thresholds + EOQ. SC Item Reorder child doctype, get_reorder_thresholds helper, M11 per-WH alert scan, Procurement Plan auto-load button |
+| UC-02 | Create / Update Supplier | M1 | ✅ **enhanced 2026-05-08** | 8-step full: required (tax_id/address/mobile/email) + bank info + payment_terms select 30/60/90 + supplied_item_groups child + GPKD/ISO attachment + validate tax_id duplicate + email format |
+| UC-03 | Create & Manage Framework Contract | M1 | ✅ **enhanced 2026-05-08** | 3-tier workflow Kế toán→Manager→Executive (threshold-based, default 100tr); delivery_terms; reject với reason; blacklist override; before_submit block nếu chưa Approved |
+| UC-04 | Track Contract Status & Renewal | M1 | ✅ **enhanced 2026-05-08** | Progress bar 2-color (used/committed); renewal workflow (request_renewal → Manager/Executive approve → update valid_to + history); reject với reason; terminate với biên bản; block gia hạn quá 90 ngày retroactively |
+| UC-05 | Set Min/Max Stock Levels | M2 | ✅ **enhanced 2026-05-11** | Full per-WH + 4 thresholds + EOQ. SC Item Reorder child doctype, get_reorder_thresholds helper, M11 per-WH alert scan, Procurement Plan auto-load button |
 | UC-06 | Create Periodic Procurement Plan | M2 | ⚠️ Partial | Doctype có nhưng `generate_procurement_forecast` scheduler là placeholder. Auto-MR creation defer (cần trend analysis/ML) |
 | UC-07 | Create Purchase Request (MR) | M2 | ✅ | SC MR submit → status=Approved (slice 1) |
 | UC-08 | Create & Approve PO | M2 | ✅ | create_purchase_orders auto từ MR; approval threshold qua Settings.po_approval_threshold (50tr) |

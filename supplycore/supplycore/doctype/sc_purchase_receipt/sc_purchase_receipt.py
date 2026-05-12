@@ -287,6 +287,17 @@ class SCPurchaseReceipt(Document):
                     frappe.msgprint(_("Row {0}: hạn dùng còn {1} ngày (< {2}). Cần xác nhận.")
                                      .format(r.idx, days, min_shelf), indicator="orange", alert=True)
 
+    @frappe.whitelist()
+    def create_batches(self):
+        """Public wrapper: tạo SC Batch cho các row có expiry mà chưa có lô.
+        Trả về list batch đã tạo."""
+        before = {r.batch_no for r in self.items if r.batch_no}
+        self._create_batches_if_needed()
+        self.reload()
+        after = {r.batch_no for r in self.items if r.batch_no}
+        created = sorted(after - before)
+        return {"created": created, "count": len(created)}
+
     def _create_batches_if_needed(self):
         """Nếu row có expiry_date + chưa có batch_no → tạo SC Batch tự động
         với batch_id format `[item]-[YYYYMM]-[Seq]` (UC-15 step 3)."""

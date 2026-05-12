@@ -262,6 +262,53 @@ export const FORM_SCHEMAS = {
   },
 
   // ============================================================
+  // M3 Quality Inspection — sửa kết quả KCS
+  // ============================================================
+  'SC Quality Inspection': {
+    sections: [
+      { title: 'Thông tin kiểm', fields: [
+        { name: 'inspection_date', label: 'Ngày kiểm', type: 'Date', required: true, default: 'today' },
+        { name: 'purchase_receipt', label: 'Phiếu nhập', type: 'Link', linkTo: 'SC Purchase Receipt', required: true,
+          fetchFrom: { target_doctype: 'SC Purchase Receipt', target_field: 'supplier' } },
+        { name: 'supplier', label: 'Nhà cung cấp', type: 'Link', linkTo: 'SC Supplier', readonly: true,
+          hint: 'Tự fetch từ Phiếu nhập' },
+        { name: 'item', label: 'Vật tư', type: 'Link', linkTo: 'SC Item', required: true,
+          fetchFrom: { target_doctype: 'SC Item', target_field: 'item_name' } },
+        { name: 'item_name', label: 'Tên vật tư', type: 'Data', readonly: true },
+        { name: 'batch', label: 'Lô', type: 'Link', linkTo: 'SC Batch', canCreateNew: true,
+          hint: 'Chọn lô có sẵn hoặc bấm "+ Tạo mới Batch" để tạo lô mới và quay lại form này' },
+        { name: 'received_qty', label: 'SL nhận', type: 'Float' },
+        { name: 'inspected_by', label: 'Người kiểm', type: 'Link', linkTo: 'User' },
+        { name: 'checklist_template', label: 'Bộ tiêu chuẩn', type: 'Link', linkTo: 'QC Checklist Template' },
+      ]},
+      { title: 'Kết quả', fields: [
+        { name: 'manual_inspection', label: 'Kiểm thủ công', type: 'Check' },
+        { name: 'overall_status', label: 'Kết quả tổng', type: 'Select',
+          options: ['Pending', 'Accepted', 'Rejected', 'Conditional', 'On Hold'],
+          default: 'Pending' },
+        { name: 'action_taken', label: 'Hành động', type: 'Select',
+          options: ['Pending', 'Accept', 'Conditional Accept', 'Return to Supplier', 'Request Replacement'] },
+        { name: 'remarks', label: 'Ghi chú KCS', type: 'Small Text' },
+      ]},
+    ],
+    items: {
+      field: 'readings', label: 'Tiêu chí kiểm tra',
+      bulkActions: [
+        { label: '✓ Accept tất cả', variant: 'success', set: { status: 'Accepted' } },
+        { label: '✕ Reject tất cả', variant: 'danger',  set: { status: 'Rejected' } },
+      ],
+      columns: [
+        { name: 'specification', label: 'Tiêu chí', type: 'Data', required: true, width: '30%' },
+        { name: 'value', label: 'Giá trị đo', type: 'Data', width: '25%' },
+        { name: 'status', label: 'Kết quả', type: 'Select',
+          options: ['Pending', 'Accepted', 'Rejected'], required: true, width: '15%' },
+        { name: 'is_critical', label: 'Tới hạn', type: 'Check', width: '10%' },
+        { name: 'remarks', label: 'Ghi chú', type: 'Data', width: '20%' },
+      ],
+    },
+  },
+
+  // ============================================================
   // M4 WMS
   // ============================================================
   'SC Batch': {
@@ -374,14 +421,18 @@ export const FORM_SCHEMAS = {
       ]},
     ],
     items: {
-      field: 'items', label: 'Items dùng',
+      field: 'items', label: 'Vật tư cấp phát',
+      autoFetch: {
+        on: ['item', 'warehouse'],
+        api: 'supplycore.api.frontend.pd_item_autofetch',
+      },
       columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '28%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%' },
-        { name: 'qty', label: 'SL', type: 'Float', required: true, width: '12%' },
-        { name: 'unit_cost', label: 'Đơn giá', type: 'Currency', required: true, width: '18%' },
-        { name: 'batch', label: 'Lô', type: 'Link', linkTo: 'SC Batch', width: '15%' },
-        { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', width: '15%' },
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '24%' },
+        { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', required: true, width: '18%' },
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%' },
+        { name: 'qty', label: 'SL', type: 'Float', required: true, width: '10%' },
+        { name: 'unit_cost', label: 'Đơn giá', type: 'Currency', required: true, width: '14%' },
+        { name: 'batch', label: 'Lô (FEFO)', type: 'Link', linkTo: 'SC Batch', width: '18%' },
       ],
     },
   },

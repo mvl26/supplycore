@@ -6,6 +6,6 @@
 
 | # | Step | Status | Detail / Error |
 |---|---|---|---|
-| 1 | Tạo SC Transfer Request → Kho Khoa Nhi | PASS | SC-TR-2026-01468 |
-| 2 | Submit TR | PASS | {"name": "SC-TR-2026-01468", "owner": "Administrator", "creation": "2026-05-08 16:29:47.023715", "modified": "2026-05-08 16:29:47.059924", "modified_by": "Administrator", "docstatus": 1, "idx": 0, "request_date": "2026-05-08", "transfer_type": "Replenishment", "required_by": "2026-05-11", "requested |
+| 1 | Tạo SC Transfer Request → Kho Khoa Nhi | PASS | SC-TR-2026-01611 |
+| 2 | Submit TR | PASS | {"name": "SC-TR-2026-01611", "owner": "Administrator", "creation": "2026-05-08 17:31:26.174569", "modified": "2026-05-08 17:31:26.236454", "modified_by": "Administrator", "docstatus": 1, "idx": 0, "request_date": "2026-05-08", "transfer_type": "Replenishment", "required_by": "2026-05-11", "requested |
 | 3 | TR status sau submit | PASS | status=Approved |

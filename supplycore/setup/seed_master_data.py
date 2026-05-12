@@ -152,23 +152,245 @@ WAREHOUSES = [
 # 5. SC Supplier (NCC điển hình ngành VTYT Việt Nam)
 # ---------------------------------------------------------------------------
 SUPPLIERS = [
-    # (name, code, tax_id, type, email, phone, address)
-    ("Công ty CP Dược Hậu Giang",        "DHG",         "1800156801", "Nhà sản xuất",
-     "info@dhgpharma.com.vn", "0292-3891433", "288 Bis Nguyễn Văn Cừ, Q. Ninh Kiều, TP. Cần Thơ"),
-    ("Công ty CP Traphaco",              "TRAPHACO",    "0100109953", "Nhà sản xuất",
-     "info@traphaco.com.vn", "024-37345686", "75 Yên Ninh, Ba Đình, Hà Nội"),
-    ("Công ty CP Pymepharco",            "PYMEPHARCO",  "4400111383", "Nhà sản xuất",
-     "info@pymepharco.com",  "0257-3823250", "166-170 Nguyễn Huệ, Phú Yên"),
-    ("Công ty CP Imexpharm",             "IMEXPHARM",   "1400384433", "Nhà sản xuất",
-     "info@imexpharm.com",   "0277-3851941", "04 Đường 30/4, TP. Cao Lãnh, Đồng Tháp"),
-    ("Boston Scientific Vietnam",        "BSC-VN",      "0316578901", "Nhà phân phối",
-     "vn-info@bsci.com",     "028-39999000", "Vincom Center, Q1, TP.HCM"),
-    ("Medtronic Vietnam",                "MDT-VN",      "0316578902", "Nhà phân phối",
-     "vn-info@medtronic.com","028-39106000", "Bitexco Tower, Q1, TP.HCM"),
-    ("B. Braun Vietnam",                 "BBRAUN-VN",   "0316578903", "Nhà sản xuất",
-     "info-vn@bbraun.com",   "024-32268888", "170 La Thành, Đống Đa, Hà Nội"),
-    ("3M Vietnam Co. Ltd",               "3M-VN",       "0316578904", "Nhà phân phối",
-     "vn-info@3m.com",       "028-39101888", "Diamond Plaza, Q1, TP.HCM"),
+    # dict format — UC-02 enhanced 2026-05-08:
+    # required: supplier_name, tax_id, supplier_type, email_id, mobile_no, address
+    # optional: province, payment_terms, credit_limit, bank_*, gpkd_*, gpp_*, iso_*,
+    #           default_item_group, supplied_item_groups (list of Item Group names)
+    {
+        "supplier_name": "Công ty CP Dược Hậu Giang",
+        "supplier_code": "DHG",
+        "tax_id": "1800156801",
+        "supplier_type": "Nhà sản xuất",
+        "email_id": "info@dhgpharma.com.vn",
+        "mobile_no": "02923891433",
+        "address": "288 Bis Nguyễn Văn Cừ, Q. Ninh Kiều, TP. Cần Thơ",
+        "province": "Cần Thơ",
+        "payment_terms": "Net 30",
+        "credit_limit": 500_000_000,
+        "bank_name": "Vietcombank — Chi nhánh Cần Thơ",
+        "bank_account_no": "0011000123456",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao"],
+        "gpkd_no": "0301110116",
+        "gpp_certificate_no": "GPP-001/2025",
+        "gpp_expiry": "2027-12-31",
+        "iso_certificate_no": "ISO 9001:2015",
+        "rating": 4.5,
+    },
+    {
+        "supplier_name": "Công ty CP Traphaco",
+        "supplier_code": "TRAPHACO",
+        "tax_id": "0100109953",
+        "supplier_type": "Nhà sản xuất",
+        "email_id": "info@traphaco.com.vn",
+        "mobile_no": "02437345686",
+        "address": "75 Yên Ninh, Ba Đình, Hà Nội",
+        "province": "Hà Nội",
+        "payment_terms": "Net 60",
+        "credit_limit": 300_000_000,
+        "bank_name": "BIDV — Chi nhánh Ba Đình",
+        "bank_account_no": "0021000234567",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao"],
+        "gpkd_no": "0100109953",
+        "gpp_certificate_no": "GPP-002/2025",
+        "gpp_expiry": "2026-11-30",
+        "iso_certificate_no": "ISO 13485:2016",
+        "rating": 4.2,
+    },
+    {
+        "supplier_name": "Công ty CP Pymepharco",
+        "supplier_code": "PYMEPHARCO",
+        "tax_id": "4400111383",
+        "supplier_type": "Nhà sản xuất",
+        "email_id": "info@pymepharco.com",
+        "mobile_no": "02573823250",
+        "address": "166-170 Nguyễn Huệ, TP. Tuy Hòa, Phú Yên",
+        "province": "Phú Yên",
+        "payment_terms": "Net 30",
+        "credit_limit": 200_000_000,
+        "bank_name": "Agribank — Chi nhánh Phú Yên",
+        "bank_account_no": "0031000345678",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao"],
+        "gpkd_no": "4400111383",
+        "gpp_certificate_no": "GPP-003/2025",
+        "gpp_expiry": "2027-06-30",
+        "rating": 3.9,
+    },
+    {
+        "supplier_name": "Công ty CP Imexpharm",
+        "supplier_code": "IMEXPHARM",
+        "tax_id": "1400384433",
+        "supplier_type": "Nhà sản xuất",
+        "email_id": "info@imexpharm.com",
+        "mobile_no": "02773851941",
+        "address": "04 Đường 30/4, TP. Cao Lãnh, Đồng Tháp",
+        "province": "Đồng Tháp",
+        "payment_terms": "Net 60",
+        "credit_limit": 250_000_000,
+        "bank_name": "Vietinbank — Chi nhánh Đồng Tháp",
+        "bank_account_no": "0041000456789",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao"],
+        "gpkd_no": "1400384433",
+        "gpp_certificate_no": "GPP-004/2025",
+        "gpp_expiry": "2026-12-31",
+        "iso_certificate_no": "ISO 9001:2015",
+        "rating": 4.3,
+    },
+    {
+        "supplier_name": "Boston Scientific Vietnam",
+        "supplier_code": "BSC-VN",
+        "tax_id": "0316578901",
+        "supplier_type": "Nhà phân phối",
+        "email_id": "vn-info@bsci.com",
+        "mobile_no": "02839999000",
+        "address": "Vincom Center, 70-72 Lê Thánh Tôn, Q1, TP.HCM",
+        "province": "TP.HCM",
+        "payment_terms": "Net 90",
+        "credit_limit": 1_000_000_000,
+        "bank_name": "HSBC Vietnam",
+        "bank_account_no": "0051000567890",
+        "default_item_group": "Vật tư thay thế",
+        "supplied_item_groups": ["Vật tư thay thế", "Vật tư phụ trợ"],
+        "gpkd_no": "0316578901",
+        "iso_certificate_no": "ISO 13485:2016",
+        "rating": 4.7,
+    },
+    {
+        "supplier_name": "Medtronic Vietnam",
+        "supplier_code": "MDT-VN",
+        "tax_id": "0316578902",
+        "supplier_type": "Nhà phân phối",
+        "email_id": "vn-info@medtronic.com",
+        "mobile_no": "02839106000",
+        "address": "Bitexco Financial Tower, 2 Hải Triều, Q1, TP.HCM",
+        "province": "TP.HCM",
+        "payment_terms": "Net 90",
+        "credit_limit": 1_500_000_000,
+        "bank_name": "Standard Chartered",
+        "bank_account_no": "0061000678901",
+        "default_item_group": "Vật tư thay thế",
+        "supplied_item_groups": ["Vật tư thay thế", "Vật tư phụ trợ"],
+        "gpkd_no": "0316578902",
+        "iso_certificate_no": "ISO 13485:2016",
+        "rating": 4.8,
+    },
+    {
+        "supplier_name": "B. Braun Vietnam",
+        "supplier_code": "BBRAUN-VN",
+        "tax_id": "0316578903",
+        "supplier_type": "Nhà sản xuất",
+        "email_id": "info-vn@bbraun.com",
+        "mobile_no": "02432268888",
+        "address": "170 La Thành, Đống Đa, Hà Nội",
+        "province": "Hà Nội",
+        "payment_terms": "Net 60",
+        "credit_limit": 800_000_000,
+        "bank_name": "Vietcombank — Hà Nội",
+        "bank_account_no": "0011000789012",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao", "Hóa chất sinh phẩm"],
+        "gpkd_no": "0316578903",
+        "iso_certificate_no": "ISO 13485:2016",
+        "rating": 4.6,
+    },
+    {
+        "supplier_name": "3M Vietnam Co. Ltd",
+        "supplier_code": "3M-VN",
+        "tax_id": "0316578904",
+        "supplier_type": "Nhà phân phối",
+        "email_id": "vn-info@3m.com",
+        "mobile_no": "02839101888",
+        "address": "Diamond Plaza, 34 Lê Duẩn, Q1, TP.HCM",
+        "province": "TP.HCM",
+        "payment_terms": "Net 60",
+        "credit_limit": 500_000_000,
+        "bank_name": "Citibank Vietnam",
+        "bank_account_no": "0071000890123",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao"],
+        "gpkd_no": "0316578904",
+        "iso_certificate_no": "ISO 9001:2015",
+        "rating": 4.4,
+    },
+    # 4 NCC mới đại diện thêm các nhóm khác cho UC-01 search filter test
+    {
+        "supplier_name": "Công ty TNHH TBYT Hồng Hà",
+        "supplier_code": "HONGHA-MED",
+        "tax_id": "0102030405",
+        "supplier_type": "Đại lý",
+        "email_id": "kinhdoanh@hongha.vn",
+        "mobile_no": "02438234567",
+        "address": "Số 1 Nguyễn Thái Học, Hoàn Kiếm, Hà Nội",
+        "province": "Hà Nội",
+        "payment_terms": "Net 30",
+        "credit_limit": 100_000_000,
+        "bank_name": "Techcombank — Hoàn Kiếm",
+        "bank_account_no": "0081000901234",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao", "Dịch truyền"],
+        "gpkd_no": "0102030405",
+        "rating": 3.5,
+    },
+    {
+        "supplier_name": "Công ty CP Dược Hà Tây",
+        "supplier_code": "HATAYPHARMA",
+        "tax_id": "0500404404",
+        "supplier_type": "Nhà sản xuất",
+        "email_id": "contact@hataypharma.vn",
+        "mobile_no": "02433568901",
+        "address": "Số 10 đường Quang Trung, Q. Hà Đông, Hà Nội",
+        "province": "Hà Nội",
+        "payment_terms": "Net 60",
+        "credit_limit": 150_000_000,
+        "bank_name": "MB Bank",
+        "bank_account_no": "0091000012345",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao"],
+        "gpkd_no": "0500404404",
+        "gpp_certificate_no": "GPP-005/2025",
+        "gpp_expiry": "2027-04-30",
+        "rating": 3.8,
+    },
+    {
+        "supplier_name": "Công ty TNHH Vật tư Y tế Sài Gòn",
+        "supplier_code": "SGN-MED",
+        "tax_id": "0314567890",
+        "supplier_type": "Đại lý",
+        "email_id": "info@sgnmed.vn",
+        "mobile_no": "02838222333",
+        "address": "456 Nguyễn Trãi, Q5, TP.HCM",
+        "province": "TP.HCM",
+        "payment_terms": "COD",
+        "credit_limit": 50_000_000,
+        "bank_name": "ACB",
+        "bank_account_no": "0101000123456",
+        "default_item_group": "Vật tư tiêu hao",
+        "supplied_item_groups": ["Vật tư tiêu hao"],
+        "gpkd_no": "0314567890",
+        "rating": 3.2,
+    },
+    {
+        "supplier_name": "Roche Diagnostics Vietnam",
+        "supplier_code": "ROCHE-DX",
+        "tax_id": "0316123456",
+        "supplier_type": "Nhà phân phối",
+        "email_id": "vn.contact@roche.com",
+        "mobile_no": "02839111222",
+        "address": "Saigon Centre, 65 Lê Lợi, Q1, TP.HCM",
+        "province": "TP.HCM",
+        "payment_terms": "Net 90",
+        "credit_limit": 2_000_000_000,
+        "bank_name": "HSBC Vietnam",
+        "bank_account_no": "0051000456789",
+        "default_item_group": "Hóa chất sinh phẩm",
+        "supplied_item_groups": ["Hóa chất sinh phẩm"],
+        "gpkd_no": "0316123456",
+        "iso_certificate_no": "ISO 13485:2016",
+        "rating": 4.9,
+    },
 ]
 
 
@@ -289,23 +511,77 @@ def _seed_warehouses() -> int:
 
 
 def _seed_suppliers() -> int:
-    created = 0
-    for name, code, tax, stype, email, phone, addr in SUPPLIERS:
-        if frappe.db.exists("SC Supplier", {"supplier_name": name}):
+    """Seed/upsert NCC theo SUPPLIERS dict format (UC-02 enhanced).
+
+    Tạo mới nếu chưa có. Nếu đã có: update các field còn thiếu (bank, item_groups,
+    payment_terms, ...) để backfill cho records cũ tạo từ format tuple.
+    """
+    created = 0; updated = 0
+    for sup in SUPPLIERS:
+        existing_name = frappe.db.get_value("SC Supplier",
+            {"supplier_name": sup["supplier_name"]}, "name")
+        if existing_name:
+            updated += _upsert_supplier(existing_name, sup)
             continue
         d = frappe.new_doc("SC Supplier")
-        d.supplier_name = name
-        d.supplier_code = code
-        d.tax_id = tax
-        d.supplier_type = stype
-        d.email_id = email
-        d.mobile_no = phone
-        d.address = addr
-        d.payment_terms = "Net 30"
+        _apply_supplier_fields(d, sup)
         d.flags.ignore_permissions = True
-        d.insert()
-        created += 1
+        try:
+            d.insert()
+            created += 1
+        except Exception as e:
+            frappe.log_error(message=f"NCC {sup['supplier_name']} insert failed: {e}",
+                              title="Seed master data")
     return created
+
+
+def _upsert_supplier(name: str, sup: dict) -> int:
+    """Overwrite các field từ seed spec lên NCC đã có. Idempotent (re-run cùng kết quả)."""
+    d = frappe.get_doc("SC Supplier", name)
+    changed = False
+    # Scalar — overwrite với seed value (spec is source of truth)
+    for f in ("supplier_type", "email_id", "mobile_no", "address",
+              "province", "payment_terms", "credit_limit", "bank_name",
+              "bank_account_no", "bank_account_holder", "gpkd_no",
+              "gpp_certificate_no", "gpp_expiry", "iso_certificate_no",
+              "default_item_group", "rating"):
+        v = sup.get(f)
+        if v is not None and d.get(f) != v:
+            setattr(d, f, v)
+            changed = True
+    # Child supplied_item_groups: replace toàn bộ với seed list
+    seed_igs = [ig for ig in (sup.get("supplied_item_groups") or [])
+                if frappe.db.exists("SC Item Group", ig)]
+    current_igs = sorted([r.item_group for r in (d.supplied_item_groups or [])])
+    if sorted(seed_igs) != current_igs:
+        d.supplied_item_groups = []
+        for ig in seed_igs:
+            d.append("supplied_item_groups", {"item_group": ig})
+        changed = True
+    if changed:
+        d.flags.ignore_permissions = True
+        try:
+            d.save()
+            return 1
+        except Exception as e:
+            frappe.log_error(message=f"NCC upsert {name} fail: {e}",
+                              title="Seed master data")
+    return 0
+
+
+def _apply_supplier_fields(d, sup: dict):
+    """Set tất cả field từ dict spec lên doc."""
+    for f in ("supplier_name", "supplier_code", "tax_id", "supplier_type",
+              "email_id", "mobile_no", "address", "province",
+              "payment_terms", "credit_limit", "bank_name", "bank_account_no",
+              "bank_account_holder", "gpkd_no", "gpp_certificate_no",
+              "gpp_expiry", "iso_certificate_no", "default_item_group", "rating"):
+        v = sup.get(f)
+        if v is not None:
+            setattr(d, f, v)
+    for ig in sup.get("supplied_item_groups", []) or []:
+        if frappe.db.exists("SC Item Group", ig):
+            d.append("supplied_item_groups", {"item_group": ig})
 
 
 def _seed_items() -> int:

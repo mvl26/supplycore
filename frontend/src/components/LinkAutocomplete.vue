@@ -9,8 +9,9 @@ const props = defineProps({
   required:   Boolean,
   readonly:   Boolean,
   size:       { type: String, default: 'normal' }, // normal/sm
+  allowCreate: Boolean,                            // hiển thị "+ Tạo mới"
 })
-const emit = defineEmits(['update:modelValue', 'selected'])
+const emit = defineEmits(['update:modelValue', 'selected', 'createNew'])
 
 const open = ref(false)
 const search = ref('')
@@ -84,6 +85,11 @@ const subLabel = (r) => r.item_name || r.supplier_name || r.patient_name || r.fu
 
     <div v-if="open && !readonly"
       class="absolute z-30 mt-1 w-full bg-white border border-sc-border rounded-md shadow-lg max-h-64 overflow-y-auto">
+      <button v-if="allowCreate" type="button"
+        @mousedown.prevent="emit('createNew'); open = false"
+        class="w-full text-left px-3 py-2 text-sm font-semibold text-sc-royal hover:bg-sc-bg border-b border-sc-border bg-blue-50">
+        + Tạo mới {{ linkTo.replace(/^SC /, '') }}
+      </button>
       <div v-if="loading" class="px-3 py-2 text-sm text-sc-text-muted">Đang tìm...</div>
       <div v-else-if="results.length === 0" class="px-3 py-2 text-sm text-sc-text-muted">
         Không có kết quả{{ search ? ` cho "${search}"` : '' }}

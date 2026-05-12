@@ -26,9 +26,47 @@ function removeRow(idx) {
   emit('update:modelValue', arr)
 }
 
+function applyBulk(action) {
+  if (!rows.value.length) return
+  const set = action.set || {}
+  const arr = rows.value.map(r => ({ ...r, ...set }))
+  emit('update:modelValue', arr)
+}
+
+const variantClass = (v) => ({
+  success: 'bg-sc-success hover:bg-green-700 text-white',
+  danger:  'bg-sc-danger hover:bg-red-700 text-white',
+  primary: 'sc-btn-primary',
+}[v] || 'sc-btn-secondary')
+
 function updateCell(idx, name, value) {
   const arr = rows.value.map((r, i) => i === idx ? { ...r, [name]: value } : r)
   emit('update:modelValue', arr)
+  // Trigger row-level auto-fetch nếu schema khai báo autoFetch.on chứa field này
+  const af = props.schema.autoFetch
+  if (af && af.api && af.on?.includes(name)) {
+    const row = arr[idx]
+    if (af.on.every(k => row[k])) runAutoFetch(idx, row, af)
+  }
+}
+
+async function runAutoFetch(idx, row, af) {
+  const params = {}
+  for (const k of af.on) params[k] = row[k]
+  try {
+    const res = await call(af.api, params)
+    if (!res || typeof res !== 'object') return
+    const updates = {}
+    for (const [k, v] of Object.entries(res)) {
+      // Bỏ qua key không phải column hợp lệ
+      if (!props.schema.columns.some(c => c.name === k)) continue
+      if (v != null && v !== '') updates[k] = v
+    }
+    if (Object.keys(updates).length) {
+      const arr2 = rows.value.map((r, i) => i === idx ? { ...r, ...updates } : r)
+      emit('update:modelValue', arr2)
+    }
+  } catch (e) {}
 }
 
 // Auto-fetch related field after Link change
@@ -57,11 +95,19 @@ async function handleLinkSelected(idx, col, linkedDoc) {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
       <h4 class="font-medium text-sc-navy text-sm">{{ schema.label }} ({{ rows.length }})</h4>
-      <button v-if="!readonly" @click="newRow" type="button" class="sc-btn-secondary text-xs">
-        + Thêm dòng
-      </button>
+      <div v-if="!readonly" class="flex items-center gap-2 flex-wrap">
+        <button v-for="(act, i) in (schema.bulkActions || [])" :key="i"
+          @click="applyBulk(act)" type="button"
+          :disabled="!rows.length"
+          :class="['text-xs px-3 py-1 rounded-md font-medium disabled:opacity-40', variantClass(act.variant)]">
+          {{ act.label }}
+        </button>
+        <button @click="newRow" type="button" class="sc-btn-secondary text-xs">
+          + Thêm dòng
+        </button>
+      </div>
     </div>
 
     <div v-if="rows.length === 0" class="border border-dashed border-sc-border rounded-md p-6 text-center text-sm text-sc-text-muted">

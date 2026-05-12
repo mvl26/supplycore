@@ -1,12 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { call, getList } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDate, fmtNumber } from '../utils'
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToastStore()
 
 const warehouses = ref([])
@@ -26,10 +27,19 @@ async function loadWarehouses() {
 }
 
 async function loadBins() {
-  if (!filterWh.value) { bins.value = []; return }
-  bins.value = await call('supplycore.api.frontend.bins_for_warehouse',
-    { warehouse: filterWh.value })
+  // Luôn load tất cả bins (kèm warehouse) để mỗi row có thể chọn vị trí
+  // thuộc đúng kho của row đó, kể cả khi filterWh để trống.
+  bins.value = await call('supplycore.api.frontend.bins_for_warehouse', {})
 }
+
+const binsByWh = computed(() => {
+  const m = {}
+  for (const b of bins.value) {
+    if (!m[b.warehouse]) m[b.warehouse] = []
+    m[b.warehouse].push(b)
+  }
+  return m
+})
 
 async function loadPending() {
   loading.value = true
@@ -47,13 +57,17 @@ async function loadPending() {
 }
 
 watch(filterWh, () => {
-  loadBins()
   loadPending()
 })
 
 onMounted(async () => {
-  await loadWarehouses()
-  if (warehouses.value.length) filterWh.value = warehouses.value[0].name
+  await Promise.all([loadWarehouses(), loadBins()])
+  // Auto-select warehouse từ query param (vd: PR submit → ?warehouse=Kho X)
+  const qWh = route.query.warehouse
+  if (qWh && warehouses.value.some(w => w.name === qWh)) {
+    filterWh.value = qWh
+  }
+  await loadPending()
 })
 
 const selectedCount = computed(() =>
@@ -143,13 +157,17 @@ async function saveAll() {
           </td>
           <td class="text-right font-mono font-semibold">{{ fmtNumber(r.qty) }}</td>
           <td>
-            <select v-model="assignments[r.sle_name]" class="sc-input py-1 text-xs">
+            <select v-if="(binsByWh[r.warehouse] || []).length"
+              v-model="assignments[r.sle_name]" class="sc-input py-1 text-xs">
               <option value="">— Chọn vị trí —</option>
-              <option v-for="b in bins.filter(b => b.name && (!r.warehouse || true))"
+              <option v-for="b in binsByWh[r.warehouse] || []"
                 :key="b.name" :value="b.name">
-                {{ b.name }} {{ b.bin_code && b.bin_code !== b.name ? `(${b.bin_code})` : '' }}
+                {{ b.bin_code || b.name }}
               </option>
             </select>
+            <span v-else class="text-xs text-sc-text-muted italic">
+              Kho chưa khai vị trí
+            </span>
           </td>
         </tr>
       </tbody>

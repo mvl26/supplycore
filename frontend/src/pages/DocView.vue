@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc } from '../api'
+import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, call } from '../api'
 import { DT } from '../modules'
 import { FORM_SCHEMAS } from '../schemas'
 import PageHeader from '../components/PageHeader.vue'
@@ -30,6 +30,9 @@ const loading = ref(false)
 const saving = ref(false)
 const editing = ref(false)
 
+const LINK_PENDING_KEY = 'sc-link-create-pending'
+const LINK_RESULT_KEY  = 'sc-link-create-result'
+
 async function load() {
   if (isNew.value) {
     // Init empty doc with defaults; childtable empty array
@@ -38,18 +41,66 @@ async function load() {
       doc.value[schema.value.items.field] = []
     }
     editing.value = true
+    // Nếu đang trong vòng round-trip "+ Tạo mới Link" → prefill từ doc gốc
+    try {
+      const pending = JSON.parse(sessionStorage.getItem(LINK_PENDING_KEY) || 'null')
+      if (pending && pending.newDoctype === doctype.value && pending.prefill) {
+        doc.value = { ...doc.value, ...pending.prefill }
+      }
+    } catch (e) {}
     return
   }
   loading.value = true
   try {
     doc.value = await getDoc(doctype.value, name.value)
-    editing.value = false
+    // Auto-edit khi draft → user khỏi phải bấm "Sửa"
+    editing.value = doc.value.docstatus === 0 && !!schema.value
+    // Nếu vừa quay lại từ Tạo mới Link → patch field bằng record vừa tạo
+    try {
+      const result = JSON.parse(sessionStorage.getItem(LINK_RESULT_KEY) || 'null')
+      if (result && result.returnPath && route.fullPath.startsWith(result.returnPath.split('?')[0])) {
+        sessionStorage.removeItem(LINK_RESULT_KEY)
+        doc.value = { ...doc.value, [result.field]: result.newName }
+        editing.value = true
+        toast.success(`Đã chọn ${result.field}: ${result.newName}`)
+      }
+    } catch (e) {}
   } catch (e) {
     toast.error(`Không tải được: ${e.message}`)
     doc.value = null
   } finally {
     loading.value = false
   }
+}
+
+// Khi user bấm "+ Tạo mới" trên Link field → lưu state rồi navigate sang form new
+async function onCreateNewLink(field) {
+  if (!field?.linkTo) return
+  const prefill = {}
+  // QI → SC Batch: prefill item, supplier (fetch từ PR nếu chưa có trên doc)
+  if (doctype.value === 'SC Quality Inspection' && field.name === 'batch') {
+    if (doc.value?.item) prefill.item = doc.value.item
+    let supplier = doc.value?.supplier
+    if (!supplier && doc.value?.purchase_receipt) {
+      try {
+        const res = await call('frappe.client.get_value', {
+          doctype: 'SC Purchase Receipt',
+          filters: { name: doc.value.purchase_receipt },
+          fieldname: 'supplier',
+        })
+        supplier = res?.supplier
+      } catch (e) {}
+    }
+    if (supplier) prefill.supplier = supplier
+  }
+  // PR rows / Stock Entry rows có thể mở rộng sau
+  sessionStorage.setItem(LINK_PENDING_KEY, JSON.stringify({
+    returnPath: route.fullPath,
+    field: field.name,
+    newDoctype: field.linkTo,
+    prefill,
+  }))
+  router.push(`/doc/${encodeURIComponent(field.linkTo)}/new`)
 }
 
 watch(() => route.fullPath, load)
@@ -70,13 +121,25 @@ async function save() {
       const payload = { ...doc.value, doctype: doctype.value }
       const created = await createDoc(doctype.value, payload)
       toast.success(`Đã tạo ${created.name}`)
+      // Nếu đang round-trip "+ Tạo mới Link" → quay lại form gốc, patch field
+      let pending = null
+      try { pending = JSON.parse(sessionStorage.getItem(LINK_PENDING_KEY) || 'null') } catch (e) {}
+      if (pending && pending.newDoctype === doctype.value) {
+        sessionStorage.removeItem(LINK_PENDING_KEY)
+        sessionStorage.setItem(LINK_RESULT_KEY, JSON.stringify({
+          returnPath: pending.returnPath,
+          field: pending.field,
+          newName: created.name,
+        }))
+        router.replace(pending.returnPath)
+        return
+      }
       router.replace(`/doc/${encodeURIComponent(doctype.value)}/${encodeURIComponent(created.name)}`)
     } else {
       // Send only the changed payload; Frappe handles partial update
       await updateDoc(doctype.value, name.value, doc.value)
       toast.success('Đã lưu')
-      editing.value = false
-      await load()
+      await load()  // load() sẽ tự bật editing nếu vẫn là draft
     }
   } catch (e) {
     toast.error(e.message)
@@ -85,13 +148,27 @@ async function save() {
   }
 }
 
+// Sau submit thì điều hướng tới trang phù hợp với UC
+const POST_SUBMIT_NAV = {
+  'SC Purchase Receipt': (d) => d?.docstatus === 1 && d.is_return === 0
+    ? { path: '/putaway', query: { warehouse: d.warehouse || '' } } : null,
+  'SC Stock Entry': (d) => d?.docstatus === 1 && d.to_warehouse
+    ? { path: '/putaway', query: { warehouse: d.to_warehouse } } : null,
+}
+
 async function doSubmit() {
   if (!doc.value?.name) return
   saving.value = true
   try {
     await submitDoc(doctype.value, name.value)
-    toast.success('Đã submit')
+    toast.success('Đã gửi duyệt')
     await load()
+    const navFn = POST_SUBMIT_NAV[doctype.value]
+    const nav = navFn?.(doc.value)
+    if (nav) {
+      toast.success('Chuyển sang xếp hàng lên kệ...')
+      router.push(nav)
+    }
   } catch (e) {
     toast.error(e.message)
   } finally {
@@ -177,16 +254,16 @@ function displayField(value, key) {
           </button>
         </template>
         <template v-else-if="editing">
-          <button @click="editing = false; load()" class="sc-btn-secondary text-sm">Hủy</button>
+          <button @click="load" class="sc-btn-secondary text-sm">↺ Hoàn tác</button>
           <button @click="save" :disabled="saving" class="sc-btn-primary text-sm">
             {{ saving ? 'Đang lưu...' : '💾 Lưu' }}
           </button>
+          <button v-if="doc.docstatus === 0" @click="doSubmit"
+            :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm">
+            📤 Gửi duyệt
+          </button>
         </template>
         <template v-else>
-          <button v-if="doc.docstatus === 0 && schema"
-            @click="editing = true" class="sc-btn-secondary text-sm">✎ Sửa</button>
-          <button v-if="doc.docstatus === 0" @click="doSubmit"
-            :disabled="saving" class="sc-btn-primary text-sm">Gửi duyệt</button>
           <button v-if="doc.docstatus === 1" @click="doCancel"
             :disabled="saving" class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium text-sm">
             Hủy
@@ -195,30 +272,28 @@ function displayField(value, key) {
       </template>
     </PageHeader>
 
+    <!-- Action panel — hiển thị cả khi draft-editing để user gọi action (vd Gửi duyệt FC) -->
+    <ActionPanel v-if="!isNew && doc?.name" :doctype="doctype" :doc="doc" @after="load" />
+
+    <!-- Stock-aware widget chung -->
+    <WarehouseStockPanel v-if="['SC Transfer Request', 'SC Stock Entry'].includes(doctype) && doc.from_warehouse"
+      :warehouse="doc.from_warehouse"
+      :title="isNew || editing ? 'Tồn kho nguồn (chọn lô khi điền items)' : 'Tồn kho nguồn'" />
+    <template v-if="doctype === 'SC Patient Dispensing' && doc.items?.length">
+      <FefoPickGuide v-for="(it, i) in doc.items.filter(it => it.item && it.warehouse && it.qty)"
+        :key="`fefo-${i}`" :item="it.item" :warehouse="it.warehouse" :qtyNeeded="it.qty" />
+    </template>
+
     <!-- New / Edit mode → DocForm -->
     <template v-if="isNew || editing">
-      <DocForm v-model="doc" :doctype="doctype" @submit="save" />
+      <DocForm v-model="doc" :doctype="doctype" @submit="save" @create-new="onCreateNewLink" />
       <div v-if="!schema" class="sc-card p-6 text-center">
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
       </div>
-      <!-- TR/SE form: hiển thị tồn kho nguồn để chọn lô -->
-      <WarehouseStockPanel v-if="['SC Transfer Request', 'SC Stock Entry'].includes(doctype) && doc.from_warehouse"
-        :warehouse="doc.from_warehouse"
-        title="Tồn kho nguồn (chọn lô khi điền items)" />
     </template>
 
-    <!-- View mode -->
+    <!-- View mode (chỉ khi đã submit hoặc cancel — không phải draft) -->
     <template v-else>
-      <ActionPanel :doctype="doctype" :doc="doc" @after="load" />
-
-      <!-- Stock-aware view: TR/SE → tồn kho nguồn; PD → FEFO guide -->
-      <WarehouseStockPanel v-if="['SC Transfer Request', 'SC Stock Entry'].includes(doctype) && doc.from_warehouse"
-        :warehouse="doc.from_warehouse"
-        title="Tồn kho nguồn" />
-      <template v-if="doctype === 'SC Patient Dispensing' && doc.items?.length">
-        <FefoPickGuide v-for="(it, i) in doc.items.filter(it => it.item && it.warehouse && it.qty)"
-          :key="`fefo-${i}`" :item="it.item" :warehouse="it.warehouse" :qtyNeeded="it.qty" />
-      </template>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="sc-card p-5">
@@ -242,9 +317,6 @@ function displayField(value, key) {
           </dl>
         </div>
       </div>
-
-      <!-- Related records (reverse lookups) -->
-      <RelatedDocs v-if="!isNew && doc?.name" :doctype="doctype" :name="doc.name" />
 
       <div v-for="child in fieldGroups.items" :key="child.key" class="sc-card p-5 mb-4">
         <h3 class="font-semibold text-sc-navy mb-3">{{ fieldLabel(child.key) }} ({{ child.value.length }})</h3>
@@ -272,5 +344,8 @@ function displayField(value, key) {
         </div>
       </div>
     </template>
+
+    <!-- Related records (reverse lookups) — luôn hiển thị nếu doc tồn tại -->
+    <RelatedDocs v-if="!isNew && doc?.name" :doctype="doctype" :name="doc.name" />
   </div>
 </template>

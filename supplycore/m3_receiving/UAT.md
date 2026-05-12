@@ -6,7 +6,7 @@
 
 | # | Step | Status | Detail / Error |
 |---|---|---|---|
-| 1 | Tạo SC Batch (master) | PASS | {"name": "UAT-M3-BATCH-1778232585", "owner": "Administrator", "creation": "2026-05-08 16:29:46.457369", "modified": "2026-05-08 16:29:46.457369", "modified_by": "Administrator", "docstatus": 0, "idx": 0, "batch_id": "UAT-M3-BATCH-1778232585", "item": "VTTH-MASK-3PLY", "item_name": "Khẩu trang y tế 3 |
-| 2 | Tạo SC Purchase Receipt từ PO | PASS | SC-PR-2026-01463 |
-| 3 | Submit PR (auto-create QI nếu cần) | PASS | {"name": "SC-PR-2026-01463", "owner": "Administrator", "creation": "2026-05-08 16:29:46.548534", "modified": "2026-05-08 16:29:46.599287", "modified_by": "Administrator", "docstatus": 1, "idx": 0, "supplier": "SC-SUP-00055", "supplier_name": "Công ty CP Dược Hậu Giang", "purchase_order": "SC-PO-2026 |
+| 1 | Tạo SC Batch (master) | PASS | {"name": "UAT-M3-BATCH-1778236284", "owner": "Administrator", "creation": "2026-05-08 17:31:25.501017", "modified": "2026-05-08 17:31:25.501017", "modified_by": "Administrator", "docstatus": 0, "idx": 0, "batch_id": "UAT-M3-BATCH-1778236284", "item": "VTTH-MASK-3PLY", "item_name": "Khẩu trang y tế 3 |
+| 2 | Tạo SC Purchase Receipt từ PO | PASS | SC-PR-2026-01606 |
+| 3 | Submit PR (auto-create QI nếu cần) | PASS | {"name": "SC-PR-2026-01606", "owner": "Administrator", "creation": "2026-05-08 17:31:25.591036", "modified": "2026-05-08 17:31:25.631878", "modified_by": "Administrator", "docstatus": 1, "idx": 0, "supplier": "SC-SUP-00055", "supplier_name": "Công ty CP Dược Hậu Giang", "purchase_order": "SC-PO-2026 |
 | 4 | PR có qc_status | PASS | qc_status=Pending, status=None |

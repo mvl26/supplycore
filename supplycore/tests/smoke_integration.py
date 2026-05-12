@@ -60,8 +60,13 @@ def run():
         "uom": item_uom, "unit_price": 1,
     })
     fc.flags.ignore_permissions = True
-    fc.insert(); fc.submit()
-    fc.reload()
+    fc.insert(); fc.reload()
+    # UC-03 3-tier approval workflow
+    fc.submit_for_review(); fc.reload()
+    fc.approve_as_manager(comment="integration"); fc.reload()
+    if fc.approval_stage == "Executive Review":
+        fc.approve_as_executive(comment="integration"); fc.reload()
+    fc.submit(); fc.reload()
     results.append({"step": "1. FC Active",
                     "fc": fc.name, "remaining": flt(fc.remaining_value),
                     "status": fc.status})

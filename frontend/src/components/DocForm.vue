@@ -11,7 +11,7 @@ const props = defineProps({
   doctype:    { type: String, required: true },
   readonly:   { type: Boolean, default: false },
 })
-const emit = defineEmits(['update:modelValue', 'submit'])
+const emit = defineEmits(['update:modelValue', 'submit', 'createNew'])
 
 const schema = computed(() => FORM_SCHEMAS[props.doctype])
 const doc = computed({ get: () => props.modelValue, set: (v) => emit('update:modelValue', v) })
@@ -70,7 +70,8 @@ function isVisible(field) {
             <FormField :model-value="doc[f.name]"
               :field="f" :readonly="readonly"
               @update:model-value="v => updateField(f.name, v)"
-              @selected="linked => handleLinkSelected(f, linked)" />
+              @selected="linked => handleLinkSelected(f, linked)"
+              @create-new="emit('createNew', f)" />
           </div>
         </template>
       </div>

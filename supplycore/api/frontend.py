@@ -440,14 +440,70 @@ def assign_bin(assignments):
 
 
 @frappe.whitelist()
-def bins_for_warehouse(warehouse):
-    """List bins trong 1 warehouse."""
-    if not warehouse:
-        return []
+def pd_item_autofetch(item=None, warehouse=None):
+    """Auto-fetch UOM + đơn giá + lô FEFO khi cấp phát/xuất kho 1 vật tư
+    tại 1 kho. Lô được chọn = lô có qty > 0 trong kho, QC Accepted (hoặc
+    chưa gắn QC), không blocked, sort expiry_date ASC (FEFO).
+    """
+    if not item or not warehouse:
+        return {}
+
+    uom = frappe.db.get_value("SC Item", item, "uom")
+
+    # Đơn giá: ưu tiên valuation_rate gần nhất trong kho; fallback unit_price
+    # từ FC Item Active rẻ nhất.
+    val_row = frappe.db.sql("""
+        SELECT valuation_rate FROM `tabSC Stock Ledger Entry`
+        WHERE item=%s AND warehouse=%s AND is_cancelled=0
+              AND valuation_rate > 0
+        ORDER BY posting_date DESC, creation DESC LIMIT 1
+    """, (item, warehouse))
+    unit_cost = flt(val_row[0][0]) if val_row else 0
+
+    if not unit_cost:
+        fc_row = frappe.db.sql("""
+            SELECT fci.unit_price FROM `tabFC Item` fci
+            JOIN `tabFramework Contract` fc ON fc.name = fci.parent
+            WHERE fci.item_code=%s AND fc.docstatus=1 AND fc.status='Active'
+            ORDER BY fci.unit_price ASC LIMIT 1
+        """, item)
+        unit_cost = flt(fc_row[0][0]) if fc_row else 0
+
+    # FEFO batch trong kho
+    batch_row = frappe.db.sql("""
+        SELECT sle.batch, SUM(sle.qty_change) AS qty,
+               b.expiry_date, b.qc_status, b.blocked
+        FROM `tabSC Stock Ledger Entry` sle
+        LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
+        WHERE sle.item=%s AND sle.warehouse=%s AND sle.is_cancelled=0
+          AND sle.batch IS NOT NULL AND sle.batch != ''
+          AND (b.blocked = 0 OR b.blocked IS NULL)
+          AND (b.qc_status = 'Accepted' OR b.qc_status IS NULL)
+        GROUP BY sle.batch
+        HAVING qty > 0
+        ORDER BY b.expiry_date ASC, sle.batch ASC
+        LIMIT 1
+    """, (item, warehouse), as_dict=True)
+    batch = batch_row[0].batch if batch_row else None
+
+    return {
+        "uom": uom,
+        "unit_cost": unit_cost,
+        "batch": batch,
+        "available_qty": flt(batch_row[0].qty) if batch_row else 0,
+        "expiry_date": str(batch_row[0].expiry_date) if batch_row and batch_row[0].expiry_date else None,
+    }
+
+
+@frappe.whitelist()
+def bins_for_warehouse(warehouse=None):
+    """List bins. Nếu warehouse=None → trả tất cả bins kèm warehouse
+    để frontend có thể group + lọc theo từng row Putaway."""
+    filters = {"warehouse": warehouse} if warehouse else {}
     return frappe.db.get_all("Bin Location",
-        filters={"warehouse": warehouse},
-        fields=["name", "bin_code"],
-        order_by="bin_code asc", limit=200)
+        filters=filters,
+        fields=["name", "bin_code", "warehouse"],
+        order_by="warehouse asc, bin_code asc", limit=500)
 
 
 @frappe.whitelist()

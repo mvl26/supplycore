@@ -59,9 +59,11 @@ export const ACTIONS = {
 
   // === M3 Purchase Receipt — UC-09..14 ===
   'SC Purchase Receipt': [
-    { method: 'make_quality_inspection', label: 'Tạo Phiếu QC',     icon: '🔬', variant: 'primary',
+    { method: 'make_quality_inspection', label: 'Tạo Phiếu KCS',    icon: '🔬', variant: 'primary',
       when: (d) => d.docstatus === 1 && d.is_return === 0 },
-    { method: 'list_batches',            label: 'Xem Lô đã tạo',    icon: '🏷️', variant: 'secondary',
+    { method: 'create_batches',          label: 'Tạo Lô',           icon: '🏷️', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.is_return === 0 },
+    { method: 'list_batches',            label: 'Xem Lô đã tạo',    icon: '🔍', variant: 'secondary',
       when: (d) => d.docstatus === 1 && d.is_return === 0 },
     { method: 'make_debit_note',     label: 'Tạo Debit Note',          icon: '📝', variant: 'primary',
       when: (d) => d.is_return === 1 && d.docstatus === 1 && !d.debit_note },

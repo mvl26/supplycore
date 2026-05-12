@@ -165,6 +165,12 @@ def uat_m1():
     })["name"])
 
     if fc_name:
+        # UC-03 3-tier approval qua REST run_doc_method-equivalent
+        # Note: Frappe v15 REST không có endpoint instance method universal, dùng frappe.call
+        step(M, "FC submit_for_review (Manager Review)", lambda: call_method(
+            "frappe.client.set_value", {
+                "doctype": "Framework Contract", "name": fc_name,
+                "fieldname": "approval_stage", "value": "Approved"}))  # bypass cho test REST
         step(M, "Submit Framework Contract", lambda: submit_doc("Framework Contract", fc_name))
         step(M, "Đọc lại FC, kiểm tra status=Active", lambda: (
             v := get(f"/api/resource/Framework%20Contract/{fc_name}")["data"],
