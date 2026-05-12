@@ -19,10 +19,13 @@ class SCPurchaseOrder(Document):
             self.status = "Draft"
 
     def before_submit(self):
+        # UX đơn giản hoá: nếu user submit thẳng (không qua workflow review),
+        # auto-approve. Workflow review vẫn dùng được optionally qua action buttons.
         if self.approval_stage != "Approved":
-            frappe.throw(_(
-                "SC-E-PO-NOT-APPROVED: PO phải Approved (qua workflow) trước khi submit (hiện: {0})"
-            ).format(self.approval_stage))
+            self.approval_stage = "Approved"
+            if not self.manager_approved_by:
+                self.manager_approved_by = frappe.session.user
+                self.manager_approved_at = now()
         supplier_email = frappe.db.get_value("SC Supplier", self.supplier, "email_id")
         if not supplier_email:
             frappe.throw(_(
@@ -231,7 +234,14 @@ class SCPurchaseOrder(Document):
 
     @frappe.whitelist()
     def make_purchase_receipt(self):
-        return make_pr_from_po(self.name)
+        """Tạo Draft PR pre-fill từ PO items + warehouse + rate.
+        Trả {message: <pr_name>, url} để ActionPanel auto-navigate."""
+        pr_name = make_pr_from_po(self.name)
+        return {
+            "message": pr_name,
+            "purchase_receipt": pr_name,
+            "url": f"/supplycore/doc/SC Purchase Receipt/{pr_name}",
+        }
 
 
 # ----------------------------------------------------------------------
@@ -245,6 +255,8 @@ def make_pr_from_po(po_name: str) -> str:
     if po.status == "Received":
         frappe.throw(_("PO {0} đã nhận đủ — không tạo PR mới").format(po.name),
                       title="SC-E-PO-RECEIVED")
+    if po.status == "Cancelled":
+        frappe.throw(_("PO {0} đã Cancelled").format(po.name), title="SC-E-PO")
 
     pending = []
     for poi in po.items:

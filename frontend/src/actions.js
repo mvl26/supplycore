@@ -26,18 +26,21 @@ export const ACTIONS = {
       ]},
   ],
 
-  // === M2 Purchase Order — UC-08 ===
+  // === M2 Purchase Order — UC-08 (workflow đơn giản hoá) ===
   'SC Purchase Order': [
-    { method: 'submit_for_review',   label: 'Gửi duyệt',         icon: '📤', variant: 'primary',
+    { method: 'make_purchase_receipt', label: 'Tạo Phiếu nhập (PR)', icon: '📦', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status !== 'Received' && d.status !== 'Cancelled',
+      navigateOnSuccess: { type: 'doc', dt: 'SC Purchase Receipt', from: 'purchase_receipt' } },
+    { method: 'submit_for_review',   label: 'Gửi duyệt (Optional)', icon: '📤', variant: 'secondary',
       when: (d) => d.docstatus === 0 && (d.approval_stage === 'Draft' || !d.approval_stage) },
     { method: 'approve_as_manager',  label: 'Manager duyệt',     icon: '✓',  variant: 'success',
-      when: (d) => d.approval_stage === 'Manager Review',
+      when: (d) => d.docstatus === 0 && d.approval_stage === 'Manager Review',
       args: [{ key: 'comment', label: 'Ghi chú', type: 'textarea' }] },
     { method: 'approve_as_executive', label: 'Executive duyệt',  icon: '✓✓', variant: 'success',
-      when: (d) => d.approval_stage === 'Executive Review',
+      when: (d) => d.docstatus === 0 && d.approval_stage === 'Executive Review',
       args: [{ key: 'comment', label: 'Ghi chú', type: 'textarea' }] },
     { method: 'reject',              label: 'Từ chối',           icon: '✕',  variant: 'danger',
-      when: (d) => ['Manager Review', 'Executive Review'].includes(d.approval_stage),
+      when: (d) => d.docstatus === 0 && ['Manager Review', 'Executive Review'].includes(d.approval_stage),
       args: [{ key: 'reason', label: 'Lý do', type: 'textarea', required: true }] },
   ],
 
