@@ -7,6 +7,7 @@ import { FORM_SCHEMAS } from '../schemas'
 import PageHeader from '../components/PageHeader.vue'
 import ActionPanel from '../components/ActionPanel.vue'
 import DocForm from '../components/DocForm.vue'
+import RelatedDocs from '../components/RelatedDocs.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDateTime, fmtNumber } from '../utils'
 
@@ -216,6 +217,9 @@ function displayField(value, key) {
           </dl>
         </div>
       </div>
+
+      <!-- Related records (reverse lookups) -->
+      <RelatedDocs v-if="!isNew && doc?.name" :doctype="doctype" :name="doc.name" />
 
       <div v-for="child in fieldGroups.items" :key="child.key" class="sc-card p-5 mb-4">
         <h3 class="font-semibold text-sc-navy mb-3">{{ child.key.replace(/_/g, ' ') }} ({{ child.value.length }})</h3>

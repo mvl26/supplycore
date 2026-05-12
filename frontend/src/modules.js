@@ -195,10 +195,10 @@ export const DT = {
       { key: 'transaction_date', label: 'Ngày', type: 'date' },
       { key: 'supplier', label: 'NCC' },
       { key: 'schedule_date', label: 'Ngày giao', type: 'date' },
-      { key: 'total_value', label: 'Tổng', type: 'currency', align: 'right' },
+      { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
       { key: 'status', label: 'Status', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'transaction_date', 'supplier', 'schedule_date', 'total_value', 'status', 'docstatus'],
+    listFields: ['name', 'transaction_date', 'supplier', 'schedule_date', 'grand_total', 'status', 'docstatus'],
     actions: ['submit', 'cancel', 'send_to_supplier'],
   },
 
@@ -321,7 +321,7 @@ export const DT = {
       { key: 'patient_pays', label: 'BN trả', type: 'currency', align: 'right' },
     ],
     listFields: ['name', 'dispensing_date', 'patient', 'patient_name', 'ward',
-                  'total_cost', 'patient_pays', 'bhyt_amount', 'docstatus'],
+                  'total_cost', 'patient_pays', 'docstatus'],
   },
 
   // === M8 ===
