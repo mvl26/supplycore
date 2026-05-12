@@ -13,7 +13,7 @@ def run_all():
     ts = random_string(6)
     sup = frappe.db.get_value("SC Supplier", {"supplier_name": "Công ty CP Dược Hậu Giang"}, "name") \
           or frappe.get_all("SC Supplier", limit=1)[0].name
-    item = "VTTH-MASK-3PLY"
+    item = "DTRC-NACL09"  # batch-tracked item để chạy đầy đủ FEFO section
     item_uom = frappe.db.get_value("SC Item", item, "uom")
     main_wh = "Kho Vật tư tiêu hao"
     dept_wh = frappe.db.get_value("SC Warehouse", {"warehouse_type": "Department", "disabled": 0}, "name") \
@@ -32,7 +32,12 @@ def run_all():
                           "uom": item_uom, "unit_price": 1})
     fc.flags.ignore_permissions = True
     try:
-        fc.insert(); fc.submit(); fc.reload()
+        fc.insert(); fc.reload()
+        fc.submit_for_review(); fc.reload()
+        fc.approve_as_manager(comment="UAT"); fc.reload()
+        if fc.approval_stage == "Executive Review":
+            fc.approve_as_executive(comment="UAT"); fc.reload()
+        fc.submit(); fc.reload()
         print(f"  ✓ FC {fc.name} submit, status={fc.status}")
         if fc.status != "Active":
             note("1.2", f"FC.status={fc.status} sau submit, expected Active", "High")
@@ -65,9 +70,11 @@ def run_all():
     mr.flags.ignore_permissions = True
     try:
         mr.insert(); mr.submit(); mr.reload()
+        if mr.status == "Pending":
+            mr.approve(); mr.reload()
         if mr.status != "Approved":
-            note("2.1", f"MR.status={mr.status} sau submit, expected Approved (slice 1)", "Medium")
-        print(f"  ✓ MR {mr.name} submit, status={mr.status}")
+            note("2.1", f"MR.status={mr.status} sau approve, expected Approved", "Medium")
+        print(f"  ✓ MR {mr.name} submit + approve, status={mr.status}")
     except Exception as e:
         note("2.1", f"MR submit fail: {str(e)[:150]}", "Critical")
         return
@@ -84,12 +91,12 @@ def run_all():
         note("2.2", f"create_purchase_orders fail: {str(e)[:150]}", "Critical")
         return
 
-    # 2.3 Submit PO
+    # 2.3 Submit PO — simplified flow: submit → Sent to Supplier
     po = frappe.get_doc("SC Purchase Order", po_name)
     try:
         po.submit(); po.reload()
-        if po.status != "Approved":
-            note("2.3", f"PO.status={po.status} sau submit", "Medium")
+        if po.status != "Sent to Supplier":
+            note("2.3", f"PO.status={po.status} sau submit, expected Sent to Supplier", "Medium")
         print(f"  ✓ PO submit, status={po.status}")
     except Exception as e:
         note("2.3", f"PO submit fail: {str(e)[:150]}", "Critical")

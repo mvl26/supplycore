@@ -63,6 +63,13 @@ async function logout() {
           <span class="text-sm font-medium">Tồn kho</span>
         </router-link>
 
+        <router-link to="/putaway"
+          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
+          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/putaway') }">
+          <span class="text-base">📦</span>
+          <span class="text-sm font-medium">Xếp hàng lên kệ</span>
+        </router-link>
+
         <div v-for="(modules, group) in groups" :key="group" class="mt-4">
           <div class="px-5 mb-1 text-xs font-semibold text-white/40 uppercase tracking-wider">
             {{ group }}

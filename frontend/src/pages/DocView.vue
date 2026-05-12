@@ -8,6 +8,8 @@ import PageHeader from '../components/PageHeader.vue'
 import ActionPanel from '../components/ActionPanel.vue'
 import DocForm from '../components/DocForm.vue'
 import RelatedDocs from '../components/RelatedDocs.vue'
+import FefoPickGuide from '../components/FefoPickGuide.vue'
+import WarehouseStockPanel from '../components/WarehouseStockPanel.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDateTime, fmtNumber } from '../utils'
 
@@ -189,11 +191,24 @@ function displayField(value, key) {
       <div v-if="!schema" class="sc-card p-6 text-center">
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
       </div>
+      <!-- TR/SE form: hiển thị tồn kho nguồn để chọn lô -->
+      <WarehouseStockPanel v-if="['SC Transfer Request', 'SC Stock Entry'].includes(doctype) && doc.from_warehouse"
+        :warehouse="doc.from_warehouse"
+        title="Tồn kho nguồn (chọn lô khi điền items)" />
     </template>
 
     <!-- View mode -->
     <template v-else>
       <ActionPanel :doctype="doctype" :doc="doc" @after="load" />
+
+      <!-- Stock-aware view: TR/SE → tồn kho nguồn; PD → FEFO guide -->
+      <WarehouseStockPanel v-if="['SC Transfer Request', 'SC Stock Entry'].includes(doctype) && doc.from_warehouse"
+        :warehouse="doc.from_warehouse"
+        title="Tồn kho nguồn" />
+      <template v-if="doctype === 'SC Patient Dispensing' && doc.items?.length">
+        <FefoPickGuide v-for="(it, i) in doc.items.filter(it => it.item && it.warehouse && it.qty)"
+          :key="`fefo-${i}`" :item="it.item" :warehouse="it.warehouse" :qtyNeeded="it.qty" />
+      </template>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="sc-card p-5">

@@ -7,6 +7,7 @@ frappe.db.get_all (bypass field validation, nhưng vẫn check role permissions)
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 
 @frappe.whitelist()
@@ -265,6 +266,188 @@ def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
         LIMIT 500
     """, params, as_dict=True)
     return rows
+
+
+@frappe.whitelist()
+def warehouse_stock_for_item(warehouse, item=None):
+    """List batches của item (hoặc tất cả) trong warehouse với bin + qty.
+    UC-18: hỗ trợ TR form khi user chọn item → hiện tồn + bin.
+    """
+    if not warehouse:
+        return []
+    conds = ["sle.warehouse = %(wh)s", "sle.is_cancelled = 0"]
+    params = {"wh": warehouse}
+    if item:
+        conds.append("sle.item = %(item)s")
+        params["item"] = item
+    return frappe.db.sql(f"""
+        SELECT sle.item, i.item_name, sle.batch, sle.bin_location,
+               COALESCE(SUM(sle.qty_change), 0) AS qty,
+               b.expiry_date, b.qc_status, b.blocked,
+               i.safety_stock
+        FROM `tabSC Stock Ledger Entry` sle
+        LEFT JOIN `tabSC Item` i ON i.name = sle.item
+        LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
+        WHERE {' AND '.join(conds)}
+        GROUP BY sle.item, sle.batch, sle.bin_location
+        HAVING qty > 0
+        ORDER BY b.expiry_date ASC, sle.batch
+    """, params, as_dict=True)
+
+
+@frappe.whitelist()
+def check_safety_after_transfer(warehouse, item, qty):
+    """Kiểm tra nếu chuyển qty từ warehouse → tồn còn lại có dưới safety_stock không.
+    Trả {current, after, safety_stock, below_safety, warning_msg}.
+    """
+    current = flt(frappe.db.sql("""
+        SELECT COALESCE(SUM(qty_change), 0)
+        FROM `tabSC Stock Ledger Entry`
+        WHERE warehouse = %s AND item = %s AND is_cancelled = 0
+    """, (warehouse, item))[0][0])
+    safety = flt(frappe.db.get_value("SC Item", item, "safety_stock") or 0)
+    after = current - flt(qty)
+    below = safety > 0 and after < safety
+    return {
+        "current": current,
+        "transfer_qty": flt(qty),
+        "after_transfer": after,
+        "safety_stock": safety,
+        "below_safety": below,
+        "warning_msg": f"⚠ Sau chuyển còn {after:.0f} < safety stock {safety:.0f}" if below else None,
+    }
+
+
+@frappe.whitelist()
+def fefo_pick_guide(item, warehouse, qty_needed):
+    """UC-17/UC-21: FEFO picking guide.
+    Trả picking plan: lô nào lấy trước, bin nào, qty bao nhiêu.
+
+    Sort batches by expiry_date ASC (first-expired-first-out).
+    Skip blocked batches. Skip batches HD đã hết.
+    """
+    qty_needed = flt(qty_needed)
+    if qty_needed <= 0:
+        return {"error": "qty_needed phải > 0", "picks": [], "total_picked": 0}
+
+    rows = frappe.db.sql("""
+        SELECT sle.batch, sle.bin_location,
+               COALESCE(SUM(sle.qty_change), 0) AS qty,
+               b.expiry_date, b.qc_status, b.blocked,
+               DATEDIFF(b.expiry_date, CURDATE()) AS days_left
+        FROM `tabSC Stock Ledger Entry` sle
+        JOIN `tabSC Batch` b ON b.name = sle.batch
+        WHERE sle.warehouse = %s AND sle.item = %s AND sle.is_cancelled = 0
+          AND b.disabled = 0
+          AND COALESCE(b.blocked, 0) = 0
+          AND b.qc_status = 'Accepted'
+          AND (b.expiry_date IS NULL OR b.expiry_date >= CURDATE())
+        GROUP BY sle.batch, sle.bin_location, b.expiry_date, b.qc_status, b.blocked
+        HAVING qty > 0
+        ORDER BY b.expiry_date ASC, sle.batch
+    """, (warehouse, item), as_dict=True)
+
+    picks = []
+    remaining = qty_needed
+    for r in rows:
+        if remaining <= 0:
+            break
+        pick_qty = min(flt(r["qty"]), remaining)
+        picks.append({
+            "batch": r["batch"],
+            "bin_location": r["bin_location"] or "(chưa xếp bin)",
+            "expiry_date": str(r["expiry_date"]) if r["expiry_date"] else None,
+            "days_left": int(r["days_left"]) if r["days_left"] is not None else None,
+            "available": flt(r["qty"]),
+            "pick_qty": pick_qty,
+            "qc_status": r["qc_status"],
+            "instruction": (f"Lấy {pick_qty:.0f} từ lô {r['batch']} "
+                            f"tại {r['bin_location'] or '(chưa có bin)'} "
+                            f"(HD {r['expiry_date']}, còn {r['days_left']} ngày)"),
+        })
+        remaining -= pick_qty
+
+    total_picked = qty_needed - remaining
+    return {
+        "item": item, "warehouse": warehouse,
+        "qty_needed": qty_needed,
+        "total_picked": total_picked,
+        "shortage": max(0, remaining),
+        "is_sufficient": remaining <= 0.01,
+        "picks": picks,
+        "summary": (f"Đủ {total_picked:.0f} / {qty_needed:.0f} qua {len(picks)} lô"
+                     if remaining <= 0.01
+                     else f"⚠ THIẾU {remaining:.0f}: chỉ có {total_picked:.0f} / {qty_needed:.0f}"),
+    }
+
+
+@frappe.whitelist()
+def pending_putaway(warehouse=None, limit=50):
+    """List SLE recent (PR/SE Material Receipt) chưa có bin_location.
+    UC: phiếu xếp hàng lên kệ.
+    """
+    conds = ["sle.qty_change > 0", "sle.is_cancelled = 0",
+              "(sle.bin_location IS NULL OR sle.bin_location = '')",
+              "sle.voucher_type IN ('SC Purchase Receipt', 'SC Stock Entry')"]
+    params = {}
+    if warehouse:
+        conds.append("sle.warehouse = %(wh)s")
+        params["wh"] = warehouse
+    return frappe.db.sql(f"""
+        SELECT sle.name AS sle_name, sle.posting_date,
+               sle.item, i.item_name, sle.warehouse, sle.batch,
+               sle.qty_change AS qty,
+               sle.voucher_type, sle.voucher_no,
+               b.expiry_date, b.qc_status
+        FROM `tabSC Stock Ledger Entry` sle
+        LEFT JOIN `tabSC Item` i ON i.name = sle.item
+        LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
+        WHERE {' AND '.join(conds)}
+        ORDER BY sle.creation DESC
+        LIMIT %(lim)s
+    """, {**params, "lim": int(limit)}, as_dict=True)
+
+
+@frappe.whitelist()
+def assign_bin(assignments):
+    """Bulk assign bin_location cho list SLE rows.
+    Args: assignments = [{sle_name, bin_location}]
+    """
+    import json
+    if isinstance(assignments, str):
+        assignments = json.loads(assignments)
+    updated = 0
+    for a in assignments or []:
+        if not (a.get("sle_name") and a.get("bin_location")):
+            continue
+        # Verify bin thuộc warehouse của SLE
+        sle = frappe.db.get_value("SC Stock Ledger Entry", a["sle_name"],
+            ["warehouse"], as_dict=True)
+        if not sle:
+            continue
+        bin_wh = frappe.db.get_value("Bin Location", a["bin_location"], "warehouse")
+        if bin_wh != sle.warehouse:
+            frappe.throw(_("Bin {0} không thuộc kho {1}").format(
+                a["bin_location"], sle.warehouse))
+        frappe.db.sql("""
+            UPDATE `tabSC Stock Ledger Entry`
+            SET bin_location = %s
+            WHERE name = %s
+        """, (a["bin_location"], a["sle_name"]))
+        updated += 1
+    frappe.db.commit()
+    return {"updated": updated}
+
+
+@frappe.whitelist()
+def bins_for_warehouse(warehouse):
+    """List bins trong 1 warehouse."""
+    if not warehouse:
+        return []
+    return frappe.db.get_all("Bin Location",
+        filters={"warehouse": warehouse},
+        fields=["name", "bin_code"],
+        order_by="bin_code asc", limit=200)
 
 
 @frappe.whitelist()
