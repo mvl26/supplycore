@@ -116,21 +116,40 @@ class SCTransferRequest(Document):
         if not valid_items:
             frappe.throw(_("Không có item nào có approved_qty > 0"))
 
+        from supplycore.api.fefo import auto_pick_fefo
+
         se = frappe.new_doc("SC Stock Entry")
         se.entry_type = "Material Transfer"
         se.posting_date = today()
         se.from_warehouse = self.from_warehouse
         se.to_warehouse = self.to_warehouse
-        se.transfer_request = self.name  # link ngược về TR
+        se.transfer_request = self.name
         se.purpose = f"Transfer Request {self.name}"
+
         for row in valid_items:
-            se.append("items", {
-                "item": row.item,
-                "qty": flt(row.approved_qty),
-                "uom": row.uom,
-                "batch": row.batch,
-                "valuation_rate": 0,  # SE controller sẽ tính từ SLE legacy hoặc 0
-            })
+            qty_left = flt(row.approved_qty)
+            has_batch = frappe.db.get_value("SC Item", row.item, "has_batch_no")
+            # TH1: row đã chỉ định batch → dùng nguyên 1 dòng SE
+            if row.batch or not has_batch:
+                se.append("items", {
+                    "item": row.item, "qty": qty_left, "uom": row.uom,
+                    "batch": row.batch or None, "valuation_rate": 0,
+                })
+                continue
+            # TH2: item cần batch nhưng TR không chỉ định → FEFO auto-pick, split nếu cần
+            pick = auto_pick_fefo(row.item, self.from_warehouse, qty_left)
+            picked = pick.get("picked") or []
+            if not picked or pick.get("shortfall", 0) > 0:
+                frappe.throw(_(
+                    "SC-E-TRANSFER-NO-BATCH: Item {0} cần batch nhưng kho nguồn không đủ "
+                    "tồn (thiếu {1}). Hãy chỉ định batch trong TR hoặc bổ sung tồn kho."
+                ).format(row.item, pick.get("shortfall", qty_left)))
+            for b in picked:
+                se.append("items", {
+                    "item": row.item, "qty": flt(b["suggested_qty"]), "uom": row.uom,
+                    "batch": b["batch_no"], "valuation_rate": 0,
+                })
+
         se.flags.ignore_permissions = True
         se.insert()
         self.db_set("stock_entry", se.name)

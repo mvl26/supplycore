@@ -114,7 +114,37 @@ const statusBadge = computed(() => {
   return { text: 'Nháp', cls: 'sc-badge-neutral' }
 })
 
+function validateRequired() {
+  const s = schema.value
+  if (!s) return null
+  const missing = []
+  for (const sec of s.sections || []) {
+    for (const f of sec.fields) {
+      if (!f.required) continue
+      const v = doc.value?.[f.name]
+      if (v === undefined || v === null || v === '') missing.push(f.label || f.name)
+    }
+  }
+  if (s.items) {
+    const rows = doc.value?.[s.items.field] || []
+    rows.forEach((row, i) => {
+      for (const c of s.items.columns || []) {
+        if (!c.required) continue
+        const v = row?.[c.name]
+        if (v === undefined || v === null || v === '') missing.push(`${s.items.label} dòng ${i + 1}: ${c.label || c.name}`)
+      }
+    })
+    if (!rows.length && s.items.requiredRows) missing.push(`${s.items.label} cần ≥1 dòng`)
+  }
+  return missing.length ? missing : null
+}
+
 async function save() {
+  const missing = validateRequired()
+  if (missing) {
+    toast.error(`Thiếu trường bắt buộc: ${missing.join(', ')}`)
+    return
+  }
   saving.value = true
   try {
     if (isNew.value) {

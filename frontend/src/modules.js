@@ -160,6 +160,26 @@ export const DT = {
     listFields: ['name', 'warehouse_name', 'warehouse_type', 'parent_warehouse',
                   'is_group', 'disabled'],
   },
+  'Bin Location': {
+    module: 'm0', extraModules: ['m4'], label: 'Vị trí lưu trữ', icon: '📍',
+    listColumns: [
+      { key: 'name', label: 'Mã vị trí', mono: true },
+      { key: 'warehouse', label: 'Kho' },
+      { key: 'bin_code', label: 'Code', mono: true },
+      { key: 'zone', label: 'Khu' },
+      { key: 'aisle', label: 'Hàng' },
+      { key: 'rack', label: 'Kệ' },
+      { key: 'shelf', label: 'Tầng' },
+      { key: 'level', label: 'Mức' },
+      { key: 'status', label: 'Trạng thái' },
+      { key: 'is_quarantine', label: 'Cách ly', type: 'check' },
+      { key: 'enabled', label: 'Hiệu lực', type: 'check' },
+    ],
+    listFields: ['name', 'warehouse', 'bin_code', 'zone', 'aisle', 'rack',
+                  'shelf', 'level', 'status', 'occupancy_pct',
+                  'is_quarantine', 'temperature_controlled', 'enabled'],
+    defaultOrderBy: 'warehouse asc, bin_code asc',
+  },
   'SC Department': {
     module: 'm0', label: 'Khoa phòng', icon: '🏥',
     listColumns: [

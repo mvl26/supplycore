@@ -76,6 +76,15 @@ export const ACTIONS = {
       args: [{ key: 'replacement_pr_name', label: 'Mã PR đổi hàng', type: 'text', required: true }] },
   ],
 
+  // === M6 Transfer Request — UC-18 ===
+  'SC Transfer Request': [
+    { method: 'make_stock_entry', label: 'Tạo phiếu chuyển kho', icon: '🚚', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Approved' && !d.stock_entry,
+      navigateOnSuccess: { type: 'doc', dt: 'SC Stock Entry', from: 'result' } },
+    { method: 'get_transfer_slip_data', label: 'Xem phiếu chuyển', icon: '📄', variant: 'secondary',
+      when: (d) => d.docstatus === 1 },
+  ],
+
   // === M9 Stock Reconciliation — UC-19, UC-28 ===
   'SC Stock Reconciliation': [
     { method: 'reject', label: 'Manager từ chối', icon: '✕', variant: 'danger',
