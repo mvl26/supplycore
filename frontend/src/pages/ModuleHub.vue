@@ -3,14 +3,25 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { MODULES, MODULE_DOCTYPES, DT } from '../modules'
 import { getList, count } from '../api'
+import { useAccessStore } from '../stores/access'
 import PageHeader from '../components/PageHeader.vue'
 import DataTable from '../components/DataTable.vue'
+
+const access = useAccessStore()
 
 const route = useRoute()
 const router = useRouter()
 const moduleId = computed(() => `m${route.params.n}`)
 const moduleInfo = computed(() => MODULES.find(m => m.id === moduleId.value))
-const doctypes = computed(() => MODULE_DOCTYPES[moduleId.value] || [])
+// Chỉ hiện doctype mà user có quyền read (hoặc chưa tracked → cho qua, REST sẽ filter)
+const doctypes = computed(() => {
+  const all = MODULE_DOCTYPES[moduleId.value] || []
+  return all.filter(d => {
+    const dtInfo = access.doctypes[d.dt]
+    if (dtInfo === undefined) return true  // chưa tracked — cho qua
+    return !!dtInfo.read
+  })
+})
 
 const activeDt = ref(null)
 const activeMeta = computed(() => doctypes.value.find(d => d.dt === activeDt.value))
@@ -97,13 +108,13 @@ function newDoc(dt) {
           </div>
         </div>
         <div class="border-t border-sc-border flex">
-          <button @click="newDoc(d.dt)"
+          <button v-if="access.canDoctype(d.dt, 'create')" @click="newDoc(d.dt)"
             class="flex-1 px-3 py-2 text-xs font-medium text-sc-royal hover:bg-sc-bg transition border-r border-sc-border">
-            + Tạo mới
+            + Tạo
           </button>
           <button @click="gotoList(d.dt)"
             class="flex-1 px-3 py-2 text-xs font-medium text-sc-text-muted hover:bg-sc-bg transition">
-            Xem danh sách →
+            Danh sách →
           </button>
         </div>
       </div>
@@ -123,7 +134,8 @@ function newDoc(dt) {
           </span>
         </h3>
         <div class="flex gap-2">
-          <button @click="newDoc(activeDt)" class="sc-btn-primary text-xs">+ Tạo mới</button>
+          <button v-if="access.canDoctype(activeDt, 'create')" @click="newDoc(activeDt)"
+            class="sc-btn-primary text-xs">+ Tạo mới</button>
           <button @click="gotoList(activeDt)" class="sc-btn-secondary text-xs">Danh sách đầy đủ →</button>
         </div>
       </div>

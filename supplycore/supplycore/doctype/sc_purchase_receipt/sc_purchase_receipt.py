@@ -39,9 +39,39 @@ class SCPurchaseReceipt(Document):
         if self.is_return:
             if not (self.return_reason and str(self.return_reason).strip()):
                 frappe.throw(_("SC-E-RETURN-REASON: Phải nhập 'Lý do trả hàng'"))
+        # Bắt buộc expiry_date cho mọi item có has_batch_no=1 (tránh "item cuối
+        # bị không gán lô tự động" do user quên fill expiry).
+        missing_expiry = []
+        for r in self.items:
+            if r.batch_no:
+                continue  # đã có lô, OK
+            if frappe.db.get_value("SC Item", r.item, "has_batch_no") and not r.expiry_date:
+                missing_expiry.append(r.idx)
+        if missing_expiry and not self.is_return:
+            frappe.throw(_(
+                "SC-E-PR-MISSING-EXPIRY: Các dòng {0} có vật tư yêu cầu quản lý lô "
+                "nhưng chưa nhập Hạn dùng. Vui lòng nhập Hạn dùng cho từng dòng "
+                "trước khi submit (hệ thống sẽ tự sinh lô)."
+            ).format(missing_expiry))
 
     def on_submit(self):
         self._create_batches_if_needed()
+        # Audit: đảm bảo mọi item có has_batch_no=1 + expiry_date đều có batch_no
+        # (sau khi _create_batches_if_needed chạy). Nếu thiếu → fail submit
+        # để tránh stock entry không có batch reference.
+        self.reload()
+        missing_batch = []
+        for r in self.items:
+            if not r.expiry_date:
+                continue
+            if frappe.db.get_value("SC Item", r.item, "has_batch_no") and not r.batch_no:
+                missing_batch.append(r.idx)
+        if missing_batch:
+            frappe.throw(_(
+                "SC-E-PR-BATCH-MISSING: Các dòng {0} chưa được gán lô tự động "
+                "(item yêu cầu lô + có hạn dùng). Đây là lỗi hệ thống, vui lòng "
+                "liên hệ admin."
+            ).format(missing_batch), title="SC-E-PR-BATCH-MISSING")
         self._post_stock_ledger()
         if self.qc_required and not self.is_return:
             self._auto_create_qi()
@@ -300,26 +330,65 @@ class SCPurchaseReceipt(Document):
 
     def _create_batches_if_needed(self):
         """Nếu row có expiry_date + chưa có batch_no → tạo SC Batch tự động
-        với batch_id format `[item]-[YYYYMM]-[Seq]` (UC-15 step 3)."""
-        from supplycore.m5_fefo.api.batch_helpers import generate_batch_id
+        với batch_id format `[item]-[YYYYMM]-[Seq]` (UC-15 step 3).
+
+        Dùng seq cache local để tránh race condition khi nhiều row cùng
+        (item, year-month): COUNT-based seq trong cùng transaction có thể
+        không thấy uncommitted insert → duplicate batch_id → INSERT fail
+        → row sau bị skip không gán lô.
+        """
+        from frappe.utils import getdate
+        # seq_cache: key=(item, YYYYMM), value=next seq để dùng
+        seq_cache = {}
+        skipped_no_expiry = []
+
         for r in self.items:
             has_batch = frappe.db.get_value("SC Item", r.item, "has_batch_no")
             if not has_batch:
                 continue
-            if not r.batch_no and r.expiry_date:
-                bid = generate_batch_id(r.item, str(r.expiry_date))
-                b = frappe.new_doc("SC Batch")
-                b.batch_id = bid
-                b.item = r.item
-                b.expiry_date = r.expiry_date
-                b.manufacturing_date = r.manufacturing_date
-                b.supplier = self.supplier
-                b.supplier_batch_no = r.supplier_batch_no
-                b.flags.ignore_permissions = True
-                # UC-15: PR-level đã warn user; auto-create skip short_expiry block
-                b.flags.ignore_short_expiry = 1
+            if r.batch_no:
+                continue  # đã có lô, skip
+            if not r.expiry_date:
+                # Item bắt buộc batch nhưng thiếu expiry → ghi nhận để báo cho user
+                skipped_no_expiry.append(r.idx)
+                continue
+
+            ym = getdate(r.expiry_date).strftime("%Y%m")
+            key = (r.item, ym)
+            if key not in seq_cache:
+                cnt = frappe.db.sql("""
+                    SELECT COUNT(*) FROM `tabSC Batch`
+                    WHERE batch_id LIKE %s
+                """, f"{r.item}-{ym}-%")[0][0]
+                seq_cache[key] = int(cnt or 0)
+            seq_cache[key] += 1
+            bid = f"{r.item}-{ym}-{seq_cache[key]:03d}"
+
+            b = frappe.new_doc("SC Batch")
+            b.batch_id = bid
+            b.item = r.item
+            b.expiry_date = r.expiry_date
+            b.manufacturing_date = r.manufacturing_date
+            b.supplier = self.supplier
+            b.supplier_batch_no = r.supplier_batch_no
+            b.flags.ignore_permissions = True
+            b.flags.ignore_short_expiry = 1
+            try:
                 b.insert()
-                r.db_set("batch_no", b.name, update_modified=False)
+            except frappe.DuplicateEntryError:
+                # Edge case: race với PR khác. Retry với seq cao hơn.
+                seq_cache[key] += 1
+                bid = f"{r.item}-{ym}-{seq_cache[key]:03d}"
+                b.batch_id = bid
+                b.insert()
+            r.db_set("batch_no", b.name, update_modified=False)
+
+        if skipped_no_expiry:
+            frappe.msgprint(
+                _("⚠ Các dòng {0} có vật tư yêu cầu lô nhưng thiếu Hạn dùng → "
+                  "không tạo lô tự động. Vui lòng kiểm tra.").format(skipped_no_expiry),
+                indicator="orange", alert=True, title="SC-W-PR-MISSING-EXPIRY",
+            )
 
     def _post_stock_ledger(self):
         from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry

@@ -9,10 +9,19 @@ from frappe.utils import flt, now
 class BinLocation(Document):
 
     def validate(self):
+        self._ensure_barcode()
         if self.temperature_controlled:
             if self.min_temperature is not None and self.max_temperature is not None:
                 if self.max_temperature <= self.min_temperature:
                     frappe.throw(_("Nhiệt độ max phải lớn hơn min"))
+
+    def _ensure_barcode(self):
+        """Tự sinh barcode = bin_code khi tạo vị trí (nếu chưa có).
+
+        User vẫn có thể đè bằng mã GS1 riêng.
+        """
+        if not self.barcode and self.bin_code:
+            self.barcode = self.bin_code
 
     def on_trash(self):
         """UC-12 ngoại lệ: không cho xóa bin đang có hàng."""

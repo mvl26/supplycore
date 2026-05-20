@@ -12,6 +12,29 @@ const emit = defineEmits(['update:modelValue'])
 
 const rows = computed(() => props.modelValue || [])
 
+// Tổng cộng cột Currency có compute (vd FC: total_amount)
+const totals = computed(() => {
+  const out = {}
+  for (const col of props.schema.columns || []) {
+    if (col.type !== 'Currency') continue
+    out[col.name] = rows.value.reduce((s, r) => s + Number(r[col.name] || 0), 0)
+  }
+  return out
+})
+
+const grandTotal = computed(() => {
+  // Ưu tiên cột có compute (vd total_amount); fallback: cột Currency cuối cùng
+  const cols = props.schema.columns || []
+  const computed_col = cols.find(c => c.type === 'Currency' && c.compute)
+  if (computed_col) return totals.value[computed_col.name] || 0
+  return null
+})
+
+function fmtCurrency(v) {
+  if (v == null) return ''
+  return new Intl.NumberFormat('vi-VN').format(Math.round(v))
+}
+
 function newRow() {
   const r = {}
   for (const c of props.schema.columns) {
@@ -41,11 +64,23 @@ const variantClass = (v) => ({
 
 function updateCell(idx, name, value) {
   const arr = rows.value.map((r, i) => i === idx ? { ...r, [name]: value } : r)
+  // Compute fields trên cùng dòng: col.compute = {from: [a, b], op: 'mul'}
+  const row = arr[idx]
+  for (const col of props.schema.columns) {
+    if (!col.compute) continue
+    const { from, op } = col.compute
+    if (!from?.includes(name)) continue
+    const vals = from.map(k => Number(row[k] || 0))
+    let v = 0
+    if (op === 'mul') v = vals.reduce((a, b) => a * b, 1)
+    else if (op === 'add') v = vals.reduce((a, b) => a + b, 0)
+    else if (op === 'sub') v = vals[0] - vals.slice(1).reduce((a, b) => a + b, 0)
+    row[col.name] = v
+  }
   emit('update:modelValue', arr)
   // Trigger row-level auto-fetch nếu schema khai báo autoFetch.on chứa field này
   const af = props.schema.autoFetch
   if (af && af.api && af.on?.includes(name)) {
-    const row = arr[idx]
     if (af.on.every(k => row[k])) runAutoFetch(idx, row, af)
   }
 }
@@ -133,7 +168,7 @@ async function handleLinkSelected(idx, col, linkedDoc) {
             <td class="px-2 py-1 text-sc-text-muted text-xs align-top pt-3">{{ idx + 1 }}</td>
             <td v-for="c in schema.columns" :key="c.name" class="px-2 py-1 align-top">
               <FormField :model-value="r[c.name]"
-                :field="c" size="sm" :show-label="false"
+                :field="c" :context="r" size="sm" :show-label="false"
                 @update:model-value="v => updateCell(idx, c.name, v)"
                 @selected="(linked) => handleLinkSelected(idx, c, linked)" />
             </td>
@@ -143,6 +178,17 @@ async function handleLinkSelected(idx, col, linkedDoc) {
             </td>
           </tr>
         </tbody>
+        <tfoot v-if="grandTotal != null && rows.length">
+          <tr class="bg-sc-bg font-semibold">
+            <td class="px-2 py-2 text-sc-text-muted text-xs"></td>
+            <td v-for="c in schema.columns" :key="c.name" class="px-2 py-2 text-sm">
+              <span v-if="c.compute && c.type === 'Currency'" class="font-mono">
+                Tổng: {{ fmtCurrency(totals[c.name]) }}
+              </span>
+            </td>
+            <td v-if="!readonly"></td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   </div>

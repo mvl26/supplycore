@@ -40,18 +40,33 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
     if mr.docstatus != 1:
         frappe.throw(_("MR {0} chưa submit").format(mr_name), title="SC-E-MR")
 
-    # Group MR items theo best (supplier, FC)
+    # Group MR items theo best (supplier, FC). Track FC remaining qty/value
+    # in-memory để tránh over-allocate khi MR có nhiều row cùng item.
     groups: dict = {}
     unmatched = []
+    # Cache: { fc_name: { item_code: remaining_qty_left } }
+    fc_qty_cache: dict = {}
+
+    if not mr.items:
+        frappe.throw(_("MR {0} không có dòng items nào").format(mr_name), title="SC-E-MR-EMPTY")
 
     for row in mr.items:
-        match = _find_best_fc_for_item(row.item, flt(row.qty))
+        # Re-check remaining_qty TỪ cache (đã trừ những row trước trong cùng MR)
+        match = _find_best_fc_for_item(row.item, flt(row.qty), fc_qty_cache)
         if not match:
             unmatched.append({
-                "item": row.item, "qty": flt(row.qty), "uom": row.uom,
-                "reason": "Không có HĐK Active phù hợp với item + qty",
+                "mr_item": row.name,
+                "row_idx": row.idx,
+                "item": row.item,
+                "qty": flt(row.qty),
+                "uom": row.uom,
+                "reason": "Không có HĐK Active phù hợp với item + qty còn lại",
             })
             continue
+        # Cập nhật cache: trừ qty đã claim
+        fc_qty_cache.setdefault(match["fc"], {})
+        fc_qty_cache[match["fc"]][row.item] = match["remaining_qty"] - flt(row.qty)
+
         key = (match["supplier"], match["fc"])
         g = groups.setdefault(key, {
             "supplier": match["supplier"],
@@ -62,6 +77,7 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
         amount = flt(row.qty) * flt(match["unit_price"])
         g["items"].append({
             "mr_item": row.name,
+            "row_idx": row.idx,
             "item": row.item,
             "qty": flt(row.qty),
             "uom": row.uom,
@@ -93,8 +109,31 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
         if created:
             mr.db_set("status", "Ordered")
 
+    # === Audit: đảm bảo KHÔNG mất dòng nào ===
+    mr_total = len(mr.items)
+    grouped_total = sum(len(g["items"]) for g in groups.values())
+    unmatched_total = len(unmatched)
+    if grouped_total + unmatched_total != mr_total:
+        frappe.log_error(
+            f"PO suggest mismatch: MR {mr_name} có {mr_total} items, "
+            f"grouped={grouped_total}, unmatched={unmatched_total}",
+            title="SC-E-MR-PO-ROW-LOSS",
+        )
+        frappe.throw(_(
+            "SC-E-MR-PO-ROW-LOSS: MR {0} có {1} dòng nhưng chỉ xử lý được {2} "
+            "(group {3} + unmatched {4}). Vui lòng liên hệ admin."
+        ).format(mr_name, mr_total, grouped_total + unmatched_total,
+                  grouped_total, unmatched_total))
+
     return {
         "mr": mr_name,
+        "summary": {
+            "mr_items": mr_total,
+            "grouped_items": grouped_total,
+            "unmatched_items": unmatched_total,
+            "pos_created": len(created),
+            "all_accounted": grouped_total + unmatched_total == mr_total,
+        },
         "groups": [
             {"supplier": k[0], "framework_contract": k[1], **v}
             for k, v in groups.items()
@@ -104,8 +143,11 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
     }
 
 
-def _find_best_fc_for_item(item: str, qty: float) -> dict:
-    """Trả {supplier, fc, unit_price, fc_item_name} cho FC Active rẻ nhất phù hợp."""
+def _find_best_fc_for_item(item: str, qty: float, fc_qty_cache: dict = None) -> dict:
+    """Trả {supplier, fc, unit_price, fc_item_name, remaining_qty} cho FC Active
+    rẻ nhất phù hợp. fc_qty_cache (optional) chứa qty đã claim trong cùng MR
+    để tránh over-allocate khi MR có nhiều row cùng item.
+    """
     rows = frappe.db.sql("""
         SELECT fc.name AS fc, fc.supplier, fci.name AS fci_name,
                fci.unit_price, fci.remaining_qty
@@ -115,15 +157,19 @@ def _find_best_fc_for_item(item: str, qty: float) -> dict:
           AND fc.status = 'Active'
           AND fc.valid_to >= CURDATE()
           AND fci.item_code = %s
-          AND fci.remaining_qty >= %s
         ORDER BY fci.unit_price ASC
-        LIMIT 1
-    """, (item, qty), as_dict=True)
-    if not rows:
-        return None
-    r = rows[0]
-    return {"supplier": r.supplier, "fc": r.fc,
-            "unit_price": flt(r.unit_price), "fc_item_name": r.fci_name}
+    """, (item,), as_dict=True)
+    fc_qty_cache = fc_qty_cache or {}
+    for r in rows:
+        effective_remain = flt(r.remaining_qty)
+        # Trừ phần đã claim trong cùng MR
+        if r.fc in fc_qty_cache and item in fc_qty_cache[r.fc]:
+            effective_remain = fc_qty_cache[r.fc][item]
+        if effective_remain >= qty:
+            return {"supplier": r.supplier, "fc": r.fc,
+                    "unit_price": flt(r.unit_price), "fc_item_name": r.fci_name,
+                    "remaining_qty": effective_remain}
+    return None
 
 
 def _create_draft_po(mr, supplier: str, fc: str, items: list) -> str:

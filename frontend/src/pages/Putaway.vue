@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { call, getList } from '../api'
 import PageHeader from '../components/PageHeader.vue'
+import Pagination from '../components/Pagination.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDate, fmtNumber } from '../utils'
 
@@ -16,6 +17,11 @@ const items = ref([])
 const bins = ref([])
 const loading = ref(false)
 const saving = ref(false)
+const searchText = ref('')
+const sortKey = ref('posting_date')
+const sortDir = ref('desc')
+const page = ref(1)
+const pageSize = ref(20)
 
 // Map: sle_name → bin_location
 const assignments = ref({})
@@ -73,6 +79,46 @@ onMounted(async () => {
 const selectedCount = computed(() =>
   Object.values(assignments.value).filter(v => v).length)
 
+const filteredItems = computed(() => {
+  const q = searchText.value.trim().toLowerCase()
+  if (!q) return items.value
+  return items.value.filter(r =>
+    String(r.voucher_no || '').toLowerCase().includes(q) ||
+    String(r.item || '').toLowerCase().includes(q) ||
+    String(r.item_name || '').toLowerCase().includes(q) ||
+    String(r.batch || '').toLowerCase().includes(q))
+})
+
+const sortedItems = computed(() => {
+  const arr = [...filteredItems.value]
+  const k = sortKey.value, d = sortDir.value === 'asc' ? 1 : -1
+  arr.sort((a, b) => {
+    const va = a[k], vb = b[k]
+    if (va == null && vb == null) return 0
+    if (va == null) return 1
+    if (vb == null) return -1
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * d
+    return String(va).localeCompare(String(vb), 'vi') * d
+  })
+  return arr
+})
+
+const totalItems = computed(() => sortedItems.value.length)
+const pagedItems = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  return sortedItems.value.slice(start, start + pageSize.value)
+})
+
+function setSort(key) {
+  if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  else { sortKey.value = key; sortDir.value = 'asc' }
+  page.value = 1
+}
+function sortIcon(key) {
+  if (sortKey.value !== key) return '⇅'
+  return sortDir.value === 'asc' ? '▲' : '▼'
+}
+
 async function saveAll() {
   const pairs = Object.entries(assignments.value)
     .filter(([k, v]) => v)
@@ -108,12 +154,36 @@ async function saveAll() {
     </template>
   </PageHeader>
 
-  <div class="sc-card p-4 mb-4">
-    <label class="text-xs text-sc-text-muted block mb-1">Lọc theo kho</label>
-    <select v-model="filterWh" class="sc-input max-w-md">
-      <option value="">— Tất cả kho —</option>
-      <option v-for="w in warehouses" :key="w.name" :value="w.name">{{ w.name }}</option>
-    </select>
+  <div class="sc-card p-4 mb-4 flex flex-wrap items-end gap-3">
+    <div class="flex-1 min-w-[180px] max-w-md">
+      <label class="text-xs text-sc-text-muted block mb-1">Lọc theo kho</label>
+      <select v-model="filterWh" class="sc-input">
+        <option value="">— Tất cả kho —</option>
+        <option v-for="w in warehouses" :key="w.name" :value="w.name">{{ w.name }}</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[200px] max-w-sm">
+      <label class="text-xs text-sc-text-muted block mb-1">Tìm trong DS</label>
+      <div class="relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sc-text-muted text-sm">🔍</span>
+        <input v-model="searchText" @input="page = 1"
+          class="sc-input pl-8" placeholder="Mã chứng từ / VT / lô..." />
+      </div>
+    </div>
+    <div>
+      <label class="text-xs text-sc-text-muted block mb-1">Sắp xếp</label>
+      <div class="flex gap-1">
+        <select v-model="sortKey" @change="page = 1" class="sc-input">
+          <option value="posting_date">📅 Ngày</option>
+          <option value="voucher_no">🔤 Chứng từ</option>
+          <option value="item">📦 Mã VT</option>
+          <option value="expiry_date">⏱️ Hạn dùng</option>
+          <option value="qty">🔢 SL</option>
+        </select>
+        <button @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
+          class="sc-btn-secondary text-sm">{{ sortDir === 'asc' ? '▲' : '▼' }}</button>
+      </div>
+    </div>
   </div>
 
   <div v-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải...</div>
@@ -125,20 +195,36 @@ async function saveAll() {
     <table class="sc-table">
       <thead>
         <tr>
-          <th>Chứng từ</th>
-          <th>Ngày</th>
-          <th>Mã VT</th>
-          <th>Tên SP</th>
-          <th>Kho</th>
-          <th>Lô</th>
-          <th>HD</th>
+          <th @click="setSort('voucher_no')" class="cursor-pointer select-none hover:bg-sc-bg">
+            Chứng từ <span class="text-xs text-sc-royal">{{ sortIcon('voucher_no') }}</span>
+          </th>
+          <th @click="setSort('posting_date')" class="cursor-pointer select-none hover:bg-sc-bg">
+            Ngày <span class="text-xs text-sc-royal">{{ sortIcon('posting_date') }}</span>
+          </th>
+          <th @click="setSort('item')" class="cursor-pointer select-none hover:bg-sc-bg">
+            Mã VT <span class="text-xs text-sc-royal">{{ sortIcon('item') }}</span>
+          </th>
+          <th @click="setSort('item_name')" class="cursor-pointer select-none hover:bg-sc-bg">
+            Tên SP <span class="text-xs text-sc-royal">{{ sortIcon('item_name') }}</span>
+          </th>
+          <th @click="setSort('warehouse')" class="cursor-pointer select-none hover:bg-sc-bg">
+            Kho <span class="text-xs text-sc-royal">{{ sortIcon('warehouse') }}</span>
+          </th>
+          <th @click="setSort('batch')" class="cursor-pointer select-none hover:bg-sc-bg">
+            Lô <span class="text-xs text-sc-royal">{{ sortIcon('batch') }}</span>
+          </th>
+          <th @click="setSort('expiry_date')" class="cursor-pointer select-none hover:bg-sc-bg">
+            HD <span class="text-xs text-sc-royal">{{ sortIcon('expiry_date') }}</span>
+          </th>
           <th>KCS</th>
-          <th class="text-right">SL</th>
+          <th @click="setSort('qty')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
+            SL <span class="text-xs text-sc-royal">{{ sortIcon('qty') }}</span>
+          </th>
           <th class="w-48">📍 Chọn vị trí</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="r in items" :key="r.sle_name">
+        <tr v-for="r in pagedItems" :key="r.sle_name">
           <td>
             <span class="font-mono text-xs text-sc-royal">{{ r.voucher_no }}</span>
             <div class="text-xs text-sc-text-muted">{{ r.voucher_type.replace('SC ', '') }}</div>
@@ -172,5 +258,9 @@ async function saveAll() {
         </tr>
       </tbody>
     </table>
+    <Pagination :total="totalItems" :page="page" :pageSize="pageSize"
+      :loading="loading"
+      @update:page="page = $event"
+      @update:pageSize="(s) => { pageSize = s; page = 1 }" />
   </div>
 </template>

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { call, getList } from '../api'
 import PageHeader from '../components/PageHeader.vue'
+import Pagination from '../components/Pagination.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber, fmtShort, fmtVND, fmtDate } from '../utils'
 
@@ -15,8 +16,14 @@ const filters = ref({ item: '', warehouse: '', batch: '' })
 const itemSuggestions = ref([])
 const whSuggestions = ref([])
 
+const sortKey = ref('item')
+const sortDir = ref('asc')
+const page = ref(1)
+const pageSize = ref(20)
+
 async function load() {
   loading.value = true
+  page.value = 1
   try {
     rows.value = await call('supplycore.api.frontend.stock_balance', {
       item: filters.value.item || null,
@@ -49,6 +56,36 @@ const totals = computed(() => {
   const distinctBatches = new Set(rows.value.map(r => r.batch).filter(Boolean)).size
   return { totalQty, totalValue, distinctItems, distinctBatches }
 })
+
+const sortedRows = computed(() => {
+  const arr = [...rows.value]
+  const k = sortKey.value, d = sortDir.value === 'asc' ? 1 : -1
+  arr.sort((a, b) => {
+    const va = a[k], vb = b[k]
+    if (va == null && vb == null) return 0
+    if (va == null) return 1
+    if (vb == null) return -1
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * d
+    return String(va).localeCompare(String(vb), 'vi') * d
+  })
+  return arr
+})
+
+const totalRows = computed(() => sortedRows.value.length)
+const pagedRows = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  return sortedRows.value.slice(start, start + pageSize.value)
+})
+
+function setSort(key) {
+  if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  else { sortKey.value = key; sortDir.value = 'asc' }
+  page.value = 1
+}
+function sortIcon(key) {
+  if (sortKey.value !== key) return '⇅'
+  return sortDir.value === 'asc' ? '▲' : '▼'
+}
 
 function openBatch(b) {
   if (b) router.push(`/doc/SC%20Batch/${encodeURIComponent(b)}`)
@@ -133,18 +170,34 @@ const qcLabel = (s) => ({
       <table class="sc-table">
         <thead>
           <tr>
-            <th>Mã VT</th>
-            <th>Tên</th>
-            <th>Kho</th>
-            <th>Lô</th>
-            <th>KCS</th>
-            <th>HD</th>
-            <th class="text-right">SL tồn</th>
-            <th class="text-right">Giá trị (VND)</th>
+            <th @click="setSort('item')" class="cursor-pointer select-none hover:bg-sc-bg">
+              Mã VT <span class="text-xs text-sc-royal">{{ sortIcon('item') }}</span>
+            </th>
+            <th @click="setSort('item_name')" class="cursor-pointer select-none hover:bg-sc-bg">
+              Tên <span class="text-xs text-sc-royal">{{ sortIcon('item_name') }}</span>
+            </th>
+            <th @click="setSort('warehouse')" class="cursor-pointer select-none hover:bg-sc-bg">
+              Kho <span class="text-xs text-sc-royal">{{ sortIcon('warehouse') }}</span>
+            </th>
+            <th @click="setSort('batch')" class="cursor-pointer select-none hover:bg-sc-bg">
+              Lô <span class="text-xs text-sc-royal">{{ sortIcon('batch') }}</span>
+            </th>
+            <th @click="setSort('qc_status')" class="cursor-pointer select-none hover:bg-sc-bg">
+              KCS <span class="text-xs text-sc-royal">{{ sortIcon('qc_status') }}</span>
+            </th>
+            <th @click="setSort('expiry_date')" class="cursor-pointer select-none hover:bg-sc-bg">
+              HD <span class="text-xs text-sc-royal">{{ sortIcon('expiry_date') }}</span>
+            </th>
+            <th @click="setSort('qty')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
+              SL tồn <span class="text-xs text-sc-royal">{{ sortIcon('qty') }}</span>
+            </th>
+            <th @click="setSort('value')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
+              Giá trị (VND) <span class="text-xs text-sc-royal">{{ sortIcon('value') }}</span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(r, idx) in rows" :key="idx"
+          <tr v-for="(r, idx) in pagedRows" :key="idx"
             class="cursor-pointer"
             :class="{ 'bg-red-50': isExpired(r.expiry_date), 'bg-amber-50': isExpiringSoon(r.expiry_date) && !isExpired(r.expiry_date) }">
             <td class="font-mono text-xs" @click="openItem(r.item)">{{ r.item }}</td>
@@ -168,6 +221,10 @@ const qcLabel = (s) => ({
           </tr>
         </tbody>
       </table>
+      <Pagination :total="totalRows" :page="page" :pageSize="pageSize"
+        :loading="loading"
+        @update:page="page = $event"
+        @update:pageSize="(s) => { pageSize = s; page = 1 }" />
     </div>
   </div>
 </template>

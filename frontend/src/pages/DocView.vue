@@ -10,6 +10,13 @@ import DocForm from '../components/DocForm.vue'
 import RelatedDocs from '../components/RelatedDocs.vue'
 import FefoPickGuide from '../components/FefoPickGuide.vue'
 import WarehouseStockPanel from '../components/WarehouseStockPanel.vue'
+import FetchUpstream from '../components/FetchUpstream.vue'
+import RecallRecoveryPanel from '../components/RecallRecoveryPanel.vue'
+import CountEntryPanel from '../components/CountEntryPanel.vue'
+import IcsSummaryPanel from '../components/IcsSummaryPanel.vue'
+import IrScopePanel from '../components/IrScopePanel.vue'
+import RouteGuidePanel from '../components/RouteGuidePanel.vue'
+import BarcodeDisplay from '../components/BarcodeDisplay.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDateTime, fmtNumber } from '../utils'
 import { statusLabel } from '../modules'
@@ -54,7 +61,10 @@ async function load() {
   try {
     doc.value = await getDoc(doctype.value, name.value)
     // Auto-edit khi draft → user khỏi phải bấm "Sửa"
-    editing.value = doc.value.docstatus === 0 && !!schema.value
+    // Trừ khi đã duyệt 3-tier (approval_stage=Approved) → khoá sửa
+    editing.value = doc.value.docstatus === 0
+      && !isApprovalLocked(doc.value)
+      && !!schema.value
     // Nếu vừa quay lại từ Tạo mới Link → patch field bằng record vừa tạo
     try {
       const result = JSON.parse(sessionStorage.getItem(LINK_RESULT_KEY) || 'null')
@@ -106,12 +116,128 @@ async function onCreateNewLink(field) {
 watch(() => route.fullPath, load)
 onMounted(load)
 
+// Merge data từ FetchUpstream → đè header field + replace items
+function onUpstreamMerge({ header, items, source }) {
+  if (!doc.value) return
+  const next = { ...doc.value, ...(header || {}) }
+  // Child table: nếu schema có items field → set; nếu form chưa có items array → init
+  const itemsField = schema.value?.items?.field || 'items'
+  if (Array.isArray(items) && items.length) {
+    const existing = Array.isArray(next[itemsField]) ? next[itemsField] : []
+    // Nếu user đã thêm vài dòng → append; nếu rỗng → thay
+    if (existing.filter(r => r && Object.keys(r).length > 1).length === 0) {
+      next[itemsField] = items
+    } else {
+      next[itemsField] = [...existing, ...items]
+    }
+  }
+  // Lưu meta source để hiển thị badge
+  if (source?.name) {
+    next._upstream_source = `${source.doctype} ${source.name}`
+  }
+  doc.value = next
+}
+
 const statusBadge = computed(() => {
   if (!doc.value) return null
   const ds = doc.value.docstatus
   if (ds === 1) return { text: 'Đã gửi', cls: 'sc-badge-success' }
   if (ds === 2) return { text: 'Đã huỷ', cls: 'sc-badge-critical' }
   return { text: 'Nháp', cls: 'sc-badge-neutral' }
+})
+
+// Tài liệu đã qua 3-tier (stage=Approved) thì khoá sửa — chỉ submit hoặc reject
+function isApprovalLocked(d) {
+  if (!d) return false
+  if (d.approval_stage === 'Approved' && (d.docstatus ?? 0) === 0) return true
+  return false
+}
+const approvalLocked = computed(() => isApprovalLocked(doc.value))
+
+// === Lịch sử sửa (Version diffs) ===
+const editLog = ref([])
+const editLogLoading = ref(false)
+const editLogExpanded = ref(false)          // section thu gọn mặc định
+const expandedVersions = ref(new Set())     // các log entry đang mở chi tiết
+const editLogLoaded = ref(false)
+
+async function loadEditLog() {
+  if (isNew.value || !doc.value?.name) return
+  editLogLoading.value = true
+  try {
+    editLog.value = await call('supplycore.api.frontend.get_doc_versions', {
+      doctype: doctype.value, name: doc.value.name, limit: 50,
+    }) || []
+    editLogLoaded.value = true
+  } catch (e) { editLog.value = [] }
+  finally { editLogLoading.value = false }
+}
+// Reset khi đổi doc — chỉ tải log khi user mở section (lazy)
+watch(() => doc.value?.name, () => {
+  editLog.value = []
+  editLogLoaded.value = false
+  editLogExpanded.value = false
+  expandedVersions.value = new Set()
+})
+
+function toggleEditLog() {
+  editLogExpanded.value = !editLogExpanded.value
+  if (editLogExpanded.value && !editLogLoaded.value) loadEditLog()
+}
+function toggleVersion(name) {
+  const s = new Set(expandedVersions.value)
+  s.has(name) ? s.delete(name) : s.add(name)
+  expandedVersions.value = s
+}
+
+function fmtVal(v) {
+  if (v == null) return '—'
+  if (typeof v === 'object') return JSON.stringify(v).slice(0, 60)
+  return String(v).slice(0, 80)
+}
+
+// Tên field thân thiện (child table notation giữ nguyên dạng rút gọn)
+function fieldDisplay(f) {
+  if (!f) return ''
+  if (f.startsWith('+ ') || f.startsWith('- ')) return f
+  if (f.includes('[')) {
+    // vd "items[0].qty" → "Chi tiết #1 · qty"
+    const m = f.match(/^(\w+)\[(\d+)\]\.(.+)$/)
+    if (m) return `${fieldLabel(m[1])} #${Number(m[2]) + 1} · ${fieldLabel(m[3])}`
+    return f
+  }
+  return fieldLabel(f)
+}
+
+// Tóm tắt 1 dòng cho mỗi version
+function changeSummary(v) {
+  const labels = (v.changed || []).map(c => fieldDisplay(c.field))
+  const shown = labels.slice(0, 3).join(', ')
+  const more = labels.length > 3 ? ` +${labels.length - 3}` : ''
+  return `${labels.length} thay đổi — ${shown}${more}`
+}
+function fmtLogTime(s) {
+  try { return new Date(s).toLocaleString('vi-VN') } catch (e) { return s }
+}
+
+// === Barcode quét được (SC Batch / Bin Location) ===
+const barcodeInfo = computed(() => {
+  const d = doc.value
+  if (!d || isNew.value) return null
+  if (doctype.value === 'SC Batch') {
+    const v = d.barcode || d.batch_id
+    if (!v) return null
+    return { value: v, title: `Lô: ${d.batch_id || d.name}`,
+             subtitle: [d.item, d.expiry_date ? `HSD: ${d.expiry_date}` : '']
+               .filter(Boolean).join(' · ') }
+  }
+  if (doctype.value === 'Bin Location') {
+    const v = d.barcode || d.bin_code
+    if (!v) return null
+    return { value: v, title: `Vị trí: ${d.bin_code || d.name}`,
+             subtitle: [d.warehouse, d.zone].filter(Boolean).join(' · ') }
+  }
+  return null
 })
 
 function validateRequired() {
@@ -294,6 +420,11 @@ function displayField(value, key) {
           </button>
         </template>
         <template v-else>
+          <!-- Đã duyệt 3-tier nhưng chưa Submit → cho Submit kích hoạt -->
+          <button v-if="approvalLocked" @click="doSubmit"
+            :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm">
+            {{ saving ? 'Đang gửi...' : '📤 Submit kích hoạt' }}
+          </button>
           <button v-if="doc.docstatus === 1" @click="doCancel"
             :disabled="saving" class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium text-sm">
             Hủy
@@ -304,6 +435,39 @@ function displayField(value, key) {
 
     <!-- Action panel — hiển thị cả khi draft-editing để user gọi action (vd Gửi duyệt FC) -->
     <ActionPanel v-if="!isNew && doc?.name" :doctype="doctype" :doc="doc" @after="load" />
+
+    <!-- Mã vạch quét được — SC Batch / Bin Location -->
+    <BarcodeDisplay v-if="barcodeInfo" :value="barcodeInfo.value"
+      :title="barcodeInfo.title" :subtitle="barcodeInfo.subtitle" />
+
+    <!-- M10 Recall Notice: panel theo dõi thu hồi với inline edit per row -->
+    <RecallRecoveryPanel v-if="doctype === 'SC Recall Notice' && !isNew && doc?.name"
+      :doctype="doctype" :doc="doc" @after="load" />
+
+    <!-- M9 ICS: tổng quan kiểm kê + phiếu đếm in -->
+    <IcsSummaryPanel v-if="doctype === 'SC Inventory Count Sheet' && !isNew && doc?.name"
+      :doctype="doctype" :doc="doc" />
+
+    <!-- M9 ICS: bảng nhập đếm nhanh (chỉ hiện khi draft) -->
+    <CountEntryPanel v-if="doctype === 'SC Inventory Count Sheet' && !isNew && doc?.name && doc.docstatus === 0"
+      :doctype="doctype" :doc="doc" @after="load" />
+
+    <!-- M10 Investigation Report: scope hint + variance display -->
+    <IrScopePanel v-if="doctype === 'SC Investigation Report' && !isNew && doc?.name"
+      :doc="doc" />
+
+    <!-- Bản đồ chỉ đường: Chuyển kho / Cấp phát / Vị trí lưu trữ -->
+    <RouteGuidePanel v-if="!isNew && doc?.name" :doctype="doctype" :doc="doc" />
+
+    <!-- Banner: HĐ đã duyệt 3-tier → khoá sửa -->
+    <div v-if="approvalLocked"
+      class="sc-card border-l-4 border-sc-success bg-green-50 px-4 py-3 mb-4 text-sm">
+      <div class="font-semibold text-sc-navy">🔒 Hợp đồng đã được duyệt — đã khoá sửa</div>
+      <div class="text-sc-text-muted mt-1">
+        HĐ đã qua đủ 3-tier (Kế toán → Quản lý → Lãnh đạo). Bấm <b>Submit</b> để kích hoạt,
+        hoặc <b>Reject</b> để gửi lại Kế toán điều chỉnh.
+      </div>
+    </div>
 
     <!-- Stock-aware widget chung -->
     <WarehouseStockPanel v-if="['SC Transfer Request', 'SC Stock Entry'].includes(doctype) && doc.from_warehouse"
@@ -316,6 +480,8 @@ function displayField(value, key) {
 
     <!-- New / Edit mode → DocForm -->
     <template v-if="isNew || editing">
+      <!-- Fetch upstream — chỉ hiện ở form New để pull data từ doc cha -->
+      <FetchUpstream v-if="isNew" :target-doctype="doctype" @merge="onUpstreamMerge" />
       <DocForm v-model="doc" :doctype="doctype" @submit="save" @create-new="onCreateNewLink" />
       <div v-if="!schema" class="sc-card p-6 text-center">
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
@@ -374,6 +540,61 @@ function displayField(value, key) {
         </div>
       </div>
     </template>
+
+    <!-- Lịch sử sửa (Version diffs) — thu gọn mặc định, mỗi log 1 dòng -->
+    <div v-if="!isNew && doc?.name" class="sc-card mb-4">
+      <button type="button" @click="toggleEditLog"
+        class="w-full flex items-center justify-between px-5 py-3 hover:bg-sc-bg">
+        <h3 class="font-semibold text-sc-navy">
+          <span class="inline-block w-4">{{ editLogExpanded ? '▾' : '▸' }}</span>
+          📜 Lịch sử sửa<span v-if="editLogLoaded"> ({{ editLog.length }})</span>
+        </h3>
+        <span class="text-xs text-sc-text-muted">
+          {{ editLogExpanded ? 'Bấm để thu gọn' : 'Bấm để xem' }}
+        </span>
+      </button>
+
+      <div v-if="editLogExpanded" class="px-5 pb-4">
+        <div v-if="editLogLoading" class="text-sm text-sc-text-muted py-2">Đang tải...</div>
+        <div v-else-if="!editLog.length" class="text-sm text-sc-text-muted py-2">
+          Chưa có lần sửa nào được ghi log.
+        </div>
+        <div v-else class="divide-y divide-sc-border">
+          <div v-for="v in editLog" :key="v.name">
+            <!-- Dòng tóm tắt — click mở/đóng chi tiết -->
+            <button type="button" @click="toggleVersion(v.name)"
+              class="w-full flex items-start gap-2 py-2 text-left hover:bg-sc-bg">
+              <span class="text-sc-text-muted text-xs mt-0.5 w-3">
+                {{ expandedVersions.has(v.name) ? '▾' : '▸' }}
+              </span>
+              <span class="flex-1 min-w-0">
+                <span class="text-sm text-sc-text">{{ changeSummary(v) }}</span>
+                <span class="block text-xs text-sc-text-muted">
+                  {{ v.owner }} · {{ fmtLogTime(v.creation) }}
+                </span>
+              </span>
+            </button>
+            <!-- Chi tiết field-level — chỉ khi mở -->
+            <table v-if="expandedVersions.has(v.name)"
+              class="w-full text-xs mb-2 ml-5">
+              <tbody>
+                <tr v-for="(c, i) in v.changed" :key="i" class="border-b border-sc-border">
+                  <td class="py-1 pr-2 text-sc-text-muted align-top" style="width: 32%">
+                    {{ fieldDisplay(c.field) }}
+                  </td>
+                  <td class="py-1 pr-2 text-sc-danger line-through align-top" style="width: 30%">
+                    {{ fmtVal(c.old) }}
+                  </td>
+                  <td class="py-1 text-sc-success font-medium align-top">
+                    → {{ fmtVal(c.new) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Related records (reverse lookups) — luôn hiển thị nếu doc tồn tại -->
     <RelatedDocs v-if="!isNew && doc?.name" :doctype="doctype" :name="doc.name" />

@@ -5,6 +5,8 @@
   "section_main", "warehouse_name", "warehouse_code",
   "column_break_1", "warehouse_type", "is_group", "disabled",
   "section_hierarchy", "parent_warehouse", "department",
+  "section_map", "site_row", "site_col", "site_block",
+  "column_break_map", "map_rows", "map_cols", "is_site_entrance",
   "section_meta", "address", "phone", "remarks"
  ],
  "fields": [
@@ -24,6 +26,15 @@
    "description": "Cấu trúc 3 tầng: Kho tổng → Kho con → Kho khoa phòng"},
   {"fieldname": "department", "fieldtype": "Link", "options": "SC Department", "label": "Khoa phòng",
    "description": "Set nếu warehouse_type=Department"},
+
+  {"fieldname": "section_map", "fieldtype": "Section Break", "label": "Bản đồ khuôn viên & Sơ đồ kho", "collapsible": 1},
+  {"fieldname": "site_row", "fieldtype": "Int", "label": "Toạ độ hàng (khuôn viên BV)", "description": "Vị trí kho trên bản đồ khuôn viên bệnh viện"},
+  {"fieldname": "site_col", "fieldtype": "Int", "label": "Toạ độ cột (khuôn viên BV)"},
+  {"fieldname": "site_block", "fieldtype": "Data", "label": "Toà nhà / khối", "description": "VD: Nhà A, Tầng 1"},
+  {"fieldname": "column_break_map", "fieldtype": "Column Break"},
+  {"fieldname": "map_rows", "fieldtype": "Int", "label": "Số hàng sơ đồ kho", "description": "Kích thước lưới bin trong kho — số hàng (aisle)"},
+  {"fieldname": "map_cols", "fieldtype": "Int", "label": "Số cột sơ đồ kho", "description": "Số cột (zone)"},
+  {"fieldname": "is_site_entrance", "fieldtype": "Check", "label": "Là cổng/lối vào khuôn viên", "default": "0", "description": "Điểm bắt đầu chỉ đường trên bản đồ khuôn viên"},
 
   {"fieldname": "section_meta", "fieldtype": "Section Break", "label": "Liên hệ", "collapsible": 1},
   {"fieldname": "address", "fieldtype": "Small Text", "label": "Địa chỉ"},

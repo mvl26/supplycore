@@ -1,17 +1,18 @@
 <script setup>
-import { computed } from 'vue'
 import { statusLabel } from '../modules'
 
 const props = defineProps({
   rows:    { type: Array, default: () => [] },
-  columns: { type: Array, required: true }, // [{key, label, type, format, width, align}]
+  columns: { type: Array, required: true }, // [{key, label, type, format, width, align, sortable}]
   loading: Boolean,
   empty:   { type: String, default: 'Chưa có dữ liệu' },
   rowKey:  { type: String, default: 'name' },
   rowClickable: { type: Boolean, default: true },
+  sortKey: { type: String, default: '' },     // current sort column key
+  sortDir: { type: String, default: 'desc' }, // 'asc' | 'desc'
 })
 
-const emit = defineEmits(['rowClick'])
+const emit = defineEmits(['rowClick', 'sort'])
 
 function fmt(value, col) {
   if (value == null) return ''
@@ -29,6 +30,13 @@ function fmt(value, col) {
   }
   return value
 }
+
+function onHeaderClick(c) {
+  if (!c.sortable) return
+  let dir = 'asc'
+  if (props.sortKey === c.key) dir = props.sortDir === 'asc' ? 'desc' : 'asc'
+  emit('sort', { key: c.key, dir })
+}
 </script>
 
 <template>
@@ -41,8 +49,20 @@ function fmt(value, col) {
           <tr>
             <th v-for="c in columns" :key="c.key"
               :style="c.width ? { width: c.width } : {}"
-              :class="c.align === 'right' ? 'text-right' : ''">
-              {{ c.label }}
+              :class="[
+                c.align === 'right' ? 'text-right' : '',
+                c.sortable ? 'cursor-pointer select-none hover:bg-sc-bg' : '',
+              ]"
+              @click="onHeaderClick(c)">
+              <span class="inline-flex items-center gap-1">
+                {{ c.label }}
+                <template v-if="c.sortable">
+                  <span v-if="sortKey === c.key" class="text-sc-royal text-xs">
+                    {{ sortDir === 'asc' ? '▲' : '▼' }}
+                  </span>
+                  <span v-else class="text-sc-border text-xs">⇅</span>
+                </template>
+              </span>
             </th>
           </tr>
         </thead>

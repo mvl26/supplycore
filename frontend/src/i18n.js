@@ -19,6 +19,7 @@ const FIELD_LABEL = {
   parent_warehouse: 'Kho cha', from_warehouse: 'Kho nguồn',
   to_warehouse: 'Kho đích', target_bin: 'Bin đích',
   bin_location: 'Vị trí (Bin)', is_group: 'Là nhóm',
+  barcode: 'Barcode', bin_code: 'Mã vị trí', batch_id: 'Mã lô',
   // Supplier
   supplier: 'Nhà cung cấp', supplier_name: 'Tên NCC',
   supplier_batch_no: 'Số lô NCC', tax_id: 'MST',

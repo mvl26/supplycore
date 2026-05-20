@@ -6,7 +6,7 @@ const MODULES_WITH_CREATE = [
   ['m2', 'Kế hoạch & Mua', 2],
   ['m3', 'Tiếp nhận', 2],
   ['m4', 'Quản lý kho', 3],
-  ['m5', 'FEFO', 1],
+  ['m5', 'Quản lý lô vật tư', 1],
   ['m6', 'Chuyển kho', 2],
   ['m7', 'Cấp phát', 2],
   ['m8', 'Kế toán', 3],

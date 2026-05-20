@@ -70,7 +70,8 @@
   {"role": "SupplyCore Executive", "read": 1, "submit": 1, "cancel": 1, "report": 1, "print": 1},
   {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "report": 1, "print": 1},
   {"role": "Pharmacy Officer", "read": 1, "report": 1},
-  {"role": "QC Officer", "read": 1, "report": 1}
+  {"role": "QC Officer", "read": 1, "report": 1},
+  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1}
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
  "module": "M10 Traceability", "name": "SC Recall Notice",

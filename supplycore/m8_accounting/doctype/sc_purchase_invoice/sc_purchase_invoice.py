@@ -227,6 +227,11 @@ def _resolve_account(code: str) -> str:
 def make_invoice_from_pr(pr_name: str) -> str:
     """Tạo SC Purchase Invoice draft từ PR đã submit + accepted QC.
 
+    Auto-fetch:
+      - Parent: supplier, supplier_name, purchase_order, purchase_receipt
+      - Per item: item_name, warehouse, batch_no (từ PR Item)
+      - pr_item_ref (=PR Item.name), po_item_ref (=PR Item.po_item_ref)
+
     Returns: tên PI draft (chưa submit — user review rồi submit để post GL).
     """
     pr = frappe.get_doc("SC Purchase Receipt", pr_name)
@@ -244,16 +249,28 @@ def make_invoice_from_pr(pr_name: str) -> str:
 
     pi = frappe.new_doc("SC Purchase Invoice")
     pi.supplier = pr.supplier
+    pi.supplier_name = frappe.db.get_value("SC Supplier", pr.supplier, "supplier_name")
     pi.purchase_order = pr.purchase_order
     pi.purchase_receipt = pr_name
     pi.supplier_invoice_no = f"AUTO-{pr_name}"  # placeholder, user sửa lại
     pi.invoice_date = today()
     pi.due_date = add_days(today(), 30)
     pi.vat_rate = 10  # default VAT VN
+    pi.remarks = _("Tự tạo từ PR {0} (kho nhập: {1})").format(
+        pr_name, pr.to_warehouse or "—")
     for r in pr.items:
         pi.append("items", {
-            "item": r.item, "qty": r.qty, "uom": r.uom,
-            "rate": r.rate, "amount": flt(r.qty) * flt(r.rate),
+            "item": r.item,
+            "item_name": getattr(r, "item_name", None) or
+                          frappe.db.get_value("SC Item", r.item, "item_name"),
+            "qty": r.qty,
+            "uom": r.uom,
+            "rate": r.rate,
+            "amount": flt(r.qty) * flt(r.rate),
+            "warehouse": r.warehouse or pr.to_warehouse,
+            "batch_no": r.batch_no,
+            "po_item_ref": r.po_item_ref,
+            "pr_item_ref": r.name,
         })
     pi.flags.ignore_permissions = True
     pi.insert()

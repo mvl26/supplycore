@@ -3,14 +3,20 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { MODULES } from '../modules'
 import { useAuthStore } from '../stores/auth'
+import { useAccessStore } from '../stores/access'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const access = useAccessStore()
+
+// Chỉ hiện module mà user có quyền — "không có phận sự thì không thấy"
+const visibleModules = computed(() =>
+  MODULES.filter(m => access.canModule(m.id)))
 
 const groups = computed(() => {
   const g = {}
-  MODULES.forEach(m => { (g[m.group] = g[m.group] || []).push(m) })
+  visibleModules.value.forEach(m => { (g[m.group] = g[m.group] || []).push(m) })
   return g
 })
 
@@ -49,25 +55,53 @@ async function logout() {
           <span class="text-sm font-medium">Dashboard</span>
         </router-link>
 
-        <router-link to="/alerts"
+        <router-link v-if="access.canFeature('alerts')" to="/alerts"
           class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
           :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/alerts') }">
           <span class="text-base">🔔</span>
           <span class="text-sm font-medium">Cảnh báo</span>
         </router-link>
 
-        <router-link to="/stock-balance"
+        <router-link v-if="access.canFeature('stock_balance')" to="/stock-balance"
           class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
           :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/stock-balance') }">
           <span class="text-base">📊</span>
           <span class="text-sm font-medium">Tồn kho</span>
         </router-link>
 
-        <router-link to="/putaway"
+        <router-link v-if="access.canFeature('putaway')" to="/putaway"
           class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
           :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/putaway') }">
           <span class="text-base">📦</span>
           <span class="text-sm font-medium">Xếp hàng lên kệ</span>
+        </router-link>
+
+        <router-link v-if="access.canFeature('batch_trace')" to="/batch-trace"
+          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
+          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/batch-trace') }">
+          <span class="text-base">🔍</span>
+          <span class="text-sm font-medium">Truy xuất lô (M10)</span>
+        </router-link>
+
+        <router-link v-if="access.canFeature('warehouse_map')" to="/warehouse-map"
+          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
+          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/warehouse-map') }">
+          <span class="text-base">🗺️</span>
+          <span class="text-sm font-medium">Bản đồ kho</span>
+        </router-link>
+
+        <router-link v-if="access.canFeature('financial_reports')" to="/financial-reports"
+          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
+          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/financial-reports') }">
+          <span class="text-base">📊</span>
+          <span class="text-sm font-medium">Báo cáo TC (M8)</span>
+        </router-link>
+
+        <router-link v-if="access.canFeature('users')" to="/users"
+          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
+          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/users') }">
+          <span class="text-base">👥</span>
+          <span class="text-sm font-medium">Người dùng & Quyền</span>
         </router-link>
 
         <div v-for="(modules, group) in groups" :key="group" class="mt-4">

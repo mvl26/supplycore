@@ -440,6 +440,23 @@ def assign_bin(assignments):
 
 
 @frappe.whitelist()
+def item_eligible_uoms(item=None):
+    """Trả về danh sách UOM hợp lệ cho 1 vật tư.
+
+    SC Item có 3 trường UOM: uom (tồn kho), buy_uom (mua), use_uom (sử dụng/BHYT).
+    Frontend dùng để filter dropdown UOM trong child table — chỉ hiển thị các UOM
+    của item đang chọn, không phải toàn bộ SC UOM.
+    """
+    if not item:
+        return []
+    row = frappe.db.get_value("SC Item", item,
+                                ["uom", "buy_uom", "use_uom"], as_dict=True)
+    if not row:
+        return []
+    return [u for u in dict.fromkeys([row.uom, row.buy_uom, row.use_uom]).keys() if u]
+
+
+@frappe.whitelist()
 def pd_item_autofetch(item=None, warehouse=None):
     """Auto-fetch UOM + đơn giá + lô FEFO khi cấp phát/xuất kho 1 vật tư
     tại 1 kho. Lô được chọn = lô có qty > 0 trong kho, QC Accepted (hoặc
@@ -544,3 +561,73 @@ def save_doc(doctype, name, fields):
             doc.set(k, v)
     doc.save()
     return doc.as_dict()
+
+
+@frappe.whitelist()
+def get_doc_versions(doctype, name, limit=50):
+    """Trả lịch sử sửa từ tabVersion (track_changes=1) — diff field-level.
+
+    Mỗi record là 1 lần save. data là JSON {changed: [[field, old, new], ...]}.
+    Frontend hiển thị thành bảng "ai-sửa-gì-khi-nào".
+    """
+    if not frappe.has_permission(doctype, "read", doc=name):
+        frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
+
+    import json as _json
+    rows = frappe.db.get_all(
+        "Version",
+        filters={"ref_doctype": doctype, "docname": name},
+        fields=["name", "owner", "creation", "data"],
+        order_by="creation desc",
+        limit=int(limit) if limit else 50,
+    )
+    out = []
+    for r in rows:
+        changed = []
+        try:
+            d = _json.loads(r.data or "{}")
+            for entry in (d.get("changed") or []):
+                if not entry or len(entry) < 3:
+                    continue
+                fld, old, new = entry[0], entry[1], entry[2]
+                # Bỏ field hệ thống không cần show
+                if fld in ("modified", "modified_by", "_user_tags", "_comments",
+                           "_assign", "_liked_by"):
+                    continue
+                changed.append({"field": fld, "old": old, "new": new})
+            # row_changed = [[childtable, idx, name, [[field, old, new], ...]], ...]
+            for entry in (d.get("row_changed") or []):
+                if not entry or len(entry) < 4:
+                    continue
+                ctable, idx, _cname, diffs = entry[0], entry[1], entry[2], entry[3]
+                for fdiff in (diffs or []):
+                    if not fdiff or len(fdiff) < 3:
+                        continue
+                    f, o, n = fdiff[0], fdiff[1], fdiff[2]
+                    if f in ("modified", "modified_by"):
+                        continue
+                    changed.append({
+                        "field": f"{ctable}[{idx}].{f}",
+                        "old": o, "new": n,
+                    })
+            for added in (d.get("added") or []):
+                if not added or len(added) < 2:
+                    continue
+                changed.append({"field": f"+ {added[0]}",
+                                "old": None, "new": "(dòng mới)"})
+            for removed in (d.get("removed") or []):
+                if not removed or len(removed) < 2:
+                    continue
+                changed.append({"field": f"- {removed[0]}",
+                                "old": "(đã xoá)", "new": None})
+        except Exception:
+            continue
+        if not changed:
+            continue
+        out.append({
+            "name": r.name,
+            "owner": r.owner,
+            "creation": str(r.creation),
+            "changed": changed,
+        })
+    return out

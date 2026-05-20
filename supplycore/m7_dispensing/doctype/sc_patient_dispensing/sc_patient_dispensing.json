@@ -1,58 +1,272 @@
 {
- "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
- "autoname": "format:SC-PD-{YYYY}-{#####}", "is_submittable": 1, "track_changes": 1,
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-PD-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
  "field_order": [
-  "section_main", "patient", "patient_name", "bhyt_card_no",
-  "column_break_1", "bhyt_type", "bhyt_payment_rate", "ward",
-  "section_dates", "dispensing_date",
-  "column_break_dates", "dispensing_request", "stock_entry",
-  "section_items", "items",
-  "section_total", "total_cost", "bhyt_covered",
-  "column_break_total", "patient_pays", "ceiling_overage",
-  "section_other", "remarks", "amended_from"
+  "section_main",
+  "patient",
+  "patient_name",
+  "bhyt_card_no",
+  "column_break_1",
+  "bhyt_type",
+  "bhyt_payment_rate",
+  "ward",
+  "section_dates",
+  "dispensing_date",
+  "column_break_dates",
+  "dispensing_request",
+  "stock_entry",
+  "section_items",
+  "items",
+  "section_total",
+  "total_cost",
+  "bhyt_covered",
+  "column_break_total",
+  "patient_pays",
+  "ceiling_overage",
+  "section_other",
+  "remarks",
+  "amended_from"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Bệnh nhân"},
-  {"fieldname": "patient", "fieldtype": "Link", "options": "SC Patient", "label": "Mã BN", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "patient_name", "fieldtype": "Data", "fetch_from": "patient.patient_name", "label": "Họ tên", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "bhyt_card_no", "fieldtype": "Data", "fetch_from": "patient.bhyt_card_no", "label": "Số thẻ BHYT", "read_only": 1, "in_standard_filter": 1},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "bhyt_type", "fieldtype": "Data", "fetch_from": "patient.bhyt_type", "label": "Loại BHYT", "read_only": 1},
-  {"fieldname": "bhyt_payment_rate", "fieldtype": "Percent", "fetch_from": "patient.bhyt_payment_rate", "label": "Tỷ lệ BHYT BN", "read_only": 1},
-  {"fieldname": "ward", "fieldtype": "Link", "options": "SC Department", "label": "Khoa", "in_list_view": 1, "in_standard_filter": 1},
-
-  {"fieldname": "section_dates", "fieldtype": "Section Break", "label": "Thời gian & Liên kết"},
-  {"fieldname": "dispensing_date", "fieldtype": "Date", "label": "Ngày cấp phát", "reqd": 1, "default": "Today", "in_list_view": 1},
-  {"fieldname": "column_break_dates", "fieldtype": "Column Break"},
-  {"fieldname": "dispensing_request", "fieldtype": "Link", "options": "SC Dispensing Request", "label": "Dispensing Request", "in_standard_filter": 1},
-  {"fieldname": "stock_entry", "fieldtype": "Link", "options": "SC Stock Entry", "label": "Stock Entry"},
-
-  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Vật tư sử dụng"},
-  {"fieldname": "items", "fieldtype": "Table", "options": "SC PD Item", "reqd": 1, "label": "Items"},
-
-  {"fieldname": "section_total", "fieldtype": "Section Break", "label": "Tổng hợp chi phí"},
-  {"fieldname": "total_cost", "fieldtype": "Currency", "options": "VND", "label": "Tổng chi phí", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "bhyt_covered", "fieldtype": "Currency", "options": "VND", "label": "BHYT chi trả", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "column_break_total", "fieldtype": "Column Break"},
-  {"fieldname": "patient_pays", "fieldtype": "Currency", "options": "VND", "label": "BN tự trả", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "ceiling_overage", "fieldtype": "Currency", "options": "VND", "label": "Phần vượt giá trần", "read_only": 1,
-   "description": "Phần BN tự trả do vượt giá trần BHYT"},
-
-  {"fieldname": "section_other", "fieldtype": "Section Break", "label": "Khác", "collapsible": 1},
-  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Patient Dispensing", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Bệnh nhân"
+  },
+  {
+   "fieldname": "patient",
+   "fieldtype": "Link",
+   "options": "SC Patient",
+   "label": "Mã BN",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "patient_name",
+   "fieldtype": "Data",
+   "fetch_from": "patient.patient_name",
+   "label": "Họ tên",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bhyt_card_no",
+   "fieldtype": "Data",
+   "fetch_from": "patient.bhyt_card_no",
+   "label": "Số thẻ BHYT",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "bhyt_type",
+   "fieldtype": "Data",
+   "fetch_from": "patient.bhyt_type",
+   "label": "Loại BHYT",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bhyt_payment_rate",
+   "fieldtype": "Percent",
+   "fetch_from": "patient.bhyt_payment_rate",
+   "label": "Tỷ lệ BHYT BN",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ward",
+   "fieldtype": "Link",
+   "options": "SC Department",
+   "label": "Khoa",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "section_dates",
+   "fieldtype": "Section Break",
+   "label": "Thời gian & Liên kết"
+  },
+  {
+   "fieldname": "dispensing_date",
+   "fieldtype": "Date",
+   "label": "Ngày cấp phát",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "dispensing_request",
+   "fieldtype": "Link",
+   "options": "SC Dispensing Request",
+   "label": "Dispensing Request",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "options": "SC Stock Entry",
+   "label": "Stock Entry"
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Vật tư sử dụng"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "SC PD Item",
+   "reqd": 1,
+   "label": "Items"
+  },
+  {
+   "fieldname": "section_total",
+   "fieldtype": "Section Break",
+   "label": "Tổng hợp chi phí"
+  },
+  {
+   "fieldname": "total_cost",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Tổng chi phí",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bhyt_covered",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "BHYT chi trả",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_total",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "patient_pays",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "BN tự trả",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "ceiling_overage",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Phần vượt giá trần",
+   "read_only": 1,
+   "description": "Phần BN tự trả do vượt giá trần BHYT"
+  },
+  {
+   "fieldname": "section_other",
+   "fieldtype": "Section Break",
+   "label": "Khác",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Patient Dispensing",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Ward Staff", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
-  {"role": "Pharmacy Officer", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
-  {"role": "BHYT Officer", "read": 1, "write": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Accountant", "read": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Ward Staff",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Pharmacy Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "BHYT Officer",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
- "module": "M7 Dispensing", "name": "SC Patient Dispensing",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M7 Dispensing",
+ "name": "SC Patient Dispensing",
  "search_fields": "patient,bhyt_card_no,ward",
- "sort_field": "modified", "sort_order": "DESC"
+ "sort_field": "modified",
+ "sort_order": "DESC"
 }

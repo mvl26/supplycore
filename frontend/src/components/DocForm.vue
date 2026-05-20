@@ -68,7 +68,7 @@ function isVisible(field) {
           <div v-if="isVisible(f)"
             :class="['Small Text','Long Text','Text'].includes(f.type) ? 'md:col-span-2' : ''">
             <FormField :model-value="doc[f.name]"
-              :field="f" :readonly="readonly"
+              :field="f" :context="doc" :readonly="readonly"
               @update:model-value="v => updateField(f.name, v)"
               @selected="linked => handleLinkSelected(f, linked)"
               @create-new="emit('createNew', f)" />

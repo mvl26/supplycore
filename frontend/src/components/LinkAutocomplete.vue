@@ -10,8 +10,15 @@ const props = defineProps({
   readonly:   Boolean,
   size:       { type: String, default: 'normal' }, // normal/sm
   allowCreate: Boolean,                            // hiển thị "+ Tạo mới"
+  extraFilters: { type: Array, default: () => [] }, // [[field, op, value], ...] AND với search
 })
 const emit = defineEmits(['update:modelValue', 'selected', 'createNew'])
+
+// Re-fetch khi extraFilters đổi (vd: row.item thay đổi → filter dropdown đổi theo)
+watch(() => JSON.stringify(props.extraFilters), () => {
+  results.value = []
+  if (open.value) doSearch(search.value)
+})
 
 const open = ref(false)
 const search = ref(props.modelValue || '')
@@ -53,13 +60,19 @@ async function doSearch(q) {
   loading.value = true
   try {
     const filters = q ? [['name', 'like', `%${q}%`]] : []
+    // Merge extraFilters (vd: scope theo item) — AND với search
+    for (const f of (props.extraFilters || [])) {
+      if (Array.isArray(f) && f.length >= 3) filters.push(f)
+    }
     const fields = props.linkTo === 'SC Item' ? ['name', 'item_name']
                   : props.linkTo === 'SC Supplier' ? ['name', 'supplier_name']
                   : props.linkTo === 'SC Patient' ? ['name', 'patient_name']
                   : props.linkTo === 'User' ? ['name', 'full_name']
+                  : props.linkTo === 'SC Batch' ? ['name', 'item', 'expiry_date']
                   : ['name']
+    const order = props.linkTo === 'SC Batch' ? 'expiry_date asc' : 'modified desc'
     const rows = await getList(props.linkTo, {
-      fields, filters, order_by: 'modified desc', limit: 20,
+      fields, filters, order_by: order, limit: 20,
     })
     results.value = rows
   } catch (e) {
@@ -98,7 +111,19 @@ function pick(row) {
   open.value = false
 }
 
-const subLabel = (r) => r.item_name || r.supplier_name || r.patient_name || r.full_name || ''
+const subLabel = (r) => {
+  if (r.item_name || r.supplier_name || r.patient_name || r.full_name) {
+    return r.item_name || r.supplier_name || r.patient_name || r.full_name
+  }
+  // SC Batch: hiện item + HSD
+  if (r.item || r.expiry_date) {
+    const parts = []
+    if (r.item) parts.push(r.item)
+    if (r.expiry_date) parts.push(`HSD: ${r.expiry_date}`)
+    return parts.join(' · ')
+  }
+  return ''
+}
 </script>
 
 <template>

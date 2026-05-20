@@ -6,7 +6,7 @@ export const MODULES = [
   { id: 'm2',  code: 'M2',  name: 'Kế hoạch & Mua',       icon: '🛒', route: '/m2',  group: 'Chiến lược' },
   { id: 'm3',  code: 'M3',  name: 'Tiếp nhận',            icon: '📦', route: '/m3',  group: 'Vận hành' },
   { id: 'm4',  code: 'M4',  name: 'Quản lý kho',          icon: '🏬', route: '/m4',  group: 'Vận hành' },
-  { id: 'm5',  code: 'M5',  name: 'FEFO',                 icon: '⏱️', route: '/m5',  group: 'Vận hành' },
+  { id: 'm5',  code: 'M5',  name: 'Quản lý lô vật tư',    icon: '⏱️', route: '/m5',  group: 'Vận hành' },
   { id: 'm6',  code: 'M6',  name: 'Chuyển kho',           icon: '🔁', route: '/m6',  group: 'Vận hành' },
   { id: 'm7',  code: 'M7',  name: 'Cấp phát',             icon: '💉', route: '/m7',  group: 'Vận hành' },
   { id: 'm8',  code: 'M8',  name: 'Kế toán',              icon: '💰', route: '/m8',  group: 'Tài chính' },
@@ -166,6 +166,7 @@ export const DT = {
       { key: 'name', label: 'Mã vị trí', mono: true },
       { key: 'warehouse', label: 'Kho' },
       { key: 'bin_code', label: 'Code', mono: true },
+      { key: 'barcode', label: 'Barcode', mono: true },
       { key: 'zone', label: 'Khu' },
       { key: 'aisle', label: 'Hàng' },
       { key: 'rack', label: 'Kệ' },
@@ -175,7 +176,7 @@ export const DT = {
       { key: 'is_quarantine', label: 'Cách ly', type: 'check' },
       { key: 'enabled', label: 'Hiệu lực', type: 'check' },
     ],
-    listFields: ['name', 'warehouse', 'bin_code', 'zone', 'aisle', 'rack',
+    listFields: ['name', 'warehouse', 'bin_code', 'barcode', 'zone', 'aisle', 'rack',
                   'shelf', 'level', 'status', 'occupancy_pct',
                   'is_quarantine', 'temperature_controlled', 'enabled'],
     defaultOrderBy: 'warehouse asc, bin_code asc',
@@ -241,6 +242,10 @@ export const DT = {
       { key: 'total_value', label: 'Tổng', type: 'currency', align: 'right' },
       { key: 'remaining_value', label: 'Còn lại', type: 'currency', align: 'right' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    // Gộp 2 cột Từ/Đến thành 1 dải filter (period overlap) trong panel "Lọc cột"
+    dateRangePairs: [
+      { start: 'valid_from', end: 'valid_to', label: 'Hiệu lực HĐ' },
     ],
     listFields: ['name', 'contract_number', 'supplier_name', 'valid_from', 'valid_to',
                   'total_value', 'remaining_value', 'status', 'docstatus'],
@@ -345,6 +350,7 @@ export const DT = {
     module: 'm4', label: 'Lô', icon: '🏷️',
     listColumns: [
       { key: 'name', label: 'Mã lô', mono: true },
+      { key: 'barcode', label: 'Barcode', mono: true },
       { key: 'item', label: 'Vật tư' },
       { key: 'supplier_batch_no', label: 'Số lô NCC' },
       { key: 'manufacturing_date', label: 'SX', type: 'date' },
@@ -352,7 +358,10 @@ export const DT = {
       { key: 'qc_status', label: 'QC', type: 'badge', badgeMap: STATUS_BADGE },
       { key: 'blocked', label: 'Khoá', type: 'check' },
     ],
-    listFields: ['name', 'item', 'supplier_batch_no', 'manufacturing_date', 'expiry_date',
+    dateRangePairs: [
+      { start: 'manufacturing_date', end: 'expiry_date', label: 'Vòng đời lô (SX → HD)' },
+    ],
+    listFields: ['name', 'barcode', 'item', 'supplier_batch_no', 'manufacturing_date', 'expiry_date',
                   'qc_status', 'blocked', 'supplier'],
   },
 
@@ -420,10 +429,13 @@ export const DT = {
       { key: 'purchase_receipt', label: 'PR', mono: true },
       { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
       { key: 'outstanding_amount', label: 'Còn lại', type: 'currency', align: 'right' },
+      { key: 'three_way_match_status', label: '3-way', type: 'badge', badgeMap: STATUS_BADGE },
+      { key: 'payment_hold', label: 'Khoá TT', type: 'check' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'invoice_date', 'supplier', 'purchase_receipt', 'grand_total',
-                  'outstanding_amount', 'status', 'docstatus'],
+                  'outstanding_amount', 'three_way_match_status', 'payment_hold',
+                  'status', 'docstatus'],
   },
   'SC Payment Entry': {
     module: 'm8', label: 'Phiếu thanh toán', icon: '💳',
@@ -433,8 +445,9 @@ export const DT = {
       { key: 'supplier', label: 'NCC' },
       { key: 'amount', label: 'Số tiền', type: 'currency', align: 'right' },
       { key: 'payment_method', label: 'Phương thức' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'payment_date', 'supplier', 'amount', 'payment_method', 'docstatus'],
+    listFields: ['name', 'payment_date', 'supplier', 'amount', 'payment_method', 'status', 'docstatus'],
   },
   'SC GL Entry': {
     module: 'm8', label: 'Bút toán GL', icon: '💰',
@@ -454,12 +467,12 @@ export const DT = {
     module: 'm9', label: 'Phiếu kiểm kê', icon: '📋',
     listColumns: [
       { key: 'name', label: 'ICS', mono: true },
-      { key: 'posting_date', label: 'Ngày', type: 'date' },
+      { key: 'count_date', label: 'Ngày', type: 'date' },
       { key: 'warehouse', label: 'Kho' },
-      { key: 'count_type', label: 'Loại' },
+      { key: 'count_scope', label: 'Phạm vi' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'posting_date', 'warehouse', 'count_type', 'status', 'docstatus'],
+    listFields: ['name', 'count_date', 'warehouse', 'count_scope', 'status', 'docstatus'],
   },
   'SC Stock Reconciliation': {
     module: 'm9', label: 'Đối soát kho', icon: '🔍',
@@ -543,10 +556,10 @@ export const MODULE_DOCTYPES = (() => {
       m[mod].push({ dt, label: cfg.label, icon: cfg.icon })
     }
   })
-  // M5 FEFO: chia sẻ SC Batch + SC Stock Ledger Entry view (FEFO picking dùng)
+  // M5 Quản lý lô vật tư: SC Batch sắp xếp theo HSD (FEFO) làm view chính
   if (!m['m5']) m['m5'] = []
   m['m5'].push(
-    { dt: 'SC Batch', label: 'Lô FEFO', icon: '⏱️',
+    { dt: 'SC Batch', label: 'Danh sách lô vật tư', icon: '⏱️',
       defaultOrderBy: 'expiry_date asc',
       defaultFilters: [['blocked', '=', 0]] },
   )

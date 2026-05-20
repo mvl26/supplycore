@@ -13,11 +13,40 @@ DEFAULT_FC_EXECUTIVE_THRESHOLD = 100_000_000
 class FrameworkContract(Document):
 
     def validate(self):
+        self._guard_locked_after_approval()
         self._validate_dates()
         self._validate_supplier_active()
         self._compute_items()
         self._compute_totals()
         self._derive_status()
+
+    def _guard_locked_after_approval(self):
+        """Khoá sửa khi HĐ đã duyệt 3-tier (stage=Approved & docstatus=0).
+
+        Lý do: HĐ đã qua đủ Manager + Executive nhưng chưa Submit kích hoạt —
+        chỉ cho phép 2 action: Submit (kích hoạt) hoặc Reject (gửi lại Kế toán).
+        Sửa nội dung sau khi duyệt = phá vỡ audit trail của 3-tier approval.
+
+        Bypass:
+        - is_new() → đang tạo mới, không có gì để khoá.
+        - docstatus != 0 → docstatus=1 đã được Frappe khoá tự nhiên (chỉ db_set
+          đi qua được); docstatus=2 (Cancelled) thì cũng không sửa được.
+        - flags.allow_edit_after_approval → cho phép code nội bộ bypass (vd
+          reset_to_draft sau khi Reject).
+        """
+        if self.is_new():
+            return
+        if (self.docstatus or 0) != 0:
+            return
+        if (self.approval_stage or "") != "Approved":
+            return
+        if self.flags.get("allow_edit_after_approval"):
+            return
+        frappe.throw(
+            _("Hợp đồng đã được duyệt (Approved) — không cho phép sửa. "
+              "Hãy bấm Submit để kích hoạt HĐ, hoặc Reject để gửi lại Kế toán."),
+            title="SC-E-FC-LOCKED",
+        )
 
     def before_submit(self):
         """UC-03 step 6-7: chỉ cho submit khi đã Approved qua 3-tier."""
@@ -71,13 +100,8 @@ class FrameworkContract(Document):
             row.remaining_qty = flt(row.contract_qty) - flt(row.ordered_qty or 0)
 
     def _compute_totals(self):
-        items_total = sum(flt(r.total_amount) for r in self.items)
-        # total_value do user nhập — kiểm tra so với tổng items
-        if self.total_value and abs(flt(self.total_value) - items_total) > 1:
-            frappe.msgprint(_("Tổng giá trị nhập tay ({0}) khác tổng các dòng vật tư ({1})").format(
-                frappe.format(self.total_value, {"fieldtype": "Currency"}),
-                frappe.format(items_total, {"fieldtype": "Currency"})),
-                indicator="orange", alert=True)
+        # Tổng giá trị HĐ luôn = Σ thành tiền items (read-only đối với user)
+        self.total_value = sum(flt(r.total_amount) for r in self.items)
         used = flt(self.used_value or 0)
         committed = flt(self.committed_value or 0)
         self.remaining_value = flt(self.total_value) - used - committed

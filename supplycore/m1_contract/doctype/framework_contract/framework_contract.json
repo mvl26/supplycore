@@ -62,7 +62,7 @@
   {"fieldname": "valid_to", "fieldtype": "Date", "label": "Hết hạn", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
 
   {"fieldname": "section_value", "fieldtype": "Section Break", "label": "Giá trị hợp đồng"},
-  {"fieldname": "total_value", "fieldtype": "Currency", "label": "Tổng giá trị (VND)", "reqd": 1, "in_list_view": 1, "options": "VND", "non_negative": 1},
+  {"fieldname": "total_value", "fieldtype": "Currency", "label": "Tổng giá trị (VND)", "read_only": 1, "in_list_view": 1, "options": "VND", "non_negative": 1, "description": "Tự động tính = Σ thành tiền các dòng vật tư bên dưới"},
   {"fieldname": "used_value", "fieldtype": "Currency", "label": "Đã sử dụng (PO submitted)", "read_only": 1, "default": "0", "options": "VND", "no_copy": 1, "in_list_view": 1, "description": "Tổng grand_total các PO đã submit"},
   {"fieldname": "committed_value", "fieldtype": "Currency", "label": "Đang gọi (RO Approved)", "read_only": 1, "default": "0", "options": "VND", "no_copy": 1, "description": "Tổng RO đã duyệt nhưng chưa convert sang PO"},
   {"fieldname": "remaining_value", "fieldtype": "Currency", "label": "Còn lại khả dụng", "read_only": 1, "options": "VND", "no_copy": 1, "in_list_view": 1, "description": "= Tổng giá trị − Đã sử dụng − Đang gọi"},
@@ -124,7 +124,9 @@
   {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
   {"role": "SupplyCore Executive", "read": 1, "report": 1, "print": 1},
   {"role": "Warehouse Officer", "read": 1, "report": 1},
-  {"role": "Pharmacy Officer", "read": 1, "report": 1}
+  {"role": "Pharmacy Officer", "read": 1, "report": 1},
+  {"role": "SupplyCore Purchaser", "read": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1}
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",

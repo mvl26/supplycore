@@ -70,7 +70,8 @@
   {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1, "email": 1},
   {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1, "email": 1},
   {"role": "SupplyCore Accountant", "read": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Executive", "read": 1, "report": 1, "print": 1}
+  {"role": "SupplyCore Executive", "read": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1}
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
  "module": "M10 Traceability", "name": "SC Investigation Report",
