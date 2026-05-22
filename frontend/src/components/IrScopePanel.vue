@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   doc: Object,
@@ -41,7 +42,7 @@ const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
     <!-- Banner gợi ý phạm vi nếu thiếu -->
     <div v-if="doc.docstatus === 0 && !hasScope"
       class="sc-card border-l-4 border-amber-400 bg-amber-50 px-4 py-3 mb-4 text-sm">
-      <div class="font-semibold text-amber-900">⚠️ Cần xác định phạm vi điều tra</div>
+      <div class="font-semibold text-amber-900 flex items-center gap-1.5"><Icon name="alert-triangle" :size="16" /> Cần xác định phạm vi điều tra</div>
       <div class="text-amber-800 mt-1">
         Phải nhập <strong>ít nhất 1</strong> trong: <em>Vật tư</em>, <em>Kho</em>, <em>Lô</em>.
         Càng cụ thể, audit trail càng chính xác.
@@ -51,7 +52,7 @@ const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
     <!-- Variance summary sau khi đã compare -->
     <div v-if="hasComparison" class="sc-card p-5 mb-4">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl">⚖️</span> Kết quả so sánh tồn kho
+        <Icon name="git-compare" :size="18" /> Kết quả so sánh tồn kho
       </h3>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="border rounded p-3">
@@ -82,21 +83,21 @@ const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
       </div>
       <div v-if="doc.variance_qty != 0 && doc.docstatus === 0"
         class="mt-3 text-sm text-sc-text-muted">
-        💡 Bấm <em>"Tạo SR điều chỉnh"</em> để generate phiếu Stock Reconciliation tự động điều chỉnh tồn kho theo SL đếm tay.
+        <Icon name="info" :size="16" /> Bấm <em>"Tạo SR điều chỉnh"</em> để generate phiếu Stock Reconciliation tự động điều chỉnh tồn kho theo SL đếm tay.
       </div>
     </div>
 
     <!-- Anomalies cards -->
     <div v-if="hasAnomalies" class="sc-card p-5 mb-4">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl">⚠️</span>
+        <Icon name="alert-triangle" :size="18" />
         Bất thường phát hiện ({{ anomaliesList.length }})
       </h3>
       <div class="space-y-2">
         <div v-for="(a, i) in anomaliesList" :key="i"
           class="border-l-4 border-amber-500 bg-amber-50 p-3 rounded">
           <div class="font-medium text-amber-900 flex items-center gap-2">
-            <span class="text-lg">⚠️</span>
+            <Icon name="alert-triangle" :size="18" />
             {{ a.type || a.kind || 'Anomaly #' + (i + 1) }}
           </div>
           <div class="text-xs text-amber-800 mt-1 grid grid-cols-2 gap-1">
@@ -114,7 +115,7 @@ const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
     <!-- System error adjustment linked -->
     <div v-if="doc.system_error_adjustment"
       class="sc-card border-l-4 border-green-400 bg-green-50 px-4 py-3 mb-4 text-sm">
-      ✓ <strong>SR điều chỉnh đã được tạo:</strong>
+      <Icon name="check" :size="16" /> <strong>SR điều chỉnh đã được tạo:</strong>
       <router-link :to="`/doc/SC Stock Reconciliation/${encodeURIComponent(doc.system_error_adjustment)}`"
         class="text-sc-royal hover:underline font-mono ml-1">
         {{ doc.system_error_adjustment }}

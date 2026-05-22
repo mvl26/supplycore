@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, onMounted, nextTick } from 'vue'
 import JsBarcode from 'jsbarcode'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   value:   { type: String, required: true },   // mã để mã hoá thành barcode
@@ -68,9 +69,9 @@ function printLabel() {
 <template>
   <div class="sc-card p-4 mb-4">
     <div class="flex items-center justify-between mb-2">
-      <h3 class="font-semibold text-sc-navy">🔖 Mã vạch (quét được)</h3>
-      <button @click="printLabel" type="button" class="sc-btn-secondary text-sm"
-        :disabled="!!error || !value">🖨 In nhãn</button>
+      <h3 class="font-semibold text-sc-navy flex items-center gap-2"><Icon name="bookmark" :size="18" /> Mã vạch (quét được)</h3>
+      <button @click="printLabel" type="button" class="sc-btn-secondary text-sm inline-flex items-center gap-1"
+        :disabled="!!error || !value"><Icon name="printer" :size="14" /> In nhãn</button>
     </div>
     <div v-if="error" class="text-sm text-sc-danger">{{ error }}</div>
     <div v-else class="flex flex-col items-center">

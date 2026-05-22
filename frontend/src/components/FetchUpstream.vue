@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { fetchUpstream } from '../api'
 import { useToastStore } from '../stores/toast'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   targetDoctype: { type: String, required: true },
@@ -90,16 +91,16 @@ function formatVal(v, key) {
     <!-- Trigger button -->
     <button v-if="!open" @click="open = true" type="button"
       class="sc-btn-secondary text-sm flex items-center gap-2">
-      📥 Lấy từ {{ sources.map(s => s.label).join(' / ') }}
+      <Icon name="download" :size="15" /> Lấy từ {{ sources.map(s => s.label).join(' / ') }}
     </button>
 
     <!-- Inline picker -->
     <div v-else class="sc-card border-2 border-sc-royal/30 bg-sc-royal/5 overflow-hidden">
       <header class="px-4 py-2.5 border-b border-sc-border bg-white flex items-center justify-between gap-3">
-        <div class="text-sm font-semibold text-sc-navy">
-          📥 Lấy dữ liệu từ doc upstream
+        <div class="text-sm font-semibold text-sc-navy flex items-center gap-2">
+          <Icon name="download" :size="16" /> Lấy dữ liệu từ doc upstream
         </div>
-        <button @click="open = false" type="button" class="text-sc-text-muted hover:text-sc-text text-sm">✕</button>
+        <button @click="open = false" type="button" class="text-sc-text-muted hover:text-sc-text"><Icon name="x" :size="16" /></button>
       </header>
 
       <div class="p-4 space-y-3">
@@ -115,8 +116,8 @@ function formatVal(v, key) {
             {{ s.label }}
           </button>
         </div>
-        <p v-if="activeSource" class="text-xs text-sc-text-muted italic">
-          ℹ {{ activeSource.description }}
+        <p v-if="activeSource" class="text-xs text-sc-text-muted italic flex items-center gap-1">
+          <Icon name="info" :size="13" /> {{ activeSource.description }}
         </p>
 
         <!-- Search -->

@@ -155,4 +155,44 @@ export const tests = [
       return { ok: true, detail: `Batch dropdown lọc đúng item=${itemCode} ✓` }
     },
   },
+  {
+    name: 'framework_contracts_for_item: chỉ trả HĐ khung Active có chứa item',
+    run: async ({ page }) => {
+      // Item nằm trong ít nhất 1 FC Active
+      const fcItems = await apiGetList(page, 'FC Item',
+        { fields: ['item_code', 'parent'], limit: 80 })
+      if (!fcItems.length) return { ok: false, detail: 'Không có FC Item' }
+      let itemCode = null
+      for (const r of fcItems) {
+        const fc = await apiCall(page, 'frappe.client.get_value', {
+          doctype: 'Framework Contract', filters: { name: r.parent },
+          fieldname: ['docstatus', 'status'],
+        })
+        if (fc && fc.docstatus === 1 && fc.status === 'Active') { itemCode = r.item_code; break }
+      }
+      if (!itemCode) return { ok: false, detail: 'Không tìm thấy item trong FC Active' }
+
+      const fcs = await apiCall(page, 'supplycore.api.frontend.framework_contracts_for_item',
+        { item: itemCode })
+      if (!Array.isArray(fcs) || !fcs.length) {
+        return { ok: false, detail: `Rỗng cho item ${itemCode} (đáng lẽ có FC)` }
+      }
+      // Mọi FC trả về phải Active + submitted
+      for (const fcName of fcs) {
+        const fc = await apiCall(page, 'frappe.client.get_value', {
+          doctype: 'Framework Contract', filters: { name: fcName },
+          fieldname: ['docstatus', 'status'],
+        })
+        if (!fc || fc.docstatus !== 1 || fc.status !== 'Active') {
+          return { ok: false, detail: `${fcName} không Active/submitted lọt vào kết quả` }
+        }
+      }
+      const bogus = await apiCall(page, 'supplycore.api.frontend.framework_contracts_for_item',
+        { item: 'NONEXISTENT-XXX' })
+      if (!Array.isArray(bogus) || bogus.length !== 0) {
+        return { ok: false, detail: `item lạ → ${JSON.stringify(bogus)} (đáng lẽ [])` }
+      }
+      return { ok: true, detail: `item=${itemCode} → ${fcs.length} HĐ khung Active; item lạ → [] ✓` }
+    },
+  },
 ]

@@ -125,7 +125,7 @@ def related_docs(doctype, name):
     elif doctype == "SC Purchase Receipt":
         out["quality_inspections"] = frappe.db.get_all("SC Quality Inspection",
             filters={"purchase_receipt": name},
-            fields=["name", "inspection_date", "item", "batch", "overall_status", "docstatus"],
+            fields=["name", "inspection_date", "item", "supplier", "batch", "overall_status", "docstatus"],
             order_by="inspection_date desc", limit=50)
         # Batches từ PR Item
         out["batches"] = frappe.db.sql("""
@@ -281,8 +281,9 @@ def warehouse_stock_for_item(warehouse, item=None):
         conds.append("sle.item = %(item)s")
         params["item"] = item
     return frappe.db.sql(f"""
-        SELECT sle.item, i.item_name, sle.batch, sle.bin_location,
+        SELECT sle.item, i.item_name, i.uom, sle.batch, sle.bin_location,
                COALESCE(SUM(sle.qty_change), 0) AS qty,
+               MIN(sle.posting_date) AS received_date,
                b.expiry_date, b.qc_status, b.blocked,
                i.safety_stock
         FROM `tabSC Stock Ledger Entry` sle
@@ -454,6 +455,25 @@ def item_eligible_uoms(item=None):
     if not row:
         return []
     return [u for u in dict.fromkeys([row.uom, row.buy_uom, row.use_uom]).keys() if u]
+
+
+@frappe.whitelist()
+def framework_contracts_for_item(item=None):
+    """Trả về danh sách Framework Contract (Active, đã duyệt) có chứa vật tư `item`.
+
+    Frontend dùng để filter dropdown 'HĐ khung' trong bảng chi tiết Yêu cầu mua —
+    chỉ gợi ý HĐ khung nào thực sự có vật tư đang chọn ở dòng đó (scope theo mã VT).
+    """
+    if not item:
+        return []
+    rows = frappe.db.sql("""
+        SELECT DISTINCT fc.name
+        FROM `tabFC Item` fci
+        JOIN `tabFramework Contract` fc ON fc.name = fci.parent
+        WHERE fci.item_code = %s AND fc.docstatus = 1 AND fc.status = 'Active'
+        ORDER BY fc.name DESC
+    """, item)
+    return [r[0] for r in rows]
 
 
 @frappe.whitelist()

@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import FormField from './FormField.vue'
+import Icon from './Icon.vue'
 import { call } from '../api'
 
 const props = defineProps({
@@ -174,7 +175,7 @@ async function handleLinkSelected(idx, col, linkedDoc) {
             </td>
             <td v-if="!readonly" class="px-2 py-1 align-top">
               <button @click="removeRow(idx)" type="button"
-                class="text-sc-danger hover:bg-red-50 px-1.5 py-1 rounded text-sm">✕</button>
+                class="text-sc-danger hover:bg-red-50 px-1.5 py-1 rounded text-sm"><Icon name="x" :size="14" /></button>
             </td>
           </tr>
         </tbody>

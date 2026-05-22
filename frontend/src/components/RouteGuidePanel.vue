@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { warehouseMap, getList } from '../api'
 import MapView from './MapView.vue'
+import Icon from './Icon.vue'
 import { useToastStore } from '../stores/toast'
 
 const props = defineProps({
@@ -81,10 +82,10 @@ const hasMap = computed(() => mapData.value && (mapData.value.cells || []).lengt
     <header class="px-5 py-3 border-b border-sc-border bg-sc-bg flex items-center justify-between cursor-pointer"
       @click="open = !open">
       <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-        <span class="text-xl">🗺️</span> Bản đồ chỉ đường
+        <Icon name="map" :size="20" /> Bản đồ chỉ đường
         <span class="text-xs font-normal text-sc-text-muted">{{ caption }}</span>
       </h3>
-      <span class="text-sc-text-muted text-sm">{{ open ? '▲' : '▼' }}</span>
+      <span class="text-sc-text-muted"><Icon :name="open ? 'chevron-up' : 'chevron-down'" :size="16" /></span>
     </header>
     <div v-show="open" class="p-4">
       <div v-if="loading" class="text-center py-8 text-sc-text-muted text-sm">Đang tải bản đồ...</div>

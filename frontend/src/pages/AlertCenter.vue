@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { getList, count, runDocMethod } from '../api'
 import { useToastStore } from '../stores/toast'
 import PageHeader from '../components/PageHeader.vue'
+import Icon from '../components/Icon.vue'
 import Modal from '../components/Modal.vue'
 import FieldInput from '../components/FieldInput.vue'
 import Pagination from '../components/Pagination.vue'
@@ -127,10 +128,10 @@ function openRef(a) {
 </script>
 
 <template>
-  <PageHeader title="Trung tâm cảnh báo" icon="🔔" code="SCR-13"
+  <PageHeader title="Trung tâm cảnh báo" icon="bell" code="SCR-13"
     :subtitle="`${counts.all} cảnh báo trong bộ lọc hiện tại`">
     <template #actions>
-      <button @click="load" class="sc-btn-secondary text-sm">↻ Tải lại</button>
+      <button @click="load" class="sc-btn-secondary text-sm"><Icon name="rotate-cw" :size="14" /> Tải lại</button>
     </template>
   </PageHeader>
 
@@ -153,26 +154,26 @@ function openRef(a) {
     </div>
     <div class="border-l border-sc-border pl-2 ml-1 flex items-center gap-2 flex-1 min-w-[200px]">
       <div class="relative flex-1 max-w-sm">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sc-text-muted text-sm">🔍</span>
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sc-text-muted text-sm"><Icon name="search" :size="14" /></span>
         <input v-model="searchText" placeholder="Tìm theo tiêu đề..."
           class="sc-input pl-8 py-1.5 text-sm" />
       </div>
       <select v-model="sortKey" @change="page = 1; load()" class="sc-input py-1.5 text-sm max-w-[160px]">
-        <option value="alert_date">📅 Ngày cảnh báo</option>
-        <option value="severity">⚠️ Mức độ</option>
-        <option value="title">🔤 Tiêu đề</option>
-        <option value="modified">🕰️ Cập nhật</option>
+        <option value="alert_date">Ngày cảnh báo</option>
+        <option value="severity">Mức độ</option>
+        <option value="title">Tiêu đề</option>
+        <option value="modified">Cập nhật</option>
       </select>
       <button @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'; load()"
         class="sc-btn-secondary text-xs">
-        {{ sortDir === 'asc' ? '▲' : '▼' }}
+        <Icon :name="sortDir === 'asc' ? 'arrow-up' : 'arrow-down'" :size="14" />
       </button>
     </div>
   </div>
 
   <div v-if="loading" class="text-center py-20 text-sc-text-muted">Đang tải...</div>
   <div v-else-if="alerts.length === 0" class="sc-card p-10 text-center text-sc-text-muted">
-    ✓ Không có cảnh báo
+    <Icon name="check" :size="16" /> Không có cảnh báo
   </div>
   <div v-else>
   <div class="space-y-3">
@@ -184,26 +185,26 @@ function openRef(a) {
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
             <h4 class="font-semibold text-sc-navy">{{ a.title }}</h4>
-            <span v-if="a.escalated" class="sc-badge sc-badge-critical">↑ ĐÃ ĐẨY LÊN</span>
-            <span v-if="a.resolved" class="sc-badge sc-badge-success">✓ Đã xử lý</span>
+            <span v-if="a.escalated" class="sc-badge sc-badge-critical"><Icon name="arrow-up" :size="14" /> ĐÃ ĐẨY LÊN</span>
+            <span v-if="a.resolved" class="sc-badge sc-badge-success"><Icon name="check" :size="14" /> Đã xử lý</span>
             <span v-if="a.snooze_until && !a.resolved" class="sc-badge sc-badge-neutral">
-              💤 Tạm ẩn → {{ fmt(a.snooze_until) }}
+              <Icon name="alarm-clock" :size="14" /> Tạm ẩn <Icon name="arrow-right" :size="14" /> {{ fmt(a.snooze_until) }}
             </span>
-            <span v-if="a.assigned_to" class="sc-badge sc-badge-info">👤 {{ a.assigned_to }}</span>
+            <span v-if="a.assigned_to" class="sc-badge sc-badge-info"><Icon name="user" :size="14" /> {{ a.assigned_to }}</span>
           </div>
           <p class="text-sm text-sc-text-muted mt-1">{{ a.message }}</p>
           <div class="flex items-center gap-3 mt-2 text-xs text-sc-text-muted">
-            <span>📅 {{ fmt(a.alert_date) }}</span>
+            <span><Icon name="calendar" :size="14" /> {{ fmt(a.alert_date) }}</span>
             <button v-if="a.reference_doctype" @click="openRef(a)"
               class="text-sc-royal hover:underline">
-              🔗 {{ a.reference_doctype }} {{ a.reference_name }}
+              <Icon name="link" :size="14" /> {{ a.reference_doctype }} {{ a.reference_name }}
             </button>
           </div>
         </div>
         <div v-if="!a.resolved" class="flex gap-2 flex-wrap">
-          <button @click="openAction(a, 'resolve')" class="sc-btn-primary text-xs">✓ Xử lý</button>
-          <button @click="openAction(a, 'snooze')" class="sc-btn-secondary text-xs">💤 Tạm ẩn</button>
-          <button @click="openAction(a, 'assign')" class="sc-btn-secondary text-xs">👤 Phân công</button>
+          <button @click="openAction(a, 'resolve')" class="sc-btn-primary text-xs"><Icon name="check" :size="14" /> Xử lý</button>
+          <button @click="openAction(a, 'snooze')" class="sc-btn-secondary text-xs"><Icon name="alarm-clock" :size="14" /> Tạm ẩn</button>
+          <button @click="openAction(a, 'assign')" class="sc-btn-secondary text-xs"><Icon name="user" :size="14" /> Phân công</button>
         </div>
       </div>
     </div>

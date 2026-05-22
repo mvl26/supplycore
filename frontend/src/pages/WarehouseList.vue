@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { call } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import Pagination from '../components/Pagination.vue'
+import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber, fmtShort } from '../utils'
 
@@ -78,8 +79,8 @@ function setSort(key) {
 }
 
 function sortIcon(key) {
-  if (sortKey.value !== key) return '⇅'
-  return sortDir.value === 'asc' ? '▲' : '▼'
+  if (sortKey.value !== key) return 'chevrons-up-down'
+  return sortDir.value === 'asc' ? 'chevron-up' : 'chevron-down'
 }
 
 function clearFilters() {
@@ -99,10 +100,12 @@ function newWarehouse() {
 </script>
 
 <template>
-  <PageHeader title="Kho — Tồn kho hiện tại" icon="🏬"
+  <PageHeader title="Kho — Tồn kho hiện tại" icon="warehouse"
     code="SC Warehouse" :subtitle="`${total.toLocaleString('vi-VN')} kho${search || filterType ? ' (đã lọc)' : ''}`">
     <template #actions>
-      <button @click="load" class="sc-btn-secondary text-sm">↻</button>
+      <button @click="load" class="sc-btn-secondary text-sm">
+        <Icon name="rotate-cw" :size="14" />
+      </button>
       <button @click="newWarehouse" class="sc-btn-primary text-sm">+ Tạo kho</button>
     </template>
   </PageHeader>
@@ -110,7 +113,9 @@ function newWarehouse() {
   <!-- Toolbar -->
   <div class="sc-card p-3 mb-4 flex flex-wrap items-center gap-3">
     <div class="relative flex-1 min-w-[200px] max-w-md">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sc-text-muted text-sm">🔍</span>
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sc-text-muted">
+        <Icon name="search" :size="14" />
+      </span>
       <input v-model="search" @input="page = 1"
         placeholder="Tìm theo tên kho..."
         class="sc-input pl-8" />
@@ -120,17 +125,19 @@ function newWarehouse() {
       <option v-for="t in warehouseTypes" :key="t" :value="t">{{ t }}</option>
     </select>
     <select v-model="sortKey" @change="page = 1" class="sc-input max-w-[180px]">
-      <option value="name">🔤 Sắp xếp: Tên kho</option>
-      <option value="total_qty">🔢 Sắp xếp: SL tồn</option>
-      <option value="distinct_items">📦 Sắp xếp: Số items</option>
-      <option value="total_value">💰 Sắp xếp: Giá trị</option>
+      <option value="name">Sắp xếp: Tên kho</option>
+      <option value="total_qty">Sắp xếp: SL tồn</option>
+      <option value="distinct_items">Sắp xếp: Số items</option>
+      <option value="total_value">Sắp xếp: Giá trị</option>
     </select>
     <button @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
       class="sc-btn-secondary text-sm" :title="sortDir === 'asc' ? 'Tăng dần' : 'Giảm dần'">
-      {{ sortDir === 'asc' ? '▲ Tăng' : '▼ Giảm' }}
+      <Icon :name="sortDir === 'asc' ? 'chevron-up' : 'chevron-down'" :size="14" />
+      {{ sortDir === 'asc' ? 'Tăng' : 'Giảm' }}
     </button>
     <button v-if="search || filterType" @click="clearFilters"
-      class="text-xs text-sc-text-muted hover:text-sc-danger underline">✕ Xoá lọc</button>
+      class="text-xs text-sc-text-muted hover:text-sc-danger underline">
+      <Icon name="x" :size="12" /> Xoá lọc</button>
   </div>
 
   <div v-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải...</div>
@@ -142,19 +149,19 @@ function newWarehouse() {
       <thead>
         <tr>
           <th @click="setSort('name')" class="cursor-pointer select-none hover:bg-sc-bg">
-            Tên kho <span class="text-xs text-sc-royal">{{ sortIcon('name') }}</span>
+            Tên kho <span class="text-xs text-sc-royal"><Icon :name="sortIcon('name')" :size="12" /></span>
           </th>
           <th @click="setSort('warehouse_type')" class="cursor-pointer select-none hover:bg-sc-bg">
-            Loại <span class="text-xs text-sc-royal">{{ sortIcon('warehouse_type') }}</span>
+            Loại <span class="text-xs text-sc-royal"><Icon :name="sortIcon('warehouse_type')" :size="12" /></span>
           </th>
           <th @click="setSort('total_qty')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
-            Tổng SL tồn <span class="text-xs text-sc-royal">{{ sortIcon('total_qty') }}</span>
+            Tổng SL tồn <span class="text-xs text-sc-royal"><Icon :name="sortIcon('total_qty')" :size="12" /></span>
           </th>
           <th @click="setSort('distinct_items')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
-            Số items <span class="text-xs text-sc-royal">{{ sortIcon('distinct_items') }}</span>
+            Số items <span class="text-xs text-sc-royal"><Icon :name="sortIcon('distinct_items')" :size="12" /></span>
           </th>
           <th @click="setSort('total_value')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
-            Giá trị tồn (VND) <span class="text-xs text-sc-royal">{{ sortIcon('total_value') }}</span>
+            Giá trị tồn (VND) <span class="text-xs text-sc-royal"><Icon :name="sortIcon('total_value')" :size="12" /></span>
           </th>
           <th class="w-32"></th>
         </tr>
@@ -173,7 +180,7 @@ function newWarehouse() {
           <td>
             <button @click="openStockBalance(r.name)"
               class="text-xs text-sc-royal hover:underline">
-              Chi tiết →
+              Chi tiết <Icon name="arrow-right" :size="12" />
             </button>
           </td>
         </tr>

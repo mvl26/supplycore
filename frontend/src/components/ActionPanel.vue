@@ -6,6 +6,7 @@ import { runDocMethod, call } from '../api'
 import { useToastStore } from '../stores/toast'
 import Modal from './Modal.vue'
 import FieldInput from './FieldInput.vue'
+import Icon from './Icon.vue'
 
 const router = useRouter()
 
@@ -22,6 +23,7 @@ const args = ref({})
 const result = ref(null)
 const resultLabel = ref('')
 const showResult = ref(false)
+const pendingAfter = ref(null)  // emit('after') bị hoãn tới khi đóng modal kết quả
 
 // Action method nào trả về data nhiều → cần show kết quả cho user
 const RESULT_ACTIONS = new Set([
@@ -33,7 +35,24 @@ const RESULT_ACTIONS = new Set([
   'detect_anomalies',
   'audit_dispensings_in_period',
   'verify_audit_integrity',
+  'create_purchase_orders',
+  'get_po_suggestion',
 ])
+
+function closeResult() {
+  showResult.value = false
+  // Giờ mới emit('after') để parent reload doc (an toàn — modal đã đóng)
+  if (pendingAfter.value) {
+    emit('after', pendingAfter.value, result.value)
+    pendingAfter.value = null
+  }
+}
+
+function goToDoc(dt, name) {
+  showResult.value = false
+  pendingAfter.value = null
+  router.push(`/doc/${encodeURIComponent(dt)}/${encodeURIComponent(name)}`)
+}
 
 const visible = computed(() => {
   const list = ACTIONS[props.doctype] || []
@@ -70,13 +89,19 @@ async function runAction(a, argsObj) {
     result.value = typeof msg === 'object' ? msg : { result: msg }
     toast.success(`Đã thực hiện: ${a.label}`)
     selected.value = null
-    emit('after', a, result.value)
 
     // Show result modal cho method trả về data
     const methodKey = a.method || (a.apiMethod || '').split('.').pop()
-    if (RESULT_ACTIONS.has(methodKey) && result.value && typeof result.value === 'object') {
+    const isResultAction = RESULT_ACTIONS.has(methodKey)
+      && result.value && typeof result.value === 'object'
+    if (isResultAction) {
       resultLabel.value = a.label
       showResult.value = true
+      // Hoãn emit('after') — nếu emit ngay, parent reload doc làm ActionPanel
+      // unmount → modal kết quả biến mất. Emit khi user đóng modal.
+      pendingAfter.value = a
+    } else {
+      emit('after', a, result.value)
     }
 
     // Auto-navigate nếu action có navigateOnSuccess
@@ -129,13 +154,15 @@ const btnClass = {
 <template>
   <div v-if="visible.length" class="sc-card p-5 mb-4">
     <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-      ⚡ Hành động khả dụng
+      <Icon name="zap" :size="18" /> Hành động khả dụng
     </h3>
     <div class="flex flex-wrap gap-2">
       <button v-for="a in visible" :key="a.method || a.apiMethod"
         @click="openAction(a)" :disabled="running"
-        :class="[btnClass[a.variant] || 'sc-btn-secondary', 'text-sm disabled:opacity-50']">
-        <span class="mr-1">{{ a.icon }}</span> {{ a.label }}
+        :class="[btnClass[a.variant] || 'sc-btn-secondary',
+                 'inline-flex items-center gap-1.5 text-sm disabled:opacity-50']">
+        <Icon v-if="a.icon" :name="a.icon" :size="15" />
+        {{ a.label }}
       </button>
     </div>
   </div>
@@ -159,11 +186,11 @@ const btnClass = {
 
   <!-- Result viewer modal — hiển thị kết quả structured của action data-rich -->
   <Modal :open="showResult" :title="`Kết quả: ${resultLabel}`" size="lg"
-    @close="showResult = false">
+    @close="closeResult">
     <div v-if="result" class="space-y-3 text-sm">
       <!-- Anomalies / findings array -->
       <div v-if="result.anomalies && Array.isArray(result.anomalies)">
-        <div class="font-semibold mb-2">⚠️ Bất thường phát hiện ({{ result.anomalies.length }})</div>
+        <div class="font-semibold mb-2 flex items-center gap-2"><Icon name="alert-triangle" :size="16" /> Bất thường phát hiện ({{ result.anomalies.length }})</div>
         <div v-if="!result.anomalies.length" class="text-sc-text-muted italic">
           Không có bất thường nào.
         </div>
@@ -182,7 +209,7 @@ const btnClass = {
 
       <!-- Audit trail entries -->
       <div v-else-if="result.entries && Array.isArray(result.entries)">
-        <div class="font-semibold mb-2">📋 Audit Trail — {{ result.entries.length }} entries</div>
+        <div class="font-semibold mb-2 flex items-center gap-2"><Icon name="clipboard-list" :size="16" /> Audit Trail — {{ result.entries.length }} entries</div>
         <div class="bg-sc-bg p-2 rounded text-xs grid grid-cols-3 gap-2 mb-2">
           <div>Tổng: <strong>{{ result.total_entries ?? result.entries.length }}</strong></div>
           <div>Suspicious: <strong>{{ result.suspicious_count ?? 0 }}</strong></div>
@@ -212,7 +239,7 @@ const btnClass = {
 
       <!-- Stock comparison -->
       <div v-else-if="result.theoretical_qty != null || result.variance_qty != null">
-        <div class="font-semibold mb-2">⚖️ So sánh tồn kho</div>
+        <div class="font-semibold mb-2 flex items-center gap-2"><Icon name="git-compare" :size="16" /> So sánh tồn kho</div>
         <div class="grid grid-cols-2 gap-3">
           <div class="border rounded p-2">
             <div class="text-xs text-sc-text-muted">SL lý thuyết</div>
@@ -270,11 +297,78 @@ const btnClass = {
 
       <!-- Recovery / Dispensing audit summary -->
       <div v-else-if="result.audited != null || result.notified != null || result.recipients != null">
-        <div class="font-semibold mb-2">📊 Tổng hợp</div>
+        <div class="font-semibold mb-2 flex items-center gap-2"><Icon name="bar-chart" :size="16" /> Tổng hợp</div>
         <div class="grid grid-cols-2 gap-2">
           <div v-for="(v, k) in result" :key="k" class="border rounded p-2">
             <div class="text-xs text-sc-text-muted">{{ k }}</div>
             <div class="font-mono">{{ Array.isArray(v) ? v.length + ' items' : (typeof v === 'object' ? JSON.stringify(v).slice(0, 80) : v) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tạo PO từ MR — hiển thị mọi PO đã tạo + item từng PO + unmatched -->
+      <div v-else-if="result.groups && Array.isArray(result.groups)">
+        <div class="bg-sc-bg p-3 rounded mb-3 grid grid-cols-2 gap-2 text-xs">
+          <div>Dòng yêu cầu: <strong>{{ result.summary?.mr_items ?? '—' }}</strong></div>
+          <div>Đã đưa vào PO: <strong>{{ result.summary?.grouped_items ?? '—' }}</strong></div>
+          <div>Số PO tạo: <strong>{{ result.created_pos?.length ?? 0 }}</strong></div>
+          <div :class="result.summary?.unmatched_items ? 'text-sc-danger font-semibold' : ''">
+            Chưa khớp HĐK: <strong>{{ result.summary?.unmatched_items ?? 0 }}</strong>
+          </div>
+        </div>
+
+        <div v-if="!result.created_pos?.length" class="text-sm text-sc-text-muted italic mb-3">
+          Chưa tạo PO nào (xem preview bên dưới).
+        </div>
+
+        <div class="space-y-3">
+          <div v-for="(g, gi) in result.groups" :key="gi"
+            class="border border-sc-border rounded">
+            <div class="bg-sc-bg px-3 py-2 flex items-center justify-between">
+              <div class="text-sm">
+                <button v-if="g.po_name" type="button"
+                  @click="goToDoc('SC Purchase Order', g.po_name)"
+                  class="font-mono font-semibold text-sc-royal hover:underline">
+                  {{ g.po_name }}
+                </button>
+                <span v-else class="font-mono text-sc-text-muted">(chưa tạo)</span>
+                <span class="text-xs text-sc-text-muted ml-2">
+                  NCC {{ g.supplier }} · HĐK {{ g.framework_contract }}
+                </span>
+              </div>
+              <span class="text-xs font-mono">
+                {{ Number(g.subtotal || 0).toLocaleString('vi-VN') }} đ
+              </span>
+            </div>
+            <table class="text-xs w-full">
+              <thead class="text-sc-text-muted">
+                <tr>
+                  <th class="p-1.5 text-left">Vật tư</th>
+                  <th class="p-1.5 text-right">SL</th>
+                  <th class="p-1.5 text-left">ĐVT</th>
+                  <th class="p-1.5 text-right">Đơn giá</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(it, ii) in g.items" :key="ii" class="border-t border-sc-border">
+                  <td class="p-1.5 font-mono">{{ it.item }}</td>
+                  <td class="p-1.5 text-right">{{ it.qty }}</td>
+                  <td class="p-1.5">{{ it.uom }}</td>
+                  <td class="p-1.5 text-right">{{ Number(it.rate || 0).toLocaleString('vi-VN') }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div v-if="result.unmatched_items?.length"
+          class="mt-3 border-l-4 border-amber-500 bg-amber-50 p-2 rounded">
+          <div class="font-semibold text-amber-900 text-sm mb-1">
+            ⚠ {{ result.unmatched_items.length }} vật tư chưa có HĐK phù hợp — chưa vào PO
+          </div>
+          <div v-for="(u, ui) in result.unmatched_items" :key="ui"
+            class="text-xs text-amber-800">
+            {{ u.item }} (SL {{ u.qty }} {{ u.uom }}) — {{ u.reason }}
           </div>
         </div>
       </div>
@@ -286,7 +380,7 @@ const btnClass = {
       </details>
     </div>
     <template #footer>
-      <button @click="showResult = false" class="sc-btn-primary text-sm">Đóng</button>
+      <button @click="closeResult" class="sc-btn-primary text-sm">Đóng</button>
     </template>
   </Modal>
 </template>

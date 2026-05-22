@@ -449,15 +449,30 @@ class FrameworkContract(Document):
         mr.warehouse = warehouse
         mr.remarks = f"Auto từ HĐ khung {self.name} (NCC: {self.supplier_name or self.supplier})"
         mr.framework_contract = self.name if frappe.db.has_column("SC Material Request", "framework_contract") else None
+        # Map item_code → dòng FC Item, để lấy đơn giá / ĐVT / tên vật tư
+        # ngay từ hợp đồng khung — user KHÔNG phải chọn lại HĐ khung ở bảng chi tiết.
+        fc_rows = {r.item_code: r for r in self.items}
         for it in items:
             item_code = it.get("item_code") or it.get("item")
             qty = flt(it.get("qty"))
             if not item_code or qty <= 0:
                 continue
-            uom = frappe.db.get_value("SC Item", item_code, "uom")
+            fc_row = fc_rows.get(item_code)
+            uom = (fc_row.uom if fc_row else None) \
+                or frappe.db.get_value("SC Item", item_code, "uom")
+            unit_price = flt(fc_row.unit_price) if fc_row else 0.0
+            item_name = (fc_row.item_name if fc_row else None) \
+                or frappe.db.get_value("SC Item", item_code, "item_name")
             mr.append("items", {
-                "item": item_code, "uom": uom,
-                "qty": qty, "schedule_date": sched,
+                "item": item_code,
+                "item_name": item_name,
+                "uom": uom,
+                "qty": qty,
+                "schedule_date": sched,
+                # UC-07 luồng 2: gắn sẵn HĐ khung + đơn giá vào từng dòng
+                "framework_contract": self.name,
+                "estimated_unit_cost": unit_price,
+                "estimated_amount": qty * unit_price,
             })
         mr.flags.ignore_permissions = True
         mr.insert()

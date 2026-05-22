@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
+import Icon from '../components/Icon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,7 +16,7 @@ const target = computed(() => route.query.from || '')
 
 <template>
   <div class="sc-card p-10 text-center max-w-lg mx-auto mt-10">
-    <div class="text-6xl mb-3">🛡</div>
+    <div class="text-6xl mb-3"><Icon name="shield-alert" :size="64" /></div>
     <h2 class="text-xl font-bold text-sc-navy mb-2">403 — Không có quyền</h2>
     <p class="text-sm text-sc-text-muted mb-4">{{ reason }}</p>
     <p v-if="target" class="text-xs text-sc-text-muted mb-4 font-mono">
@@ -38,8 +39,12 @@ const target = computed(() => route.query.from || '')
     </div>
 
     <div class="flex justify-center gap-2">
-      <button @click="router.back()" class="sc-btn-secondary text-sm">← Quay lại</button>
-      <router-link to="/dashboard" class="sc-btn-primary text-sm">🏠 Về Dashboard</router-link>
+      <button @click="router.back()" class="sc-btn-secondary text-sm">
+        <Icon name="arrow-left" :size="14" /> Quay lại
+      </button>
+      <router-link to="/dashboard" class="sc-btn-primary text-sm">
+        <Icon name="home" :size="14" /> Về Dashboard
+      </router-link>
     </div>
   </div>
 </template>

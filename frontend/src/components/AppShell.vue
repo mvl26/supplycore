@@ -4,29 +4,62 @@ import { useRoute, useRouter } from 'vue-router'
 import { MODULES } from '../modules'
 import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
+import Icon from './Icon.vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const access = useAccessStore()
 
-// Chỉ hiện module mà user có quyền — "không có phận sự thì không thấy"
-const visibleModules = computed(() =>
-  MODULES.filter(m => access.canModule(m.id)))
+// Sidebar state — collapse persists; drawer is mobile-only
+const collapsed = ref(localStorage.getItem('sc-sidebar') === '1')
+const sidebarOpen = ref(false)
+const userMenuOpen = ref(false)
 
-const groups = computed(() => {
+function toggleCollapse() {
+  collapsed.value = !collapsed.value
+  localStorage.setItem('sc-sidebar', collapsed.value ? '1' : '0')
+}
+
+// Primary navigation — "không có phận sự thì không thấy" (RBAC-gated)
+const primaryNav = computed(() => [
+  { to: '/dashboard',        icon: 'layout-dashboard', label: 'Tổng quan',          show: true },
+  { to: '/alerts',           icon: 'bell',             label: 'Cảnh báo',           show: access.canFeature('alerts') },
+  { to: '/stock-balance',    icon: 'package',          label: 'Tồn kho',            show: access.canFeature('stock_balance') },
+  { to: '/putaway',          icon: 'package-plus',     label: 'Xếp hàng lên kệ',    show: access.canFeature('putaway') },
+  { to: '/batch-trace',      icon: 'file-search',      label: 'Truy xuất lô',       show: access.canFeature('batch_trace') },
+  { to: '/warehouse-map',    icon: 'map',              label: 'Bản đồ kho',         show: access.canFeature('warehouse_map') },
+  { to: '/financial-reports',icon: 'wallet',           label: 'Báo cáo tài chính',  show: access.canFeature('financial_reports') },
+  { to: '/users',            icon: 'users',            label: 'Người dùng & Quyền', show: access.canFeature('users') },
+].filter(i => i.show))
+
+// Module groups in deliberate operational order
+const moduleGroups = computed(() => {
+  const order = ['Thiết lập', 'Chiến lược', 'Vận hành', 'Tài chính', 'Chất lượng', 'Báo cáo']
   const g = {}
-  visibleModules.value.forEach(m => { (g[m.group] = g[m.group] || []).push(m) })
-  return g
+  MODULES.filter(m => access.canModule(m.id)).forEach(m => { (g[m.group] ||= []).push(m) })
+  return order.filter(k => g[k]).map(k => ({ label: k, items: g[k] }))
 })
 
-const userMenuOpen = ref(false)
-const sidebarOpen = ref(false)
-
-function isActive(path) {
+function isActive(path, exact = true) {
   if (path === '/dashboard') return route.path === '/' || route.path === '/dashboard'
-  return route.path.startsWith(path)
+  return exact ? route.path === path : route.path.startsWith(path)
 }
+
+const currentTitle = computed(() => {
+  if (route.name === 'module') {
+    const m = MODULES.find(x => x.id === `m${route.params.n}`)
+    return m ? `${m.code} · ${m.name}` : 'Phân hệ'
+  }
+  return route.meta?.title || 'SupplyCore'
+})
+
+const initials = computed(() => {
+  const n = auth.user.full_name || auth.user.name || 'G'
+  return n.trim().split(/\s+/).slice(-2).map(w => w[0]).join('').toUpperCase().slice(0, 2)
+})
+
+function closeDrawer() { sidebarOpen.value = false }
 
 async function logout() {
   await auth.doLogout()
@@ -35,124 +68,173 @@ async function logout() {
 </script>
 
 <template>
-  <div class="min-h-screen flex bg-sc-bg">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-sc-navy text-white flex-shrink-0 flex flex-col"
-      :class="{ 'hidden md:flex': !sidebarOpen, 'fixed inset-0 z-40 flex': sidebarOpen }">
-      <div class="px-5 py-4 border-b border-white/10 flex items-center gap-2">
-        <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-xl">🏥</div>
-        <div>
-          <div class="text-base font-bold tracking-tight leading-tight">SupplyCore</div>
-          <div class="text-xs text-white/60 leading-tight">Chuỗi cung ứng Bệnh viện</div>
+  <div class="min-h-screen flex sc-app-bg">
+    <!-- Mobile backdrop -->
+    <Transition name="route">
+      <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-sc-navy-900/55 backdrop-blur-[2px] md:hidden"
+        @click="sidebarOpen = false" />
+    </Transition>
+
+    <!-- ============ Sidebar ============ -->
+    <aside
+      class="fixed md:sticky top-0 z-50 h-screen flex flex-col flex-shrink-0
+             bg-gradient-to-b from-sc-navy to-sc-navy-deep text-white
+             border-r border-white/5 shadow-sc-lg md:shadow-none
+             transition-[width,transform] duration-300 ease-sc"
+      :class="[
+        collapsed ? 'md:w-[78px]' : 'md:w-[266px]',
+        sidebarOpen ? 'w-[266px] translate-x-0' : 'w-[266px] -translate-x-full md:translate-x-0',
+      ]">
+
+      <!-- Brand -->
+      <div class="h-[60px] flex items-center gap-3 px-4 border-b border-white/8 flex-shrink-0">
+        <div class="relative flex-shrink-0">
+          <svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+            <defs>
+              <linearGradient id="scLogoG" x1="2" y1="2" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#7FB4E0" />
+                <stop offset="1" stop-color="#1F4E79" />
+              </linearGradient>
+            </defs>
+            <rect x="1.4" y="1.4" width="37.2" height="37.2" rx="11" fill="url(#scLogoG)" />
+            <rect x="1.4" y="1.4" width="37.2" height="37.2" rx="11" fill="none"
+              stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="1.1" />
+            <path d="M20 11v18 M11 20h18" stroke="#FFFFFF" stroke-width="3.7" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div v-if="!collapsed" class="min-w-0 overflow-hidden">
+          <div class="text-[15px] font-extrabold tracking-tight leading-tight">SupplyCore</div>
+          <div class="text-[10.5px] uppercase tracking-[0.14em] text-white/45 leading-tight mt-0.5">
+            Cung ứng Bệnh viện
+          </div>
         </div>
       </div>
 
-      <nav class="flex-1 overflow-y-auto py-3">
-        <router-link to="/dashboard"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/dashboard') }">
-          <span class="text-base">🏠</span>
-          <span class="text-sm font-medium">Dashboard</span>
-        </router-link>
-
-        <router-link v-if="access.canFeature('alerts')" to="/alerts"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/alerts') }">
-          <span class="text-base">🔔</span>
-          <span class="text-sm font-medium">Cảnh báo</span>
-        </router-link>
-
-        <router-link v-if="access.canFeature('stock_balance')" to="/stock-balance"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/stock-balance') }">
-          <span class="text-base">📊</span>
-          <span class="text-sm font-medium">Tồn kho</span>
-        </router-link>
-
-        <router-link v-if="access.canFeature('putaway')" to="/putaway"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/putaway') }">
-          <span class="text-base">📦</span>
-          <span class="text-sm font-medium">Xếp hàng lên kệ</span>
-        </router-link>
-
-        <router-link v-if="access.canFeature('batch_trace')" to="/batch-trace"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/batch-trace') }">
-          <span class="text-base">🔍</span>
-          <span class="text-sm font-medium">Truy xuất lô (M10)</span>
-        </router-link>
-
-        <router-link v-if="access.canFeature('warehouse_map')" to="/warehouse-map"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/warehouse-map') }">
-          <span class="text-base">🗺️</span>
-          <span class="text-sm font-medium">Bản đồ kho</span>
-        </router-link>
-
-        <router-link v-if="access.canFeature('financial_reports')" to="/financial-reports"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/financial-reports') }">
-          <span class="text-base">📊</span>
-          <span class="text-sm font-medium">Báo cáo TC (M8)</span>
-        </router-link>
-
-        <router-link v-if="access.canFeature('users')" to="/users"
-          class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-          :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive('/users') }">
-          <span class="text-base">👥</span>
-          <span class="text-sm font-medium">Người dùng & Quyền</span>
-        </router-link>
-
-        <div v-for="(modules, group) in groups" :key="group" class="mt-4">
-          <div class="px-5 mb-1 text-xs font-semibold text-white/40 uppercase tracking-wider">
-            {{ group }}
-          </div>
-          <router-link v-for="m in modules" :key="m.id" :to="m.route"
-            class="flex items-center gap-3 px-5 py-2 hover:bg-white/10 transition"
-            :class="{ 'bg-sc-royal/30 border-l-4 border-sc-royal-light pl-4': isActive(m.route) }">
-            <span class="text-base">{{ m.icon }}</span>
-            <span class="text-sm flex-1">
-              <span class="font-mono text-xs text-white/50 mr-1">{{ m.code }}</span>
-              {{ m.name }}
-            </span>
+      <!-- Nav -->
+      <nav class="flex-1 overflow-y-auto overflow-x-hidden py-3 sc-nav-scroll">
+        <!-- Primary -->
+        <div class="space-y-0.5">
+          <router-link v-for="item in primaryNav" :key="item.to"
+            :to="item.to" @click="closeDrawer" :title="collapsed ? item.label : ''"
+            class="sc-nav-item group"
+            :class="[
+              isActive(item.to) ? 'sc-nav-active' : 'sc-nav-idle',
+              collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
+            ]">
+            <span v-if="isActive(item.to)" class="sc-nav-bar" />
+            <Icon :name="item.icon" :size="19"
+              class="transition-transform duration-200 ease-sc group-hover:scale-110" />
+            <span v-if="!collapsed" class="text-[13.5px] font-medium truncate">{{ item.label }}</span>
           </router-link>
+        </div>
+
+        <!-- Module groups -->
+        <div v-for="grp in moduleGroups" :key="grp.label" class="mt-4">
+          <div v-if="!collapsed" class="px-5 mb-1.5 text-[10px] font-bold uppercase
+            tracking-[0.16em] text-white/35">
+            {{ grp.label }}
+          </div>
+          <div v-else class="mx-4 my-2.5 border-t border-white/8" />
+          <div class="space-y-0.5">
+            <router-link v-for="m in grp.items" :key="m.id"
+              :to="m.route" @click="closeDrawer" :title="collapsed ? `${m.code} — ${m.name}` : ''"
+              class="sc-nav-item group"
+              :class="[
+                isActive(m.route) ? 'sc-nav-active' : 'sc-nav-idle',
+                collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
+              ]">
+              <span v-if="isActive(m.route)" class="sc-nav-bar" />
+              <Icon :name="m.icon" :size="19"
+                class="transition-transform duration-200 ease-sc group-hover:scale-110" />
+              <span v-if="!collapsed" class="flex items-baseline gap-1.5 min-w-0">
+                <span class="font-mono text-[10px] text-white/40 group-hover:text-white/60
+                  transition-colors flex-shrink-0">{{ m.code }}</span>
+                <span class="text-[13.5px] font-medium truncate">{{ m.name }}</span>
+              </span>
+            </router-link>
+          </div>
         </div>
       </nav>
 
-      <div class="px-5 py-3 border-t border-white/10 text-xs text-white/50">
-        v0.1.0 · {{ auth.primaryRole }}
+      <!-- Footer -->
+      <div class="border-t border-white/8 flex-shrink-0 p-2.5">
+        <button @click="toggleCollapse"
+          class="hidden md:flex items-center gap-2.5 w-full rounded-lg px-3 py-2
+                 text-white/55 hover:text-white hover:bg-white/[0.07]
+                 transition-colors duration-150"
+          :class="collapsed ? 'justify-center' : ''">
+          <Icon name="panel-left" :size="18"
+            class="transition-transform duration-300 ease-sc" :class="collapsed ? 'rotate-180' : ''" />
+          <span v-if="!collapsed" class="text-xs font-medium">Thu gọn thanh điều hướng</span>
+        </button>
+        <div v-if="!collapsed" class="px-3 pt-1.5 text-[10.5px] text-white/35 flex items-center gap-1.5">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+          <span>v0.1.0 · {{ auth.primaryRole }}</span>
+        </div>
       </div>
     </aside>
 
-    <!-- Main -->
+    <!-- ============ Main column ============ -->
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="bg-white border-b border-sc-border h-14 flex items-center px-5 justify-between">
-        <button @click="sidebarOpen = !sidebarOpen" class="md:hidden text-sc-navy text-xl">☰</button>
-        <div class="flex-1"></div>
+      <!-- Top bar -->
+      <header class="sticky top-0 z-30 h-[60px] flex items-center gap-3 px-4 md:px-6
+        bg-sc-surface/85 backdrop-blur-md border-b border-sc-border">
+        <button @click="sidebarOpen = true" class="sc-icon-btn md:hidden">
+          <Icon name="menu" :size="20" />
+        </button>
+
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="hidden sm:inline-flex h-7 w-7 items-center justify-center rounded-md
+            bg-sc-royal-50 text-sc-royal">
+            <Icon name="circle-dot" :size="15" />
+          </span>
+          <h2 class="text-[15px] font-bold text-sc-navy truncate">{{ currentTitle }}</h2>
+        </div>
+
+        <div class="flex-1" />
+
+        <router-link v-if="access.canFeature('alerts')" to="/alerts"
+          class="sc-icon-btn relative" title="Cảnh báo">
+          <Icon name="bell" :size="19" />
+        </router-link>
+
+        <div class="h-6 w-px bg-sc-border mx-0.5 hidden sm:block" />
 
         <!-- User menu -->
         <div class="relative" v-click-outside="() => userMenuOpen = false">
           <button @click.stop="userMenuOpen = !userMenuOpen"
-            class="flex items-center gap-2 hover:bg-sc-bg rounded-md px-2 py-1 transition">
-            <div class="w-8 h-8 rounded-full bg-sc-royal text-white flex items-center justify-center font-semibold text-sm">
-              {{ (auth.user.full_name || auth.user.name || 'G').slice(0, 1).toUpperCase() }}
+            class="flex items-center gap-2.5 rounded-lg pl-1.5 pr-2 py-1
+                   hover:bg-sc-bg-soft transition-colors duration-150">
+            <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-sc-royal to-sc-navy
+              text-white flex items-center justify-center font-bold text-xs shadow-sc-xs">
+              {{ initials }}
             </div>
-            <div class="text-left hidden sm:block">
-              <div class="text-sm font-medium text-sc-text">{{ auth.user.full_name || auth.user.name }}</div>
-              <div class="text-xs text-sc-text-muted">{{ auth.primaryRole }}</div>
+            <div class="text-left hidden sm:block leading-tight">
+              <div class="text-[13px] font-semibold text-sc-text max-w-[140px] truncate">
+                {{ auth.user.full_name || auth.user.name }}
+              </div>
+              <div class="text-[11px] text-sc-text-muted">{{ auth.primaryRole }}</div>
             </div>
-            <span class="text-sc-text-muted text-xs">▾</span>
+            <Icon name="chevron-down" :size="15"
+              class="text-sc-text-muted transition-transform duration-200"
+              :class="userMenuOpen ? 'rotate-180' : ''" />
           </button>
-          <Transition name="fade">
+          <Transition name="sc-pop">
             <div v-if="userMenuOpen"
-              class="absolute right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-sc-lg border border-sc-border py-1 z-40">
-              <div class="px-3 py-2 border-b border-sc-border">
-                <div class="text-sm font-medium">{{ auth.user.full_name || auth.user.name }}</div>
-                <div class="text-xs text-sc-text-muted">{{ auth.user.email || auth.user.name }}</div>
+              class="absolute right-0 top-full mt-2 w-60 bg-sc-surface rounded-xl
+                     shadow-sc-lg border border-sc-border py-1.5 z-40 origin-top-right">
+              <div class="px-3.5 py-2.5 border-b border-sc-border">
+                <div class="text-[13px] font-semibold text-sc-text truncate">
+                  {{ auth.user.full_name || auth.user.name }}
+                </div>
+                <div class="text-[11px] text-sc-text-muted truncate">
+                  {{ auth.user.email || auth.user.name }}
+                </div>
               </div>
               <button @click="userMenuOpen = false; logout()"
-                class="block w-full text-left px-3 py-2 text-sm hover:bg-sc-bg text-sc-danger">
+                class="flex items-center gap-2.5 w-full text-left px-3.5 py-2.5 text-[13px]
+                       font-medium text-sc-danger hover:bg-red-50 transition-colors">
+                <Icon name="log-out" :size="17" />
                 Đăng xuất
               </button>
             </div>
@@ -160,14 +242,69 @@ async function logout() {
         </div>
       </header>
 
-      <main class="flex-1 overflow-y-auto p-5 md:p-6">
-        <slot />
+      <!-- Page body -->
+      <main class="flex-1 overflow-y-auto">
+        <div class="p-4 md:p-6 lg:p-7 max-w-[1600px] mx-auto w-full">
+          <slot />
+        </div>
       </main>
     </div>
   </div>
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity .12s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+/* Nav item base */
+.sc-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 40px;
+  border-radius: 9px;
+  transition: background-color .15s ease, color .15s ease;
+}
+.sc-nav-idle { color: rgba(255, 255, 255, 0.62); }
+.sc-nav-idle:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.07);
+}
+.sc-nav-active {
+  color: #fff;
+  background: linear-gradient(90deg, rgba(91, 155, 213, 0.30), rgba(91, 155, 213, 0.07));
+}
+.sc-nav-active :deep(.sc-icon) { color: #9CC5E8; }
+
+/* Sliding accent bar */
+.sc-nav-bar {
+  position: absolute;
+  left: -10.5px;
+  top: 50%;
+  height: 22px;
+  width: 3.5px;
+  border-radius: 999px;
+  background: #7FB4E0;
+  box-shadow: 0 0 10px rgba(127, 180, 224, 0.7);
+  transform: translateY(-50%);
+  animation: sc-bar-in .26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes sc-bar-in {
+  from { opacity: 0; height: 4px; }
+  to   { opacity: 1; height: 22px; }
+}
+
+/* Dark scrollbar inside sidebar */
+.sc-nav-scroll::-webkit-scrollbar { width: 6px; }
+.sc-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border: none;
+}
+.sc-nav-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
+
+/* User-menu popover */
+.sc-pop-enter-active { transition: opacity .16s ease, transform .16s cubic-bezier(0.22, 1, 0.36, 1); }
+.sc-pop-leave-active { transition: opacity .1s ease, transform .1s ease; }
+.sc-pop-enter-from, .sc-pop-leave-to { opacity: 0; transform: translateY(-6px) scale(0.97); }
+
+.route-enter-active, .route-leave-active { transition: opacity .2s ease; }
+.route-enter-from, .route-leave-to { opacity: 0; }
 </style>

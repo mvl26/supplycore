@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { runDocMethod } from '../api'
 import { useToastStore } from '../stores/toast'
 import Modal from './Modal.vue'
+import Icon from './Icon.vue'
 import { fmtNumber } from '../utils'
 
 const props = defineProps({
@@ -92,14 +93,14 @@ const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
   <div v-if="doc && items.length" class="sc-card p-5 mb-4">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-        <span class="text-xl">📊</span> Tổng quan kiểm kê
+        <Icon name="bar-chart" :size="18" /> Tổng quan kiểm kê
       </h3>
       <div class="flex gap-2">
         <button @click="openPrintSheet" class="sc-btn-secondary text-sm" title="Xem dữ liệu phiếu (ẩn SL hệ thống)">
-          🖨️ Phiếu đếm
+          <Icon name="printer" :size="14" /> Phiếu đếm
         </button>
         <button @click="downloadCsv" class="sc-btn-secondary text-sm" title="Xuất CSV">
-          📥 CSV
+          <Icon name="download" :size="14" /> CSV
         </button>
       </div>
     </div>
@@ -151,11 +152,11 @@ const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
     <div v-if="doc.docstatus === 0" class="mt-4 text-sm">
       <div v-if="stats.counted === 0"
         class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-        💡 <strong>Bước 1:</strong> Bấm <em>"Tự nạp items"</em> để load danh sách vật tư trong phạm vi, rồi nhập SL đếm vào bảng dưới.
+        <Icon name="info" :size="16" /> <strong>Bước 1:</strong> Bấm <em>"Tự nạp items"</em> để load danh sách vật tư trong phạm vi, rồi nhập SL đếm vào bảng dưới.
       </div>
       <div v-else-if="!isReady"
         class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded">
-        ⏳ <strong>Đang đếm:</strong>
+        <Icon name="clock" :size="16" /> <strong>Đang đếm:</strong>
         <span v-if="stats.counted < stats.total">
           Còn <strong>{{ stats.total - stats.counted }}</strong> items chưa đếm.
         </span>
@@ -164,16 +165,16 @@ const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
         </span>
       </div>
       <div v-else class="bg-green-50 border-l-4 border-green-400 p-3 rounded">
-        ✓ <strong>Đã đếm xong</strong> — Submit phiếu rồi bấm <em>"Tạo SR đối soát"</em> để tạo phiếu điều chỉnh kho.
+        <Icon name="check" :size="16" /> <strong>Đã đếm xong</strong> — Submit phiếu rồi bấm <em>"Tạo SR đối soát"</em> để tạo phiếu điều chỉnh kho.
       </div>
     </div>
     <div v-else-if="doc.docstatus === 1 && doc.status === 'Counted' && !doc.stock_reconciliation"
       class="mt-4 bg-green-50 border-l-4 border-green-400 p-3 rounded text-sm">
-      ✓ <strong>Phiếu đã submit</strong> — Bấm <em>"Tạo SR đối soát"</em> để điều chỉnh tồn kho theo kết quả đếm.
+      <Icon name="check" :size="16" /> <strong>Phiếu đã submit</strong> — Bấm <em>"Tạo SR đối soát"</em> để điều chỉnh tồn kho theo kết quả đếm.
     </div>
     <div v-else-if="doc.stock_reconciliation"
       class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
-      🔧 SR đối soát đã tạo:
+      <Icon name="settings" :size="16" /> SR đối soát đã tạo:
       <router-link :to="`/doc/SC Stock Reconciliation/${encodeURIComponent(doc.stock_reconciliation)}`"
         class="text-sc-royal hover:underline font-mono">{{ doc.stock_reconciliation }}</router-link>
     </div>
@@ -231,7 +232,7 @@ const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
       </div>
       <template #footer>
         <button @click="printOpen = false" class="sc-btn-secondary text-sm">Đóng</button>
-        <button @click="printNow" class="sc-btn-primary text-sm">🖨️ In</button>
+        <button @click="printNow" class="sc-btn-primary text-sm"><Icon name="printer" :size="14" /> In</button>
       </template>
     </Modal>
   </div>

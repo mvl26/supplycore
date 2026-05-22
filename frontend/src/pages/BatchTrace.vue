@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { call } from '../api'
 import PageHeader from '../components/PageHeader.vue'
+import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber, fmtDate } from '../utils'
 
@@ -82,10 +83,10 @@ const expiryStatus = computed(() => {
   if (!trace.value?.header?.expiry_date) return null
   const exp = new Date(trace.value.header.expiry_date)
   const days = (exp - new Date()) / (1000 * 60 * 60 * 24)
-  if (days < 0) return { cls: 'text-red-700 bg-red-100', label: 'ĐÃ HẾT HẠN', icon: '🔴' }
-  if (days < 30) return { cls: 'text-red-700 bg-red-50', label: `Còn ${Math.floor(days)} ngày`, icon: '⚠️' }
-  if (days < 90) return { cls: 'text-amber-700 bg-amber-50', label: `Còn ${Math.floor(days)} ngày`, icon: '🟡' }
-  return { cls: 'text-green-700 bg-green-50', label: `Còn ${Math.floor(days)} ngày`, icon: '🟢' }
+  if (days < 0) return { cls: 'text-red-700 bg-red-100', label: 'ĐÃ HẾT HẠN' }
+  if (days < 30) return { cls: 'text-red-700 bg-red-50', label: `Còn ${Math.floor(days)} ngày` }
+  if (days < 90) return { cls: 'text-amber-700 bg-amber-50', label: `Còn ${Math.floor(days)} ngày` }
+  return { cls: 'text-green-700 bg-green-50', label: `Còn ${Math.floor(days)} ngày` }
 })
 
 function totalConsumption(movements) {
@@ -112,7 +113,7 @@ const missingLabel = {
 </script>
 
 <template>
-  <PageHeader title="Truy xuất lô — UC-29" icon="🔍" code="M10"
+  <PageHeader title="Truy xuất lô — UC-29" icon="file-search" code="M10"
     subtitle="Tra cứu vòng đời 1 lô vật tư: nguồn gốc → di chuyển → cấp phát → tồn hiện tại" />
 
   <!-- Lookup form -->
@@ -125,7 +126,8 @@ const missingLabel = {
             class="sc-input font-mono" placeholder="VD: GLU500-202503-001" />
           <button @click="lookup" :disabled="loading"
             class="sc-btn-primary text-sm disabled:opacity-50">
-            {{ loading ? '...' : '🔍 Tra cứu' }}
+            <template v-if="loading">...</template>
+            <template v-else><Icon name="search" :size="14" /> Tra cứu</template>
           </button>
         </div>
       </div>
@@ -162,12 +164,12 @@ const missingLabel = {
 
   <!-- No data -->
   <div v-if="!trace" class="sc-card p-10 text-center text-sc-text-muted">
-    Nhập mã lô và bấm <strong>🔍 Tra cứu</strong> để xem timeline.
+    Nhập mã lô và bấm <strong><Icon name="search" :size="14" /> Tra cứu</strong> để xem timeline.
   </div>
 
   <!-- Not found -->
   <div v-else-if="trace.exists === false" class="sc-card p-10 text-center text-sc-danger">
-    ❌ Không tìm thấy lô <strong class="font-mono">{{ trace.batch_no }}</strong>
+    <Icon name="x-circle" :size="16" /> Không tìm thấy lô <strong class="font-mono">{{ trace.batch_no }}</strong>
   </div>
 
   <!-- Trace timeline -->
@@ -176,7 +178,7 @@ const missingLabel = {
     <div v-if="!trace.data_quality.complete"
       class="sc-card p-3 bg-amber-50 border-amber-200">
       <div class="flex items-start gap-2">
-        <span class="text-amber-700 text-lg">⚠️</span>
+        <span class="text-amber-700 text-lg"><Icon name="alert-triangle" :size="18" /></span>
         <div class="text-sm text-amber-900 flex-1">
           <strong>Dữ liệu chưa đầy đủ</strong> — các trường còn thiếu:
           <ul class="mt-1 list-disc list-inside text-xs">
@@ -189,9 +191,9 @@ const missingLabel = {
     <!-- Section 1: Header -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy text-lg mb-3 flex items-center gap-2">
-        <span class="text-2xl">📦</span>
+        <span class="text-2xl"><Icon name="package" :size="20" /></span>
         <span>Lô <span class="font-mono">{{ trace.header.name }}</span></span>
-        <span v-if="trace.header.blocked" class="sc-badge sc-badge-critical">🚫 ĐÃ KHOÁ</span>
+        <span v-if="trace.header.blocked" class="sc-badge sc-badge-critical"><Icon name="ban" :size="14" /> ĐÃ KHOÁ</span>
         <span :class="['sc-badge', qcBadge(trace.header.qc_status)]">
           KCS: {{ qcLabel(trace.header.qc_status) }}
         </span>
@@ -228,7 +230,7 @@ const missingLabel = {
           <div class="font-semibold">{{ fmtDate(trace.header.expiry_date) || '—' }}</div>
           <span v-if="expiryStatus"
             :class="['text-xs px-2 py-0.5 rounded-full inline-block mt-1', expiryStatus.cls]">
-            {{ expiryStatus.icon }} {{ expiryStatus.label }}
+            {{ expiryStatus.label }}
           </span>
         </div>
         <div v-if="trace.header.block_reason" class="md:col-span-2">
@@ -241,10 +243,10 @@ const missingLabel = {
     <!-- Section 2: Origin -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl">🏭</span> Nguồn gốc (PR → PO → QI)
+        <span class="text-xl"><Icon name="building-2" :size="18" /></span> Nguồn gốc (PR → PO → QI)
       </h3>
       <div v-if="!trace.origin" class="text-sc-text-muted text-sm">
-        ⚠️ Không tìm thấy PR gốc — có thể là lô nhập từ kho khác hoặc data import
+        <Icon name="alert-triangle" :size="14" /> Không tìm thấy PR gốc — có thể là lô nhập từ kho khác hoặc data import
       </div>
       <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="border-l-4 border-sc-royal pl-3">
@@ -253,8 +255,8 @@ const missingLabel = {
             @click="goToDoc('SC Purchase Receipt', trace.origin.purchase_receipt)">
             {{ trace.origin.purchase_receipt }}
           </div>
-          <div class="text-xs mt-1">📅 {{ fmtDate(trace.origin.received_date) }}</div>
-          <div class="text-xs">🏢 {{ trace.origin.supplier }}</div>
+          <div class="text-xs mt-1"><Icon name="calendar" :size="14" /> {{ fmtDate(trace.origin.received_date) }}</div>
+          <div class="text-xs"><Icon name="building" :size="14" /> {{ trace.origin.supplier }}</div>
         </div>
         <div v-if="trace.origin.purchase_order" class="border-l-4 border-amber-500 pl-3">
           <div class="text-xs text-sc-text-muted">Đơn mua (PO)</div>
@@ -269,7 +271,7 @@ const missingLabel = {
             @click="goToDoc('SC Quality Inspection', trace.origin.qc_inspection)">
             {{ trace.origin.qc_inspection }}
           </div>
-          <div class="text-xs mt-1">📅 {{ fmtDate(trace.origin.qc_date) }}</div>
+          <div class="text-xs mt-1"><Icon name="calendar" :size="14" /> {{ fmtDate(trace.origin.qc_date) }}</div>
           <span :class="['sc-badge', qcBadge(trace.origin.qc_result)]">
             {{ qcLabel(trace.origin.qc_result) }}
           </span>
@@ -280,7 +282,7 @@ const missingLabel = {
     <!-- Section 3: Current Stock -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl">📍</span> Tồn kho hiện tại
+        <span class="text-xl"><Icon name="map-pin" :size="18" /></span> Tồn kho hiện tại
         <span class="ml-auto font-mono text-lg font-bold text-sc-success">
           {{ fmtNumber(trace.current_stock.total_qty) }}
         </span>
@@ -302,7 +304,7 @@ const missingLabel = {
     <div class="sc-card overflow-hidden">
       <div class="p-5 pb-3">
         <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-          <span class="text-xl">📜</span> Sổ cái tồn kho ({{ trace.movements.length }} bút toán)
+          <span class="text-xl"><Icon name="clipboard-list" :size="18" /></span> Sổ cái tồn kho ({{ trace.movements.length }} bút toán)
           <span class="ml-auto text-xs text-sc-text-muted">
             Nhập: <span class="text-sc-success font-mono">+{{ fmtNumber(totalReceived(trace.movements)) }}</span>
             · Xuất: <span class="text-sc-danger font-mono">-{{ fmtNumber(totalConsumption(trace.movements)) }}</span>
@@ -354,7 +356,7 @@ const missingLabel = {
     <div class="sc-card overflow-hidden">
       <div class="p-5 pb-3">
         <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-          <span class="text-xl">💉</span>
+          <span class="text-xl"><Icon name="syringe" :size="18" /></span>
           Cấp phát bệnh nhân ({{ trace.dispensing.length }})
         </h3>
       </div>

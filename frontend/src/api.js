@@ -36,14 +36,32 @@ async function request(path, options = {}) {
 
 function parseFrappeError(body) {
   if (!body) return null
-  if (body.exception) return body.exception.split(':').slice(1).join(':').trim()
+  // _server_messages = nguồn đầy đủ nhất (frappe.throw / msgprint), ưu tiên.
   if (body._server_messages) {
     try {
       const arr = JSON.parse(body._server_messages)
-      const msgs = arr.map(m => typeof m === 'string' ? JSON.parse(m).message : m.message)
-      return msgs.join('; ').replace(/<[^>]+>/g, '')
-    } catch (e) {}
+      const msgs = arr.map(m => {
+        const o = typeof m === 'string' ? JSON.parse(m) : m
+        return (o && o.message != null) ? o.message : String(m)
+      })
+      const txt = msgs.join('\n').replace(/<[^>]+>/g, '').trim()
+      if (txt) return txt
+    } catch (e) { /* fall through */ }
   }
+  // exception: có thể là "module.path.XxxError: message" HOẶC message thuần.
+  // Chỉ cắt prefix khi khớp đúng dạng class path — tránh nuốt mất message
+  // không có dấu ':' (vd "Tick FEFO Override + ghi lý do") hoặc message
+  // chứa dấu ':' của riêng nó.
+  if (body.exception) {
+    const ex = String(body.exception).trim()
+    const m = ex.match(/^([\w.]+(?:Error|Exception)):\s*([\s\S]+)$/)
+    const txt = (m ? m[2] : ex).trim()
+    if (txt) return txt
+  }
+  if (body._error_message) {
+    return String(body._error_message).replace(/<[^>]+>/g, '').trim()
+  }
+  if (typeof body.message === 'string') return body.message
   if (body.message?.message) return body.message.message
   return null
 }

@@ -282,7 +282,8 @@ export const FORM_SCHEMAS = {
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'qty', label: 'SL', type: 'Float', required: true, width: '12%' },
-        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract', width: '18%' },
+        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract', width: '18%',
+          scope: { itemField: 'item' } },
         { name: 'estimated_unit_cost', label: 'Đơn giá ƯT', type: 'Currency', width: '18%' },
         { name: 'schedule_date', label: 'Ngày cần', type: 'Date', width: '15%' },
       ],
@@ -391,8 +392,8 @@ export const FORM_SCHEMAS = {
     items: {
       field: 'readings', label: 'Tiêu chí kiểm tra',
       bulkActions: [
-        { label: '✓ Accept tất cả', variant: 'success', set: { status: 'Accepted' } },
-        { label: '✕ Reject tất cả', variant: 'danger',  set: { status: 'Rejected' } },
+        { label: 'Accept tất cả', variant: 'success', set: { status: 'Accepted' } },
+        { label: 'Reject tất cả', variant: 'danger',  set: { status: 'Rejected' } },
       ],
       columns: [
         { name: 'specification', label: 'Tiêu chí', type: 'Data', required: true, width: '30%' },
@@ -503,7 +504,7 @@ export const FORM_SCHEMAS = {
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'qty', label: 'SL', type: 'Float', required: true, width: '15%' },
-        { name: 'valuation_rate', label: 'Đơn giá', type: 'Currency', width: '18%' },
+        { name: 'valuation_rate', label: 'Đơn giá', type: 'Currency', width: '18%', readonly: true },
         { name: 'batch', label: 'Lô', type: 'Link', linkTo: 'SC Batch', width: '20%',
           scope: { itemField: 'item' } },
         { name: 'fefo_override', label: 'Bỏ qua FEFO', type: 'Check', width: '15%' },

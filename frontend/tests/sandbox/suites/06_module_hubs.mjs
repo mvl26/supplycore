@@ -23,8 +23,8 @@ export const tests = MODULES_WITH_CREATE.flatMap(([id, expectedTitle, minCards])
       await page.waitForTimeout(1500)
       await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: false })
       const title = await page.locator('h1').first().textContent()
-      // Count "+ Tạo mới" buttons inside doctype cards
-      const createBtns = await page.locator('button:has-text("+ Tạo mới")').count()
+      // Count "Tạo mới" create buttons (UI dùng icon dấu cộng thay cho ký tự "+")
+      const createBtns = await page.locator('button:has-text("Tạo mới")').count()
       return title?.includes(expectedTitle) && createBtns >= minCards
         ? { ok: true, detail: `"${title}", ${createBtns} create buttons` }
         : { ok: false, detail: `Title="${title}", btns=${createBtns} (need ${minCards})` }

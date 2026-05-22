@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { call } from '../api'
 import { fmtDate, fmtNumber } from '../utils'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   item: String,
@@ -55,7 +56,7 @@ function urgencyClass(days) {
   <div v-else-if="guide" class="sc-card overflow-hidden mb-4">
     <div class="flex items-center justify-between px-4 py-3 border-b border-sc-border bg-sc-bg">
       <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-        🧭 Hướng dẫn lấy hàng (FEFO)
+        <Icon name="map" :size="18" /> Hướng dẫn lấy hàng (FEFO)
       </h3>
       <span class="text-sm font-mono"
         :class="guide.is_sufficient ? 'text-sc-success font-semibold' : 'text-sc-danger font-semibold'">
@@ -79,8 +80,8 @@ function urgencyClass(days) {
               <span class="font-mono text-xs px-2 py-0.5 bg-sc-royal text-white rounded">
                 {{ p.batch }}
               </span>
-              <span class="text-sm">📍 <span class="font-medium">{{ p.bin_location }}</span></span>
-              <span class="text-sm">📦 Lấy <span class="font-bold font-mono">{{ fmtNumber(p.pick_qty) }}</span> /
+              <span class="text-sm inline-flex items-center gap-1"><Icon name="map-pin" :size="14" /> <span class="font-medium">{{ p.bin_location }}</span></span>
+              <span class="text-sm inline-flex items-center gap-1"><Icon name="package" :size="14" /> Lấy <span class="font-bold font-mono">{{ fmtNumber(p.pick_qty) }}</span> /
                 tồn {{ fmtNumber(p.available) }}</span>
               <span v-if="p.days_left != null" class="text-xs"
                 :class="p.days_left < 30 ? 'text-sc-danger font-semibold' :
@@ -94,8 +95,8 @@ function urgencyClass(days) {
     </div>
 
     <div v-if="!guide.is_sufficient && guide.shortage > 0"
-      class="bg-red-50 border-t border-red-200 px-4 py-2 text-sm text-sc-danger">
-      ⚠ <b>Thiếu {{ fmtNumber(guide.shortage) }} đơn vị</b> — không có đủ tồn kho khả dụng tại {{ warehouse }}
+      class="bg-red-50 border-t border-red-200 px-4 py-2 text-sm text-sc-danger flex items-center gap-1">
+      <Icon name="alert-triangle" :size="14" /> <b>Thiếu {{ fmtNumber(guide.shortage) }} đơn vị</b> — không có đủ tồn kho khả dụng tại {{ warehouse }}
     </div>
   </div>
 </template>

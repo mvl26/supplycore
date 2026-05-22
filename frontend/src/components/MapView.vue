@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   // Response từ warehouse_map API (get_site_map / get_warehouse_map / get_route)
@@ -51,11 +52,11 @@ const gridCols = computed(() => {
 
 // Màu ô site theo loại kho
 const SITE_TYPE = {
-  Main:       { bg: '#1F4E79', fg: '#fff', icon: '🏛️', label: 'Kho tổng' },
-  Sub:        { bg: '#2E75B6', fg: '#fff', icon: '📦', label: 'Kho con' },
-  Department: { bg: '#5B9BD5', fg: '#fff', icon: '🏥', label: 'Kho khoa' },
-  Quarantine: { bg: '#C55A11', fg: '#fff', icon: '⚠️', label: 'Cách ly' },
-  Transit:    { bg: '#7F7F7F', fg: '#fff', icon: '🔁', label: 'Trung chuyển' },
+  Main:       { bg: '#1F4E79', fg: '#fff', icon: 'building-2', label: 'Kho tổng' },
+  Sub:        { bg: '#2E75B6', fg: '#fff', icon: 'package', label: 'Kho con' },
+  Department: { bg: '#5B9BD5', fg: '#fff', icon: 'heart-pulse', label: 'Kho khoa' },
+  Quarantine: { bg: '#C55A11', fg: '#fff', icon: 'alert-triangle', label: 'Cách ly' },
+  Transit:    { bg: '#7F7F7F', fg: '#fff', icon: 'arrow-left-right', label: 'Trung chuyển' },
 }
 // Màu ô bin theo trạng thái
 const BIN_STATUS = {
@@ -105,8 +106,9 @@ const legend = computed(() => {
     <!-- Header -->
     <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
       <div class="text-sm">
-        <span class="font-semibold text-sc-navy">
-          {{ isSite ? '🗺️ ' + mapData.site_name : '🏬 ' + mapData.warehouse }}
+        <span class="font-semibold text-sc-navy inline-flex items-center gap-1">
+          <Icon :name="isSite ? 'map' : 'warehouse'" :size="16" />
+          {{ isSite ? mapData.site_name : mapData.warehouse }}
         </span>
         <span v-if="isSite && mapData.site_address" class="text-sc-text-muted ml-1">
           · {{ mapData.site_address }}
@@ -147,16 +149,14 @@ const legend = computed(() => {
             <template v-if="`${r}-${c}` === entranceKey">
               <div class="absolute inset-0 flex flex-col items-center justify-center
                           bg-sc-navy text-white rounded-md">
-                <span class="text-lg">🚪</span>
+                <Icon name="log-out" :size="18" />
                 <span class="text-[10px] leading-tight">{{ mapData.entrance_label }}</span>
               </div>
             </template>
 
             <!-- Site cell -->
             <template v-else-if="isSite && cellAt[`${r}-${c}`]">
-              <span class="text-lg leading-none">
-                {{ (SITE_TYPE[cellAt[`${r}-${c}`].type] || {}).icon || '📍' }}
-              </span>
+              <Icon :name="(SITE_TYPE[cellAt[`${r}-${c}`].type] || {}).icon || 'map-pin'" :size="18" />
               <span class="text-[10px] leading-tight font-medium px-1 mt-0.5">
                 {{ cellAt[`${r}-${c}`].warehouse.replace('Kho ', '') }}
               </span>
@@ -178,7 +178,7 @@ const legend = computed(() => {
 
             <!-- Path step dot (ô trống thuộc đường đi) -->
             <template v-else-if="pathSet.has(`${r}-${c}`)">
-              <span class="text-sc-royal text-lg">●</span>
+              <span class="text-sc-royal"><Icon name="dot" :size="18" /></span>
             </template>
           </div>
         </template>
@@ -188,7 +188,7 @@ const legend = computed(() => {
     <!-- Route info -->
     <div v-if="mapData.path && mapData.path.length"
       class="mt-2 text-xs text-sc-text-muted flex items-center gap-2">
-      <span class="text-sc-royal">➜</span>
+      <span class="text-sc-royal"><Icon name="arrow-right" :size="14" /></span>
       Tuyến chỉ đường: <b>{{ mapData.path.length }}</b> bước —
       từ <b>{{ mapData.route_from || mapData.entrance_label }}</b>
       tới <b>{{ mapData.target_warehouse || mapData.target_bin || 'đích' }}</b>

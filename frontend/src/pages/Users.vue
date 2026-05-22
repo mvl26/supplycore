@@ -7,6 +7,7 @@ import { useToastStore } from '../stores/toast'
 import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
 import FieldInput from '../components/FieldInput.vue'
+import Icon from '../components/Icon.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -136,7 +137,7 @@ const tickedRoleInfo = computed(() =>
 
 <template>
   <div v-if="!isAdmin" class="sc-card p-10 text-center">
-    <div class="text-4xl mb-3">🛡</div>
+    <div class="text-4xl mb-3"><Icon name="shield" :size="40" /></div>
     <h2 class="text-lg font-bold text-sc-navy mb-2">Cần quyền quản lý user</h2>
     <p class="text-sm text-sc-text-muted">
       Chỉ <b>System Manager</b> hoặc <b>SupplyCore Manager</b> mới truy cập được trang này.
@@ -144,11 +145,13 @@ const tickedRoleInfo = computed(() =>
   </div>
 
   <div v-else>
-    <PageHeader title="Người dùng & Phân quyền" icon="👥"
+    <PageHeader title="Người dùng & Phân quyền" icon="users"
       code="User Management · RBAC"
       :subtitle="`${userList.length} user SupplyCore — ${roleGuide.length} role có hướng dẫn`">
       <template #actions>
-        <button @click="loadAll" class="sc-btn-secondary text-sm" title="Tải lại">↻</button>
+        <button @click="loadAll" class="sc-btn-secondary text-sm" title="Tải lại">
+          <Icon name="rotate-cw" :size="14" />
+        </button>
         <button @click="openCreate" class="sc-btn-primary text-sm">+ Tạo user</button>
       </template>
     </PageHeader>
@@ -156,7 +159,8 @@ const tickedRoleInfo = computed(() =>
     <!-- Search + filter -->
     <div class="sc-card p-3 mb-4 flex items-center gap-3">
       <FieldInput v-model="search" placeholder="Tìm theo email / tên..."
-        class="flex-1 max-w-md" prefix="🔍" />
+        prefix-icon="search"
+        class="flex-1 max-w-md" />
     </div>
 
     <!-- User table -->
@@ -203,10 +207,13 @@ const tickedRoleInfo = computed(() =>
             <td class="px-4 py-2 text-right whitespace-nowrap">
               <button @click="openEdit(u)" class="sc-btn-secondary text-xs">Sửa quyền</button>
               <button @click="doReset(u)" class="sc-btn-secondary text-xs ml-1"
-                :disabled="u.name === 'Administrator'" title="Gửi email reset">🔑</button>
+                :disabled="u.name === 'Administrator'" title="Gửi email reset">
+                <Icon name="mail" :size="14" />
+              </button>
               <button @click="toggleEnabled(u)" class="sc-btn-secondary text-xs ml-1"
                 :disabled="u.name === 'Administrator'">
-                {{ u.enabled ? '⏸ Tắt' : '▶ Bật' }}
+                <Icon :name="u.enabled ? 'ban' : 'play'" :size="14" />
+                {{ u.enabled ? 'Tắt' : 'Bật' }}
               </button>
             </td>
           </tr>
@@ -217,7 +224,7 @@ const tickedRoleInfo = computed(() =>
     <!-- Role legend (compact) -->
     <details class="sc-card mt-5 p-4">
       <summary class="cursor-pointer text-sm font-medium text-sc-navy">
-        📖 Danh mục role + chức năng / giới hạn
+        <Icon name="book" :size="16" /> Danh mục role + chức năng / giới hạn
       </summary>
       <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
         <div v-for="r in roleGuide" :key="r.role"
@@ -279,7 +286,7 @@ const tickedRoleInfo = computed(() =>
           <!-- LEGEND of ticked roles -->
           <div>
             <h4 class="text-sm font-semibold text-sc-navy mb-2">
-              🛡 Giải thích quyền đang chọn ({{ tickedRoleInfo.length }})
+              <Icon name="shield" :size="16" /> Giải thích quyền đang chọn ({{ tickedRoleInfo.length }})
             </h4>
             <div v-if="!tickedRoleInfo.length" class="text-xs text-sc-text-muted italic
               border border-dashed border-sc-border rounded-lg p-4 text-center">
@@ -293,19 +300,19 @@ const tickedRoleInfo = computed(() =>
                   <span class="font-semibold text-sm">{{ r.role }}</span>
                   <span v-if="r.danger_level === 'high'"
                     class="text-[10px] px-1.5 py-0.5 rounded bg-red-200 text-red-800 font-bold">
-                    ⚠ SIÊU QUYỀN
+                    <Icon name="alert-triangle" :size="12" /> SIÊU QUYỀN
                   </span>
                 </div>
                 <div class="text-xs mb-1"><b>{{ r.vn_name }}</b></div>
                 <div class="text-xs mb-2 opacity-80"><b>Phạm vi:</b> {{ r.scope }}</div>
                 <div class="text-xs mb-2">
-                  <div class="font-medium mb-0.5">✅ Chức năng:</div>
+                  <div class="font-medium mb-0.5"><Icon name="check-circle" :size="14" /> Chức năng:</div>
                   <ul class="list-disc list-inside space-y-0.5 opacity-90">
                     <li v-for="(d, i) in r.duties" :key="i">{{ d }}</li>
                   </ul>
                 </div>
                 <div class="text-xs">
-                  <div class="font-medium mb-0.5">⛔ Giới hạn:</div>
+                  <div class="font-medium mb-0.5"><Icon name="ban" :size="14" /> Giới hạn:</div>
                   <ul class="list-disc list-inside space-y-0.5 opacity-90">
                     <li v-for="(l, i) in r.limits" :key="i">{{ l }}</li>
                   </ul>
@@ -335,7 +342,7 @@ const tickedRoleInfo = computed(() =>
                 <div class="text-sm font-medium text-sc-text">
                   {{ r.role }}
                   <span v-if="r.danger_level === 'high'"
-                    class="text-[9px] px-1 py-0.5 rounded bg-red-200 text-red-800 font-bold ml-1">⚠ TỐI CAO</span>
+                    class="text-[9px] px-1 py-0.5 rounded bg-red-200 text-red-800 font-bold ml-1"><Icon name="alert-triangle" :size="11" /> TỐI CAO</span>
                 </div>
                 <div class="text-xs text-sc-text-muted">{{ r.vn_name }}</div>
                 <div class="text-[10px] text-sc-text-muted font-mono mt-0.5">
@@ -352,7 +359,8 @@ const tickedRoleInfo = computed(() =>
           Huỷ
         </button>
         <button @click="submitForm" class="sc-btn-primary text-sm" :disabled="formBusy">
-          {{ formBusy ? 'Đang lưu…' : (editing?.name ? '💾 Lưu phân quyền' : '+ Tạo user') }}
+          <Icon v-if="!formBusy && editing?.name" name="save" :size="14" />
+          {{ formBusy ? 'Đang lưu…' : (editing?.name ? 'Lưu phân quyền' : '+ Tạo user') }}
         </button>
       </template>
     </Modal>

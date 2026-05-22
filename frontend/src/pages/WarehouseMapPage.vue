@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { warehouseMap } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import MapView from '../components/MapView.vue'
+import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 
 const router = useRouter()
@@ -64,7 +65,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <PageHeader title="Bản đồ kho" icon="🗺️" code="Warehouse Map"
+  <PageHeader title="Bản đồ kho" icon="map" code="Warehouse Map"
     subtitle="Bản đồ khuôn viên bệnh viện + sơ đồ vị trí lưu trữ trong từng kho">
   </PageHeader>
 
@@ -74,12 +75,12 @@ onMounted(async () => {
       <button @click="tab = 'site'"
         class="px-5 py-3 text-sm font-medium border-b-2 transition"
         :class="tab === 'site' ? 'border-sc-royal text-sc-navy bg-sc-bg' : 'border-transparent text-sc-text-muted hover:bg-sc-bg'">
-        🗺️ Bản đồ khuôn viên
+        <Icon name="map" :size="16" /> Bản đồ khuôn viên
       </button>
       <button @click="tab = 'warehouse'"
         class="px-5 py-3 text-sm font-medium border-b-2 transition"
         :class="tab === 'warehouse' ? 'border-sc-royal text-sc-navy bg-sc-bg' : 'border-transparent text-sc-text-muted hover:bg-sc-bg'">
-        🏬 Sơ đồ trong kho
+        <Icon name="warehouse" :size="16" /> Sơ đồ trong kho
       </button>
     </div>
   </div>

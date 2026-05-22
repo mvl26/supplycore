@@ -4,16 +4,15 @@ Endpoint:
     POST /api/method/supplycore.m2_planning.api.po_suggest.suggest_po_from_mr
     payload: {"mr_name": "SC-MR-2026-####"}
 
-Logic:
-    1. Đọc MR (phải docstatus=1, status=Approved/Pending).
-    2. Với mỗi MR item → tìm Framework Contract Active có:
-       - FC Item.item_code == item
-       - FC Item.remaining_qty ≥ MR qty
-       - FC.remaining_value ≥ qty × unit_price
-       Pick FC theo unit_price thấp nhất (tiêu chí cost optimization).
-    3. Group MR items theo (supplier, framework_contract) → tạo 1 draft PO/group.
-    4. Items không match FC → trả về `unmatched_items` (user phải tạo PO không-FC manually).
-    5. Validate trước khi tạo: ΣPO ≤ FC.remaining_value (BR-M1-03 / SC-E002).
+Logic chọn HĐK cho mỗi dòng MR:
+    - Dòng ĐÃ gán framework_contract (tạo MR từ 1 HĐK, hoặc user chọn tay):
+      BẮT BUỘC dùng đúng HĐK đó. Nếu HĐK không hợp lệ/không đủ tồn → unmatched
+      (KHÔNG tự đổi sang HĐK khác — tránh PO lệch yêu cầu).
+    - Dòng CHƯA gán framework_contract: suggest HĐK Active có đơn giá thấp nhất
+      (FC Item.item_code == item, remaining_qty ≥ qty).
+Sau đó:
+    - Group MR items theo (supplier, framework_contract) → 1 draft PO/group.
+    - Validate ΣPO ≤ FC.remaining_value (BR-M1-03 / SC-E002).
 """
 
 import frappe
@@ -51,8 +50,21 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
         frappe.throw(_("MR {0} không có dòng items nào").format(mr_name), title="SC-E-MR-EMPTY")
 
     for row in mr.items:
-        # Re-check remaining_qty TỪ cache (đã trừ những row trước trong cùng MR)
-        match = _find_best_fc_for_item(row.item, flt(row.qty), fc_qty_cache)
+        # 2 nhánh theo yêu cầu nghiệp vụ:
+        #  - Dòng MR ĐÃ gán HĐK (tạo MR từ 1 HĐK, hoặc user chọn tay) →
+        #    BẮT BUỘC theo đúng HĐK đó, không tự đổi sang HĐK/NCC khác.
+        #  - Dòng MR CHƯA gán HĐK → suggest HĐK Active có đơn giá rẻ nhất.
+        if row.framework_contract:
+            match = _validate_specific_fc(
+                row.framework_contract, row.item, flt(row.qty), fc_qty_cache)
+            reason_if_none = _(
+                "HĐK {0} đã chọn không dùng được cho vật tư này "
+                "(hết hiệu lực / không chứa vật tư / không đủ tồn). "
+                "Điều chỉnh HĐK hoặc số lượng trên dòng MR."
+            ).format(row.framework_contract)
+        else:
+            match = _find_best_fc_for_item(row.item, flt(row.qty), fc_qty_cache)
+            reason_if_none = _("Không có HĐK Active phù hợp với vật tư + số lượng còn lại")
         if not match:
             unmatched.append({
                 "mr_item": row.name,
@@ -60,7 +72,7 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
                 "item": row.item,
                 "qty": flt(row.qty),
                 "uom": row.uom,
-                "reason": "Không có HĐK Active phù hợp với item + qty còn lại",
+                "reason": reason_if_none,
             })
             continue
         # Cập nhật cache: trừ qty đã claim
@@ -141,6 +153,41 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
         "unmatched_items": unmatched,
         "created_pos": created,
     }
+
+
+def _validate_specific_fc(fc_name: str, item: str, qty: float,
+                           fc_qty_cache: dict = None) -> dict:
+    """Kiểm tra FC user đã chọn trên dòng MR có dùng được cho item+qty không.
+
+    Trả {supplier, fc, unit_price, fc_item_name, remaining_qty} nếu FC:
+    - docstatus=1, status=Active, còn hiệu lực (valid_to >= hôm nay)
+    - có FC Item khớp item_code
+    - remaining_qty (đã trừ phần claim trong cùng MR) >= qty
+    Ngược lại trả None để caller fallback sang FC khác.
+    """
+    if not fc_name:
+        return None
+    rows = frappe.db.sql("""
+        SELECT fc.name AS fc, fc.supplier, fci.name AS fci_name,
+               fci.unit_price, fci.remaining_qty
+        FROM `tabFramework Contract` fc
+        JOIN `tabFC Item` fci ON fci.parent = fc.name
+        WHERE fc.name = %s
+          AND fc.docstatus = 1
+          AND fc.status = 'Active'
+          AND fc.valid_to >= CURDATE()
+          AND fci.item_code = %s
+    """, (fc_name, item), as_dict=True)
+    fc_qty_cache = fc_qty_cache or {}
+    for r in rows:
+        effective_remain = flt(r.remaining_qty)
+        if r.fc in fc_qty_cache and item in fc_qty_cache[r.fc]:
+            effective_remain = fc_qty_cache[r.fc][item]
+        if effective_remain >= qty:
+            return {"supplier": r.supplier, "fc": r.fc,
+                    "unit_price": flt(r.unit_price), "fc_item_name": r.fci_name,
+                    "remaining_qty": effective_remain}
+    return None
 
 
 def _find_best_fc_for_item(item: str, qty: float, fc_qty_cache: dict = None) -> dict:

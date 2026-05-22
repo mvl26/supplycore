@@ -4,6 +4,7 @@ import { runDocMethod } from '../api'
 import { useToastStore } from '../stores/toast'
 import Modal from './Modal.vue'
 import FieldInput from './FieldInput.vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   doc: Object,        // SC Recall Notice
@@ -120,7 +121,7 @@ function pct(part, whole) {
     class="sc-card p-5 mb-4">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-        <span class="text-xl">📦</span> Theo dõi thu hồi
+        <Icon name="package" :size="18" /> Theo dõi thu hồi
         <span class="text-xs text-sc-text-muted ml-2">
           (UC-30 step 6 — cập nhật từng vị trí ảnh hưởng)
         </span>
@@ -205,13 +206,13 @@ function pct(part, whole) {
               <div class="flex gap-1 justify-center">
                 <button @click="openRecovery(r)"
                   class="text-xs px-2 py-1 rounded bg-sc-royal text-white hover:bg-sc-navy"
-                  title="Cập nhật chi tiết">✏️ Cập nhật</button>
+                  title="Cập nhật chi tiết"><Icon name="edit" :size="14" /> Cập nhật</button>
                 <button v-if="r.outstanding_qty > 0" @click="quickFullRecover(r)"
                   class="text-xs px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700"
-                  title="Thu hồi toàn bộ">✓ Thu</button>
+                  title="Thu hồi toàn bộ"><Icon name="check" :size="14" /> Thu</button>
                 <button v-if="r.outstanding_qty > 0" @click="quickFullDestroy(r)"
                   class="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-                  title="Huỷ toàn bộ">🗑 Huỷ</button>
+                  title="Huỷ toàn bộ"><Icon name="trash" :size="14" /> Huỷ</button>
               </div>
             </td>
           </tr>

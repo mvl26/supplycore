@@ -1,6 +1,10 @@
 // Suite 22: Tạo + Lưu SC Transfer Request không lỗi
 import { apiCall, apiGetList, navigateTo } from '../helpers.mjs'
 
+// Bảng chi tiết (ChildTable dùng class "w-full") — tách khỏi bảng bộ chọn
+// tồn kho WarehouseStockPanel (dùng class "sc-table") trên cùng trang.
+const childTable = (page) => page.locator('table.w-full')
+
 async function pickTwoWarehouses(page) {
   const rows = await apiGetList(page, 'SC Warehouse', {
     fields: ['name', 'is_group', 'disabled'],
@@ -96,21 +100,21 @@ export const tests = [
       await page.waitForTimeout(400)
 
       // Fill item
-      const itemInput = page.locator('table input').first()
+      const itemInput = childTable(page).locator('input').first()
       await itemInput.fill(item)
       await page.waitForTimeout(600)
       await page.locator(`button:has-text("${item}")`).first().click().catch(() => null)
       await page.waitForTimeout(300)
 
       // Fill UOM
-      const uomInput = page.locator('table tr td:nth-child(3) input').first()
+      const uomInput = childTable(page).locator('tr td:nth-child(3) input').first()
       await uomInput.fill(uom)
       await page.waitForTimeout(500)
       await page.locator(`button:has-text("${uom}")`).first().click().catch(() => null)
       await page.waitForTimeout(300)
 
       // Fill SL yêu cầu (col 4)
-      const qtyInput = page.locator('table tr td:nth-child(4) input').first()
+      const qtyInput = childTable(page).locator('tr td:nth-child(4) input').first()
       await qtyInput.fill('1')
       await page.waitForTimeout(300)
 
@@ -199,12 +203,12 @@ export const tests = [
       // Add row + fill item + uom — BỎ requested_qty
       await page.locator('button:has-text("+ Thêm dòng")').first().click()
       await page.waitForTimeout(400)
-      const itemInput = page.locator('table input').first()
+      const itemInput = childTable(page).locator('input').first()
       await itemInput.fill(item)
       await page.waitForTimeout(600)
       await page.locator(`button:has-text("${item}")`).first().click().catch(() => null)
       await page.waitForTimeout(300)
-      const uomInput = page.locator('table tr td:nth-child(3) input').first()
+      const uomInput = childTable(page).locator('tr td:nth-child(3) input').first()
       await uomInput.fill(uom)
       await page.waitForTimeout(500)
       await page.locator(`button:has-text("${uom}")`).first().click().catch(() => null)

@@ -69,6 +69,7 @@ async function doSearch(q) {
                   : props.linkTo === 'SC Patient' ? ['name', 'patient_name']
                   : props.linkTo === 'User' ? ['name', 'full_name']
                   : props.linkTo === 'SC Batch' ? ['name', 'item', 'expiry_date']
+                  : props.linkTo === 'Framework Contract' ? ['name', 'contract_number', 'supplier_name']
                   : ['name']
     const order = props.linkTo === 'SC Batch' ? 'expiry_date asc' : 'modified desc'
     const rows = await getList(props.linkTo, {
@@ -112,6 +113,13 @@ function pick(row) {
 }
 
 const subLabel = (r) => {
+  // Framework Contract: số HĐ + NCC — để nhận biết HĐ khung nào
+  if (props.linkTo === 'Framework Contract') {
+    const parts = []
+    if (r.contract_number) parts.push(`Số HĐ: ${r.contract_number}`)
+    if (r.supplier_name) parts.push(r.supplier_name)
+    return parts.join(' · ')
+  }
   if (r.item_name || r.supplier_name || r.patient_name || r.full_name) {
     return r.item_name || r.supplier_name || r.patient_name || r.full_name
   }

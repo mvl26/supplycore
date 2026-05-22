@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getList, count } from '../api'
 import { DT } from '../modules'
 import PageHeader from '../components/PageHeader.vue'
+import Icon from '../components/Icon.vue'
 import DataTable from '../components/DataTable.vue'
 import FieldInput from '../components/FieldInput.vue'
 import Pagination from '../components/Pagination.vue'
@@ -61,12 +62,12 @@ const dateField = computed(() =>
 const sortOptions = computed(() => {
   const df = dateField.value
   return [
-    { value: `${df}|desc`, label: `📅 Mới nhất (${df === 'modified' ? 'cập nhật' : 'ngày'})` },
-    { value: `${df}|asc`,  label: `📅 Cũ nhất` },
-    { value: 'name|asc',   label: '🔤 Mã/Tên A → Z' },
-    { value: 'name|desc',  label: '🔤 Mã/Tên Z → A' },
-    { value: 'creation|desc', label: '🆕 Tạo mới nhất' },
-    { value: 'creation|asc',  label: '🕰️ Tạo cũ nhất' },
+    { value: `${df}|desc`, label: `Mới nhất (${df === 'modified' ? 'cập nhật' : 'ngày'})` },
+    { value: `${df}|asc`,  label: `Cũ nhất` },
+    { value: 'name|asc',   label: 'Mã/Tên A → Z' },
+    { value: 'name|desc',  label: 'Mã/Tên Z → A' },
+    { value: 'creation|desc', label: 'Tạo mới nhất' },
+    { value: 'creation|asc',  label: 'Tạo cũ nhất' },
   ]
 })
 
@@ -317,21 +318,22 @@ onMounted(() => {
     <PageHeader :title="cfg.label" :icon="cfg.icon" :code="doctype"
       :subtitle="`${total.toLocaleString('vi-VN')} bản ghi${search || activeFilterCount() ? ' (đã lọc)' : ''}`">
       <template #actions>
-        <button @click="load" class="sc-btn-secondary text-sm" title="Tải lại">↻</button>
+        <button @click="load" class="sc-btn-secondary text-sm" title="Tải lại"><Icon name="rotate-cw" :size="14" /></button>
         <ListImportExport :doctype="doctype" :list-columns="columns"
           :filters="buildFilters()" :order-by="buildOrderBy()"
           :can-import="access.canDoctype(doctype, 'create')"
           @imported="load" />
         <button v-if="access.canDoctype(doctype, 'create')"
-          @click="newDoc" class="sc-btn-primary text-sm">+ Tạo mới</button>
+          @click="newDoc" class="sc-btn-primary text-sm"><Icon name="plus" :size="14" /> Tạo mới</button>
       </template>
     </PageHeader>
 
     <!-- Toolbar: search + sort + filter toggle + page size -->
     <div class="sc-card p-3 mb-4 flex flex-wrap items-center gap-3">
       <FieldInput v-model="search" placeholder="Tìm theo mã/tên..."
+        prefix-icon="search"
         class="flex-1 min-w-[200px] max-w-md"
-        prefix="🔍" @keyup.enter="loadAndSync" />
+        @keyup.enter="loadAndSync" />
 
       <div class="flex items-center gap-1 text-sm">
         <label class="text-sc-text-muted">Sắp xếp:</label>
@@ -344,7 +346,7 @@ onMounted(() => {
       <button @click="toggleFilters" class="sc-btn-secondary text-sm"
         :class="showFilters ? '!bg-sc-navy !text-white' : ''"
         title="Bật/tắt bộ lọc theo cột">
-        🔽 Lọc cột
+        <Icon name="filter" :size="14" /> Lọc cột
         <span v-if="activeFilterCount()" class="ml-1 text-xs">
           ({{ activeFilterCount() }})
         </span>
@@ -352,7 +354,7 @@ onMounted(() => {
 
       <button v-if="search || activeFilterCount() || sortKey"
         @click="clearAll" class="text-xs text-sc-text-muted hover:text-sc-danger underline">
-        ✕ Xoá lọc
+        <Icon name="x" :size="14" /> Xoá lọc
       </button>
     </div>
 
@@ -377,7 +379,7 @@ onMounted(() => {
                 onFilterInput();
               }"
               class="sc-input py-1 text-xs flex-1" title="Từ ngày" />
-            <span class="text-sc-text-muted text-xs">→</span>
+            <span class="text-sc-text-muted text-xs"><Icon name="arrow-right" :size="14" /></span>
             <input type="date"
               :value="(columnFilters[pairKey(p)] && columnFilters[pairKey(p)].to) || ''"
               @change="e => {
@@ -404,7 +406,7 @@ onMounted(() => {
                     onFilterInput();
                   }"
                   class="sc-input py-1 text-xs flex-1" title="Từ ngày" />
-                <span class="text-sc-text-muted text-xs">→</span>
+                <span class="text-sc-text-muted text-xs"><Icon name="arrow-right" :size="14" /></span>
                 <input type="date"
                   :value="(columnFilters[c.key] && columnFilters[c.key].to) || ''"
                   @change="e => {
@@ -422,7 +424,7 @@ onMounted(() => {
                 @change="e => { columnFilters[c.key] = e.target.value; onFilterInput() }"
                 class="sc-input py-1 text-sm">
                 <option value="">— Tất cả —</option>
-                <option value="1">Có (✓)</option>
+                <option value="1">Có</option>
                 <option value="0">Không</option>
               </select>
             </template>

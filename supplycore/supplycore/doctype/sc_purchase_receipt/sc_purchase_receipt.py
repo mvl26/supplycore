@@ -39,19 +39,19 @@ class SCPurchaseReceipt(Document):
         if self.is_return:
             if not (self.return_reason and str(self.return_reason).strip()):
                 frappe.throw(_("SC-E-RETURN-REASON: Phải nhập 'Lý do trả hàng'"))
-        # Bắt buộc expiry_date cho mọi item có has_batch_no=1 (tránh "item cuối
-        # bị không gán lô tự động" do user quên fill expiry).
+        # Mỗi dòng vật tư phải có Hạn dùng — phiếu nhập sinh 1 lô / 1 dòng item
+        # (đơn N item → N lô). SC Batch bắt buộc expiry_date nên đây là tiền đề.
         missing_expiry = []
         for r in self.items:
             if r.batch_no:
                 continue  # đã có lô, OK
-            if frappe.db.get_value("SC Item", r.item, "has_batch_no") and not r.expiry_date:
+            if not r.expiry_date:
                 missing_expiry.append(r.idx)
         if missing_expiry and not self.is_return:
             frappe.throw(_(
-                "SC-E-PR-MISSING-EXPIRY: Các dòng {0} có vật tư yêu cầu quản lý lô "
-                "nhưng chưa nhập Hạn dùng. Vui lòng nhập Hạn dùng cho từng dòng "
-                "trước khi submit (hệ thống sẽ tự sinh lô)."
+                "SC-E-PR-MISSING-EXPIRY: Các dòng {0} chưa nhập Hạn dùng. "
+                "Mỗi dòng vật tư cần Hạn dùng để hệ thống tự sinh lô tương ứng "
+                "khi nhập kho."
             ).format(missing_expiry))
 
     def on_submit(self):
@@ -64,13 +64,12 @@ class SCPurchaseReceipt(Document):
         for r in self.items:
             if not r.expiry_date:
                 continue
-            if frappe.db.get_value("SC Item", r.item, "has_batch_no") and not r.batch_no:
+            if not r.batch_no:
                 missing_batch.append(r.idx)
         if missing_batch:
             frappe.throw(_(
-                "SC-E-PR-BATCH-MISSING: Các dòng {0} chưa được gán lô tự động "
-                "(item yêu cầu lô + có hạn dùng). Đây là lỗi hệ thống, vui lòng "
-                "liên hệ admin."
+                "SC-E-PR-BATCH-MISSING: Các dòng {0} chưa được gán lô tự động. "
+                "Đây là lỗi hệ thống, vui lòng liên hệ admin."
             ).format(missing_batch), title="SC-E-PR-BATCH-MISSING")
         self._post_stock_ledger()
         if self.qc_required and not self.is_return:
@@ -329,8 +328,8 @@ class SCPurchaseReceipt(Document):
         return {"created": created, "count": len(created)}
 
     def _create_batches_if_needed(self):
-        """Nếu row có expiry_date + chưa có batch_no → tạo SC Batch tự động
-        với batch_id format `[item]-[YYYYMM]-[Seq]` (UC-15 step 3).
+        """Sinh SC Batch cho MỌI dòng vật tư có expiry_date + chưa có batch_no
+        (đơn N item → N lô). batch_id format `[item]-[YYYYMM]-[Seq]` (UC-15 step 3).
 
         Dùng seq cache local để tránh race condition khi nhiều row cùng
         (item, year-month): COUNT-based seq trong cùng transaction có thể
@@ -343,9 +342,7 @@ class SCPurchaseReceipt(Document):
         skipped_no_expiry = []
 
         for r in self.items:
-            has_batch = frappe.db.get_value("SC Item", r.item, "has_batch_no")
-            if not has_batch:
-                continue
+            # Sinh lô cho MỌI dòng vật tư — đơn N item → N lô tương ứng.
             if r.batch_no:
                 continue  # đã có lô, skip
             if not r.expiry_date:
@@ -430,6 +427,7 @@ class SCPurchaseReceipt(Document):
             qi.purchase_receipt = self.name
             qi.pr_item_ref = r.name
             qi.item = r.item
+            qi.supplier = self.supplier
             qi.batch = r.batch_no
             qi.received_qty = r.qty
             qi.checklist_template = template

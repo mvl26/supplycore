@@ -5,6 +5,7 @@ import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, call } from '../api
 import { DT } from '../modules'
 import { FORM_SCHEMAS } from '../schemas'
 import PageHeader from '../components/PageHeader.vue'
+import Icon from '../components/Icon.vue'
 import ActionPanel from '../components/ActionPanel.vue'
 import DocForm from '../components/DocForm.vue'
 import RelatedDocs from '../components/RelatedDocs.vue'
@@ -136,6 +137,46 @@ function onUpstreamMerge({ header, items, source }) {
     next._upstream_source = `${source.doctype} ${source.name}`
   }
   doc.value = next
+}
+
+// WarehouseStockPanel (TR / SE): điền các dòng tồn kho đã tích → bảng chi tiết
+async function onStockFill(picked) {
+  if (!doc.value || !Array.isArray(picked) || !picked.length) return
+  const itemsField = schema.value?.items?.field || 'items'
+  // TR dùng requested_qty, SE dùng qty
+  const qtyField = doctype.value === 'SC Transfer Request' ? 'requested_qty' : 'qty'
+  const items = Array.isArray(doc.value[itemsField]) ? [...doc.value[itemsField]] : []
+  const seen = new Set(items.map(r => `${r.item}|${r.batch || ''}`))
+
+  // ĐVT theo vật tư — ưu tiên uom panel trả về; thiếu thì tra SC Item.uom
+  const uomMap = {}
+  const needUom = [...new Set(picked.filter(r => !r.uom && r.item).map(r => r.item))]
+  await Promise.all(needUom.map(async (it) => {
+    try {
+      const d = await call('frappe.client.get_value', {
+        doctype: 'SC Item', filters: { name: it }, fieldname: 'uom',
+      })
+      uomMap[it] = d?.uom || null
+    } catch (e) { uomMap[it] = null }
+  }))
+
+  let added = 0
+  for (const r of picked) {
+    const k = `${r.item}|${r.batch || ''}`
+    if (seen.has(k)) continue   // bỏ qua dòng item+lô đã có
+    seen.add(k)
+    const row = {
+      item: r.item,
+      uom: r.uom || uomMap[r.item] || null,   // ĐVT theo vật tư
+      batch: r.batch || null,
+    }
+    row[qtyField] = r.qty
+    items.push(row)
+    added++
+  }
+  doc.value = { ...doc.value, [itemsField]: items }
+  if (added) toast.success(`Đã điền ${added} dòng vào bảng chi tiết`)
+  else toast.warning('Các dòng đã chọn đã có trong bảng chi tiết')
 }
 
 const statusBadge = computed(() => {
@@ -380,7 +421,7 @@ function displayField(value, key) {
   if (/value|amount|total|cost|rate/.test(key) && typeof value === 'number') {
     return fmtNumber(value)
   }
-  if (value === 1) return '✓'
+  if (value === 1) return 'Có'
   if (value === 0) return ''
   return value
 }
@@ -401,29 +442,32 @@ function displayField(value, key) {
       :subtitle="isNew ? 'Bản ghi mới — điền form và lưu' :
         `Cập nhật: ${doc.modified ? fmtDateTime(doc.modified) : ''}`">
       <template #actions>
-        <button @click="backToList" class="sc-btn-secondary text-sm">← Danh sách</button>
+        <button @click="backToList" class="sc-btn-secondary text-sm"><Icon name="chevron-left" :size="14" /> Danh sách</button>
         <span v-if="statusBadge && !isNew" :class="['sc-badge', statusBadge.cls]">{{ statusBadge.text }}</span>
 
         <template v-if="isNew">
           <button @click="save" :disabled="saving" class="sc-btn-primary text-sm">
-            {{ saving ? 'Đang lưu...' : '💾 Lưu' }}
+            <template v-if="saving">Đang lưu...</template>
+            <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
         </template>
         <template v-else-if="editing">
-          <button @click="load" class="sc-btn-secondary text-sm">↺ Hoàn tác</button>
+          <button @click="load" class="sc-btn-secondary text-sm"><Icon name="refresh-ccw" :size="14" /> Hoàn tác</button>
           <button @click="save" :disabled="saving" class="sc-btn-primary text-sm">
-            {{ saving ? 'Đang lưu...' : '💾 Lưu' }}
+            <template v-if="saving">Đang lưu...</template>
+            <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
           <button v-if="doc.docstatus === 0" @click="doSubmit"
             :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm">
-            📤 Gửi duyệt
+            <Icon name="upload" :size="14" /> Gửi duyệt
           </button>
         </template>
         <template v-else>
           <!-- Đã duyệt 3-tier nhưng chưa Submit → cho Submit kích hoạt -->
           <button v-if="approvalLocked" @click="doSubmit"
             :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm">
-            {{ saving ? 'Đang gửi...' : '📤 Submit kích hoạt' }}
+            <template v-if="saving">Đang gửi...</template>
+            <template v-else><Icon name="upload" :size="14" /> Submit kích hoạt</template>
           </button>
           <button v-if="doc.docstatus === 1" @click="doCancel"
             :disabled="saving" class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium text-sm">
@@ -462,7 +506,7 @@ function displayField(value, key) {
     <!-- Banner: HĐ đã duyệt 3-tier → khoá sửa -->
     <div v-if="approvalLocked"
       class="sc-card border-l-4 border-sc-success bg-green-50 px-4 py-3 mb-4 text-sm">
-      <div class="font-semibold text-sc-navy">🔒 Hợp đồng đã được duyệt — đã khoá sửa</div>
+      <div class="font-semibold text-sc-navy"><Icon name="lock" :size="16" /> Hợp đồng đã được duyệt — đã khoá sửa</div>
       <div class="text-sc-text-muted mt-1">
         HĐ đã qua đủ 3-tier (Kế toán → Quản lý → Lãnh đạo). Bấm <b>Submit</b> để kích hoạt,
         hoặc <b>Reject</b> để gửi lại Kế toán điều chỉnh.
@@ -472,7 +516,9 @@ function displayField(value, key) {
     <!-- Stock-aware widget chung -->
     <WarehouseStockPanel v-if="['SC Transfer Request', 'SC Stock Entry'].includes(doctype) && doc.from_warehouse"
       :warehouse="doc.from_warehouse"
-      :title="isNew || editing ? 'Tồn kho nguồn (chọn lô khi điền items)' : 'Tồn kho nguồn'" />
+      :selectable="isNew || editing"
+      :title="isNew || editing ? 'Chọn tồn kho nguồn — tích để điền vào bảng chi tiết' : 'Tồn kho nguồn'"
+      @fill="onStockFill" />
     <template v-if="doctype === 'SC Patient Dispensing' && doc.items?.length">
       <FefoPickGuide v-for="(it, i) in doc.items.filter(it => it.item && it.warehouse && it.qty)"
         :key="`fefo-${i}`" :item="it.item" :warehouse="it.warehouse" :qtyNeeded="it.qty" />
@@ -546,8 +592,8 @@ function displayField(value, key) {
       <button type="button" @click="toggleEditLog"
         class="w-full flex items-center justify-between px-5 py-3 hover:bg-sc-bg">
         <h3 class="font-semibold text-sc-navy">
-          <span class="inline-block w-4">{{ editLogExpanded ? '▾' : '▸' }}</span>
-          📜 Lịch sử sửa<span v-if="editLogLoaded"> ({{ editLog.length }})</span>
+          <span class="inline-block w-4"><Icon :name="editLogExpanded ? 'chevron-down' : 'chevron-right'" :size="14" /></span>
+          <Icon name="history" :size="16" /> Lịch sử sửa<span v-if="editLogLoaded"> ({{ editLog.length }})</span>
         </h3>
         <span class="text-xs text-sc-text-muted">
           {{ editLogExpanded ? 'Bấm để thu gọn' : 'Bấm để xem' }}
@@ -565,7 +611,7 @@ function displayField(value, key) {
             <button type="button" @click="toggleVersion(v.name)"
               class="w-full flex items-start gap-2 py-2 text-left hover:bg-sc-bg">
               <span class="text-sc-text-muted text-xs mt-0.5 w-3">
-                {{ expandedVersions.has(v.name) ? '▾' : '▸' }}
+                <Icon :name="expandedVersions.has(v.name) ? 'chevron-down' : 'chevron-right'" :size="12" />
               </span>
               <span class="flex-1 min-w-0">
                 <span class="text-sm text-sc-text">{{ changeSummary(v) }}</span>
@@ -586,7 +632,7 @@ function displayField(value, key) {
                     {{ fmtVal(c.old) }}
                   </td>
                   <td class="py-1 text-sc-success font-medium align-top">
-                    → {{ fmtVal(c.new) }}
+                    <Icon name="arrow-right" :size="14" /> {{ fmtVal(c.new) }}
                   </td>
                 </tr>
               </tbody>

@@ -59,14 +59,19 @@ export const tests = [
   {
     name: 'UC-14: PR submit → SC Batch auto-created',
     run: async ({ page }) => {
-      const batches = await apiGetList(page, 'SC Batch', {
-        fields: ['name', 'supplier_batch_no', 'qc_status'],
-        limit: 5, order_by: 'creation desc',
+      // PR submitted gần nhất → mọi dòng item phải có batch_no tự sinh
+      const prs = await apiGetList(page, 'SC Purchase Receipt', {
+        fields: ['name'],
+        filters: [['docstatus', '=', 1], ['is_return', '=', 0]],
+        limit: 1, order_by: 'creation desc',
       })
-      const fromPR = batches.filter(b => b.supplier_batch_no?.startsWith('LOT'))
-      return fromPR.length >= 1
-        ? { ok: true, detail: `${fromPR.length} batches từ PR (LOT-prefix)` }
-        : { ok: false, detail: 'No PR-created batches' }
+      if (!prs.length) return { ok: false, detail: 'No submitted PR' }
+      const doc = await apiGetDoc(page, 'SC Purchase Receipt', prs[0].name)
+      const items = doc.items || []
+      const withBatch = items.filter(i => i.batch_no).length
+      return items.length > 0 && withBatch >= 1
+        ? { ok: true, detail: `${prs[0].name}: ${withBatch}/${items.length} dòng có lô tự sinh` }
+        : { ok: false, detail: `${prs[0].name}: ${withBatch}/${items.length} dòng có batch_no` }
     },
   },
 ]

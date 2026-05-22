@@ -171,6 +171,11 @@ MAPPINGS: dict[tuple[str, str], dict] = {
             },
             "qty_logic": lambda r: flt(r.get("approved_qty") or r.get("requested_qty")),
             "qty_target": "qty",
+            # Đơn giá lấy theo tồn kho nguồn của lô — gắn sẵn, không nhập tay
+            "row_enrich": lambda row, src: {
+                "valuation_rate": _stock_valuation(
+                    row.get("item"), src.get("from_warehouse"), row.get("batch")),
+            },
         },
     },
 
@@ -223,6 +228,24 @@ def _doctype_label(dt: str) -> str:
         return frappe.db.get_value("DocType", dt, "name") or dt
     except Exception:
         return dt
+
+
+def _stock_valuation(item, warehouse, batch=None):
+    """Đơn giá tồn kho của 1 item/lô tại 1 kho — valuation_rate SLE gần nhất.
+    Dùng để gắn sẵn đơn giá lô khi tạo Phiếu chuyển kho (không nhập tay)."""
+    if not item or not warehouse:
+        return 0.0
+    conds = ["item = %(i)s", "warehouse = %(w)s", "is_cancelled = 0", "valuation_rate > 0"]
+    params = {"i": item, "w": warehouse}
+    if batch:
+        conds.append("batch = %(b)s")
+        params["b"] = batch
+    v = frappe.db.sql(f"""
+        SELECT valuation_rate FROM `tabSC Stock Ledger Entry`
+        WHERE {' AND '.join(conds)}
+        ORDER BY posting_date DESC, creation DESC LIMIT 1
+    """, params)
+    return flt(v[0][0]) if v else 0.0
 
 
 @frappe.whitelist()
@@ -305,6 +328,15 @@ def fetch(source_doctype: str, source_name: str, target_doctype: str) -> dict:
                 except Exception:
                     pass
             row.update(per_src_const_dict)
+            # row_enrich: bổ sung field tính toán theo từng dòng (vd: đơn giá lô)
+            enrich = items_spec.get("row_enrich")
+            if callable(enrich) and row:
+                try:
+                    for ek, ev in (enrich(row, source) or {}).items():
+                        if ev is not None and ev != "":
+                            row[ek] = ev
+                except Exception:
+                    pass
             if row:
                 items.append(row)
 

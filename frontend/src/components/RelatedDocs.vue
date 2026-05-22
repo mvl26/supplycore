@@ -5,6 +5,7 @@ import { call } from '../api'
 import { fmtDate, fmtNumber, fmtShort } from '../utils'
 import { fieldLabel } from '../i18n'
 import { statusLabel } from '../modules'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   doctype: { type: String, required: true },
@@ -31,20 +32,20 @@ watch(() => [props.doctype, props.name], load)
 onMounted(load)
 
 const SECTION_LABELS = {
-  purchase_orders:      { title: 'Đơn mua hàng (PO)', icon: '🛒', dt: 'SC Purchase Order' },
-  material_requests:    { title: 'Yêu cầu mua (MR)',  icon: '📝', dt: 'SC Material Request' },
-  purchase_receipts:    { title: 'Phiếu nhập (PR)',   icon: '📦', dt: 'SC Purchase Receipt' },
-  quality_inspections:  { title: 'Kiểm tra QC (QI)',  icon: '🔬', dt: 'SC Quality Inspection' },
-  batches:              { title: 'Lô đã nhập',         icon: '🏷️', dt: 'SC Batch' },
-  purchase_invoices:    { title: 'Hóa đơn mua (PI)',  icon: '🧾', dt: 'SC Purchase Invoice' },
-  stock_balance:        { title: 'Tồn kho hiện tại',  icon: '📊', dt: null },
-  recent_movements:     { title: 'Sổ kho gần đây',    icon: '📈', dt: 'SC Stock Ledger Entry' },
-  movements:            { title: 'Lịch sử SLE',       icon: '📈', dt: 'SC Stock Ledger Entry' },
-  recalls:              { title: 'Recall liên quan',  icon: '🚨', dt: 'SC Recall Notice' },
-  dispensings:          { title: 'Lịch sử cấp phát',  icon: '💉', dt: 'SC Patient Dispensing' },
-  patient_dispensings:  { title: 'Cấp phát BN từ DR', icon: '💉', dt: 'SC Patient Dispensing' },
-  framework_contracts:  { title: 'HĐ khung',           icon: '📑', dt: 'Framework Contract' },
-  affected_items:       { title: 'Vật tư bị ảnh hưởng', icon: '⚠️', dt: null },
+  purchase_orders:      { title: 'Đơn mua hàng (PO)', icon: 'shopping-cart', dt: 'SC Purchase Order' },
+  material_requests:    { title: 'Yêu cầu mua (MR)',  icon: 'file-text', dt: 'SC Material Request' },
+  purchase_receipts:    { title: 'Phiếu nhập (PR)',   icon: 'package', dt: 'SC Purchase Receipt' },
+  quality_inspections:  { title: 'Kiểm tra QC (QI)',  icon: 'flask-conical', dt: 'SC Quality Inspection' },
+  batches:              { title: 'Lô đã nhập',         icon: 'tag', dt: 'SC Batch' },
+  purchase_invoices:    { title: 'Hóa đơn mua (PI)',  icon: 'receipt', dt: 'SC Purchase Invoice' },
+  stock_balance:        { title: 'Tồn kho hiện tại',  icon: 'bar-chart', dt: null },
+  recent_movements:     { title: 'Sổ kho gần đây',    icon: 'trending-up', dt: 'SC Stock Ledger Entry' },
+  movements:            { title: 'Lịch sử SLE',       icon: 'trending-up', dt: 'SC Stock Ledger Entry' },
+  recalls:              { title: 'Recall liên quan',  icon: 'siren', dt: 'SC Recall Notice' },
+  dispensings:          { title: 'Lịch sử cấp phát',  icon: 'syringe', dt: 'SC Patient Dispensing' },
+  patient_dispensings:  { title: 'Cấp phát BN từ DR', icon: 'syringe', dt: 'SC Patient Dispensing' },
+  framework_contracts:  { title: 'HĐ khung',           icon: 'file-text', dt: 'Framework Contract' },
+  affected_items:       { title: 'Vật tư bị ảnh hưởng', icon: 'alert-triangle', dt: null },
 }
 
 const STATUS_KEYS = new Set(['status', 'qc_status', 'overall_status', 'severity',
@@ -78,8 +79,8 @@ function fmt(value, key) {
   if (/total|value|amount|qty|cost|balance|pays/.test(key) && typeof value === 'number') {
     return fmtShort(value)
   }
-  if (value === 1) return '✓'
-  if (value === 0) return ''
+  if (value === 1) return 'Có'
+  if (value === 0) return '—'
   return value
 }
 
@@ -98,7 +99,7 @@ function columnsFor(rows) {
     <div v-for="(rows, key) in related" :key="key">
       <div v-if="Array.isArray(rows) && rows.length" class="sc-card mb-4 overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 border-b border-sc-border">
-          <span class="text-lg">{{ SECTION_LABELS[key]?.icon || '🔗' }}</span>
+          <Icon :name="SECTION_LABELS[key]?.icon || 'link'" :size="18" />
           <h3 class="font-semibold text-sc-navy">
             {{ SECTION_LABELS[key]?.title || key }}
             <span class="text-xs font-normal text-sc-text-muted ml-1">({{ rows.length }})</span>
@@ -122,7 +123,7 @@ function columnsFor(rows) {
                   {{ fmt(r[c], c) }}
                 </td>
                 <td v-if="SECTION_LABELS[key]?.dt && r.name" class="text-right">
-                  <span class="text-xs text-sc-royal">→</span>
+                  <span class="text-sc-royal"><Icon name="arrow-right" :size="12" /></span>
                 </td>
               </tr>
             </tbody>

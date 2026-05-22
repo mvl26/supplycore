@@ -26,7 +26,7 @@
 | 1 | Mở `/app/sc-material-request/new`, chọn `request_type`: `Purchase` (Mua hàng) hoặc `Urgent` (Đột xuất) | Form Draft |
 | 2 | Thêm row item: chọn `item`, nhập `qty`, `uom` | `fetch_from` auto-fill `item_name` |
 | 3 | Nhập `reason` (lý do đề nghị) + `schedule_date` (ngày cần giao) | Field optional cho reason, bắt buộc cho schedule_date |
-| 4 | (Optional) Trên row chọn `framework_contract` | `validate()` auto-fetch `estimated_unit_cost` = unit_price từ Framework Contract Item khớp `item` |
+| 4 | (Optional) Trên row chọn `framework_contract` — dropdown **chỉ gợi ý HĐ khung Active có chứa vật tư của dòng đó** (scope theo mã VT qua API `framework_contracts_for_item`); mỗi gợi ý hiển thị mã HĐ + số HĐ + NCC để nhận biết | `validate()` auto-fetch `estimated_unit_cost` = unit_price từ FC Item khớp `item` |
 | 5 | Submit (Ctrl+S → Submit) | `validate()` chạy guards (qty>0, schedule≥transaction, NCC check). `on_submit()` set `status=Pending`. `_notify_managers()` gửi email SupplyCore Manager |
 | 6 | Manager mở MR, click **"Duyệt"** hoặc **"Từ chối"** | Method `approve()` → status=Approved + notify owner. Method `reject(reason)` → status=Rejected + lưu `rejection_reason` + notify owner |
 | 7 | Sau Approved, Accountant click **"Tạo Purchase Order"** | `create_purchase_orders()` đã có (suggest theo FC, group theo supplier) |
@@ -51,6 +51,29 @@ Daily scheduler `supplycore.m2_planning.tasks.check_reorder_levels` (đăng ký 
 Helpers: `_find_reorder_candidates()`, `_get_current_qty()`, `_compute_qty()`, `_create_reorder_mr()`, `_send_reorder_summary()` — all in `m2_planning/tasks.py`.
 
 User sau khi nhận email mở Draft MR → review qty → Submit → workflow chính tiếp tục từ bước 5.
+
+### 1b — Tạo MR từ Hợp đồng khung — gọi hàng theo HĐ (`Framework Contract.make_material_request`)
+
+Trên Framework Contract (đã submit, `status=Active`) → ActionPanel **"Tạo Yêu cầu mua hàng"**
+gọi `make_material_request(items=None, schedule_date=None, warehouse=None)`:
+
+1. Guard: FC phải `docstatus=1` và `status=Active`, ngược lại throw `SC-E-FC-MR-NOT-ACTIVE`.
+2. `items=None` (mặc định) → lấy tất cả dòng FC Item có `remaining_qty > 0`. Có thể
+   truyền `items=[{item_code, qty}]` để giới hạn danh mục/số lượng.
+3. `warehouse` mặc định: `SupplyCore Settings.default_warehouse`, fallback kho non-group đầu tiên.
+4. `schedule_date` mặc định: `today + 14`.
+5. Tạo Draft MR `request_type=Purchase`. **Mỗi dòng chi tiết được điền sẵn từ chính FC Item**
+   — user KHÔNG phải chọn lại HĐ khung hay nhập đơn giá ở bảng chi tiết:
+   - `item`, `item_name`, `uom`, `qty`
+   - `framework_contract` = FC nguồn
+   - `estimated_unit_cost` = `FC Item.unit_price` (đơn giá hợp đồng khung)
+   - `estimated_amount` = `qty × unit_price`
+6. `validate()` khi insert xác nhận lại đơn giá qua `_get_fc_price()` (vì dòng đã có
+   `framework_contract`) → `total_estimated_cost` tính đúng ngay từ lúc tạo.
+7. Trả về `{material_request, url}`; FE điều hướng sang MR vừa tạo.
+
+> Quy ước: khi gọi hàng theo HĐ, đơn giá MR đề nghị luôn bám đơn giá hợp đồng khung
+> đang hiệu lực — không nhập tay, không chọn lại HĐ ở từng dòng.
 
 ### 6a — Từ chối
 
@@ -292,6 +315,8 @@ def create_purchase_orders(self):
 | `test_create_po_blocked_when_pending` | submit (Pending) + create_purchase_orders → SC-E-MR-NOT-APPROVED |
 | `test_auto_create_mr_when_below_reorder` | item tồn ≤ reorder + run check_reorder_levels → Draft MR auto-tạo với qty=standard_order_qty |
 | `test_fc_price_auto_fetched` | row.framework_contract set → estimated_unit_cost = FC unit_price |
+| `test_mr_from_fc_prefills_contract_and_price` | luồng 1b: FC.make_material_request → mỗi dòng MR có `framework_contract` = FC nguồn + `estimated_unit_cost` = FC unit_price (không rỗng) |
+| `test_fc_dropdown_scoped_by_item` | bước 4: `framework_contracts_for_item(item)` chỉ trả HĐ khung Active có chứa item; item không thuộc HĐ nào → `[]` |
 
 ## Out-of-scope (KHÔNG làm trong UC-07)
 
@@ -308,3 +333,6 @@ def create_purchase_orders(self):
 4. `supplycore/supplycore/doctype/sc_material_request/sc_material_request.py` — validate guards + on_submit Pending + approve/reject + helpers + gate PO
 5. `supplycore/m2_planning/tasks.py` — rewrite `check_reorder_levels` dùng SC * doctypes + auto-tạo Draft MR (UC-07 luồng 1a)
 6. `supplycore/tests/uc07_test.py` — 11 test scenarios
+7. `supplycore/m1_contract/doctype/framework_contract/framework_contract.py` — `make_material_request` điền sẵn `framework_contract` + `estimated_unit_cost` + `estimated_amount` cho từng dòng MR (luồng 1b, 2026-05-21)
+8. `supplycore/api/frontend.py` — API `framework_contracts_for_item` (scope dropdown HĐ khung theo mã VT, bước 4, 2026-05-21)
+9. `frontend/src/components/FormField.vue` + `LinkAutocomplete.vue` + `src/schemas.js` — dropdown HĐ khung ở bảng chi tiết MR lọc theo item + hiển thị mã/số HĐ/NCC (2026-05-21)

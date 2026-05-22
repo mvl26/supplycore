@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import LinkAutocomplete from './LinkAutocomplete.vue'
+import Icon from './Icon.vue'
 import { call } from '../api'
 
 const props = defineProps({
@@ -27,6 +28,13 @@ async function resolveScope() {
     try {
       const uoms = await call('supplycore.api.frontend.item_eligible_uoms', { item: itemVal })
       extraFilters.value = (uoms && uoms.length) ? [['name', 'in', uoms]] : []
+    } catch (e) { extraFilters.value = [] }
+  } else if (props.field.linkTo === 'Framework Contract') {
+    // Chỉ gợi ý HĐ khung (Active) thực sự có chứa vật tư của dòng này.
+    // Item không thuộc HĐ khung nào → dropdown rỗng (sentinel không khớp).
+    try {
+      const fcs = await call('supplycore.api.frontend.framework_contracts_for_item', { item: itemVal })
+      extraFilters.value = [['name', 'in', (fcs && fcs.length) ? fcs : ['__no_fc__']]]
     } catch (e) { extraFilters.value = [] }
   } else {
     extraFilters.value = []
@@ -161,8 +169,8 @@ function clearAttach() {
     <div v-else-if="field.type === 'Attach'" class="flex items-center gap-2 flex-wrap">
       <template v-if="modelValue">
         <a :href="modelValue" target="_blank" rel="noopener"
-          class="text-sc-royal underline text-sm truncate max-w-[260px]"
-          :title="modelValue">📎 {{ modelValue.split('/').pop() }}</a>
+          class="text-sc-royal underline text-sm truncate max-w-[260px] inline-flex items-center gap-1"
+          :title="modelValue"><Icon name="paperclip" :size="14" /> {{ modelValue.split('/').pop() }}</a>
         <button v-if="!isReadonly()" type="button" @click="clearAttach"
           class="text-xs text-sc-danger hover:underline">Gỡ tệp</button>
       </template>
@@ -170,7 +178,8 @@ function clearAttach() {
         <label v-if="!isReadonly()"
           :class="['sc-btn-secondary cursor-pointer inline-flex items-center gap-1',
                    size === 'sm' ? 'text-xs py-1 px-2' : 'text-sm']">
-          {{ uploading ? '⏳ Đang tải...' : '📎 Chọn tệp' }}
+          <Icon :name="uploading ? 'clock' : 'paperclip'" :size="14" />
+          {{ uploading ? 'Đang tải...' : 'Chọn tệp' }}
           <input type="file" class="hidden"
             :accept="field.accept || '.pdf,.doc,.docx,.png,.jpg,.jpeg'"
             :disabled="uploading" @change="handleAttach" />

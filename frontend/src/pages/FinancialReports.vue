@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { call, getList } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
+import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber, fmtShort, fmtDate } from '../utils'
 
@@ -12,10 +13,10 @@ const toast = useToastStore()
 
 // === Tabs ===
 const TABS = [
-  { id: 'inventory', label: '📦 Tồn kho — giá trị', api: 'inventory_value_report' },
-  { id: 'ap_aging',  label: '⏰ Công nợ NCC (Aging)', api: 'ap_aging_report' },
-  { id: 'period',    label: '💰 Chi phí vật tư kỳ',  api: 'period_cost_report' },
-  { id: 'bhyt',      label: '🏥 Quyết toán BHYT',     api: 'bhyt_settlement_report' },
+  { id: 'inventory', label: 'Tồn kho — giá trị', api: 'inventory_value_report' },
+  { id: 'ap_aging',  label: 'Công nợ NCC (Aging)', api: 'ap_aging_report' },
+  { id: 'period',    label: 'Chi phí vật tư kỳ',  api: 'period_cost_report' },
+  { id: 'bhyt',      label: 'Quyết toán BHYT',     api: 'bhyt_settlement_report' },
 ]
 const active = ref('inventory')
 
@@ -166,16 +167,17 @@ onMounted(loadSuggestions)
 </script>
 
 <template>
-  <PageHeader title="Báo cáo tài chính M8" icon="📊"
+  <PageHeader title="Báo cáo tài chính M8" icon="bar-chart"
     code="UC-26" subtitle="4 báo cáo nghiệp vụ + drill-down chứng từ">
     <template #actions>
       <button @click="runReport" :disabled="loading"
         class="sc-btn-primary text-sm disabled:opacity-50">
-        {{ loading ? 'Đang tải...' : '▶ Chạy báo cáo' }}
+        <Icon v-if="!loading" name="play" :size="14" />
+        {{ loading ? 'Đang tải...' : 'Chạy báo cáo' }}
       </button>
       <button @click="exportCsv" :disabled="!data"
         class="sc-btn-secondary text-sm disabled:opacity-50">
-        📥 Xuất CSV
+        <Icon name="download" :size="14" /> Xuất CSV
       </button>
     </template>
   </PageHeader>
@@ -276,7 +278,7 @@ onMounted(loadSuggestions)
   <div v-if="data && (data.period_finalized === false)"
     class="sc-card p-3 mb-4 bg-amber-50 border-amber-200">
     <div class="flex items-start gap-2">
-      <span class="text-amber-700 text-lg">⚠️</span>
+      <span class="text-amber-700"><Icon name="alert-triangle" :size="18" /></span>
       <div class="text-sm text-amber-900 flex-1">
         <strong>Kỳ chưa khóa sổ</strong>
         — vẫn còn chứng từ <em>Draft</em> trong kỳ. Số liệu có thể thay đổi:
@@ -292,7 +294,7 @@ onMounted(loadSuggestions)
   <!-- Results -->
   <div v-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải dữ liệu báo cáo...</div>
   <div v-else-if="!data" class="sc-card p-10 text-center text-sc-text-muted">
-    Bấm <strong>▶ Chạy báo cáo</strong> để xem kết quả
+    Bấm <strong>Chạy báo cáo</strong> để xem kết quả
   </div>
 
   <!-- TAB 1: Inventory Value -->
@@ -524,7 +526,7 @@ onMounted(loadSuggestions)
           </div>
         </div>
         <button @click="goToDoc(drillData.doctype, drillData.name); drillOpen = false"
-          class="sc-btn-primary text-sm">Mở chứng từ →</button>
+          class="sc-btn-primary text-sm">Mở chứng từ <Icon name="arrow-right" :size="14" /></button>
       </template>
     </div>
   </Modal>

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { dataIo, downloadFile, fileToBase64 } from '../api'
 import { useToastStore } from '../stores/toast'
 import Modal from './Modal.vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   doctype:  { type: String, required: true },
@@ -209,10 +210,10 @@ const actionLabel = (a) => ({
 <template>
   <span class="inline-flex gap-2">
     <button @click="openExport" class="sc-btn-secondary text-sm" title="Xuất danh sách ra file">
-      📤 Xuất
+      <Icon name="upload" :size="14" /> Xuất
     </button>
     <button v-if="canImport" @click="openImport" class="sc-btn-secondary text-sm" title="Nhập dữ liệu từ file">
-      📥 Nhập
+      <Icon name="download" :size="14" /> Nhập
     </button>
   </span>
 
@@ -279,7 +280,8 @@ const actionLabel = (a) => ({
       <button @click="exportOpen = false" class="sc-btn-secondary text-sm">Đóng</button>
       <button @click="doExport" :disabled="exportBusy || selectedCount === 0"
         class="sc-btn-primary text-sm">
-        {{ exportBusy ? 'Đang xuất...' : `⬇ Tải file (${selectedCount} cột)` }}
+        <Icon v-if="!exportBusy" name="download" :size="14" />
+        {{ exportBusy ? 'Đang xuất...' : `Tải file (${selectedCount} cột)` }}
       </button>
     </template>
   </Modal>
@@ -303,11 +305,11 @@ const actionLabel = (a) => ({
           </select>
           <button @click="downloadTemplate(false)" :disabled="tplBusy"
             class="sc-btn-secondary text-sm">
-            ⬇ Template trống
+            <Icon name="download" :size="14" /> Template trống
           </button>
           <button @click="downloadTemplate(true)" :disabled="tplBusy"
             class="sc-btn-secondary text-sm">
-            ⬇ Template + dữ liệu hiện có (≤50 dòng)
+            <Icon name="download" :size="14" /> Template + dữ liệu hiện có (≤50 dòng)
           </button>
         </div>
         <p class="text-xs text-sc-text-muted mt-1.5">
@@ -335,12 +337,13 @@ const actionLabel = (a) => ({
         <div class="flex gap-2">
           <button @click="runDryRun" :disabled="!importFile || importBusy"
             class="sc-btn-secondary text-sm">
-            {{ importBusy && !commitDone ? 'Đang kiểm tra...' : '🔍 Kiểm tra (dry-run)' }}
+            <Icon v-if="!(importBusy && !commitDone)" name="search" :size="14" />
+            {{ importBusy && !commitDone ? 'Đang kiểm tra...' : 'Kiểm tra (dry-run)' }}
           </button>
           <button @click="runCommit"
             :disabled="!dryResult || importBusy || (dryResult?.errors?.length)"
             class="sc-btn-primary text-sm">
-            ✓ Nhập vào hệ thống
+            <Icon name="check" :size="14" /> Nhập vào hệ thống
           </button>
         </div>
       </div>

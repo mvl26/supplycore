@@ -69,6 +69,7 @@
 | `action_taken` | MODIFY options | Đổi options theo spec: `Pending\nAccept\nConditional Accept\nReturn to Supplier\nRequest Replacement` |
 | `equipment_unavailable` | ADD Check | flag thiếu thiết bị |
 | `equipment_note` | ADD Small Text | ghi chú khi On Hold |
+| `supplier` | ADD Link `SC Supplier` read_only | NCC của lô hàng — `fetch_from purchase_receipt.supplier`; `_auto_create_qi` gán sẵn `qi.supplier = pr.supplier` để phần kiểm tra QC hiển thị nhà cung cấp (2026-05-21) |
 
 ### SC Purchase Receipt — ADD
 

@@ -6,6 +6,7 @@ import { statusLabel } from '../modules'
 import KpiCard from '../components/KpiCard.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
+import Icon from '../components/Icon.vue'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { Line } from 'vue-chartjs'
@@ -159,16 +160,16 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
 </script>
 
 <template>
-  <PageHeader title="Dashboard điều hành" icon="📊" code="SCR-01"
+  <PageHeader title="Dashboard điều hành" icon="bar-chart" code="SCR-01"
     :subtitle="lastRefresh ? `Cập nhật ${lastRefresh}${dashboard?.cached ? ' (đã cache 5 phút)' : ''}` : 'Đang tải...'">
     <template #actions>
       <select v-model="roleView" @change="load(1)"
         class="sc-input max-w-[200px] text-sm" title="Lọc widget theo vai trò">
-        <option value="">📊 View đầy đủ (Executive)</option>
-        <option value="SupplyCore Manager">👔 Manager</option>
-        <option value="SupplyCore Accountant">🧮 Kế toán</option>
-        <option value="SupplyCore Storekeeper">📦 Thủ kho</option>
-        <option value="Pharmacy Officer">💊 Dược viên</option>
+        <option value="">View đầy đủ (Executive)</option>
+        <option value="SupplyCore Manager">Vai trò Quản lý</option>
+        <option value="SupplyCore Accountant">Vai trò Kế toán</option>
+        <option value="SupplyCore Storekeeper">Vai trò Thủ kho</option>
+        <option value="Pharmacy Officer">Vai trò Dược viên</option>
       </select>
       <select v-model="warehouse" @change="load(1)"
         class="sc-input max-w-[160px] text-sm" title="Lọc theo kho">
@@ -187,39 +188,43 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
         <option value="this_quarter">Quý này</option>
         <option value="this_year">Năm nay</option>
       </select>
-      <button @click="load(1)" class="sc-btn-secondary text-sm" title="Tải lại (bỏ cache)">↻</button>
-      <button @click="exportPdfData" class="sc-btn-secondary text-sm">📄 Snapshot PDF</button>
+      <button @click="load(1)" class="sc-btn-secondary text-sm" title="Tải lại (bỏ cache)">
+        <Icon name="rotate-cw" :size="15" />
+      </button>
+      <button @click="exportPdfData" class="sc-btn-secondary text-sm">
+        <Icon name="download" :size="15" /> Snapshot PDF
+      </button>
     </template>
   </PageHeader>
 
   <div v-if="loading && !dashboard" class="text-center py-20 text-sc-text-muted">Đang tải...</div>
   <template v-else-if="dashboard">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5 sc-stagger">
       <KpiCard v-if="showKpi('stock_value')" label="Tổng giá trị tồn kho"
-        :value="fmtShort(dashboard.kpis.stock_value)" unit="VND" icon="📦"
+        :value="fmtShort(dashboard.kpis.stock_value)" unit="VND" icon="package"
         @click="gotoDrill('stock_value')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('monthly_cost')" label="Chi phí mua kỳ này"
-        :value="fmtShort(dashboard.kpis.monthly_cost)" unit="VND" icon="💸"
+        :value="fmtShort(dashboard.kpis.monthly_cost)" unit="VND" icon="banknote"
         @click="gotoDrill('monthly_cost')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('ap_outstanding')" label="Công nợ NCC"
-        :value="fmtShort(dashboard.kpis.ap_outstanding)" unit="VND" icon="🧾" variant="warning"
+        :value="fmtShort(dashboard.kpis.ap_outstanding)" unit="VND" icon="receipt" variant="warning"
         @click="gotoDrill('ap_outstanding')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('pending_pos')" label="PO đang chờ"
-        :value="dashboard.kpis.pending_pos" unit="đơn" icon="📨"
+        :value="dashboard.kpis.pending_pos" unit="đơn" icon="inbox"
         @click="gotoDrill('pending_pos')" class="cursor-pointer" />
 
       <KpiCard v-if="showKpi('expiring_soon')" label="Lô sắp hết hạn (30 ngày)"
-        :value="dashboard.kpis.expiring_soon" unit="lô" icon="⏰" variant="warning"
+        :value="dashboard.kpis.expiring_soon" unit="lô" icon="alarm-clock" variant="warning"
         @click="gotoDrill('expiring_soon')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('low_stock_items')" label="Vật tư dưới tồn an toàn"
-        :value="dashboard.kpis.low_stock_items" unit="vật tư" icon="📉" variant="warning"
+        :value="dashboard.kpis.low_stock_items" unit="vật tư" icon="trending-down" variant="warning"
         @click="gotoDrill('low_stock_items')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('contract_expiring_30d')" label="HĐ sắp hết hạn"
-        :value="dashboard.kpis.contract_expiring_30d" unit="HĐ" icon="📑"
+        :value="dashboard.kpis.contract_expiring_30d" unit="HĐ" icon="file-text"
         :variant="dashboard.kpis.contract_expiring_30d > 0 ? 'critical' : 'default'"
         @click="gotoDrill('contract_expiring_30d')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('po_overdue_count')" label="PO quá hạn giao"
-        :value="dashboard.kpis.po_overdue_count" unit="đơn" icon="⚠️"
+        :value="dashboard.kpis.po_overdue_count" unit="đơn" icon="alert-triangle"
         :variant="dashboard.kpis.po_overdue_count > 0 ? 'critical' : 'default'"
         @click="gotoDrill('po_overdue_count')" class="cursor-pointer" />
     </div>
@@ -238,8 +243,12 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
           <h3 class="font-semibold text-sc-navy">Cảnh báo đang mở</h3>
           <router-link to="/alerts" class="text-xs text-sc-royal hover:underline">Tất cả →</router-link>
         </div>
-        <div v-if="dashboard.open_alerts_total === 0" class="text-sm text-sc-text-muted text-center py-10">
-          ✓ Không có cảnh báo
+        <div v-if="dashboard.open_alerts_total === 0"
+          class="flex flex-col items-center gap-2 text-sm text-sc-text-muted text-center py-10">
+          <span class="h-10 w-10 rounded-full bg-emerald-50 text-sc-success flex items-center justify-center">
+            <Icon name="check" :size="20" />
+          </span>
+          Không có cảnh báo đang mở
         </div>
         <div v-else>
           <div class="text-4xl font-bold text-sc-navy mb-3">{{ dashboard.open_alerts_total }}</div>
@@ -315,7 +324,9 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
     </div>
     <template #footer>
       <button @click="pdfOpen = false" class="sc-btn-secondary text-sm">Đóng</button>
-      <button @click="printSnapshot" class="sc-btn-primary text-sm">🖨️ In / Xuất PDF</button>
+      <button @click="printSnapshot" class="sc-btn-primary text-sm">
+        <Icon name="printer" :size="15" /> In / Xuất PDF
+      </button>
     </template>
   </Modal>
 </template>

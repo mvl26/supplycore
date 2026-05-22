@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { call, getList } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import Pagination from '../components/Pagination.vue'
+import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber, fmtShort, fmtVND, fmtDate } from '../utils'
 
@@ -83,8 +84,8 @@ function setSort(key) {
   page.value = 1
 }
 function sortIcon(key) {
-  if (sortKey.value !== key) return '⇅'
-  return sortDir.value === 'asc' ? '▲' : '▼'
+  if (sortKey.value !== key) return 'chevrons-up-down'
+  return sortDir.value === 'asc' ? 'chevron-up' : 'chevron-down'
 }
 
 function openBatch(b) {
@@ -106,10 +107,12 @@ const qcLabel = (s) => ({
 </script>
 
 <template>
-  <PageHeader title="Tồn kho hiện tại" icon="📊" code="Tồn kho"
+  <PageHeader title="Tồn kho hiện tại" icon="bar-chart" code="Tồn kho"
     :subtitle="`${rows.length} bản ghi · ${totals.distinctItems} vật tư · ${totals.distinctBatches} lô`">
     <template #actions>
-      <button @click="load" class="sc-btn-secondary text-sm">↻ Tải lại</button>
+      <button @click="load" class="sc-btn-secondary text-sm">
+        <Icon name="rotate-cw" :size="14" /> Tải lại
+      </button>
     </template>
   </PageHeader>
 
@@ -171,28 +174,28 @@ const qcLabel = (s) => ({
         <thead>
           <tr>
             <th @click="setSort('item')" class="cursor-pointer select-none hover:bg-sc-bg">
-              Mã VT <span class="text-xs text-sc-royal">{{ sortIcon('item') }}</span>
+              Mã VT <span class="text-xs text-sc-royal"><Icon :name="sortIcon('item')" :size="12" /></span>
             </th>
             <th @click="setSort('item_name')" class="cursor-pointer select-none hover:bg-sc-bg">
-              Tên <span class="text-xs text-sc-royal">{{ sortIcon('item_name') }}</span>
+              Tên <span class="text-xs text-sc-royal"><Icon :name="sortIcon('item_name')" :size="12" /></span>
             </th>
             <th @click="setSort('warehouse')" class="cursor-pointer select-none hover:bg-sc-bg">
-              Kho <span class="text-xs text-sc-royal">{{ sortIcon('warehouse') }}</span>
+              Kho <span class="text-xs text-sc-royal"><Icon :name="sortIcon('warehouse')" :size="12" /></span>
             </th>
             <th @click="setSort('batch')" class="cursor-pointer select-none hover:bg-sc-bg">
-              Lô <span class="text-xs text-sc-royal">{{ sortIcon('batch') }}</span>
+              Lô <span class="text-xs text-sc-royal"><Icon :name="sortIcon('batch')" :size="12" /></span>
             </th>
             <th @click="setSort('qc_status')" class="cursor-pointer select-none hover:bg-sc-bg">
-              KCS <span class="text-xs text-sc-royal">{{ sortIcon('qc_status') }}</span>
+              KCS <span class="text-xs text-sc-royal"><Icon :name="sortIcon('qc_status')" :size="12" /></span>
             </th>
             <th @click="setSort('expiry_date')" class="cursor-pointer select-none hover:bg-sc-bg">
-              HD <span class="text-xs text-sc-royal">{{ sortIcon('expiry_date') }}</span>
+              HD <span class="text-xs text-sc-royal"><Icon :name="sortIcon('expiry_date')" :size="12" /></span>
             </th>
             <th @click="setSort('qty')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
-              SL tồn <span class="text-xs text-sc-royal">{{ sortIcon('qty') }}</span>
+              SL tồn <span class="text-xs text-sc-royal"><Icon :name="sortIcon('qty')" :size="12" /></span>
             </th>
             <th @click="setSort('value')" class="text-right cursor-pointer select-none hover:bg-sc-bg">
-              Giá trị (VND) <span class="text-xs text-sc-royal">{{ sortIcon('value') }}</span>
+              Giá trị (VND) <span class="text-xs text-sc-royal"><Icon :name="sortIcon('value')" :size="12" /></span>
             </th>
           </tr>
         </thead>

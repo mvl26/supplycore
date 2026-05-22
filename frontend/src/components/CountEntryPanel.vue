@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { updateDoc, call } from '../api'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber } from '../utils'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   doc: Object,        // SC Inventory Count Sheet
@@ -150,14 +151,14 @@ function reloadDoc() {
     class="sc-card p-5 mb-4">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-        <span class="text-xl">⌨️</span> Bảng nhập đếm
+        <Icon name="clipboard-list" :size="20" /> Bảng nhập đếm
         <span class="text-xs text-sc-text-muted ml-2">
           (Enter/↓ chuyển dòng · Tự lưu sau 500ms)
         </span>
       </h3>
       <div class="flex items-center gap-2 text-sm">
-        <span v-if="saving" class="text-amber-700 text-xs">💾 Đang lưu...</span>
-        <button @click="reloadDoc" class="sc-btn-secondary text-xs">↻ Reload</button>
+        <span v-if="saving" class="text-amber-700 text-xs inline-flex items-center gap-1"><Icon name="save" :size="14" /> Đang lưu...</span>
+        <button @click="reloadDoc" class="sc-btn-secondary text-xs inline-flex items-center gap-1"><Icon name="rotate-cw" :size="14" /> Reload</button>
       </div>
     </div>
 
@@ -183,7 +184,7 @@ function reloadDoc() {
     <!-- Filter bar -->
     <div class="flex flex-wrap items-center gap-2 mb-3">
       <div class="relative flex-1 min-w-[200px] max-w-sm">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sc-text-muted text-sm">🔍</span>
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sc-text-muted"><Icon name="search" :size="15" /></span>
         <input v-model="search" class="sc-input pl-8 py-1 text-sm"
           placeholder="Tìm mã/tên/lô/vị trí..." />
       </div>
@@ -242,7 +243,7 @@ function reloadDoc() {
             <td>
               <span v-if="r.needs_recount" class="sc-badge sc-badge-warning text-xs">Đếm lại</span>
               <span v-else-if="Number(r.is_counted) === 1 && Number(r.actual_qty) === Number(r.system_qty || 0)"
-                class="text-green-700 text-xs">✓</span>
+                class="text-green-700"><Icon name="check" :size="14" /></span>
             </td>
             <td class="text-right">
               <input v-if="r.needs_recount"
@@ -267,7 +268,7 @@ function reloadDoc() {
     </div>
 
     <div class="mt-3 text-xs text-sc-text-muted">
-      💡 Mẹo: Bấm <kbd class="px-1 py-0.5 bg-gray-100 rounded">Enter</kbd> hoặc <kbd class="px-1 py-0.5 bg-gray-100 rounded">↓</kbd> để chuyển ô tiếp theo · <kbd class="px-1 py-0.5 bg-gray-100 rounded">↑</kbd> quay lại.
+      <Icon name="info" :size="14" /> Mẹo: Bấm <kbd class="px-1 py-0.5 bg-gray-100 rounded">Enter</kbd> hoặc <kbd class="px-1 py-0.5 bg-gray-100 rounded">↓</kbd> để chuyển ô tiếp theo · <kbd class="px-1 py-0.5 bg-gray-100 rounded">↑</kbd> quay lại.
       Ngưỡng đếm lại: <strong>{{ threshold }}%</strong>. Item có |% lệch| > ngưỡng sẽ tự bật cờ "Đếm lại".
     </div>
   </div>
