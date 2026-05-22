@@ -7,7 +7,8 @@
   "section_hierarchy", "parent_warehouse", "department",
   "section_map", "site_row", "site_col", "site_block",
   "column_break_map", "map_rows", "map_cols", "is_site_entrance",
-  "section_meta", "address", "phone", "remarks"
+  "section_meta", "address", "phone", "remarks",
+  "lft", "rgt", "old_parent"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin"},
@@ -39,7 +40,11 @@
   {"fieldname": "section_meta", "fieldtype": "Section Break", "label": "Liên hệ", "collapsible": 1},
   {"fieldname": "address", "fieldtype": "Small Text", "label": "Địa chỉ"},
   {"fieldname": "phone", "fieldtype": "Data", "label": "Điện thoại"},
-  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
+
+  {"fieldname": "lft", "fieldtype": "Int", "label": "lft", "hidden": 1, "read_only": 1, "no_copy": 1, "search_index": 1},
+  {"fieldname": "rgt", "fieldtype": "Int", "label": "rgt", "hidden": 1, "read_only": 1, "no_copy": 1, "search_index": 1},
+  {"fieldname": "old_parent", "fieldtype": "Data", "label": "Old Parent", "hidden": 1, "read_only": 1, "no_copy": 1}
  ],
  "permissions": [
   {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1},
