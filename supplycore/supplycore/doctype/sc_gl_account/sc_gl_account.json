@@ -5,7 +5,8 @@
   "section_main", "account_code", "account_name",
   "column_break_1", "account_type", "is_group", "disabled",
   "section_tree", "parent_account", "root_type",
-  "section_meta", "vas_reference", "remarks"
+  "section_meta", "vas_reference", "remarks",
+  "lft", "rgt", "old_parent"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Tài khoản kế toán"},
@@ -27,7 +28,10 @@
 
   {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
   {"fieldname": "vas_reference", "fieldtype": "Data", "label": "Tham chiếu VAS"},
-  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
+  {"fieldname": "lft", "fieldtype": "Int", "label": "lft", "hidden": 1, "read_only": 1, "no_copy": 1, "search_index": 1},
+  {"fieldname": "rgt", "fieldtype": "Int", "label": "rgt", "hidden": 1, "read_only": 1, "no_copy": 1, "search_index": 1},
+  {"fieldname": "old_parent", "fieldtype": "Data", "label": "Old Parent", "hidden": 1, "read_only": 1, "no_copy": 1}
  ],
  "permissions": [
   {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1},

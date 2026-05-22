@@ -14,3 +14,4 @@ supplycore.patches.v0_2.seed_uc10_default_qc_template
 supplycore.patches.v0_2.backfill_barcode
 supplycore.patches.v0_2.backfill_qi_supplier
 supplycore.patches.v0_2.rebuild_warehouse_tree
+supplycore.patches.v0_2.rebuild_tree_doctypes
