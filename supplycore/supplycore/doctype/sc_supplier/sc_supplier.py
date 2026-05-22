@@ -1,10 +1,11 @@
-"""SC Supplier — NCC + scorecard cho UC-01 Search & Evaluate.
+"""SC Supplier — NCC + scorecard cho UC-01 + validate UC-02.
 
 API:
 - get_scorecard(supplier) — instance method gọi qua frm.call
 - supplycore.supplycore.doctype.sc_supplier.sc_supplier.get_scorecard — module-level (REST)
 """
 
+import re
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -12,6 +13,49 @@ from frappe.utils import flt, today, add_months, getdate
 
 
 class SCSupplier(Document):
+
+    def validate(self):
+        self._validate_tax_id_unique()
+        self._validate_email_format()
+        self._normalize_bank_holder()
+        self._validate_supplied_item_groups()
+
+    def _validate_tax_id_unique(self):
+        """UC-02 step 7: kiểm tra trùng MST."""
+        if not self.tax_id:
+            return
+        clean = self.tax_id.strip()
+        if clean != self.tax_id:
+            self.tax_id = clean
+        # Check duplicate (trừ chính nó)
+        existing = frappe.db.get_value("SC Supplier",
+            {"tax_id": self.tax_id, "name": ["!=", self.name or ""]}, "name")
+        if existing:
+            frappe.throw(
+                _("MST {0} đã tồn tại ở NCC khác: {1}").format(self.tax_id, existing),
+                title="SC-E-DUPLICATE-TAX-ID")
+
+    def _validate_email_format(self):
+        if not self.email_id:
+            return
+        if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", self.email_id):
+            frappe.throw(_("Email không hợp lệ: {0}").format(self.email_id),
+                          title="SC-E-EMAIL")
+
+    def _normalize_bank_holder(self):
+        """Default bank_account_holder = supplier_name nếu để trống."""
+        if self.bank_account_no and not self.bank_account_holder:
+            self.bank_account_holder = self.supplier_name
+
+    def _validate_supplied_item_groups(self):
+        """Dedup item_groups child table."""
+        seen = set()
+        for row in (self.supplied_item_groups or []):
+            if row.item_group in seen:
+                frappe.throw(_("Item Group {0} bị trùng trong danh sách cung ứng")
+                              .format(row.item_group),
+                              title="SC-E-DUPLICATE-ITEM-GROUP")
+            seen.add(row.item_group)
 
     @frappe.whitelist()
     def get_scorecard(self):

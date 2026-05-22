@@ -1,58 +1,235 @@
 {
- "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
- "autoname": "format:SC-SE-{YYYY}-{#####}", "is_submittable": 1, "track_changes": 1,
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-SE-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
  "field_order": [
-  "section_main", "entry_type", "posting_date", "posting_time",
-  "column_break_1", "from_warehouse", "to_warehouse", "purpose",
-  "section_link", "transfer_request", "recall_notice",
-  "section_items", "items",
-  "section_status", "total_qty", "total_value",
-  "column_break_status", "pda_session_id", "remarks",
+  "section_main",
+  "entry_type",
+  "posting_date",
+  "posting_time",
+  "column_break_1",
+  "from_warehouse",
+  "to_warehouse",
+  "purpose",
+  "section_link",
+  "transfer_request",
+  "recall_notice",
+  "section_items",
+  "items",
+  "section_status",
+  "total_qty",
+  "total_value",
+  "column_break_status",
+  "pda_session_id",
+  "remarks",
   "amended_from"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin"},
-  {"fieldname": "entry_type", "fieldtype": "Select",
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Thông tin"
+  },
+  {
+   "fieldname": "entry_type",
+   "fieldtype": "Select",
    "options": "Material Receipt\nMaterial Issue\nMaterial Transfer\nManufacture\nRepack",
-   "label": "Loại giao dịch", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "default": "Material Receipt"},
-  {"fieldname": "posting_date", "fieldtype": "Date", "label": "Ngày posting", "reqd": 1, "default": "Today", "in_list_view": 1},
-  {"fieldname": "posting_time", "fieldtype": "Time", "label": "Giờ posting"},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "from_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho nguồn",
-   "depends_on": "eval:['Material Issue','Material Transfer'].includes(doc.entry_type)", "in_standard_filter": 1},
-  {"fieldname": "to_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho đích",
-   "depends_on": "eval:['Material Receipt','Material Transfer'].includes(doc.entry_type)", "in_standard_filter": 1},
-  {"fieldname": "purpose", "fieldtype": "Data", "label": "Mục đích / link tham chiếu"},
-
-  {"fieldname": "section_link", "fieldtype": "Section Break", "label": "Liên kết M6", "collapsible": 1},
-  {"fieldname": "transfer_request", "fieldtype": "Link", "options": "SC Transfer Request",
-   "label": "SC Transfer Request", "in_standard_filter": 1, "read_only": 0,
-   "description": "SE tạo từ TR Approved (M6)"},
-  {"fieldname": "recall_notice", "fieldtype": "Link", "options": "SC Recall Notice",
-   "label": "SC Recall Notice", "in_standard_filter": 1, "read_only": 1,
-   "description": "UC-30: SE là disposal của recall — bypass batch.blocked FEFO check"},
-
-  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Items"},
-  {"fieldname": "items", "fieldtype": "Table", "options": "SC Stock Entry Item", "label": "Items", "reqd": 1},
-
-  {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Tổng hợp"},
-  {"fieldname": "total_qty", "fieldtype": "Float", "label": "Tổng SL", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "total_value", "fieldtype": "Currency", "label": "Tổng giá trị", "options": "VND", "read_only": 1},
-  {"fieldname": "column_break_status", "fieldtype": "Column Break"},
-  {"fieldname": "pda_session_id", "fieldtype": "Data", "label": "PDA Session ID", "description": "Nếu giao dịch tạo từ PDA"},
-  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Stock Entry", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+   "label": "Loại giao dịch",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "default": "Material Receipt"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Ngày posting",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Giờ posting"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_warehouse",
+   "fieldtype": "Link",
+   "options": "SC Warehouse",
+   "label": "Kho nguồn",
+   "depends_on": "eval:['Material Issue','Material Transfer'].includes(doc.entry_type)",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "to_warehouse",
+   "fieldtype": "Link",
+   "options": "SC Warehouse",
+   "label": "Kho đích",
+   "depends_on": "eval:['Material Receipt','Material Transfer'].includes(doc.entry_type)",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Data",
+   "label": "Mục đích / link tham chiếu"
+  },
+  {
+   "fieldname": "section_link",
+   "fieldtype": "Section Break",
+   "label": "Liên kết M6",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "transfer_request",
+   "fieldtype": "Link",
+   "options": "SC Transfer Request",
+   "label": "SC Transfer Request",
+   "in_standard_filter": 1,
+   "read_only": 0,
+   "description": "SE tạo từ TR Approved (M6)"
+  },
+  {
+   "fieldname": "recall_notice",
+   "fieldtype": "Link",
+   "options": "SC Recall Notice",
+   "label": "SC Recall Notice",
+   "in_standard_filter": 1,
+   "read_only": 1,
+   "description": "UC-30: SE là disposal của recall — bypass batch.blocked FEFO check"
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "SC Stock Entry Item",
+   "label": "Items",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Tổng hợp"
+  },
+  {
+   "fieldname": "total_qty",
+   "fieldtype": "Float",
+   "label": "Tổng SL",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "total_value",
+   "fieldtype": "Currency",
+   "label": "Tổng giá trị",
+   "options": "VND",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pda_session_id",
+   "fieldtype": "Data",
+   "label": "PDA Session ID",
+   "description": "Nếu giao dịch tạo từ PDA"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Stock Entry",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
-  {"role": "Warehouse Officer", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
-  {"role": "Pharmacy Officer", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1},
-  {"role": "SupplyCore Ward Staff", "read": 1, "report": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Warehouse Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Pharmacy Officer",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Ward Staff",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
- "module": "Supplycore", "name": "SC Stock Entry",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore",
+ "name": "SC Stock Entry",
  "search_fields": "entry_type,from_warehouse,to_warehouse",
- "sort_field": "modified", "sort_order": "DESC"
+ "sort_field": "modified",
+ "sort_order": "DESC"
 }

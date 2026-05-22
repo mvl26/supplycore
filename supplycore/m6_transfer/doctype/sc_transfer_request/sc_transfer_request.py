@@ -116,21 +116,50 @@ class SCTransferRequest(Document):
         if not valid_items:
             frappe.throw(_("Không có item nào có approved_qty > 0"))
 
+        from supplycore.api.fefo import auto_pick_fefo
+
         se = frappe.new_doc("SC Stock Entry")
         se.entry_type = "Material Transfer"
         se.posting_date = today()
         se.from_warehouse = self.from_warehouse
         se.to_warehouse = self.to_warehouse
-        se.transfer_request = self.name  # link ngược về TR
+        se.transfer_request = self.name
         se.purpose = f"Transfer Request {self.name}"
+
         for row in valid_items:
-            se.append("items", {
-                "item": row.item,
-                "qty": flt(row.approved_qty),
-                "uom": row.uom,
-                "batch": row.batch,
-                "valuation_rate": 0,  # SE controller sẽ tính từ SLE legacy hoặc 0
-            })
+            qty_left = flt(row.approved_qty)
+            has_batch = frappe.db.get_value("SC Item", row.item, "has_batch_no")
+            # TH1: row đã chỉ định batch → dùng nguyên 1 dòng SE
+            if row.batch or not has_batch:
+                se.append("items", {
+                    "item": row.item, "qty": qty_left, "uom": row.uom,
+                    "batch": row.batch or None, "valuation_rate": 0,
+                })
+                continue
+            # TH2: item quản lý lô nhưng TR không chỉ định batch → FEFO auto-pick
+            #  tồn ĐÃ gắn lô; phần còn thiếu lấy từ tồn CHƯA gắn lô (hàng tồn cũ
+            #  nhập trước khi item bật quản lý lô — vẫn cho chuyển nguyên trạng).
+            pick = auto_pick_fefo(row.item, self.from_warehouse, qty_left)
+            for b in (pick.get("picked") or []):
+                se.append("items", {
+                    "item": row.item, "qty": flt(b["suggested_qty"]), "uom": row.uom,
+                    "batch": b["batch_no"], "valuation_rate": 0,
+                })
+            shortfall = flt(pick.get("shortfall", 0))
+            if shortfall > 0:
+                move = min(shortfall, _batchless_stock(row.item, self.from_warehouse))
+                if move > 0:
+                    se.append("items", {
+                        "item": row.item, "qty": move, "uom": row.uom,
+                        "batch": None, "valuation_rate": 0,
+                    })
+                    shortfall -= move
+            if shortfall > 0:
+                frappe.throw(_(
+                    "SC-E-TRANSFER-SHORTAGE: Item {0} — kho nguồn không đủ tồn để "
+                    "chuyển (còn thiếu {1})."
+                ).format(row.item, shortfall))
+
         se.flags.ignore_permissions = True
         se.insert()
         self.db_set("stock_entry", se.name)
@@ -163,6 +192,17 @@ class SCTransferRequest(Document):
             "total_qty": flt(self.total_qty),
             "url": f"/app/sc-transfer-request/{self.name}",
         }
+
+
+def _batchless_stock(item, warehouse):
+    """Tồn CHƯA gắn lô của 1 item tại 1 kho — hàng nhập trước khi item bật
+    quản lý lô. Cho phép chuyển/xuất nguyên trạng (không ép gán lô ngược)."""
+    v = frappe.db.sql("""
+        SELECT COALESCE(SUM(qty_change), 0) FROM `tabSC Stock Ledger Entry`
+        WHERE item = %s AND warehouse = %s AND is_cancelled = 0
+          AND (batch IS NULL OR batch = '')
+    """, (item, warehouse))
+    return flt(v[0][0]) if v else 0.0
 
 
 # ---------------------------------------------------------------------------

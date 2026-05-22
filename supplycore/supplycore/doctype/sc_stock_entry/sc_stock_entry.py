@@ -13,6 +13,24 @@ from frappe.model.document import Document
 from frappe.utils import flt, getdate, today
 
 
+def _source_valuation(item, warehouse, batch=None):
+    """Đơn giá tồn kho nguồn của 1 item/lô — valuation_rate SLE gần nhất.
+    Chuyển/Xuất kho lấy đơn giá theo tồn, không nhập tay."""
+    if not item or not warehouse:
+        return 0.0
+    conds = ["item = %(i)s", "warehouse = %(w)s", "is_cancelled = 0", "valuation_rate > 0"]
+    params = {"i": item, "w": warehouse}
+    if batch:
+        conds.append("batch = %(b)s")
+        params["b"] = batch
+    v = frappe.db.sql(f"""
+        SELECT valuation_rate FROM `tabSC Stock Ledger Entry`
+        WHERE {' AND '.join(conds)}
+        ORDER BY posting_date DESC, creation DESC LIMIT 1
+    """, params)
+    return flt(v[0][0]) if v else 0.0
+
+
 ISSUE_TYPES = ("Material Issue", "Material Transfer")
 
 
@@ -62,6 +80,10 @@ class SCStockEntry(Document):
         total_qty = 0
         total_value = 0
         for row in self.items:
+            # Đơn giá theo tồn kho nguồn của lô — Chuyển/Xuất kho không nhập tay
+            if (flt(row.valuation_rate) <= 0
+                    and self.entry_type in ("Material Transfer", "Material Issue")):
+                row.valuation_rate = _source_valuation(row.item, self.from_warehouse, row.batch)
             row.amount = flt(row.qty) * flt(row.valuation_rate)
             total_qty += flt(row.qty)
             total_value += flt(row.amount)
@@ -71,9 +93,11 @@ class SCStockEntry(Document):
                 if batch_item and batch_item != row.item:
                     frappe.throw(_("Row {0}: batch {1} không thuộc item {2}")
                                  .format(row.idx, row.batch, row.item))
-            # has_batch_no = 1 → bắt buộc nhập batch
+            # has_batch_no = 1 → bắt buộc nhập batch khi NHẬP MỚI hàng.
+            # Chuyển/Xuất kho di chuyển tồn sẵn có → tồn cũ chưa gắn lô vẫn cho đi.
             has_batch = frappe.db.get_value("SC Item", row.item, "has_batch_no")
-            if has_batch and not row.batch:
+            if (has_batch and not row.batch
+                    and self.entry_type not in ("Material Transfer", "Material Issue")):
                 frappe.throw(_("Row {0}: item {1} bắt buộc có batch").format(row.idx, row.item))
         self.total_qty = total_qty
         self.total_value = total_value

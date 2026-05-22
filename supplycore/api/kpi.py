@@ -66,6 +66,31 @@ def _cache_set(key, value):
     return value
 
 
+def _warehouses_for_department(department: str) -> list:
+    """UC-32 filter dept: trả về list warehouse trực thuộc department.
+    SC Warehouse.department là Link → SC Department. Đệ quy con của warehouse cha
+    để bao gồm cả sub-warehouse nếu phân cấp 3 tầng.
+    """
+    if not department:
+        return []
+    direct = frappe.db.get_all("SC Warehouse",
+        filters={"department": department, "disabled": 0},
+        pluck="name") or []
+    # Bao gồm con của các kho khoa (kho con kế thừa dept của parent)
+    if not direct:
+        return []
+    all_whs = set(direct)
+    pending = list(direct)
+    while pending:
+        children = frappe.db.get_all("SC Warehouse",
+            filters={"parent_warehouse": ["in", pending], "disabled": 0},
+            pluck="name") or []
+        new_children = [c for c in children if c not in all_whs]
+        all_whs.update(new_children)
+        pending = new_children
+    return list(all_whs)
+
+
 # -----------------------------------------------------------------------
 # UC-32 main: executive dashboard (extended)
 # -----------------------------------------------------------------------
@@ -96,13 +121,30 @@ def get_executive_dashboard(period: str = "this_month",
 
     from_date, to_date = _resolve_period(period)
 
+    # UC-32: derive warehouse list từ department filter (nếu có)
+    dept_whs = _warehouses_for_department(department) if department else []
+    if department and not dept_whs:
+        # Department tồn tại nhưng không có kho → KPIs stock-related = 0
+        pass
+    effective_whs = None
+    if warehouse and dept_whs:
+        # Cả 2: warehouse phải nằm trong dept_whs
+        effective_whs = [warehouse] if warehouse in dept_whs else []
+    elif warehouse:
+        effective_whs = [warehouse]
+    elif dept_whs:
+        effective_whs = dept_whs
+
     # ---- 1. Stock value: SUM(qty × valuation_rate) hiện tại ----
-    if warehouse:
-        stock_value = flt(frappe.db.sql("""
-            SELECT COALESCE(SUM(qty_change * valuation_rate), 0)
-            FROM `tabSC Stock Ledger Entry`
-            WHERE is_cancelled = 0 AND warehouse = %(wh)s
-        """, {"wh": warehouse})[0][0])
+    if effective_whs is not None:
+        if not effective_whs:
+            stock_value = 0.0
+        else:
+            stock_value = flt(frappe.db.sql("""
+                SELECT COALESCE(SUM(qty_change * valuation_rate), 0)
+                FROM `tabSC Stock Ledger Entry`
+                WHERE is_cancelled = 0 AND warehouse IN %(whs)s
+            """, {"whs": tuple(effective_whs)})[0][0])
     else:
         stock_value = flt(frappe.db.sql("""
             SELECT COALESCE(SUM(qty_change * valuation_rate), 0)
@@ -130,21 +172,24 @@ def get_executive_dashboard(period: str = "this_month",
             ["Approved", "Sent to Supplier", "Partially Received"]]})
 
     # ---- 5. Expiring soon ≤30 days ----
-    if warehouse:
-        expiring_soon = flt(frappe.db.sql("""
-            SELECT COUNT(DISTINCT b.name)
-            FROM `tabSC Batch` b
-            WHERE b.disabled = 0 AND b.blocked = 0
-              AND b.expiry_date IS NOT NULL
-              AND b.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-              AND EXISTS (
-                  SELECT 1 FROM `tabSC Stock Ledger Entry` sle
-                  WHERE sle.batch = b.name AND sle.is_cancelled = 0
-                    AND sle.warehouse = %(wh)s
-                  GROUP BY sle.batch
-                  HAVING SUM(sle.qty_change) > 0
-              )
-        """, {"wh": warehouse})[0][0])
+    if effective_whs is not None:
+        if not effective_whs:
+            expiring_soon = 0
+        else:
+            expiring_soon = flt(frappe.db.sql("""
+                SELECT COUNT(DISTINCT b.name)
+                FROM `tabSC Batch` b
+                WHERE b.disabled = 0 AND b.blocked = 0
+                  AND b.expiry_date IS NOT NULL
+                  AND b.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                  AND EXISTS (
+                      SELECT 1 FROM `tabSC Stock Ledger Entry` sle
+                      WHERE sle.batch = b.name AND sle.is_cancelled = 0
+                        AND sle.warehouse IN %(whs)s
+                      GROUP BY sle.batch
+                      HAVING SUM(sle.qty_change) > 0
+                  )
+            """, {"whs": tuple(effective_whs)})[0][0])
     else:
         expiring_soon = flt(frappe.db.sql("""
             SELECT COUNT(DISTINCT b.name)
@@ -193,19 +238,23 @@ def get_executive_dashboard(period: str = "this_month",
     """)[0][0])
 
     # ---- Top 10 items by consumption value ----
-    if warehouse:
-        top_items = frappe.db.sql("""
-            SELECT sle.item AS item_code, i.item_name,
-                   SUM(ABS(sle.qty_change)) AS qty_used,
-                   SUM(ABS(sle.qty_change) * sle.valuation_rate) AS cost
-            FROM `tabSC Stock Ledger Entry` sle
-            JOIN `tabSC Item` i ON i.name = sle.item
-            WHERE sle.qty_change < 0 AND sle.is_cancelled = 0
-              AND sle.posting_date BETWEEN %(start)s AND %(end)s
-              AND sle.warehouse = %(wh)s
-            GROUP BY sle.item
-            ORDER BY cost DESC LIMIT 10
-        """, {"start": from_date, "end": to_date, "wh": warehouse}, as_dict=True)
+    if effective_whs is not None:
+        if not effective_whs:
+            top_items = []
+        else:
+            top_items = frappe.db.sql("""
+                SELECT sle.item AS item_code, i.item_name,
+                       SUM(ABS(sle.qty_change)) AS qty_used,
+                       SUM(ABS(sle.qty_change) * sle.valuation_rate) AS cost
+                FROM `tabSC Stock Ledger Entry` sle
+                JOIN `tabSC Item` i ON i.name = sle.item
+                WHERE sle.qty_change < 0 AND sle.is_cancelled = 0
+                  AND sle.posting_date BETWEEN %(start)s AND %(end)s
+                  AND sle.warehouse IN %(whs)s
+                GROUP BY sle.item
+                ORDER BY cost DESC LIMIT 10
+            """, {"start": from_date, "end": to_date,
+                  "whs": tuple(effective_whs)}, as_dict=True)
     else:
         top_items = frappe.db.sql("""
             SELECT sle.item AS item_code, i.item_name,

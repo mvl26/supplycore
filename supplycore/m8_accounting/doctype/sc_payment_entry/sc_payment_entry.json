@@ -1,59 +1,243 @@
 {
- "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
- "autoname": "format:SC-PE-{YYYY}-{#####}", "is_submittable": 1, "track_changes": 1,
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-PE-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
  "field_order": [
-  "section_main", "supplier", "supplier_name", "payment_date",
-  "column_break_1", "payment_method", "bank_account", "reference_no", "reference_date",
-  "section_amount", "amount", "allocated_total",
-  "column_break_amount", "approval_level", "approved_by", "approved_at",
-  "section_refs", "references",
-  "section_status", "status", "partial_reason", "amended_from", "remarks"
+  "section_main",
+  "supplier",
+  "supplier_name",
+  "payment_date",
+  "column_break_1",
+  "payment_method",
+  "bank_account",
+  "reference_no",
+  "reference_date",
+  "section_amount",
+  "amount",
+  "allocated_total",
+  "column_break_amount",
+  "approval_level",
+  "approved_by",
+  "approved_at",
+  "section_refs",
+  "references",
+  "section_status",
+  "status",
+  "partial_reason",
+  "amended_from",
+  "remarks"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thanh toán NCC"},
-  {"fieldname": "supplier", "fieldtype": "Link", "options": "SC Supplier", "label": "NCC", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "supplier_name", "fieldtype": "Data", "fetch_from": "supplier.supplier_name", "label": "Tên NCC", "read_only": 1},
-  {"fieldname": "payment_date", "fieldtype": "Date", "label": "Ngày thanh toán", "reqd": 1, "default": "Today", "in_list_view": 1},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "payment_method", "fieldtype": "Select",
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Thanh toán NCC"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "options": "SC Supplier",
+   "label": "NCC",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "fetch_from": "supplier.supplier_name",
+   "label": "Tên NCC",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "label": "Ngày thanh toán",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_method",
+   "fieldtype": "Select",
    "options": "Bank Transfer\nCash\nCheck\nCredit Card\nOther",
-   "label": "Phương thức", "reqd": 1, "default": "Bank Transfer", "in_list_view": 1},
-  {"fieldname": "bank_account", "fieldtype": "Data", "label": "Tài khoản ngân hàng",
-   "depends_on": "eval:doc.payment_method=='Bank Transfer'"},
-  {"fieldname": "reference_no", "fieldtype": "Data", "label": "Số chứng từ NH"},
-  {"fieldname": "reference_date", "fieldtype": "Date", "label": "Ngày chứng từ"},
-
-  {"fieldname": "section_amount", "fieldtype": "Section Break", "label": "Số tiền"},
-  {"fieldname": "amount", "fieldtype": "Currency", "options": "VND", "label": "Số tiền", "reqd": 1, "in_list_view": 1, "non_negative": 1},
-  {"fieldname": "allocated_total", "fieldtype": "Currency", "options": "VND", "label": "Tổng phân bổ", "read_only": 1,
-   "description": "Tổng allocated_amount trong references — phải = amount"},
-  {"fieldname": "column_break_amount", "fieldtype": "Column Break"},
-  {"fieldname": "approval_level", "fieldtype": "Select",
+   "label": "Phương thức",
+   "reqd": 1,
+   "default": "Bank Transfer",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Data",
+   "label": "Tài khoản ngân hàng",
+   "depends_on": "eval:doc.payment_method=='Bank Transfer'"
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "label": "Số chứng từ NH"
+  },
+  {
+   "fieldname": "reference_date",
+   "fieldtype": "Date",
+   "label": "Ngày chứng từ"
+  },
+  {
+   "fieldname": "section_amount",
+   "fieldtype": "Section Break",
+   "label": "Số tiền"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Số tiền",
+   "reqd": 1,
+   "in_list_view": 1,
+   "non_negative": 1
+  },
+  {
+   "fieldname": "allocated_total",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Tổng phân bổ",
+   "read_only": 1,
+   "description": "Tổng allocated_amount trong references — phải = amount"
+  },
+  {
+   "fieldname": "column_break_amount",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approval_level",
+   "fieldtype": "Select",
    "options": "\nManager\nExecutive",
-   "label": "Cấp duyệt", "read_only": 1, "in_list_view": 1,
-   "description": "<50tr → Manager, ≥50tr → Executive"},
-  {"fieldname": "approved_by", "fieldtype": "Link", "options": "User", "label": "Người duyệt", "read_only": 1},
-  {"fieldname": "approved_at", "fieldtype": "Datetime", "label": "Thời điểm duyệt", "read_only": 1},
-
-  {"fieldname": "section_refs", "fieldtype": "Section Break", "label": "Phân bổ HĐ"},
-  {"fieldname": "references", "fieldtype": "Table", "options": "SC Payment Reference", "reqd": 1, "label": "Invoices"},
-
-  {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Trạng thái"},
-  {"fieldname": "status", "fieldtype": "Select",
+   "label": "Cấp duyệt",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "<50tr → Manager, ≥50tr → Executive"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_at",
+   "fieldtype": "Datetime",
+   "label": "Thời điểm duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_refs",
+   "fieldtype": "Section Break",
+   "label": "Phân bổ HĐ"
+  },
+  {
+   "fieldname": "references",
+   "fieldtype": "Table",
+   "options": "SC Payment Reference",
+   "reqd": 1,
+   "label": "Invoices"
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Trạng thái"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
    "options": "Draft\nPending Approval\nApproved\nCleared\nCancelled",
-   "label": "Status", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "partial_reason", "fieldtype": "Small Text", "label": "Lý do thanh toán partial", "description": "UC-25 3a: khi allocated < outstanding tổng"},
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Payment Entry", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
-  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+   "label": "Status",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "partial_reason",
+   "fieldtype": "Small Text",
+   "label": "Lý do thanh toán partial",
+   "description": "UC-25 3a: khi allocated < outstanding tổng"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Payment Entry",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "submit": 1, "cancel": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Executive", "read": 1, "submit": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Executive",
+   "read": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
- "module": "M8 Accounting", "name": "SC Payment Entry",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M8 Accounting",
+ "name": "SC Payment Entry",
  "search_fields": "supplier,reference_no",
- "sort_field": "modified", "sort_order": "DESC"
+ "sort_field": "modified",
+ "sort_order": "DESC"
 }

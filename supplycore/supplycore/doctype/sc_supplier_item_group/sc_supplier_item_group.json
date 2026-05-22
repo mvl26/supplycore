@@ -1,0 +1,13 @@
+{
+ "actions": [], "creation": "2026-05-08 00:00:00", "doctype": "DocType",
+ "engine": "InnoDB", "istable": 1, "track_changes": 0,
+ "field_order": ["item_group", "remarks"],
+ "fields": [
+  {"fieldname": "item_group", "fieldtype": "Link", "options": "SC Item Group",
+   "label": "Item Group", "reqd": 1, "in_list_view": 1, "columns": 4},
+  {"fieldname": "remarks", "fieldtype": "Data", "label": "Ghi chú", "in_list_view": 1, "columns": 6}
+ ],
+ "permissions": [],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-08 00:00:00",
+ "module": "Supplycore", "name": "SC Supplier Item Group", "sort_field": "modified", "sort_order": "DESC"
+}

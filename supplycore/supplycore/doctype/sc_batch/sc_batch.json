@@ -2,7 +2,7 @@
  "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
  "autoname": "field:batch_id", "track_changes": 1,
  "field_order": [
-  "section_main", "batch_id", "item", "item_name",
+  "section_main", "batch_id", "barcode", "item", "item_name",
   "column_break_1", "expiry_date", "manufacturing_date", "disabled",
   "section_supplier", "supplier", "supplier_batch_no", "manufacturer", "country_of_origin",
   "section_qc", "qc_status", "coa_attachment",
@@ -13,6 +13,8 @@
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Lô hàng"},
   {"fieldname": "batch_id", "fieldtype": "Data", "label": "Batch ID", "reqd": 1, "unique": 1, "in_list_view": 1, "search_index": 1,
    "description": "Format gợi ý: [ItemCode]-YYYYMM-NNN"},
+  {"fieldname": "barcode", "fieldtype": "Data", "label": "Barcode lô", "search_index": 1,
+   "description": "Tự sinh = Batch ID khi tạo lô. Quét để tra cứu lô. Có thể đè bằng mã GS1."},
   {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
   {"fieldname": "item_name", "fieldtype": "Data", "label": "Tên VT", "fetch_from": "item.item_name", "read_only": 1},
   {"fieldname": "column_break_1", "fieldtype": "Column Break"},
@@ -54,6 +56,6 @@
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
  "module": "Supplycore", "name": "SC Batch", "title_field": "batch_id",
- "search_fields": "batch_id,item,supplier_batch_no",
+ "search_fields": "batch_id,barcode,item,supplier_batch_no",
  "sort_field": "expiry_date", "sort_order": "ASC"
 }

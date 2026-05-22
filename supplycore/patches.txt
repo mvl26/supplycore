@@ -11,3 +11,5 @@ supplycore.patches.v0_1.init_supplycore_settings
 supplycore.patches.v0_2.seed_master_data
 supplycore.patches.v0_2.init_uc05_fields
 supplycore.patches.v0_2.seed_uc10_default_qc_template
+supplycore.patches.v0_2.backfill_barcode
+supplycore.patches.v0_2.backfill_qi_supplier

@@ -21,8 +21,12 @@ onMounted(async () => {
     </template>
     <template v-else>
       <AppShell>
-        <router-view v-slot="{ Component }">
-          <component :is="Component" />
+        <router-view v-slot="{ Component, route }">
+          <!-- Keyed wrapper: remounts per route → CSS enter animation replays.
+               Avoids <Transition mode="out-in">, which deadlocks on multi-root pages. -->
+          <div :key="route.path" class="sc-route-view">
+            <component :is="Component" />
+          </div>
         </router-view>
       </AppShell>
     </template>

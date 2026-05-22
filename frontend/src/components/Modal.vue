@@ -1,4 +1,6 @@
 <script setup>
+import Icon from './Icon.vue'
+
 defineProps({
   open: Boolean,
   title: String,
@@ -11,16 +13,22 @@ const sizeClass = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-
 
 <template>
   <Teleport to="body">
-    <Transition name="fade">
-      <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+    <Transition name="sc-modal">
+      <div v-if="open"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4
+               bg-sc-navy-900/55 backdrop-blur-[3px]"
         @click.self="emit('close')">
-        <div class="bg-white rounded-xl shadow-2xl w-full mx-auto" :class="sizeClass[size]">
+        <div class="sc-modal-panel bg-sc-surface rounded-2xl shadow-sc-xl w-full mx-auto
+          border border-sc-border overflow-hidden" :class="sizeClass[size]">
           <div class="flex items-center justify-between px-5 py-4 border-b border-sc-border">
-            <h3 class="font-semibold text-sc-navy">{{ title }}</h3>
-            <button @click="emit('close')" class="text-sc-text-muted hover:text-sc-text">✕</button>
+            <h3 class="font-bold text-[15px] text-sc-navy">{{ title }}</h3>
+            <button @click="emit('close')" class="sc-icon-btn -mr-1.5" aria-label="Đóng">
+              <Icon name="x" :size="18" />
+            </button>
           </div>
-          <div class="p-5"><slot /></div>
-          <div v-if="$slots.footer" class="px-5 py-3 border-t border-sc-border flex justify-end gap-2">
+          <div class="p-5 max-h-[72vh] overflow-y-auto"><slot /></div>
+          <div v-if="$slots.footer"
+            class="px-5 py-3.5 border-t border-sc-border bg-sc-bg-soft/60 flex justify-end gap-2">
             <slot name="footer" />
           </div>
         </div>
@@ -30,6 +38,11 @@ const sizeClass = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity .15s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.sc-modal-enter-active { transition: opacity .2s ease; }
+.sc-modal-leave-active { transition: opacity .14s ease; }
+.sc-modal-enter-from, .sc-modal-leave-to { opacity: 0; }
+.sc-modal-enter-active .sc-modal-panel {
+  transition: transform .26s cubic-bezier(0.22, 1, 0.36, 1), opacity .26s ease;
+}
+.sc-modal-enter-from .sc-modal-panel { transform: translateY(16px) scale(0.96); opacity: 0; }
 </style>

@@ -125,7 +125,7 @@ def related_docs(doctype, name):
     elif doctype == "SC Purchase Receipt":
         out["quality_inspections"] = frappe.db.get_all("SC Quality Inspection",
             filters={"purchase_receipt": name},
-            fields=["name", "inspection_date", "item", "batch", "overall_status", "docstatus"],
+            fields=["name", "inspection_date", "item", "supplier", "batch", "overall_status", "docstatus"],
             order_by="inspection_date desc", limit=50)
         # Batches từ PR Item
         out["batches"] = frappe.db.sql("""
@@ -281,8 +281,9 @@ def warehouse_stock_for_item(warehouse, item=None):
         conds.append("sle.item = %(item)s")
         params["item"] = item
     return frappe.db.sql(f"""
-        SELECT sle.item, i.item_name, sle.batch, sle.bin_location,
+        SELECT sle.item, i.item_name, i.uom, sle.batch, sle.bin_location,
                COALESCE(SUM(sle.qty_change), 0) AS qty,
+               MIN(sle.posting_date) AS received_date,
                b.expiry_date, b.qc_status, b.blocked,
                i.safety_stock
         FROM `tabSC Stock Ledger Entry` sle
@@ -440,14 +441,106 @@ def assign_bin(assignments):
 
 
 @frappe.whitelist()
-def bins_for_warehouse(warehouse):
-    """List bins trong 1 warehouse."""
-    if not warehouse:
+def item_eligible_uoms(item=None):
+    """Trả về danh sách UOM hợp lệ cho 1 vật tư.
+
+    SC Item có 3 trường UOM: uom (tồn kho), buy_uom (mua), use_uom (sử dụng/BHYT).
+    Frontend dùng để filter dropdown UOM trong child table — chỉ hiển thị các UOM
+    của item đang chọn, không phải toàn bộ SC UOM.
+    """
+    if not item:
         return []
+    row = frappe.db.get_value("SC Item", item,
+                                ["uom", "buy_uom", "use_uom"], as_dict=True)
+    if not row:
+        return []
+    return [u for u in dict.fromkeys([row.uom, row.buy_uom, row.use_uom]).keys() if u]
+
+
+@frappe.whitelist()
+def framework_contracts_for_item(item=None):
+    """Trả về danh sách Framework Contract (Active, đã duyệt) có chứa vật tư `item`.
+
+    Frontend dùng để filter dropdown 'HĐ khung' trong bảng chi tiết Yêu cầu mua —
+    chỉ gợi ý HĐ khung nào thực sự có vật tư đang chọn ở dòng đó (scope theo mã VT).
+    """
+    if not item:
+        return []
+    rows = frappe.db.sql("""
+        SELECT DISTINCT fc.name
+        FROM `tabFC Item` fci
+        JOIN `tabFramework Contract` fc ON fc.name = fci.parent
+        WHERE fci.item_code = %s AND fc.docstatus = 1 AND fc.status = 'Active'
+        ORDER BY fc.name DESC
+    """, item)
+    return [r[0] for r in rows]
+
+
+@frappe.whitelist()
+def pd_item_autofetch(item=None, warehouse=None):
+    """Auto-fetch UOM + đơn giá + lô FEFO khi cấp phát/xuất kho 1 vật tư
+    tại 1 kho. Lô được chọn = lô có qty > 0 trong kho, QC Accepted (hoặc
+    chưa gắn QC), không blocked, sort expiry_date ASC (FEFO).
+    """
+    if not item or not warehouse:
+        return {}
+
+    uom = frappe.db.get_value("SC Item", item, "uom")
+
+    # Đơn giá: ưu tiên valuation_rate gần nhất trong kho; fallback unit_price
+    # từ FC Item Active rẻ nhất.
+    val_row = frappe.db.sql("""
+        SELECT valuation_rate FROM `tabSC Stock Ledger Entry`
+        WHERE item=%s AND warehouse=%s AND is_cancelled=0
+              AND valuation_rate > 0
+        ORDER BY posting_date DESC, creation DESC LIMIT 1
+    """, (item, warehouse))
+    unit_cost = flt(val_row[0][0]) if val_row else 0
+
+    if not unit_cost:
+        fc_row = frappe.db.sql("""
+            SELECT fci.unit_price FROM `tabFC Item` fci
+            JOIN `tabFramework Contract` fc ON fc.name = fci.parent
+            WHERE fci.item_code=%s AND fc.docstatus=1 AND fc.status='Active'
+            ORDER BY fci.unit_price ASC LIMIT 1
+        """, item)
+        unit_cost = flt(fc_row[0][0]) if fc_row else 0
+
+    # FEFO batch trong kho
+    batch_row = frappe.db.sql("""
+        SELECT sle.batch, SUM(sle.qty_change) AS qty,
+               b.expiry_date, b.qc_status, b.blocked
+        FROM `tabSC Stock Ledger Entry` sle
+        LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
+        WHERE sle.item=%s AND sle.warehouse=%s AND sle.is_cancelled=0
+          AND sle.batch IS NOT NULL AND sle.batch != ''
+          AND (b.blocked = 0 OR b.blocked IS NULL)
+          AND (b.qc_status = 'Accepted' OR b.qc_status IS NULL)
+        GROUP BY sle.batch
+        HAVING qty > 0
+        ORDER BY b.expiry_date ASC, sle.batch ASC
+        LIMIT 1
+    """, (item, warehouse), as_dict=True)
+    batch = batch_row[0].batch if batch_row else None
+
+    return {
+        "uom": uom,
+        "unit_cost": unit_cost,
+        "batch": batch,
+        "available_qty": flt(batch_row[0].qty) if batch_row else 0,
+        "expiry_date": str(batch_row[0].expiry_date) if batch_row and batch_row[0].expiry_date else None,
+    }
+
+
+@frappe.whitelist()
+def bins_for_warehouse(warehouse=None):
+    """List bins. Nếu warehouse=None → trả tất cả bins kèm warehouse
+    để frontend có thể group + lọc theo từng row Putaway."""
+    filters = {"warehouse": warehouse} if warehouse else {}
     return frappe.db.get_all("Bin Location",
-        filters={"warehouse": warehouse},
-        fields=["name", "bin_code"],
-        order_by="bin_code asc", limit=200)
+        filters=filters,
+        fields=["name", "bin_code", "warehouse"],
+        order_by="warehouse asc, bin_code asc", limit=500)
 
 
 @frappe.whitelist()
@@ -488,3 +581,73 @@ def save_doc(doctype, name, fields):
             doc.set(k, v)
     doc.save()
     return doc.as_dict()
+
+
+@frappe.whitelist()
+def get_doc_versions(doctype, name, limit=50):
+    """Trả lịch sử sửa từ tabVersion (track_changes=1) — diff field-level.
+
+    Mỗi record là 1 lần save. data là JSON {changed: [[field, old, new], ...]}.
+    Frontend hiển thị thành bảng "ai-sửa-gì-khi-nào".
+    """
+    if not frappe.has_permission(doctype, "read", doc=name):
+        frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
+
+    import json as _json
+    rows = frappe.db.get_all(
+        "Version",
+        filters={"ref_doctype": doctype, "docname": name},
+        fields=["name", "owner", "creation", "data"],
+        order_by="creation desc",
+        limit=int(limit) if limit else 50,
+    )
+    out = []
+    for r in rows:
+        changed = []
+        try:
+            d = _json.loads(r.data or "{}")
+            for entry in (d.get("changed") or []):
+                if not entry or len(entry) < 3:
+                    continue
+                fld, old, new = entry[0], entry[1], entry[2]
+                # Bỏ field hệ thống không cần show
+                if fld in ("modified", "modified_by", "_user_tags", "_comments",
+                           "_assign", "_liked_by"):
+                    continue
+                changed.append({"field": fld, "old": old, "new": new})
+            # row_changed = [[childtable, idx, name, [[field, old, new], ...]], ...]
+            for entry in (d.get("row_changed") or []):
+                if not entry or len(entry) < 4:
+                    continue
+                ctable, idx, _cname, diffs = entry[0], entry[1], entry[2], entry[3]
+                for fdiff in (diffs or []):
+                    if not fdiff or len(fdiff) < 3:
+                        continue
+                    f, o, n = fdiff[0], fdiff[1], fdiff[2]
+                    if f in ("modified", "modified_by"):
+                        continue
+                    changed.append({
+                        "field": f"{ctable}[{idx}].{f}",
+                        "old": o, "new": n,
+                    })
+            for added in (d.get("added") or []):
+                if not added or len(added) < 2:
+                    continue
+                changed.append({"field": f"+ {added[0]}",
+                                "old": None, "new": "(dòng mới)"})
+            for removed in (d.get("removed") or []):
+                if not removed or len(removed) < 2:
+                    continue
+                changed.append({"field": f"- {removed[0]}",
+                                "old": "(đã xoá)", "new": None})
+        except Exception:
+            continue
+        if not changed:
+            continue
+        out.append({
+            "name": r.name,
+            "owner": r.owner,
+            "creation": str(r.creation),
+            "changed": changed,
+        })
+    return out

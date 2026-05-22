@@ -69,6 +69,11 @@ website_route_rules = [
     {"from_route": "/supplycore/<path:app_path>", "to_route": "supplycore"},
 ]
 
+# Khi truy cập domain root → đưa thẳng vào SPA SupplyCore (ko show Frappe Desk).
+website_redirects = [
+    {"source": "/", "target": "/supplycore/", "redirect_http_status": 302},
+]
+
 # ---------------------------------------------------------------------------
 # Permission hooks (target SC*)
 # ---------------------------------------------------------------------------

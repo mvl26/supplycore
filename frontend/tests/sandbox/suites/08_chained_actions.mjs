@@ -5,9 +5,12 @@ export const tests = [
   {
     name: 'FC make_material_request → tạo MR Draft',
     run: async ({ page, BASE, OUT, name }) => {
+      // FC còn remaining_value > 0 → chắc chắn có item remaining_qty cho make_material_request
       const fcs = await apiGetList(page, 'Framework Contract',
-        { fields: ['name'], filters: { status: 'Active', docstatus: 1 }, limit: 1 })
-      if (!fcs.length) return { ok: false, detail: 'No Active FC' }
+        { fields: ['name'], order_by: 'remaining_value desc',
+          filters: [['status', '=', 'Active'], ['docstatus', '=', 1],
+                    ['remaining_value', '>', 0]], limit: 1 })
+      if (!fcs.length) return { ok: false, detail: 'No Active FC còn remaining_value' }
       try {
         const result = await apiRunDocMethod(page, 'Framework Contract', fcs[0].name,
           'make_material_request')
@@ -22,9 +25,15 @@ export const tests = [
             headers: { 'X-Frappe-CSRF-Token': csrf },
           })
         }, { name: mrName, csrf: await page.evaluate(() => window.sc_csrf) })
-        return mr.items?.length >= 1
-          ? { ok: true, detail: `FC ${fcs[0].name} → MR ${mrName} (${mr.items.length} items)` }
-          : { ok: false, detail: `MR created but no items` }
+        // UC-07 luồng 1b: mỗi dòng MR phải có sẵn framework_contract + đơn giá từ HĐ khung
+        const items = mr.items || []
+        if (!items.length) return { ok: false, detail: 'MR created but no items' }
+        const missingFC = items.filter(r => !r.framework_contract).length
+        const zeroPrice = items.filter(r => !(Number(r.estimated_unit_cost) > 0)).length
+        if (missingFC) return { ok: false, detail: `MR ${mrName}: ${missingFC} dòng thiếu framework_contract` }
+        if (zeroPrice) return { ok: false, detail: `MR ${mrName}: ${zeroPrice} dòng estimated_unit_cost = 0` }
+        return { ok: true,
+          detail: `FC ${fcs[0].name} → MR ${mrName} (${items.length} items, đủ HĐ khung + đơn giá)` }
       } catch (e) {
         return { ok: false, detail: e.message.slice(0, 200) }
       }

@@ -1,80 +1,363 @@
 {
- "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
- "autoname": "format:SC-PI-{YYYY}-{#####}", "is_submittable": 1, "track_changes": 1,
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-PI-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
  "field_order": [
-  "section_main", "supplier", "supplier_name", "supplier_invoice_no",
-  "column_break_1", "invoice_date", "due_date", "payment_terms",
-  "section_link", "purchase_order", "purchase_receipt",
-  "is_debit_note", "is_credit_note", "return_against_pr",
-  "section_items", "items",
-  "section_totals", "subtotal", "vat_rate", "vat_amount",
-  "column_break_totals", "grand_total", "outstanding_amount", "paid_amount",
-  "section_match", "three_way_match_status", "match_variance_amount",
-  "mismatch_explanation", "payment_hold",
-  "column_break_match", "approval_required_by", "approved_by", "approved_at",
-  "section_status", "status", "amended_from", "remarks"
+  "section_main",
+  "supplier",
+  "supplier_name",
+  "supplier_invoice_no",
+  "column_break_1",
+  "invoice_date",
+  "due_date",
+  "payment_terms",
+  "section_link",
+  "purchase_order",
+  "purchase_receipt",
+  "is_debit_note",
+  "is_credit_note",
+  "return_against_pr",
+  "section_items",
+  "items",
+  "section_totals",
+  "subtotal",
+  "vat_rate",
+  "vat_amount",
+  "column_break_totals",
+  "grand_total",
+  "outstanding_amount",
+  "paid_amount",
+  "section_match",
+  "three_way_match_status",
+  "match_variance_amount",
+  "mismatch_explanation",
+  "payment_hold",
+  "column_break_match",
+  "approval_required_by",
+  "approved_by",
+  "approved_at",
+  "section_status",
+  "status",
+  "amended_from",
+  "remarks"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Hóa đơn NCC"},
-  {"fieldname": "supplier", "fieldtype": "Link", "options": "SC Supplier", "label": "NCC", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "supplier_name", "fieldtype": "Data", "fetch_from": "supplier.supplier_name", "label": "Tên NCC", "read_only": 1},
-  {"fieldname": "supplier_invoice_no", "fieldtype": "Data", "label": "Số HĐ NCC", "reqd": 1, "in_list_view": 1, "search_index": 1,
-   "description": "Số hóa đơn do NCC phát hành"},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "invoice_date", "fieldtype": "Date", "label": "Ngày HĐ", "reqd": 1, "default": "Today", "in_list_view": 1},
-  {"fieldname": "due_date", "fieldtype": "Date", "label": "Ngày đến hạn", "reqd": 1},
-  {"fieldname": "payment_terms", "fieldtype": "Data", "label": "Điều khoản TT"},
-
-  {"fieldname": "section_link", "fieldtype": "Section Break", "label": "Liên kết PO/PR"},
-  {"fieldname": "purchase_order", "fieldtype": "Link", "options": "SC Purchase Order", "label": "Purchase Order", "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "purchase_receipt", "fieldtype": "Link", "options": "SC Purchase Receipt", "label": "Purchase Receipt", "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "is_debit_note", "fieldtype": "Check", "label": "Debit Note (UC-11)", "default": "0", "in_standard_filter": 1, "description": "Giảm công nợ NCC từ Return PR"},
-  {"fieldname": "is_credit_note", "fieldtype": "Check", "label": "Credit Note (UC-11 refund)", "default": "0", "in_standard_filter": 1, "description": "NCC hoàn tiền cho Return PR"},
-  {"fieldname": "return_against_pr", "fieldtype": "Link", "options": "SC Purchase Receipt", "label": "Return PR (UC-11)", "depends_on": "eval:doc.is_debit_note || doc.is_credit_note"},
-
-  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Items"},
-  {"fieldname": "items", "fieldtype": "Table", "options": "SC PI Item", "reqd": 1, "label": "Items"},
-
-  {"fieldname": "section_totals", "fieldtype": "Section Break", "label": "Tổng"},
-  {"fieldname": "subtotal", "fieldtype": "Currency", "options": "VND", "label": "Tổng trước thuế", "read_only": 1},
-  {"fieldname": "vat_rate", "fieldtype": "Percent", "label": "VAT (%)", "default": "10"},
-  {"fieldname": "vat_amount", "fieldtype": "Currency", "options": "VND", "label": "Tiền VAT", "read_only": 1},
-  {"fieldname": "column_break_totals", "fieldtype": "Column Break"},
-  {"fieldname": "grand_total", "fieldtype": "Currency", "options": "VND", "label": "Tổng cộng", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "outstanding_amount", "fieldtype": "Currency", "options": "VND", "label": "Còn phải trả", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "paid_amount", "fieldtype": "Currency", "options": "VND", "label": "Đã thanh toán", "read_only": 1, "default": "0"},
-
-  {"fieldname": "section_match", "fieldtype": "Section Break", "label": "3-Way Match"},
-  {"fieldname": "three_way_match_status", "fieldtype": "Select",
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Hóa đơn NCC"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "options": "SC Supplier",
+   "label": "NCC",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "fetch_from": "supplier.supplier_name",
+   "label": "Tên NCC",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supplier_invoice_no",
+   "fieldtype": "Data",
+   "label": "Số HĐ NCC",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1,
+   "description": "Số hóa đơn do NCC phát hành"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "invoice_date",
+   "fieldtype": "Date",
+   "label": "Ngày HĐ",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Ngày đến hạn",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payment_terms",
+   "fieldtype": "Data",
+   "label": "Điều khoản TT"
+  },
+  {
+   "fieldname": "section_link",
+   "fieldtype": "Section Break",
+   "label": "Liên kết PO/PR"
+  },
+  {
+   "fieldname": "purchase_order",
+   "fieldtype": "Link",
+   "options": "SC Purchase Order",
+   "label": "Purchase Order",
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "purchase_receipt",
+   "fieldtype": "Link",
+   "options": "SC Purchase Receipt",
+   "label": "Purchase Receipt",
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "is_debit_note",
+   "fieldtype": "Check",
+   "label": "Debit Note (UC-11)",
+   "default": "0",
+   "in_standard_filter": 1,
+   "description": "Giảm công nợ NCC từ Return PR"
+  },
+  {
+   "fieldname": "is_credit_note",
+   "fieldtype": "Check",
+   "label": "Credit Note (UC-11 refund)",
+   "default": "0",
+   "in_standard_filter": 1,
+   "description": "NCC hoàn tiền cho Return PR"
+  },
+  {
+   "fieldname": "return_against_pr",
+   "fieldtype": "Link",
+   "options": "SC Purchase Receipt",
+   "label": "Return PR (UC-11)",
+   "depends_on": "eval:doc.is_debit_note || doc.is_credit_note"
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "SC PI Item",
+   "reqd": 1,
+   "label": "Items"
+  },
+  {
+   "fieldname": "section_totals",
+   "fieldtype": "Section Break",
+   "label": "Tổng"
+  },
+  {
+   "fieldname": "subtotal",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Tổng trước thuế",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_rate",
+   "fieldtype": "Percent",
+   "label": "VAT (%)",
+   "default": "10"
+  },
+  {
+   "fieldname": "vat_amount",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Tiền VAT",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_totals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Tổng cộng",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Còn phải trả",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Đã thanh toán",
+   "read_only": 1,
+   "default": "0"
+  },
+  {
+   "fieldname": "section_match",
+   "fieldtype": "Section Break",
+   "label": "3-Way Match"
+  },
+  {
+   "fieldname": "three_way_match_status",
+   "fieldtype": "Select",
    "options": "\nPending\nMatch\nMismatch\nForce Approved\nNot Applicable",
-   "label": "Trạng thái 3-way", "default": "Pending", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "match_variance_amount", "fieldtype": "Currency", "options": "VND", "label": "Sai lệch (VND)", "read_only": 1},
-  {"fieldname": "mismatch_explanation", "fieldtype": "Small Text", "label": "Giải trình chênh lệch", "depends_on": "eval:doc.three_way_match_status=='Mismatch' || doc.three_way_match_status=='Force Approved'", "description": "Bắt buộc khi 3-way match không khớp"},
-  {"fieldname": "payment_hold", "fieldtype": "Check", "label": "Tạm hold thanh toán", "read_only": 1, "default": "0", "description": "Auto-set khi 3-way mismatch (UC-24 6a)"},
-  {"fieldname": "column_break_match", "fieldtype": "Column Break"},
-  {"fieldname": "approval_required_by", "fieldtype": "Select",
+   "label": "Trạng thái 3-way",
+   "default": "Pending",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "match_variance_amount",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "label": "Sai lệch (VND)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mismatch_explanation",
+   "fieldtype": "Small Text",
+   "label": "Giải trình chênh lệch",
+   "depends_on": "eval:doc.three_way_match_status=='Mismatch' || doc.three_way_match_status=='Force Approved'",
+   "description": "Bắt buộc khi 3-way match không khớp"
+  },
+  {
+   "fieldname": "payment_hold",
+   "fieldtype": "Check",
+   "label": "Tạm hold thanh toán",
+   "read_only": 1,
+   "default": "0",
+   "description": "Auto-set khi 3-way mismatch (UC-24 6a)"
+  },
+  {
+   "fieldname": "column_break_match",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approval_required_by",
+   "fieldtype": "Select",
    "options": "\nAuto\nManager\nExecutive",
-   "label": "Cấp duyệt yêu cầu", "read_only": 1,
-   "description": "Auto = match OK; Manager <50tr; Executive ≥50tr hoặc mismatch"},
-  {"fieldname": "approved_by", "fieldtype": "Link", "options": "User", "label": "Người duyệt", "read_only": 1},
-  {"fieldname": "approved_at", "fieldtype": "Datetime", "label": "Thời điểm duyệt", "read_only": 1},
-
-  {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Trạng thái"},
-  {"fieldname": "status", "fieldtype": "Select",
+   "label": "Cấp duyệt yêu cầu",
+   "read_only": 1,
+   "description": "Auto = match OK; Manager <50tr; Executive ≥50tr hoặc mismatch"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_at",
+   "fieldtype": "Datetime",
+   "label": "Thời điểm duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Trạng thái"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
    "options": "Draft\nPending Approval\nApproved\nPartly Paid\nPaid\nOverdue\nCancelled",
-   "label": "Status", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Purchase Invoice", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
-  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+   "label": "Status",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Purchase Invoice",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Executive", "read": 1, "submit": 1, "report": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Executive",
+   "read": 1,
+   "submit": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
- "module": "M8 Accounting", "name": "SC Purchase Invoice",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M8 Accounting",
+ "name": "SC Purchase Invoice",
  "search_fields": "supplier,supplier_invoice_no,purchase_order",
- "sort_field": "modified", "sort_order": "DESC"
+ "sort_field": "modified",
+ "sort_order": "DESC"
 }

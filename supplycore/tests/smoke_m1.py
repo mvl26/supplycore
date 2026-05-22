@@ -33,7 +33,13 @@ def run():
         total += qty * price
     fc.total_value = total
     fc.flags.ignore_permissions = True
-    fc.insert(); fc.submit(); fc.reload()
+    fc.insert(); fc.reload()
+    # UC-03 3-tier approval (Administrator có System Manager role bypass)
+    fc.submit_for_review(); fc.reload()
+    fc.approve_as_manager(comment="smoke"); fc.reload()
+    if fc.approval_stage == "Executive Review":
+        fc.approve_as_executive(comment="smoke"); fc.reload()
+    fc.submit(); fc.reload()
     results.append({"step": "FC", "fc": fc.name, "status": fc.status,
                     "total": float(fc.total_value), "remaining": float(fc.remaining_value)})
 

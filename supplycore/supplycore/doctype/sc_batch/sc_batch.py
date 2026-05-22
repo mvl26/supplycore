@@ -7,6 +7,7 @@ from frappe.utils import getdate, today, now, date_diff, flt
 class SCBatch(Document):
 
     def validate(self):
+        self._ensure_barcode()
         if self.expiry_date and self.manufacturing_date:
             if getdate(self.expiry_date) <= getdate(self.manufacturing_date):
                 frappe.throw(_("Hạn dùng phải sau ngày sản xuất"))
@@ -23,6 +24,16 @@ class SCBatch(Document):
         self._compute_short_expiry()
         self._warn_duplicate_supplier_batch_no()
         self._enforce_short_expiry_ack()
+
+    def _ensure_barcode(self):
+        """Tự sinh barcode = batch_id khi tạo lô (nếu chưa có).
+
+        Áp dụng cho mọi đường tạo lô: thủ công trên form, hoặc tự động khi
+        tiếp nhận (SC Purchase Receipt._create_batches_if_needed gọi b.insert()
+        → validate này chạy). User vẫn có thể đè bằng mã GS1 riêng.
+        """
+        if not self.barcode and self.batch_id:
+            self.barcode = self.batch_id
 
     def _enforce_short_expiry_ack(self):
         """UC-15 4a: block insert nếu short expiry chưa ack."""
@@ -88,7 +99,7 @@ class SCBatch(Document):
         """UC-15 step 4: return label data for printing."""
         return {
             "batch_id": self.batch_id,
-            "barcode": self.batch_id,
+            "barcode": self.barcode or self.batch_id,
             "item": self.item,
             "item_name": self.item_name,
             "manufacturer": self.manufacturer,

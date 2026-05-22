@@ -39,7 +39,7 @@
 | 1 | Mở `/app/sc-purchase-order/<PO>` click "Tạo Purchase Receipt" hoặc `/app/sc-purchase-receipt/new` chọn PO | `make_pr_from_po(po_name)` tạo Draft PR với items pending, set `po_qty` per row |
 | 2 | (Nếu tạo từ /new) chọn PO ref | items reload từ PO |
 | 3 | Nhập `qty` thực tế nhận cho từng row | validate qty>0, non_negative, compute `over_received_qty = max(0, qty - po_qty)` |
-| 4 | Nhập `batch_no` / `manufacturing_date` / `expiry_date` / `supplier_batch_no` | `_create_batches_if_needed` auto-tạo SC Batch nếu chưa có |
+| 4 | Nhập `manufacturing_date` / `expiry_date` / `supplier_batch_no` cho **từng dòng** | `_create_batches_if_needed` auto-tạo **1 SC Batch cho MỖI dòng vật tư** — đơn N item → N lô tương ứng (không phụ thuộc cờ `has_batch_no` của vật tư) |
 | 5 | Chọn `target_bin` (Bin Location) cho row | optional, để track WMS |
 | 6 | Upload `delivery_note_attachment` (file scan phiếu giao) | Field Attach |
 | 7 | Submit | `validate()`: nếu `has_over_receipt=1` AND `over_receipt_acknowledged=0` → throw `SC-E-OVER-RECEIPT`. Nếu không có `purchase_order` AND không có `no_po_reason` → throw `SC-E-NO-PO-REASON`. `on_submit()`: SLE post + auto QI + cập nhật PO.received_qty + auto status PO |
@@ -61,8 +61,8 @@
 ## Hậu điều kiện
 
 - PR `docstatus=1`, SLE tăng tồn `to_warehouse`
-- Batch auto-tạo nếu có expiry_date
-- QI auto-tạo nếu `qc_required=1` (M3 wiring UC-10)
+- Batch auto-tạo cho **mọi dòng vật tư** (mỗi dòng 1 lô); `before_submit` chặn submit nếu có dòng thiếu `expiry_date` (`SC-E-PR-MISSING-EXPIRY`)
+- QI auto-tạo nếu `qc_required=1` (1 QI/dòng item, mang sẵn `supplier` + `batch`) (M3 wiring UC-10)
 - PO `received_qty` += per item, status auto Received/Partially Received
 - Nếu auto_create backorder: 1 PR Draft mới với `backorder_for`
 

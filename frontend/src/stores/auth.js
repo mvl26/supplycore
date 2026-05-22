@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { login as apiLogin, logout as apiLogout, getSession, getUserInfo } from '../api'
+import { useAccessStore } from './access'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -11,6 +12,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isGuest: (s) => !s.user || s.user.is_guest || s.user.name === 'Guest',
     isManager: (s) => s.user?.roles?.includes('SupplyCore Manager'),
+    isAdmin: (s) => s.user?.roles?.includes('System Manager') || s.user?.roles?.includes('SupplyCore Manager'),
     isExecutive: (s) => s.user?.roles?.includes('SupplyCore Executive'),
     isAccountant: (s) => s.user?.roles?.includes('SupplyCore Accountant'),
     isStorekeeper: (s) => s.user?.roles?.includes('SupplyCore Storekeeper'),
@@ -27,6 +29,7 @@ export const useAuthStore = defineStore('auth', {
       const sess = await getSession()
       if (sess === 'Guest') {
         this.user = { name: 'Guest', is_guest: true, roles: [] }
+        useAccessStore().reset()
       } else {
         const info = await getUserInfo(sess)
         this.user = {
@@ -37,6 +40,7 @@ export const useAuthStore = defineStore('auth', {
           is_guest: false,
           roles: window.sc_session_user?.roles || [],
         }
+        await useAccessStore().load(true)
       }
       this.booted = true
     },
@@ -59,6 +63,7 @@ export const useAuthStore = defineStore('auth', {
     async doLogout() {
       try { await apiLogout() } catch (e) {}
       this.user = { name: 'Guest', is_guest: true, roles: [] }
+      useAccessStore().reset()
       this.booted = false
     },
   },

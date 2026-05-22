@@ -1,4 +1,6 @@
 <script setup>
+import Icon from './Icon.vue'
+
 defineProps({
   title:    String,
   subtitle: String,
@@ -8,16 +10,23 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex items-center gap-3 mb-5">
-    <div v-if="icon" class="w-12 h-12 rounded-lg bg-sc-navy text-white text-xl flex items-center justify-center flex-shrink-0">
-      {{ icon }}
+  <div class="sc-rise flex flex-wrap items-start gap-4 mb-6 pb-5 border-b border-sc-border">
+    <div v-if="icon"
+      class="h-12 w-12 rounded-xl bg-gradient-to-br from-sc-royal to-sc-navy
+             text-white flex items-center justify-center shadow-sc-md flex-shrink-0">
+      <Icon :name="icon" :size="24" :stroke-width="1.7" />
     </div>
+
     <div class="flex-1 min-w-0">
-      <div v-if="code" class="text-xs font-mono text-sc-text-muted">{{ code }}</div>
-      <h1 class="text-xl font-bold text-sc-navy">{{ title }}</h1>
-      <div v-if="subtitle" class="text-sm text-sc-text-muted">{{ subtitle }}</div>
+      <div v-if="code" class="mb-1">
+        <span class="font-mono text-[10.5px] font-bold tracking-wide uppercase
+          text-sc-royal bg-sc-royal-50 rounded px-1.5 py-0.5">{{ code }}</span>
+      </div>
+      <h1 class="text-xl md:text-2xl font-bold text-sc-navy leading-tight truncate">{{ title }}</h1>
+      <p v-if="subtitle" class="text-[13px] text-sc-text-muted mt-1">{{ subtitle }}</p>
     </div>
-    <div class="flex items-center gap-2">
+
+    <div class="flex items-center gap-2 flex-wrap sc-no-print">
       <slot name="actions" />
     </div>
   </div>

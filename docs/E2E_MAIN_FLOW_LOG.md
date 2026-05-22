@@ -491,3 +491,213 @@
   "pd": "SC-PD-2026-03365"
 }
 ```
+
+## Run 2026-05-12T02:58:44.188Z
+
+**Result**: 27/27 pass ✅
+**Duration**: 11s
+
+### Steps
+
+| # | Step | Result | Detail | Time |
+|---|------|--------|--------|------|
+| 1 | PRE: Login | ✅ | URL: http://supplycore/supplycore/ | 3681ms |
+| 2 | PRE: Pick master data (Supplier, Item, Warehouse, Patient) | ✅ | Sup=SC-SUP-03163, Item=DTRC-RL (Chai), WH1=Kho Khoa Dược, WH2=Kho Phòng Mổ, BN=BN010 | 61ms |
+| 3 | 1.1 Tạo Framework Contract via API | ✅ | FC=SC-FC-2026-03373, contract_number=FC-E2E-hxzid2 | 29ms |
+| 4 | 1.2 FC submit_for_review → Manager Review | ✅ | stage=Manager Review | 40ms |
+| 5 | 1.3 FC approve_as_manager | ✅ | stage=Approved | 40ms |
+| 6 | 1.4 FC approve_as_executive (nếu cần) | ✅ | stage=Approved | 27ms |
+| 7 | 1.5 FC submit (docstatus 0→1, status=Active) | ✅ | docstatus=1, status=Active | 54ms |
+| 8 | 2.1 Tạo Material Request | ✅ | MR=SC-MR-2026-03374 | 30ms |
+| 9 | 2.2 MR submit (docstatus=1) | ✅ | docstatus=1, status=Pending | 71ms |
+| 10 | 2.3 MR approve | ✅ | status=Approved | 30ms |
+| 11 | 2.4 Tạo Purchase Order link FC | ✅ | PO=SC-PO-2026-03375, total=500000 | 40ms |
+| 12 | 2.5 PO approval workflow + submit | ✅ | docstatus=1, status=Sent to Supplier | 154ms |
+| 13 | 3.1 Tạo Purchase Receipt với batch info | ✅ | PR=SC-PR-2026-03376, supplier_batch_no=LOT-E2E-vf3p7 | 42ms |
+| 14 | 3.2 PR submit → batch + SLE auto-create | ✅ | batch=DTRC-RL-202805-007, SLE qty=100, balance=100 | 210ms |
+| 15 | 3.3 Verify batch master created | ✅ | Batch DTRC-RL-202805-007: item=DTRC-RL, expiry=2028-05-11, qc=Pending | 14ms |
+| 16 | 4.1 Tạo Quality Inspection cho batch | ✅ | QI=SC-QI-2026-03379 với 4 readings | 34ms |
+| 17 | 4.2 QI submit → Accepted | ✅ | docstatus=1, overall=Accepted | 53ms |
+| 18 | 5.1 Verify tồn kho qua SLE | ✅ | Tồn Kho Khoa Dược/DTRC-RL-202805-007: 100 | 10ms |
+| 19 | 6.1 Tạo Stock Entry Material Transfer (30 units) | ✅ | SE=SC-SE-2026-03380, qty=30 batch=DTRC-RL-202805-007 | 31ms |
+| 20 | 6.2 SE submit → SLE âm ở wh_main + dương ở wh_to | ✅ | SLE: 1 âm + 1 dương | 70ms |
+| 21 | 6.3 Verify tồn 2 kho sau transfer (70 + 30 = 100) | ✅ | Kho Khoa Dược=70, Kho Phòng Mổ=30 | 19ms |
+| 22 | 7.1 Tạo Patient Dispensing (BHYT) | ✅ | PD=SC-PD-2026-03383 cho BN BN010 | 41ms |
+| 23 | 7.2 PD submit → BHYT calc + SLE âm | ✅ | total_cost=25000, bhyt=undefined, patient_pays=10000 | 44ms |
+| 24 | 7.3 Verify tồn sau cấp phát (70 - 5 = 65) | ✅ | Kho Khoa Dược/DTRC-RL-202805-007: 65 | 11ms |
+| 25 | 8.1 UI: FC visible trong list | ✅ | SC-FC-2026-03373 visible | 1650ms |
+| 26 | 8.2 UI: PR detail page render | ✅ | Title="Phiếu nhập SC-PR-2026-03376" | 2144ms |
+| 27 | 8.3 UI: PD detail có items + BHYT info | ✅ | PD SC-PD-2026-03383 rendered (BHYT match=1) | 2133ms |
+
+### Console/JS errors
+
+- [console] Failed to load resource: the server responded with a status of 403 (FORBIDDEN)
+
+### Context (created docs)
+
+```json
+{
+  "supplier": "SC-SUP-03163",
+  "item": "DTRC-RL",
+  "itemUom": "Chai",
+  "warehouse_main": "Kho Khoa Dược",
+  "warehouse_to": "Kho Phòng Mổ",
+  "patient": "BN010",
+  "bhyt_card": "TT4-079-01234-567",
+  "department": "Ban Giám đốc",
+  "fc": "SC-FC-2026-03373",
+  "mr": "SC-MR-2026-03374",
+  "po": "SC-PO-2026-03375",
+  "pr": "SC-PR-2026-03376",
+  "supplier_batch_no": "LOT-E2E-vf3p7",
+  "batch": "DTRC-RL-202805-007",
+  "sle_initial": {
+    "name": "SC-SLE-2026-00003377",
+    "qty_change": 100,
+    "balance_qty": 100
+  },
+  "qi": "SC-QI-2026-03379",
+  "se_transfer": "SC-SE-2026-03380",
+  "pd": "SC-PD-2026-03383"
+}
+```
+
+## Run 2026-05-12T03:20:47.471Z
+
+**Result**: 27/27 pass ✅
+**Duration**: 11s
+
+### Steps
+
+| # | Step | Result | Detail | Time |
+|---|------|--------|--------|------|
+| 1 | PRE: Login | ✅ | URL: http://supplycore/supplycore/ | 3728ms |
+| 2 | PRE: Pick master data (Supplier, Item, Warehouse, Patient) | ✅ | Sup=SC-SUP-03163, Item=DTRC-RL (Chai), WH1=Kho Khoa Dược, WH2=Kho Phòng Mổ, BN=BN010 | 54ms |
+| 3 | 1.1 Tạo Framework Contract via API | ✅ | FC=SC-FC-2026-03391, contract_number=FC-E2E-ds5gfc | 34ms |
+| 4 | 1.2 FC submit_for_review → Manager Review | ✅ | stage=Manager Review | 43ms |
+| 5 | 1.3 FC approve_as_manager | ✅ | stage=Approved | 29ms |
+| 6 | 1.4 FC approve_as_executive (nếu cần) | ✅ | stage=Approved | 30ms |
+| 7 | 1.5 FC submit (docstatus 0→1, status=Active) | ✅ | docstatus=1, status=Active | 52ms |
+| 8 | 2.1 Tạo Material Request | ✅ | MR=SC-MR-2026-03392 | 26ms |
+| 9 | 2.2 MR submit (docstatus=1) | ✅ | docstatus=1, status=Pending | 73ms |
+| 10 | 2.3 MR approve | ✅ | status=Approved | 26ms |
+| 11 | 2.4 Tạo Purchase Order link FC | ✅ | PO=SC-PO-2026-03393, total=500000 | 39ms |
+| 12 | 2.5 PO approval workflow + submit | ✅ | docstatus=1, status=Sent to Supplier | 163ms |
+| 13 | 3.1 Tạo Purchase Receipt với batch info | ✅ | PR=SC-PR-2026-03394, supplier_batch_no=LOT-E2E-k67de | 52ms |
+| 14 | 3.2 PR submit → batch + SLE auto-create | ✅ | batch=DTRC-RL-202805-008, SLE qty=100, balance=100 | 137ms |
+| 15 | 3.3 Verify batch master created | ✅ | Batch DTRC-RL-202805-008: item=DTRC-RL, expiry=2028-05-11, qc=Pending | 9ms |
+| 16 | 4.1 Tạo Quality Inspection cho batch | ✅ | QI=SC-QI-2026-03397 với 4 readings | 28ms |
+| 17 | 4.2 QI submit → Accepted | ✅ | docstatus=1, overall=Accepted | 52ms |
+| 18 | 5.1 Verify tồn kho qua SLE | ✅ | Tồn Kho Khoa Dược/DTRC-RL-202805-008: 100 | 9ms |
+| 19 | 6.1 Tạo Stock Entry Material Transfer (30 units) | ✅ | SE=SC-SE-2026-03398, qty=30 batch=DTRC-RL-202805-008 | 29ms |
+| 20 | 6.2 SE submit → SLE âm ở wh_main + dương ở wh_to | ✅ | SLE: 1 âm + 1 dương | 51ms |
+| 21 | 6.3 Verify tồn 2 kho sau transfer (70 + 30 = 100) | ✅ | Kho Khoa Dược=70, Kho Phòng Mổ=30 | 18ms |
+| 22 | 7.1 Tạo Patient Dispensing (BHYT) | ✅ | PD=SC-PD-2026-03401 cho BN BN010 | 54ms |
+| 23 | 7.2 PD submit → BHYT calc + SLE âm | ✅ | total_cost=25000, bhyt=undefined, patient_pays=10000 | 50ms |
+| 24 | 7.3 Verify tồn sau cấp phát (70 - 5 = 65) | ✅ | Kho Khoa Dược/DTRC-RL-202805-008: 65 | 13ms |
+| 25 | 8.1 UI: FC visible trong list | ✅ | SC-FC-2026-03391 visible | 1662ms |
+| 26 | 8.2 UI: PR detail page render | ✅ | Title="Phiếu nhập SC-PR-2026-03394" | 2157ms |
+| 27 | 8.3 UI: PD detail có items + BHYT info | ✅ | PD SC-PD-2026-03401 rendered (BHYT match=1) | 2139ms |
+
+### Console/JS errors
+
+- [console] Failed to load resource: the server responded with a status of 403 (FORBIDDEN)
+
+### Context (created docs)
+
+```json
+{
+  "supplier": "SC-SUP-03163",
+  "item": "DTRC-RL",
+  "itemUom": "Chai",
+  "warehouse_main": "Kho Khoa Dược",
+  "warehouse_to": "Kho Phòng Mổ",
+  "patient": "BN010",
+  "bhyt_card": "TT4-079-01234-567",
+  "department": "Ban Giám đốc",
+  "fc": "SC-FC-2026-03391",
+  "mr": "SC-MR-2026-03392",
+  "po": "SC-PO-2026-03393",
+  "pr": "SC-PR-2026-03394",
+  "supplier_batch_no": "LOT-E2E-k67de",
+  "batch": "DTRC-RL-202805-008",
+  "sle_initial": {
+    "name": "SC-SLE-2026-00003395",
+    "qty_change": 100,
+    "balance_qty": 100
+  },
+  "qi": "SC-QI-2026-03397",
+  "se_transfer": "SC-SE-2026-03398",
+  "pd": "SC-PD-2026-03401"
+}
+```
+
+## Run 2026-05-12T03:41:52.986Z
+
+**Result**: 27/27 pass ✅
+**Duration**: 11s
+
+### Steps
+
+| # | Step | Result | Detail | Time |
+|---|------|--------|--------|------|
+| 1 | PRE: Login | ✅ | URL: http://supplycore/supplycore/ | 3749ms |
+| 2 | PRE: Pick master data (Supplier, Item, Warehouse, Patient) | ✅ | Sup=SC-SUP-03163, Item=DTRC-RL (Chai), WH1=Kho Khoa Dược, WH2=Kho Phòng Mổ, BN=BN010 | 59ms |
+| 3 | 1.1 Tạo Framework Contract via API | ✅ | FC=SC-FC-2026-03418, contract_number=FC-E2E-bh5tzu | 29ms |
+| 4 | 1.2 FC submit_for_review → Manager Review | ✅ | stage=Manager Review | 36ms |
+| 5 | 1.3 FC approve_as_manager | ✅ | stage=Approved | 37ms |
+| 6 | 1.4 FC approve_as_executive (nếu cần) | ✅ | stage=Approved | 31ms |
+| 7 | 1.5 FC submit (docstatus 0→1, status=Active) | ✅ | docstatus=1, status=Active | 45ms |
+| 8 | 2.1 Tạo Material Request | ✅ | MR=SC-MR-2026-03419 | 40ms |
+| 9 | 2.2 MR submit (docstatus=1) | ✅ | docstatus=1, status=Pending | 68ms |
+| 10 | 2.3 MR approve | ✅ | status=Approved | 32ms |
+| 11 | 2.4 Tạo Purchase Order link FC | ✅ | PO=SC-PO-2026-03420, total=500000 | 25ms |
+| 12 | 2.5 PO approval workflow + submit | ✅ | docstatus=1, status=Sent to Supplier | 143ms |
+| 13 | 3.1 Tạo Purchase Receipt với batch info | ✅ | PR=SC-PR-2026-03421, supplier_batch_no=LOT-E2E-3ggll | 32ms |
+| 14 | 3.2 PR submit → batch + SLE auto-create | ✅ | batch=DTRC-RL-202805-009, SLE qty=100, balance=100 | 136ms |
+| 15 | 3.3 Verify batch master created | ✅ | Batch DTRC-RL-202805-009: item=DTRC-RL, expiry=2028-05-11, qc=Pending | 12ms |
+| 16 | 4.1 Tạo Quality Inspection cho batch | ✅ | QI=SC-QI-2026-03424 với 4 readings | 36ms |
+| 17 | 4.2 QI submit → Accepted | ✅ | docstatus=1, overall=Accepted | 54ms |
+| 18 | 5.1 Verify tồn kho qua SLE | ✅ | Tồn Kho Khoa Dược/DTRC-RL-202805-009: 100 | 10ms |
+| 19 | 6.1 Tạo Stock Entry Material Transfer (30 units) | ✅ | SE=SC-SE-2026-03425, qty=30 batch=DTRC-RL-202805-009 | 45ms |
+| 20 | 6.2 SE submit → SLE âm ở wh_main + dương ở wh_to | ✅ | SLE: 1 âm + 1 dương | 54ms |
+| 21 | 6.3 Verify tồn 2 kho sau transfer (70 + 30 = 100) | ✅ | Kho Khoa Dược=70, Kho Phòng Mổ=30 | 21ms |
+| 22 | 7.1 Tạo Patient Dispensing (BHYT) | ✅ | PD=SC-PD-2026-03428 cho BN BN010 | 46ms |
+| 23 | 7.2 PD submit → BHYT calc + SLE âm | ✅ | total_cost=25000, bhyt=undefined, patient_pays=10000 | 56ms |
+| 24 | 7.3 Verify tồn sau cấp phát (70 - 5 = 65) | ✅ | Kho Khoa Dược/DTRC-RL-202805-009: 65 | 10ms |
+| 25 | 8.1 UI: FC visible trong list | ✅ | SC-FC-2026-03418 visible | 1661ms |
+| 26 | 8.2 UI: PR detail page render | ✅ | Title="Phiếu nhập SC-PR-2026-03421" | 2157ms |
+| 27 | 8.3 UI: PD detail có items + BHYT info | ✅ | PD SC-PD-2026-03428 rendered (BHYT match=1) | 2137ms |
+
+### Console/JS errors
+
+- [console] Failed to load resource: the server responded with a status of 403 (FORBIDDEN)
+
+### Context (created docs)
+
+```json
+{
+  "supplier": "SC-SUP-03163",
+  "item": "DTRC-RL",
+  "itemUom": "Chai",
+  "warehouse_main": "Kho Khoa Dược",
+  "warehouse_to": "Kho Phòng Mổ",
+  "patient": "BN010",
+  "bhyt_card": "TT4-079-01234-567",
+  "department": "Ban Giám đốc",
+  "fc": "SC-FC-2026-03418",
+  "mr": "SC-MR-2026-03419",
+  "po": "SC-PO-2026-03420",
+  "pr": "SC-PR-2026-03421",
+  "supplier_batch_no": "LOT-E2E-3ggll",
+  "batch": "DTRC-RL-202805-009",
+  "sle_initial": {
+    "name": "SC-SLE-2026-00003422",
+    "qty_change": 100,
+    "balance_qty": 100
+  },
+  "qi": "SC-QI-2026-03424",
+  "se_transfer": "SC-SE-2026-03425",
+  "pd": "SC-PD-2026-03428"
+}
+```
