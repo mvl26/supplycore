@@ -20,7 +20,7 @@ import RouteGuidePanel from '../components/RouteGuidePanel.vue'
 import BarcodeDisplay from '../components/BarcodeDisplay.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDateTime, fmtNumber } from '../utils'
-import { statusLabel } from '../modules'
+import { statusLabel, isSubmittable } from '../modules'
 import { fieldLabel } from '../i18n'
 
 const route = useRoute()
@@ -37,6 +37,7 @@ const doc = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const editing = ref(false)
+const docFormRef = ref(null)  // expose validate() từ DocForm để highlight field thiếu
 
 const LINK_PENDING_KEY = 'sc-link-create-pending'
 const LINK_RESULT_KEY  = 'sc-link-create-result'
@@ -85,9 +86,23 @@ async function load() {
 }
 
 // Khi user bấm "+ Tạo mới" trên Link field → lưu state rồi navigate sang form new
-async function onCreateNewLink(field) {
+// payload có thể là { field, search } (từ LinkAutocomplete khi không có kết quả)
+async function onCreateNewLink(payload) {
+  const field = payload?.field || payload
+  const searchText = payload?.search || ''
   if (!field?.linkTo) return
   const prefill = {}
+  // UX-004: pre-fill tên/mã từ text user đã gõ trong dropdown search.
+  // Map per-doctype field name chính (vd Item Group dùng group_name).
+  const NAME_FIELD = {
+    'SC Item Group': 'group_name', 'SC UOM': 'uom_name', 'SC Supplier': 'supplier_name',
+    'SC Warehouse': 'warehouse_name', 'SC Department': 'department_name',
+    'SC Item': 'item_name', 'SC Patient': 'patient_name',
+    'SC GL Account': 'account_name',
+  }
+  if (searchText && NAME_FIELD[field.linkTo]) {
+    prefill[NAME_FIELD[field.linkTo]] = searchText
+  }
   // QI → SC Batch: prefill item, supplier (fetch từ PR nếu chưa có trên doc)
   if (doctype.value === 'SC Quality Inspection' && field.name === 'batch') {
     if (doc.value?.item) prefill.item = doc.value.item
@@ -307,6 +322,8 @@ function validateRequired() {
 }
 
 async function save() {
+  // UX-005: gọi DocForm.validate() để highlight border đỏ + scroll
+  if (docFormRef.value?.validate && !docFormRef.value.validate()) return
   const missing = validateRequired()
   if (missing) {
     toast.error(`Thiếu trường bắt buộc: ${missing.join(', ')}`)
@@ -355,6 +372,7 @@ const POST_SUBMIT_NAV = {
 
 async function doSubmit() {
   if (!doc.value?.name) return
+  if (!confirm('Gửi bản ghi này vào quy trình duyệt? Sau khi gửi, bản ghi sẽ KHÔNG sửa được trừ khi Huỷ duyệt.')) return
   saving.value = true
   try {
     await submitDoc(doctype.value, name.value)
@@ -457,8 +475,9 @@ function displayField(value, key) {
             <template v-if="saving">Đang lưu...</template>
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
-          <button v-if="doc.docstatus === 0" @click="doSubmit"
-            :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm">
+          <button v-if="doc.docstatus === 0 && isSubmittable(doctype)" @click="doSubmit"
+            :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm"
+            title="Gửi bản ghi vào quy trình duyệt. Sau khi gửi sẽ không sửa được trừ khi Huỷ duyệt.">
             <Icon name="upload" :size="14" /> Gửi duyệt
           </button>
         </template>
@@ -528,7 +547,7 @@ function displayField(value, key) {
     <template v-if="isNew || editing">
       <!-- Fetch upstream — chỉ hiện ở form New để pull data từ doc cha -->
       <FetchUpstream v-if="isNew" :target-doctype="doctype" @merge="onUpstreamMerge" />
-      <DocForm v-model="doc" :doctype="doctype" @submit="save" @create-new="onCreateNewLink" />
+      <DocForm ref="docFormRef" v-model="doc" :doctype="doctype" @submit="save" @create-new="onCreateNewLink" />
       <div v-if="!schema" class="sc-card p-6 text-center">
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
       </div>

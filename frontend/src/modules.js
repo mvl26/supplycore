@@ -95,6 +95,22 @@ export const STATUS_LABEL = {
   Pharmacy: 'Nhà thuốc', Admin: 'Hành chính', Other: 'Khác',
 }
 
+// Doctypes có docstatus / submittable workflow.
+// "Gửi duyệt" button chỉ hiển thị cho các doctype trong set này (BUG-003).
+export const SUBMITTABLE_DOCTYPES = new Set([
+  'Framework Contract', 'Release Order', 'Procurement Plan',
+  'SC Material Request', 'SC Purchase Order', 'SC Purchase Receipt',
+  'SC Quality Inspection', 'SC Stock Entry',
+  'SC Transfer Request', 'SC Dispensing Request', 'SC Patient Dispensing',
+  'SC Inventory Count Sheet', 'SC Stock Reconciliation',
+  'SC Recall Notice', 'SC Investigation Report',
+  'SC Purchase Invoice', 'SC Payment Entry',
+])
+
+export function isSubmittable(doctype) {
+  return SUBMITTABLE_DOCTYPES.has(doctype)
+}
+
 export function statusLabel(value) {
   if (value == null || value === '') return ''
   return STATUS_LABEL[value] ?? value
