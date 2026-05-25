@@ -14,10 +14,17 @@ from frappe.utils import flt, getdate, today
 
 
 def _source_valuation(item, warehouse, batch=None):
-    """Đơn giá tồn kho nguồn của 1 item/lô — valuation_rate SLE gần nhất.
-    Chuyển/Xuất kho lấy đơn giá theo tồn, không nhập tay."""
+    """Đơn giá tồn kho nguồn của 1 item/lô — Moving Average từ SLE.
+
+    BUG-003: Chuyển/Xuất kho phải kế thừa đơn giá đúng. Thứ tự fallback:
+      1. SLE gần nhất của item+warehouse(+batch) với valuation > 0
+      2. SLE gần nhất của item bất kỳ warehouse khác (cùng item, val > 0)
+      3. SC Item.standard_rate (giá chuẩn)
+      4. 0 (cuối cùng — caller phải kiểm tra)
+    """
     if not item or not warehouse:
         return 0.0
+    # Bước 1: SLE cùng item+warehouse(+batch)
     conds = ["item = %(i)s", "warehouse = %(w)s", "is_cancelled = 0", "valuation_rate > 0"]
     params = {"i": item, "w": warehouse}
     if batch:
@@ -28,7 +35,39 @@ def _source_valuation(item, warehouse, batch=None):
         WHERE {' AND '.join(conds)}
         ORDER BY posting_date DESC, creation DESC LIMIT 1
     """, params)
-    return flt(v[0][0]) if v else 0.0
+    if v and flt(v[0][0]) > 0:
+        return flt(v[0][0])
+
+    # Bước 2: SLE cùng item ở warehouse khác — Moving Average toàn hệ thống
+    v2 = frappe.db.sql("""
+        SELECT valuation_rate FROM `tabSC Stock Ledger Entry`
+        WHERE item = %s AND is_cancelled = 0 AND valuation_rate > 0
+        ORDER BY posting_date DESC, creation DESC LIMIT 1
+    """, item)
+    if v2 and flt(v2[0][0]) > 0:
+        return flt(v2[0][0])
+
+    # Bước 3: PR rate gần nhất (đơn giá mua thực tế)
+    pr = frappe.db.sql("""
+        SELECT pri.rate FROM `tabSC Purchase Receipt Item` pri
+        JOIN `tabSC Purchase Receipt` pr ON pr.name = pri.parent
+        WHERE pri.item = %s AND pr.docstatus = 1 AND pri.rate > 0
+        ORDER BY pr.posting_date DESC LIMIT 1
+    """, item)
+    if pr and flt(pr[0][0]) > 0:
+        return flt(pr[0][0])
+
+    # Bước 4: PO rate gần nhất
+    po = frappe.db.sql("""
+        SELECT poi.rate FROM `tabSC Purchase Order Item` poi
+        JOIN `tabSC Purchase Order` po ON po.name = poi.parent
+        WHERE poi.item = %s AND po.docstatus = 1 AND poi.rate > 0
+        ORDER BY po.transaction_date DESC LIMIT 1
+    """, item)
+    if po and flt(po[0][0]) > 0:
+        return flt(po[0][0])
+
+    return 0.0
 
 
 ISSUE_TYPES = ("Material Issue", "Material Transfer")
@@ -41,6 +80,7 @@ class SCStockEntry(Document):
         self._validate_items_and_compute()
         self._validate_bin_consistency()
         self._enforce_fefo_rules()
+        self._enforce_no_negative_stock()
 
     def on_submit(self):
         self._post_stock_ledger()
@@ -262,6 +302,42 @@ class SCStockEntry(Document):
             )
             frappe.db.set_value("SC Stock Ledger Entry", s.name, "is_cancelled", 1)
 
+
+    # ------------------------------------------------------------------
+    # BUG-001: chặn tồn kho âm + BUG-002: dùng available_qty
+    # ------------------------------------------------------------------
+    def _enforce_no_negative_stock(self):
+        """Block submit nếu sau giao dịch xuất kho tồn khả dụng < 0.
+
+        Áp dụng cho Material Issue + Material Transfer (only from_warehouse).
+        Cộng dồn qty theo item+batch trong cùng SE để tránh double-debit khi
+        có nhiều dòng cùng item.
+        """
+        if self.docstatus != 0:  # chỉ check khi đang draft → trước submit
+            return
+        if self.entry_type not in ISSUE_TYPES:
+            return
+        if not self.from_warehouse:
+            return
+
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+
+        # Gộp qty theo (item, batch) trong cùng SE
+        demand = {}
+        for row in self.items:
+            key = (row.item, row.batch or None)
+            demand[key] = demand.get(key, 0) + flt(row.qty)
+
+        for (item, batch), need in demand.items():
+            avail = SCStockLedgerEntry.get_available_qty(item, self.from_warehouse, batch)
+            if need > avail:
+                batch_label = f" lô {batch}" if batch else ""
+                frappe.throw(
+                    _("Không đủ tồn khả dụng cho {0}{1} tại kho {2}: "
+                      "cần {3}, còn {4} (loại trừ QC Pending/Rejected/Blocked).")
+                    .format(item, batch_label, self.from_warehouse, need, avail),
+                    title="SC-E010 NEGATIVE_STOCK",
+                )
 
     def _log_fefo_override_audit(self):
         """UC-16 4a: record approver + insert Frappe Comment để audit override."""

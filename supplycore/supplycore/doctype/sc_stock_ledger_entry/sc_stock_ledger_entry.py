@@ -54,7 +54,12 @@ class SCStockLedgerEntry(Document):
 
     @staticmethod
     def get_qty(item, warehouse, batch=None) -> float:
-        """Query tồn kho hiện tại của item+warehouse (+ batch optional)."""
+        """Query tồn kho TỔNG của item+warehouse (+ batch optional).
+
+        TỔNG ở đây = mọi SLE (kể cả batch QC Pending). Dùng cho báo cáo
+        kế toán / kiểm kê — cần đối chiếu vật lý. Để check "có cấp phát
+        được không" → dùng get_available_qty() (loại trừ Pending/Rejected).
+        """
         from frappe.utils import flt
         sql = """
             SELECT COALESCE(SUM(qty_change), 0)
@@ -64,5 +69,32 @@ class SCStockLedgerEntry(Document):
         params = [item, warehouse]
         if batch is not None:
             sql += " AND batch = %s"
+            params.append(batch)
+        return flt(frappe.db.sql(sql, tuple(params))[0][0])
+
+    @staticmethod
+    def get_available_qty(item, warehouse, batch=None) -> float:
+        """BUG-002: tồn kho KHẢ DỤNG — loại trừ batch QC Pending/Rejected.
+
+        Dùng cho mọi nghiệp vụ xuất kho (Material Issue/Transfer, Dispensing).
+        Lô chưa qua QC (Pending) hoặc fail QC (Rejected) KHÔNG được cấp phát.
+
+        Logic: JOIN SC Batch on qc_status. SLE không có batch (item chưa
+        track lô) coi như available luôn — vì chỉ batch-tracked item mới
+        cần QC enforcement.
+        """
+        from frappe.utils import flt
+        sql = """
+            SELECT COALESCE(SUM(sle.qty_change), 0)
+            FROM `tabSC Stock Ledger Entry` sle
+            LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
+            WHERE sle.item = %s AND sle.warehouse = %s AND sle.is_cancelled = 0
+              AND (sle.batch IS NULL OR sle.batch = ''
+                   OR b.qc_status NOT IN ('Pending', 'Rejected'))
+              AND (b.blocked IS NULL OR b.blocked = 0)
+        """
+        params = [item, warehouse]
+        if batch is not None:
+            sql += " AND sle.batch = %s"
             params.append(batch)
         return flt(frappe.db.sql(sql, tuple(params))[0][0])

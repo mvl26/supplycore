@@ -24,6 +24,32 @@ class SCDispensingRequest(Document):
     def before_submit(self):
         # UC-20 ngoại lệ: quota check
         self._validate_quota()
+        # BUG-009: chặn approved_qty vượt tồn khả dụng tại thời điểm duyệt
+        self._validate_approved_qty_vs_stock()
+
+    def _validate_approved_qty_vs_stock(self):
+        """BUG-009: Khi DR submit (approve), kiểm tra approved_qty <= tồn khả
+        dụng tại from_warehouse (loại Pending/Rejected QC + blocked batch).
+        Cộng dồn theo item nếu nhiều dòng.
+        """
+        if not self.from_warehouse:
+            return
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        demand = {}
+        for r in self.items:
+            qty = flt(r.approved_qty) or flt(r.requested_qty)
+            if not (r.item and qty):
+                continue
+            demand[r.item] = demand.get(r.item, 0) + qty
+        for item, need in demand.items():
+            avail = SCStockLedgerEntry.get_available_qty(item, self.from_warehouse)
+            if need > avail:
+                frappe.throw(_(
+                    "Không đủ tồn khả dụng cho {0} tại kho {1}: "
+                    "duyệt {2}, còn {3} (loại trừ QC Pending/Rejected/Blocked). "
+                    "Giảm SL DUYỆT hoặc tạo Stock Reconciliation."
+                ).format(item, self.from_warehouse, need, avail),
+                    title="SC-E010 NEGATIVE_STOCK")
 
     def on_submit(self):
         self.db_set("status", "Approved")

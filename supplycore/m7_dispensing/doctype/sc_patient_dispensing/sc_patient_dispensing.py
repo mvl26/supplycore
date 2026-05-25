@@ -10,6 +10,7 @@ class SCPatientDispensing(Document):
 
     def validate(self):
         self._enforce_no_blocked_batch()
+        self._enforce_no_negative_stock()
         self._calculate_bhyt()
         self._compute_totals()
 
@@ -25,6 +26,27 @@ class SCPatientDispensing(Document):
                     "SC-E-RCL-BATCH-RECALLED: Batch {0} đang bị recall/block — {1}. "
                     "Không thể cấp phát cho BN."
                 ).format(row.batch, b.block_reason or ""))
+
+    def _enforce_no_negative_stock(self):
+        """BUG-001: Chặn cấp phát vượt tồn khả dụng (loại QC Pending/Rejected)."""
+        if self.docstatus != 0:
+            return
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        demand = {}
+        for r in self.items:
+            if not (r.item and r.qty and r.warehouse):
+                continue
+            key = (r.item, r.warehouse, r.batch or None)
+            demand[key] = demand.get(key, 0) + flt(r.qty)
+        for (item, warehouse, batch), need in demand.items():
+            avail = SCStockLedgerEntry.get_available_qty(item, warehouse, batch)
+            if need > avail:
+                batch_label = f" lô {batch}" if batch else ""
+                frappe.throw(_(
+                    "Không đủ tồn khả dụng cho {0}{1} tại kho {2}: "
+                    "cần {3}, còn {4} (loại trừ QC Pending/Rejected/Blocked)."
+                ).format(item, batch_label, warehouse, need, avail),
+                    title="SC-E010 NEGATIVE_STOCK")
 
     def on_submit(self):
         self._post_stock_ledger()
