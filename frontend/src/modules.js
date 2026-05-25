@@ -20,7 +20,7 @@ const STATUS_BADGE = {
   Draft: 'sc-badge-neutral', Pending: 'sc-badge-warning',
   Submitted: 'sc-badge-info', Approved: 'sc-badge-success',
   Rejected: 'sc-badge-critical', Cancelled: 'sc-badge-neutral',
-  Active: 'sc-badge-success', Expired: 'sc-badge-warning',
+  Active: 'sc-badge-success', Expired: 'sc-badge-warning', Exhausted: 'sc-badge-critical',
   Terminated: 'sc-badge-critical',
   Issued: 'sc-badge-info', 'In Progress': 'sc-badge-warning',
   Completed: 'sc-badge-success', Resolved: 'sc-badge-success',
@@ -44,7 +44,7 @@ export const STATUS_LABEL = {
   // Docstatus / workflow
   Draft: 'Nháp', Pending: 'Chờ duyệt', Submitted: 'Đã gửi',
   Approved: 'Đã duyệt', Rejected: 'Từ chối', Cancelled: 'Đã huỷ',
-  Active: 'Hiệu lực', Expired: 'Hết hạn', Terminated: 'Kết thúc',
+  Active: 'Hiệu lực', Expired: 'Hết hạn', Exhausted: 'Hết hạn mức', Terminated: 'Kết thúc',
   Issued: 'Đã phát hành', 'In Progress': 'Đang xử lý',
   Completed: 'Hoàn tất', Resolved: 'Đã xử lý',
   Investigating: 'Đang điều tra', Closed: 'Đã đóng',
@@ -111,8 +111,20 @@ export function isSubmittable(doctype) {
   return SUBMITTABLE_DOCTYPES.has(doctype)
 }
 
-export function statusLabel(value) {
+// QA-BUG-M3-01: Per-field label override — cùng value 'Pending' có thể
+// hiển thị khác nhau tùy field (qc_status → 'Chờ QC', không phải 'Chờ duyệt').
+const FIELD_STATUS_LABEL = {
+  qc_status: { Pending: 'Chờ QC', Pass: 'Đạt', Fail: 'Không đạt', 'Partial Pass': 'Đạt một phần' },
+  overall_status: { Pending: 'Chờ QC' },  // SC Quality Inspection
+  approval_stage: { Pending: 'Chờ phê duyệt' },
+  return_status: { 'Pending Supplier Response': 'Chờ NCC phản hồi' },
+}
+
+export function statusLabel(value, fieldKey) {
   if (value == null || value === '') return ''
+  if (fieldKey && FIELD_STATUS_LABEL[fieldKey]?.[value]) {
+    return FIELD_STATUS_LABEL[fieldKey][value]
+  }
   return STATUS_LABEL[value] ?? value
 }
 

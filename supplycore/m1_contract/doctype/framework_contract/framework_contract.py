@@ -118,12 +118,19 @@ class FrameworkContract(Document):
         self.expiring_soon = 1 if 0 <= days_left <= 30 else 0
 
     def _compute_active_or_expired(self) -> str:
-        """Đã submit (docstatus=1) → Active hoặc Expired tùy valid_to.
+        """Đã submit (docstatus=1) → Exhausted/Expired/Active tùy state.
 
-        Lưu ý: không trả 'Draft' vì 'Draft' = docstatus 0. Hợp đồng đã ký
-        nhưng chưa tới valid_from vẫn là Active (đã có hiệu lực pháp lý;
-        chỉ chưa thể bắt đầu gọi hàng — kiểm tra ở Release Order)."""
+        QA-BUG-M1-02: HĐ remaining_value <= 0 → Exhausted (đã dùng hết
+        hạn mức) — KHÔNG được cho tạo PO mới dù chưa đến valid_to.
+
+        Thứ tự ưu tiên:
+          - Exhausted: remaining_value <= 0 (đã dùng hết)
+          - Expired:   today > valid_to (quá hạn)
+          - Active:    còn hạn + còn hạn mức
+        """
         today_d = getdate(today())
+        if flt(self.remaining_value) <= 0 and flt(self.total_value) > 0:
+            return "Exhausted"
         if today_d > getdate(self.valid_to):
             return "Expired"
         return "Active"
