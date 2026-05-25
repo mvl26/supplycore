@@ -34,6 +34,14 @@ class SCPurchaseInvoice(Document):
                     "SC-E-PI-MISMATCH-EXPLANATION: Phải nhập 'Giải trình chênh lệch' "
                     "khi 3-way match không khớp"
                 ))
+        # BUG-006: chặn submit Hóa đơn mua có grand_total = 0 (trừ credit note).
+        # Hóa đơn 0đ tạo dữ liệu rác trong báo cáo công nợ NCC.
+        if not self.get("is_return") and flt(self.grand_total) <= 0:
+            frappe.throw(_(
+                "SC-E015 ZERO_INVOICE_TOTAL: Hóa đơn mua phải có Tổng > 0 "
+                "(hiện {0}). Kiểm tra lại các dòng vật tư + đơn giá. "
+                "Nếu là Credit Note, đánh dấu 'Là phiếu trả' (is_return)."
+            ).format(self.grand_total), title="SC-E015 ZERO_INVOICE_TOTAL")
 
     def _validate_duplicate_invoice(self):
         """UC-24 ngoại lệ: unique (supplier, supplier_invoice_no)."""
