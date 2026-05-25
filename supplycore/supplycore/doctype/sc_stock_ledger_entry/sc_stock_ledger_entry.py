@@ -50,6 +50,9 @@ class SCStockLedgerEntry(Document):
         sle.remarks = remarks
         sle.flags.allow_sle_edit = True
         sle.insert(ignore_permissions=True)
+        # QAv3-BUG-BIN-05: update Bin Location.current_qty + status sau mỗi SLE
+        if bin_location:
+            _refresh_bin_status(bin_location)
         return sle.name
 
     @staticmethod
@@ -98,3 +101,35 @@ class SCStockLedgerEntry(Document):
             sql += " AND sle.batch = %s"
             params.append(batch)
         return flt(frappe.db.sql(sql, tuple(params))[0][0])
+
+
+def _refresh_bin_status(bin_location: str):
+    """QAv3-BUG-BIN-05: tính lại current_qty + status của Bin Location.
+
+    Gọi sau mỗi SLE post. current_qty = Σ qty_change của SLE tại bin này.
+    status:
+      - Empty:   current_qty <= 0
+      - Full:    current_qty >= capacity_qty (nếu có capacity)
+      - In Use:  > 0 và < capacity (hoặc capacity không set)
+    """
+    from frappe.utils import flt
+    if not bin_location or not frappe.db.exists("Bin Location", bin_location):
+        return
+    current = flt(frappe.db.sql("""
+        SELECT COALESCE(SUM(qty_change), 0)
+        FROM `tabSC Stock Ledger Entry`
+        WHERE bin_location = %s AND is_cancelled = 0
+    """, bin_location)[0][0])
+    capacity = flt(frappe.db.get_value("Bin Location", bin_location, "capacity_qty"))
+    if current <= 0:
+        status = "Empty"
+    elif capacity > 0 and current >= capacity:
+        status = "Full"
+    else:
+        status = "In Use"
+    occupancy_pct = (current / capacity * 100) if capacity > 0 else 0
+    frappe.db.set_value("Bin Location", bin_location, {
+        "current_qty": current,
+        "status": status,
+        "occupancy_pct": occupancy_pct,
+    }, update_modified=False)
