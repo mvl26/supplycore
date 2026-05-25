@@ -3,6 +3,7 @@
 
 import { defineStore } from 'pinia'
 import { call } from '../api'
+import { resolvePersona, getPersona } from '../personas'
 
 const EMPTY = {
   user: null,
@@ -13,11 +14,17 @@ const EMPTY = {
   doctypes: {},     // {'SC Item': {read:1, write:1, create:1, submit:0, ...}}
 }
 
+const PERSONA_KEY = 'sc-persona-override'
+
 export const useAccessStore = defineStore('access', {
   state: () => ({
     ...EMPTY,
     loaded: false,
     loading: false,
+    // Admin can override the auto-detected persona for QA preview.
+    // Persists in sessionStorage; cleared at logout (reset()).
+    personaOverride: typeof sessionStorage !== 'undefined'
+      ? sessionStorage.getItem(PERSONA_KEY) : null,
   }),
   getters: {
     // Module có hiển thị không (sidebar)
@@ -29,6 +36,17 @@ export const useAccessStore = defineStore('access', {
     // Render badge "Bạn không có quyền" cho doctype lạ
     hasAnyPerm: (s) => (dt) => !!(s.doctypes?.[dt]?.read || s.doctypes?.[dt]?.write
                                     || s.doctypes?.[dt]?.create),
+    // Auto-detected persona based on Frappe roles (no override).
+    detectedPersonaId: (s) => resolvePersona(s.roles || []),
+    // Effective persona id — override wins if admin set one.
+    activePersonaId: (s) => {
+      if (s.personaOverride && s.is_admin) return s.personaOverride
+      return resolvePersona(s.roles || [])
+    },
+    activePersona() { return getPersona(this.activePersonaId) },
+    // Detect: is the user impersonating via persona switcher right now?
+    isImpersonating: (s) => !!s.personaOverride && s.is_admin
+      && s.personaOverride !== resolvePersona(s.roles || []),
   },
   actions: {
     async load(force = false) {
@@ -52,9 +70,22 @@ export const useAccessStore = defineStore('access', {
         this.loading = false
       }
     },
+    setPersonaOverride(pid) {
+      // Only admins may impersonate. Silent no-op otherwise.
+      if (!this.is_admin) return
+      if (!pid) {
+        this.personaOverride = null
+        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(PERSONA_KEY)
+        return
+      }
+      this.personaOverride = pid
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(PERSONA_KEY, pid)
+    },
     reset() {
       Object.assign(this, EMPTY)
       this.loaded = false
+      this.personaOverride = null
+      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(PERSONA_KEY)
     },
   },
 })

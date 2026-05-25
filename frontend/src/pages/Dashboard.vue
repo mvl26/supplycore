@@ -8,7 +8,9 @@ import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
 import Icon from '../components/Icon.vue'
 import { useAuthStore } from '../stores/auth'
+import { useAccessStore } from '../stores/access'
 import { useToastStore } from '../stores/toast'
+import { PERSONA_WIDGETS, PERSONA_QUICK_ACTIONS } from '../personas'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS, Title, Tooltip, Legend, LineElement, PointElement,
@@ -21,20 +23,26 @@ ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement,
 const router = useRouter()
 const toast = useToastStore()
 const auth = useAuthStore()
+const access = useAccessStore()
 const loading = ref(true)
 const dashboard = ref(null)
 const trend = ref([])
 const period = ref('this_month')
 const warehouse = ref('')
 const department = ref('')
-const roleView = ref('')   // '' = full executive view
+const roleView = ref('')   // '' = follow active persona; non-empty = manual override
 const lastRefresh = ref(null)
 const whOptions = ref([])
 const deptOptions = ref([])
 const pdfOpen = ref(false)
 const pdfData = ref(null)
 
-// Role mapping → widget allow-list (matches backend ROLE_WIDGETS)
+// Persona drives default widget set + quick actions. Manual roleView override
+// (the dropdown) still wins if set — used for ad-hoc comparison views.
+const persona = computed(() => access.activePersona)
+const quickActions = computed(() => PERSONA_QUICK_ACTIONS[persona.value?.id] || [])
+
+// Legacy Frappe-role → widget map kept for the manual override dropdown.
 const ROLE_WIDGETS = {
   'SupplyCore Executive': ['stock_value','monthly_cost','ap_outstanding','pending_pos',
                             'expiring_soon','low_stock_items','contract_expiring_30d','po_overdue_count'],
@@ -46,8 +54,11 @@ const ROLE_WIDGETS = {
 }
 
 const visibleKpiKeys = computed(() => {
-  if (!roleView.value) return null  // null = show all
-  return new Set(ROLE_WIDGETS[roleView.value] || [])
+  // Manual dropdown override wins.
+  if (roleView.value) return new Set(ROLE_WIDGETS[roleView.value] || [])
+  // Default: persona's widget set. null = show all (admin/lan).
+  const w = PERSONA_WIDGETS[persona.value?.id]
+  return w === null || w === undefined ? null : new Set(w)
 })
 
 function showKpi(key) {
@@ -80,12 +91,7 @@ async function loadOptions() {
   ])
   whOptions.value = whs
   deptOptions.value = depts
-  // Auto-detect role view based on user roles
-  const userRoles = auth.user?.roles || []
-  for (const r of ['SupplyCore Executive','SupplyCore Manager','SupplyCore Accountant',
-                    'SupplyCore Storekeeper','Pharmacy Officer']) {
-    if (userRoles.includes(r)) { roleView.value = ''; break }
-  }
+  // Default behaviour: follow active persona — leave roleView empty.
 }
 
 async function exportPdfData() {
@@ -197,12 +203,14 @@ function exportTrend() {
 </script>
 
 <template>
-  <PageHeader title="Dashboard điều hành" icon="bar-chart" code="SCR-01"
-    :subtitle="lastRefresh ? `Cập nhật ${lastRefresh}${dashboard?.cached ? ' (đã cache 5 phút)' : ''}` : 'Đang tải...'">
+  <PageHeader :title="persona?.id !== 'admin' ? `Dashboard — ${persona.name}` : 'Dashboard điều hành'"
+    icon="bar-chart" code="SCR-01"
+    :subtitle="lastRefresh ? `${persona.scope} · Cập nhật ${lastRefresh}${dashboard?.cached ? ' (đã cache 5 phút)' : ''}` : 'Đang tải...'">
     <template #actions>
       <select v-model="roleView" @change="load(1)"
-        class="sc-input max-w-[200px] text-sm" title="Lọc widget theo vai trò">
-        <option value="">View đầy đủ (Executive)</option>
+        class="sc-input max-w-[220px] text-sm" title="Lọc widget theo vai trò">
+        <option value="">Theo chân dung ({{ persona.role }})</option>
+        <option value="SupplyCore Executive">View đầy đủ (Executive)</option>
         <option value="SupplyCore Manager">Vai trò Quản lý</option>
         <option value="SupplyCore Accountant">Vai trò Kế toán</option>
         <option value="SupplyCore Storekeeper">Vai trò Thủ kho</option>
@@ -236,6 +244,25 @@ function exportTrend() {
 
   <div v-if="loading && !dashboard" class="text-center py-20 text-sc-text-muted">Đang tải...</div>
   <template v-else-if="dashboard">
+    <!-- Persona quick actions (hidden for admin / empty list) -->
+    <div v-if="quickActions.length" class="flex flex-wrap gap-2 mb-4">
+      <button v-for="(qa, idx) in quickActions" :key="idx"
+        @click="router.push(qa.to)"
+        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-semibold
+               border transition-all duration-150 shadow-sc-xs hover:shadow-sc"
+        :class="{
+          'bg-sc-navy text-white border-sc-navy hover:bg-sc-navy-deep': qa.variant === 'primary',
+          'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700': qa.variant === 'success',
+          'bg-amber-500 text-white border-amber-500 hover:bg-amber-600': qa.variant === 'warning',
+          'bg-red-600 text-white border-red-600 hover:bg-red-700': qa.variant === 'danger',
+          'bg-sc-surface text-sc-navy border-sc-border hover:bg-sc-royal-50':
+            !qa.variant || qa.variant === 'ghost',
+        }">
+        <Icon :name="qa.icon" :size="15" />
+        {{ qa.label }}
+      </button>
+    </div>
+
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5 sc-stagger">
       <KpiCard v-if="showKpi('stock_value')" label="Tổng giá trị tồn kho"
         :value="fmtShort(dashboard.kpis.stock_value)" unit="VND" icon="package"

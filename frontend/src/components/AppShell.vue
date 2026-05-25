@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { MODULES } from '../modules'
 import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
+import { PERSONAS, PERSONA_LIST } from '../personas'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
 import { APP_VERSION, BUILD_DATE, RELEASE_NOTES } from '../version'
@@ -19,13 +20,17 @@ const access = useAccessStore()
 const collapsed = ref(localStorage.getItem('sc-sidebar') === '1')
 const sidebarOpen = ref(false)
 const userMenuOpen = ref(false)
+const personaSwitchOpen = ref(false)
 
 function toggleCollapse() {
   collapsed.value = !collapsed.value
   localStorage.setItem('sc-sidebar', collapsed.value ? '1' : '0')
 }
 
-// Primary navigation — "không có phận sự thì không thấy" (RBAC-gated)
+// Active persona — auto-detected from roles unless admin has overridden it.
+const persona = computed(() => access.activePersona)
+
+// Primary navigation (admin/fallback) — "không có phận sự thì không thấy"
 const primaryNav = computed(() => [
   { to: '/dashboard',        icon: 'layout-dashboard', label: 'Tổng quan',          show: true },
   { to: '/alerts',           icon: 'bell',             label: 'Cảnh báo',           show: access.canFeature('alerts') },
@@ -37,13 +42,51 @@ const primaryNav = computed(() => [
   { to: '/users',            icon: 'users',            label: 'Người dùng & Quyền', show: access.canFeature('users') },
 ].filter(i => i.show))
 
-// Module groups in deliberate operational order
+// Module groups in deliberate operational order (admin/fallback view)
 const moduleGroups = computed(() => {
   const order = ['Thiết lập', 'Chiến lược', 'Vận hành', 'Tài chính', 'Chất lượng', 'Báo cáo']
   const g = {}
   MODULES.filter(m => access.canModule(m.id)).forEach(m => { (g[m.group] ||= []).push(m) })
   return order.filter(k => g[k]).map(k => ({ label: k, items: g[k] }))
 })
+
+// Persona-curated nav: groups + items, items gated by access store.
+// Returns array of { group, items: [...] } where empty groups are dropped.
+const personaNav = computed(() => {
+  if (!persona.value?.nav) return []
+  const passes = (item) => {
+    if (item.requireModule  && !access.canModule(item.requireModule))   return false
+    if (item.requireFeature && !access.canFeature(item.requireFeature)) return false
+    if (item.requireDoctype && !access.canDoctype(item.requireDoctype)) return false
+    return true
+  }
+  const out = []
+  let current = null
+  for (const item of persona.value.nav) {
+    if (item.group) {
+      if (current && current.items.length) out.push(current)
+      current = { label: item.group, items: [] }
+    } else if (passes(item)) {
+      (current ||= { label: '', items: [] }).items.push(item)
+    }
+  }
+  if (current && current.items.length) out.push(current)
+  return out
+})
+
+// Admin persona switcher items
+const personaOptions = computed(() =>
+  PERSONA_LIST.map(id => ({ id, ...PERSONAS[id] }))
+)
+function pickPersona(pid) {
+  access.setPersonaOverride(pid === access.detectedPersonaId ? null : pid)
+  personaSwitchOpen.value = false
+  router.push(PERSONAS[pid]?.home || '/dashboard')
+}
+function clearImpersonation() {
+  access.setPersonaOverride(null)
+  personaSwitchOpen.value = false
+}
 
 function isActive(path, exact = true) {
   if (path === '/dashboard') return route.path === '/' || route.path === '/dashboard'
@@ -114,51 +157,117 @@ async function logout() {
         </div>
       </div>
 
+      <!-- Persona card (named persona only) -->
+      <div v-if="persona && !persona.flat && !collapsed"
+        class="mx-3 mt-3 mb-1 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm
+               px-3 py-2.5 flex items-start gap-2.5">
+        <div class="h-10 w-10 rounded-lg flex-shrink-0 flex items-center justify-center
+                    text-white font-extrabold text-[15px] shadow-sc-xs"
+          :style="{ background: persona.color }">
+          {{ persona.avatar }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-[13px] font-bold leading-tight truncate">{{ persona.name }}</div>
+          <div class="text-[10.5px] text-white/55 leading-tight truncate mt-0.5">{{ persona.title }}</div>
+          <span class="inline-block mt-1.5 text-[9.5px] font-bold tracking-[0.04em]
+                       bg-white/12 text-white/90 px-2 py-[2px] rounded-full">
+            {{ persona.role }}
+          </span>
+          <span v-if="access.isImpersonating"
+            class="inline-block ml-1 text-[9.5px] font-bold tracking-[0.04em]
+                   bg-amber-400/25 text-amber-100 px-2 py-[2px] rounded-full">
+            QA preview
+          </span>
+        </div>
+      </div>
+
       <!-- Nav -->
       <nav class="flex-1 overflow-y-auto overflow-x-hidden py-3 sc-nav-scroll">
-        <!-- Primary -->
-        <div class="space-y-0.5">
-          <router-link v-for="item in primaryNav" :key="item.to"
-            :to="item.to" @click="closeDrawer" :title="collapsed ? item.label : ''"
-            class="sc-nav-item group"
-            :class="[
-              isActive(item.to) ? 'sc-nav-active' : 'sc-nav-idle',
-              collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
-            ]">
-            <span v-if="isActive(item.to)" class="sc-nav-bar" />
-            <Icon :name="item.icon" :size="19"
-              class="transition-transform duration-200 ease-sc group-hover:scale-110" />
-            <span v-if="!collapsed" class="text-[13.5px] font-medium truncate">{{ item.label }}</span>
-          </router-link>
-        </div>
 
-        <!-- Module groups -->
-        <div v-for="grp in moduleGroups" :key="grp.label" class="mt-4">
-          <div v-if="!collapsed" class="px-5 mb-1.5 text-[10px] font-bold uppercase
-            tracking-[0.16em] text-white/35">
-            {{ grp.label }}
+        <!-- ====== Persona-curated layout (named personas) ====== -->
+        <template v-if="persona && !persona.flat">
+          <div v-for="grp in personaNav" :key="grp.label" class="mb-3 last:mb-0">
+            <div v-if="!collapsed && grp.label" class="px-5 mb-1.5 text-[10px] font-bold uppercase
+              tracking-[0.16em] text-white/35">
+              {{ grp.label }}
+            </div>
+            <div v-else-if="collapsed && grp.label" class="mx-4 my-2.5 border-t border-white/8" />
+            <div class="space-y-0.5">
+              <router-link v-for="item in grp.items" :key="item.to"
+                :to="item.to" @click="closeDrawer" :title="collapsed ? item.label : ''"
+                class="sc-nav-item group"
+                :class="[
+                  isActive(item.to) ? 'sc-nav-active' : 'sc-nav-idle',
+                  collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
+                ]">
+                <span v-if="isActive(item.to)" class="sc-nav-bar" />
+                <Icon :name="item.icon" :size="19"
+                  class="transition-transform duration-200 ease-sc group-hover:scale-110" />
+                <span v-if="!collapsed" class="text-[13.5px] font-medium truncate">{{ item.label }}</span>
+              </router-link>
+            </div>
           </div>
-          <div v-else class="mx-4 my-2.5 border-t border-white/8" />
+        </template>
+
+        <!-- ====== Admin / fallback layout — full module list ====== -->
+        <template v-else>
+          <!-- Primary -->
           <div class="space-y-0.5">
-            <router-link v-for="m in grp.items" :key="m.id"
-              :to="m.route" @click="closeDrawer" :title="collapsed ? `${m.code} — ${m.name}` : ''"
+            <router-link v-for="item in primaryNav" :key="item.to"
+              :to="item.to" @click="closeDrawer" :title="collapsed ? item.label : ''"
               class="sc-nav-item group"
               :class="[
-                isActive(m.route) ? 'sc-nav-active' : 'sc-nav-idle',
+                isActive(item.to) ? 'sc-nav-active' : 'sc-nav-idle',
                 collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
               ]">
-              <span v-if="isActive(m.route)" class="sc-nav-bar" />
-              <Icon :name="m.icon" :size="19"
+              <span v-if="isActive(item.to)" class="sc-nav-bar" />
+              <Icon :name="item.icon" :size="19"
                 class="transition-transform duration-200 ease-sc group-hover:scale-110" />
-              <span v-if="!collapsed" class="flex items-baseline gap-1.5 min-w-0">
-                <span class="font-mono text-[10px] text-white/40 group-hover:text-white/60
-                  transition-colors flex-shrink-0">{{ m.code }}</span>
-                <span class="text-[13.5px] font-medium truncate">{{ m.name }}</span>
-              </span>
+              <span v-if="!collapsed" class="text-[13.5px] font-medium truncate">{{ item.label }}</span>
             </router-link>
           </div>
-        </div>
+
+          <!-- Module groups -->
+          <div v-for="grp in moduleGroups" :key="grp.label" class="mt-4">
+            <div v-if="!collapsed" class="px-5 mb-1.5 text-[10px] font-bold uppercase
+              tracking-[0.16em] text-white/35">
+              {{ grp.label }}
+            </div>
+            <div v-else class="mx-4 my-2.5 border-t border-white/8" />
+            <div class="space-y-0.5">
+              <router-link v-for="m in grp.items" :key="m.id"
+                :to="m.route" @click="closeDrawer" :title="collapsed ? `${m.code} — ${m.name}` : ''"
+                class="sc-nav-item group"
+                :class="[
+                  isActive(m.route) ? 'sc-nav-active' : 'sc-nav-idle',
+                  collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
+                ]">
+                <span v-if="isActive(m.route)" class="sc-nav-bar" />
+                <Icon :name="m.icon" :size="19"
+                  class="transition-transform duration-200 ease-sc group-hover:scale-110" />
+                <span v-if="!collapsed" class="flex items-baseline gap-1.5 min-w-0">
+                  <span class="font-mono text-[10px] text-white/40 group-hover:text-white/60
+                    transition-colors flex-shrink-0">{{ m.code }}</span>
+                  <span class="text-[13.5px] font-medium truncate">{{ m.name }}</span>
+                </span>
+              </router-link>
+            </div>
+          </div>
+        </template>
       </nav>
+
+      <!-- Scope note (named persona only) -->
+      <div v-if="persona && !persona.flat && !collapsed"
+        class="mx-3 mb-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-400/20
+               text-[10.5px] leading-relaxed text-emerald-100/85">
+        <div class="flex items-start gap-1.5">
+          <Icon name="shield-check" :size="13" class="mt-[1px] flex-shrink-0 text-emerald-300" />
+          <div class="min-w-0">
+            <div><b class="text-emerald-200">Phạm vi:</b> {{ persona.scope }}</div>
+            <div class="mt-0.5"><b class="text-emerald-200">2FA:</b> {{ persona.twofa }}</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Footer -->
       <div class="border-t border-white/8 flex-shrink-0 p-2.5">
@@ -203,6 +312,65 @@ async function logout() {
           class="sc-icon-btn relative" title="Cảnh báo">
           <Icon name="bell" :size="19" />
         </router-link>
+
+        <!-- Admin-only persona switcher (QA preview) -->
+        <div v-if="access.is_admin" class="relative"
+          v-click-outside="() => personaSwitchOpen = false">
+          <button @click.stop="personaSwitchOpen = !personaSwitchOpen"
+            class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5
+                   bg-sc-bg-soft hover:bg-sc-royal-50 transition-colors"
+            :title="`Xem giao diện theo chân dung (${persona.role})`">
+            <span class="h-5 w-5 rounded flex items-center justify-center text-[10px]
+                         font-extrabold text-white flex-shrink-0"
+              :style="{ background: persona.color }">{{ persona.avatar }}</span>
+            <span class="hidden md:inline text-[12px] font-semibold text-sc-navy max-w-[120px] truncate">
+              {{ persona.name }}
+            </span>
+            <Icon name="chevron-down" :size="13"
+              class="text-sc-text-muted transition-transform duration-200"
+              :class="personaSwitchOpen ? 'rotate-180' : ''" />
+            <span v-if="access.isImpersonating"
+              class="h-2 w-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5
+                     ring-2 ring-sc-surface" />
+          </button>
+          <Transition name="sc-pop">
+            <div v-if="personaSwitchOpen"
+              class="absolute right-0 top-full mt-2 w-72 bg-sc-surface rounded-xl
+                     shadow-sc-lg border border-sc-border py-1 z-40 origin-top-right">
+              <div class="px-3.5 py-2 border-b border-sc-border">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-sc-text-muted">
+                  Xem giao diện theo chân dung
+                </div>
+                <div class="text-[10.5px] text-sc-text-muted mt-0.5">
+                  Chỉ thay đổi UI — dữ liệu vẫn theo quyền admin
+                </div>
+              </div>
+              <button v-for="p in personaOptions" :key="p.id"
+                @click="pickPersona(p.id)"
+                class="flex items-center gap-2.5 w-full text-left px-3.5 py-2 text-[13px]
+                       hover:bg-sc-bg-soft transition-colors"
+                :class="access.activePersonaId === p.id ? 'bg-sc-royal-50' : ''">
+                <span class="h-7 w-7 rounded-lg flex items-center justify-center text-white
+                             font-extrabold text-[12px] flex-shrink-0"
+                  :style="{ background: p.color }">{{ p.avatar }}</span>
+                <div class="min-w-0 flex-1">
+                  <div class="font-semibold text-sc-text truncate">{{ p.name }}</div>
+                  <div class="text-[10.5px] text-sc-text-muted truncate">{{ p.role }}</div>
+                </div>
+                <Icon v-if="access.activePersonaId === p.id" name="check" :size="14"
+                  class="text-sc-royal flex-shrink-0" />
+              </button>
+              <div v-if="access.isImpersonating" class="border-t border-sc-border mt-1 pt-1">
+                <button @click="clearImpersonation"
+                  class="w-full text-left px-3.5 py-2 text-[12px] text-sc-text-muted
+                         hover:bg-sc-bg-soft flex items-center gap-2">
+                  <Icon name="rotate-ccw" :size="13" />
+                  Khôi phục chân dung mặc định
+                </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
 
         <div class="h-6 w-px bg-sc-border mx-0.5 hidden sm:block" />
 
