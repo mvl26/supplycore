@@ -47,10 +47,22 @@ class SCRecallNotice(Document):
         # Compute outstanding per row + total
         total_affected = 0
         outstanding = 0
+        missing_destruction_audit = []
         for r in self.affected_items:
             r.outstanding_qty = flt(r.qty_dispensed) - flt(r.recovered_qty or 0) - flt(r.destroyed_qty or 0)
             total_affected += flt(r.qty_dispensed)
             outstanding += flt(r.outstanding_qty)
+            # BUG-007: SL hủy > 0 → phải có audit trail (reason + witness + date)
+            if flt(r.destroyed_qty) > 0:
+                if not (r.destruction_reason and str(r.destruction_reason).strip()
+                        and r.destruction_witnessed_by and r.destruction_date):
+                    missing_destruction_audit.append(r.idx)
+        if missing_destruction_audit and self.docstatus == 0:
+            frappe.throw(_(
+                "SC-E016 DESTRUCTION_AUDIT: Các dòng {0} có SL hủy > 0 nhưng "
+                "thiếu Lý do hủy / Người chứng kiến / Ngày hủy. "
+                "Tiêu hủy thuốc cần audit trail đầy đủ chống gian lận."
+            ).format(missing_destruction_audit), title="SC-E016 DESTRUCTION_AUDIT")
         self.total_affected_qty = total_affected
         self.recovered_qty = recovered
         self.destroyed_qty = destroyed

@@ -22,6 +22,9 @@
   "status",
   "recovery_date",
   "recovered_by",
+  "destruction_date",
+  "destruction_witnessed_by",
+  "destruction_reason",
   "clinical_notified",
   "remarks"
  ],
@@ -145,6 +148,31 @@
    "options": "User",
    "label": "Người thu hồi",
    "allow_on_submit": 1
+  },
+  {
+   "fieldname": "destruction_date",
+   "fieldtype": "Date",
+   "label": "Ngày tiêu hủy",
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.destroyed_qty>0",
+   "description": "Bắt buộc khi SL hủy > 0 (BUG-007 audit trail)"
+  },
+  {
+   "fieldname": "destruction_witnessed_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người chứng kiến hủy",
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.destroyed_qty>0",
+   "description": "Bắt buộc khi SL hủy > 0 — chống gian lận"
+  },
+  {
+   "fieldname": "destruction_reason",
+   "fieldtype": "Small Text",
+   "label": "Lý do hủy",
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.destroyed_qty>0",
+   "description": "Mô tả phương pháp + lý do tiêu hủy"
   },
   {
    "fieldname": "clinical_notified",
