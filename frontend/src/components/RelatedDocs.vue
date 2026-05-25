@@ -75,7 +75,7 @@ function rowClick(sectionKey, row) {
 function fmt(value, key) {
   if (value == null || value === '') return '—'
   if (/_date$/.test(key)) return fmtDate(value)
-  if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value)
+  if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value, key)
   if (/total|value|amount|qty|cost|balance|pays/.test(key) && typeof value === 'number') {
     return fmtShort(value)
   }

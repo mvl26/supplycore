@@ -25,7 +25,9 @@ function fmt(value, col) {
   if (col.type === 'badge') {
     const map = col.badgeMap || {}
     const cls = map[value] || 'sc-badge-neutral'
-    const text = statusLabel(value) || '—'
+    // QA-BUG-M3-01: truyền col.key để statusLabel pick field-aware label
+    // (vd qc_status='Pending' → 'Chờ QC' thay vì 'Chờ duyệt')
+    const text = statusLabel(value, col.key) || '—'
     return { __html: `<span class="sc-badge ${cls}">${text}</span>` }
   }
   return value

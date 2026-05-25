@@ -435,7 +435,7 @@ function displayField(value, key) {
   if (typeof value === 'object') return JSON.stringify(value).slice(0, 100)
   if (/_date$/.test(key) && value) return new Date(value).toLocaleDateString('vi-VN')
   if (/_at$/.test(key) && value) return new Date(value).toLocaleString('vi-VN')
-  if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value)
+  if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value, key)
   if (/value|amount|total|cost|rate/.test(key) && typeof value === 'number') {
     return fmtNumber(value)
   }

@@ -15,18 +15,39 @@ from frappe.utils import flt, today, add_months, getdate
 class SCSupplier(Document):
 
     def validate(self):
+        self._validate_tax_id_format()
         self._validate_tax_id_unique()
         self._validate_email_format()
         self._normalize_bank_holder()
         self._validate_supplied_item_groups()
 
+    def _validate_tax_id_format(self):
+        """QA-BUG-M0-02: MST Việt Nam phải đúng định dạng theo Thông tư
+        105/2020/TT-BTC: 10 chữ số (NCC chính) hoặc 13 chữ số (10-3 cho
+        đơn vị phụ thuộc, viết liền hoặc cách bằng dấu '-').
+
+        Regex chấp nhận:
+          - 1234567890        (10 chữ số)
+          - 1234567890001     (13 chữ số liền)
+          - 1234567890-001    (10-3 cách bằng dấu)
+        """
+        if not self.tax_id:
+            return
+        clean = self.tax_id.strip().replace(" ", "")
+        if not re.match(r"^[0-9]{10}(-?[0-9]{3})?$", clean):
+            frappe.throw(_(
+                "SC-E021 INVALID_TAX_ID: MST '{0}' không đúng định dạng VN. "
+                "Phải là 10 chữ số (vd: 0301110116) hoặc 13 chữ số "
+                "(vd: 0301110116001 hoặc 0301110116-001) theo Thông tư "
+                "105/2020/TT-BTC."
+            ).format(self.tax_id), title="SC-E021 INVALID_TAX_ID")
+        # Normalize: bỏ '-' để lưu thống nhất
+        self.tax_id = clean.replace("-", "")
+
     def _validate_tax_id_unique(self):
         """UC-02 step 7: kiểm tra trùng MST."""
         if not self.tax_id:
             return
-        clean = self.tax_id.strip()
-        if clean != self.tax_id:
-            self.tax_id = clean
         # Check duplicate (trừ chính nó)
         existing = frappe.db.get_value("SC Supplier",
             {"tax_id": self.tax_id, "name": ["!=", self.name or ""]}, "name")
