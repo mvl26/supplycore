@@ -238,14 +238,21 @@ def _create_alerts_dedup(rule, rows, title_fn, msg_fn, ref_fn) -> int:
     """Tạo Alert deduplicated: 1 ref → 1 open alert active.
 
     UC-33: sau khi tạo SC Alert, gọi rule.dispatch_alert_notifications()
-    để gửi qua các channel enabled (email/sms). In-app đã được tạo qua doc."""
+    để gửi qua các channel enabled (email/sms). In-app đã được tạo qua doc.
+
+    BUG-012: Dedup theo (alert_type, reference_doctype, reference_name,
+    DATE(alert_date)) chứ KHÔNG chỉ theo alert_rule — vì 2 rule khác nhau
+    có thể cùng tạo alert cho 1 reference (vd 'fc_expiring 30d' + 'fc_expiring
+    7d' cùng fire cho FC hết hạn trong 7 ngày).
+    """
     created = 0
     rule_doc = None
     for row in rows:
         ref_dt, ref_nm = ref_fn(row)
-        # Check existing open alert cùng rule + reference trong 7 ngày
+        # BUG-012: Check existing open alert cùng (alert_type, reference) trong 7 ngày
+        # bất kể alert_rule nào tạo ra.
         existing = frappe.db.exists("SC Alert", {
-            "alert_rule": rule.name,
+            "alert_type": rule.alert_type,
             "reference_doctype": ref_dt,
             "reference_name": ref_nm,
             "resolved": 0,
