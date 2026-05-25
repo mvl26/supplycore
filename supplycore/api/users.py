@@ -392,11 +392,23 @@ def create_user(email: str, full_name: str, roles=None,
     if invalid:
         frappe.msgprint(_("Bỏ qua role không tồn tại: {0}").format(", ".join(invalid)))
 
+    # BUG-008: tách full_name → first_name + last_name (+ middle_name nếu có)
+    # vì Frappe User auto-compute full_name = first + middle + last; chỉ set
+    # first_name = bị mất phần còn lại (vd "Nguyễn Thị Thu Hương" → "Nguyễn").
+    parts = (full_name or email.split("@")[0]).strip().split()
+    if len(parts) >= 3:
+        first, middle, last = parts[0], " ".join(parts[1:-1]), parts[-1]
+    elif len(parts) == 2:
+        first, middle, last = parts[0], "", parts[1]
+    else:
+        first, middle, last = parts[0] if parts else email.split("@")[0], "", ""
+
     doc = frappe.get_doc({
         "doctype": "User",
         "email": email,
-        "first_name": full_name.split(" ")[0] if full_name else email.split("@")[0],
-        "full_name": full_name or email.split("@")[0],
+        "first_name": first,
+        "middle_name": middle,
+        "last_name": last,
         "send_welcome_email": cint(send_welcome),
         "user_type": user_type,
         "enabled": 1,
