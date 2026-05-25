@@ -126,6 +126,18 @@ h1, h2, h3, h4 { letter-spacing: -0.012em; }
   .sc-label {
     @apply block text-xs font-semibold text-sc-text-soft mb-1.5;
   }
+  /* UX-005: highlight field thiếu trên form sau khi submit */
+  .sc-field-invalid .sc-input,
+  .sc-field-invalid select,
+  .sc-field-invalid textarea,
+  .sc-field-invalid input[type="text"],
+  .sc-field-invalid input[type="number"],
+  .sc-field-invalid input[type="date"] {
+    @apply border-sc-danger ring-1 ring-sc-danger/30 bg-red-50/30;
+  }
+  .sc-field-invalid label > span.text-sc-danger {
+    @apply font-bold;
+  }
 
   /* Tables */
   .sc-table { @apply w-full text-sm border-separate border-spacing-0; }

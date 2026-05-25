@@ -34,6 +34,55 @@ async function request(path, options = {}) {
   return body
 }
 
+// UX-001: ánh xạ raw exception → thông báo nghiệp vụ thân thiện + mã lỗi.
+// Mọi lỗi không khớp sẽ giữ nguyên (để dev dễ debug), nhưng các lỗi điển hình
+// (AttributeError, TimestampMismatch, MandatoryError, Permission…) được dịch
+// sang câu tiếng Việt + error code SC-Exxx ngắn gọn cho người dùng cuối.
+const ERROR_MAP = [
+  { re: /['"]?\w+['"]?\s+object has no attribute ['"](lft|rgt|old_parent|parent_group|parent_warehouse)['"]/i,
+    code: 'SC-E101',
+    msg: 'Lỗi cấu trúc dữ liệu phân cấp. Vui lòng liên hệ quản trị viên để chạy lại migration.' },
+  { re: /TimestampMismatchError|has been modified after you have opened it/i,
+    code: 'SC-E102',
+    msg: 'Bản ghi đã được người khác cập nhật. Vui lòng tải lại trang và thử lại.' },
+  { re: /MandatoryError|Value missing for/i,
+    code: 'SC-E103',
+    msg: 'Thiếu trường bắt buộc. Vui lòng kiểm tra các ô có dấu * trên form.' },
+  { re: /DuplicateEntryError|already exists|Duplicate entry/i,
+    code: 'SC-E104',
+    msg: 'Bản ghi đã tồn tại (mã hoặc khoá duy nhất bị trùng).' },
+  { re: /LinkValidationError|Could not find/i,
+    code: 'SC-E105',
+    msg: 'Tham chiếu không hợp lệ — bản ghi liên kết không tồn tại.' },
+  { re: /PermissionError|Not permitted|No permission|no permission/i,
+    code: 'SC-E106',
+    msg: 'Bạn không có quyền thực hiện thao tác này. Vui lòng liên hệ quản trị viên.' },
+  { re: /ValidationError|Invalid|không hợp lệ/i,
+    code: 'SC-E107',
+    msg: null /* giữ message gốc nếu là ValidationError có message rõ ràng */ },
+  { re: /CSRFTokenError|Invalid CSRF/i,
+    code: 'SC-E108',
+    msg: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' },
+  { re: /AttributeError|TypeError|KeyError|InternalServerError/i,
+    code: 'SC-E999',
+    msg: 'Đã xảy ra lỗi hệ thống. Vui lòng liên hệ quản trị viên.' },
+]
+
+export function friendlyError(rawMsg) {
+  if (!rawMsg) return rawMsg
+  const txt = String(rawMsg)
+  for (const rule of ERROR_MAP) {
+    if (rule.re.test(txt)) {
+      // ValidationError không có msg cố định → giữ original (chỉ thêm prefix code nếu cần)
+      if (!rule.msg) return txt
+      // Log raw để dev debug ở console
+      try { console.warn(`[${rule.code}] ${txt}`) } catch (e) {}
+      return `${rule.msg} (Mã: ${rule.code})`
+    }
+  }
+  return txt
+}
+
 function parseFrappeError(body) {
   if (!body) return null
   // _server_messages = nguồn đầy đủ nhất (frappe.throw / msgprint), ưu tiên.
@@ -45,7 +94,7 @@ function parseFrappeError(body) {
         return (o && o.message != null) ? o.message : String(m)
       })
       const txt = msgs.join('\n').replace(/<[^>]+>/g, '').trim()
-      if (txt) return txt
+      if (txt) return friendlyError(txt)
     } catch (e) { /* fall through */ }
   }
   // exception: có thể là "module.path.XxxError: message" HOẶC message thuần.
@@ -56,13 +105,13 @@ function parseFrappeError(body) {
     const ex = String(body.exception).trim()
     const m = ex.match(/^([\w.]+(?:Error|Exception)):\s*([\s\S]+)$/)
     const txt = (m ? m[2] : ex).trim()
-    if (txt) return txt
+    if (txt) return friendlyError(txt)
   }
   if (body._error_message) {
-    return String(body._error_message).replace(/<[^>]+>/g, '').trim()
+    return friendlyError(String(body._error_message).replace(/<[^>]+>/g, '').trim())
   }
-  if (typeof body.message === 'string') return body.message
-  if (body.message?.message) return body.message.message
+  if (typeof body.message === 'string') return friendlyError(body.message)
+  if (body.message?.message) return friendlyError(body.message.message)
   return null
 }
 

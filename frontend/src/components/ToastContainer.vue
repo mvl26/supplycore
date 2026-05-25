@@ -14,7 +14,7 @@ const STYLE = {
 
 <template>
   <Teleport to="body">
-    <div class="fixed top-4 right-4 z-[60] space-y-2.5 max-w-sm w-[calc(100vw-2rem)] sm:w-auto">
+    <div class="fixed top-[72px] right-4 z-[60] space-y-2.5 max-w-sm w-[calc(100vw-2rem)] sm:w-auto">
       <TransitionGroup name="sc-toast">
         <div v-for="t in toast.toasts" :key="t.id"
           class="flex items-start gap-3 rounded-xl px-3.5 py-3 text-[13px] font-medium

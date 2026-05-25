@@ -117,7 +117,7 @@ function clearAttach() {
       :size="size" :allow-create="!!field.canCreateNew" :readonly="isReadonly()"
       :extra-filters="extraFilters"
       @update:model-value="update" @selected="(r) => emit('selected', r)"
-      @create-new="emit('createNew', field)" />
+      @create-new="(payload) => emit('createNew', { field, ...(payload || {}) })" />
 
     <!-- Select -->
     <select v-else-if="field.type === 'Select'"

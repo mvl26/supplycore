@@ -147,14 +147,22 @@ const subLabel = (r) => {
       <div v-if="open && !readonly" :style="dropdownStyle"
         class="bg-white border border-sc-border rounded-md shadow-lg max-h-72 overflow-y-auto">
         <button v-if="allowCreate" type="button"
-          @mousedown.prevent="emit('createNew'); open = false"
+          @mousedown.prevent="emit('createNew', { search }); open = false"
           class="w-full text-left px-3 py-2 text-sm font-semibold text-sc-royal hover:bg-sc-bg border-b border-sc-border bg-blue-50">
-          + Tạo mới {{ linkTo.replace(/^SC /, '') }}
+          + Tạo mới {{ linkTo.replace(/^SC /, '') }}{{ search ? ` "${search}"` : '' }}
         </button>
         <div v-if="loading" class="px-3 py-2 text-sm text-sc-text-muted">Đang tìm...</div>
-        <div v-else-if="results.length === 0" class="px-3 py-2 text-sm text-sc-text-muted">
-          Không có kết quả{{ search ? ` cho "${search}"` : '' }}
-        </div>
+        <template v-else-if="results.length === 0">
+          <div class="px-3 py-2 text-sm text-sc-text-muted">
+            Không có kết quả{{ search ? ` cho "${search}"` : '' }}
+          </div>
+          <!-- UX-004: gợi ý "Tạo mới" inline khi không tìm thấy + user đã gõ search -->
+          <button v-if="search && !allowCreate" type="button"
+            @mousedown.prevent="emit('createNew', { search }); open = false"
+            class="w-full text-left px-3 py-2 text-sm font-medium text-sc-royal hover:bg-sc-bg border-t border-sc-border bg-blue-50">
+            + Tạo mới {{ linkTo.replace(/^SC /, '') }} "{{ search }}"
+          </button>
+        </template>
         <button v-else v-for="r in results" :key="r.name" type="button"
           @mousedown.prevent="pick(r)"
           class="w-full text-left px-3 py-2 text-sm hover:bg-sc-bg border-b border-sc-border last:border-0">
