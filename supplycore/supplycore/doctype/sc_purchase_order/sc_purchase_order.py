@@ -212,7 +212,7 @@ class SCPurchaseOrder(Document):
                 recipients=[email],
                 subject=f"[SupplyCore] Purchase Order {self.name}",
                 message=msg,
-                delayed=False,
+                delayed=True,
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-08 _send_po_to_supplier")
@@ -227,7 +227,7 @@ class SCPurchaseOrder(Document):
             frappe.sendmail(
                 recipients=[self.owner],
                 subject=f"[SupplyCore] PO {self.name} bị từ chối",
-                message=body, delayed=False,
+                message=body, delayed=True,
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-08 _notify_creator_rejected")

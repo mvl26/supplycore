@@ -135,7 +135,7 @@ def _notify_supplier_qc_rejected(pr, qi, return_doc_name):
             recipients=recipients,
             subject=f"[SupplyCore] QC Rejected - {pr.name} / {qi.item_code}",
             message=msg,
-            delayed=False,
+            delayed=True,
         )
     except Exception as e:
         frappe.log_error(f"Email QC reject failed: {e}", "M3 _notify_supplier_qc_rejected")

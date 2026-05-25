@@ -239,7 +239,7 @@ class SCPurchaseReceipt(Document):
             frappe.sendmail(
                 recipients=[email],
                 subject=f"[SupplyCore] Phiếu trả hàng {self.name}",
-                message=msg, delayed=False,
+                message=msg, delayed=True,
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-11 _send_return_notification")

@@ -214,7 +214,7 @@ def _send_reorder_summary(pairs: list, drafts: list, skipped: list):
             recipients=recipients,
             subject=f"[SupplyCore] {len(drafts)} Draft MR tự tạo từ Reorder Level",
             message=message,
-            delayed=False,
+            delayed=True,
         )
     except Exception as e:
         frappe.log_error(message=str(e)[:1000], title="UC-07 _send_reorder_summary")
@@ -255,7 +255,7 @@ def check_po_response():
                          f"<p>PO <b>{po.name}</b> đã gửi lúc {po.sent_to_supplier_at} nhưng chưa nhận được xác nhận. "
                          f"Vui lòng phản hồi sớm nhất có thể.</p>"
                          f"<p>Link: /app/sc-purchase-order/{po.name}</p>"),
-                delayed=False,
+                delayed=True,
             )
             frappe.db.set_value("SC Purchase Order", po.name,
                                  "last_reminder_sent_at", frappe.utils.now())

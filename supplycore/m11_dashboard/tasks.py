@@ -33,7 +33,7 @@ def send_daily_kpi():
     try:
         frappe.sendmail(recipients=recipients,
                          subject=f"[SupplyCore] Daily KPI {today()}",
-                         message=body, delayed=False)
+                         message=body, delayed=True)
     except Exception as e:
         frappe.log_error(message=str(e)[:1000], title="M11 send_daily_kpi")
 

@@ -249,7 +249,7 @@ class SCDispensingRequest(Document):
                          f"<p>Stock Entry: {self.stock_entry}</p>"
                          f"<p>Khoa: {self.department}</p>"
                          f"<p><a href='/app/sc-dispensing-request/{self.name}'>Mở phiếu</a></p>"),
-                delayed=False,
+                delayed=True,
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-21 _notify_department")

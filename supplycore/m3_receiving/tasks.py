@@ -43,7 +43,7 @@ def check_return_responses():
                              f"chưa nhận được phản hồi xác nhận đổi hàng / hoàn tiền.</p>"
                              f"<p>Giá trị: {frappe.format(r.total_value, {'fieldtype':'Currency'})}</p>"
                              f"<p>Vui lòng liên hệ NCC để xử lý.</p>"),
-                    delayed=False,
+                    delayed=True,
                 )
             except Exception as e:
                 frappe.log_error(message=f"PR={r.name}: {str(e)[:500]}",

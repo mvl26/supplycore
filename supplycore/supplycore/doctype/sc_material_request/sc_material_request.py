@@ -133,7 +133,7 @@ class SCMaterialRequest(Document):
                 message=(f"<p>MR <a href='/app/sc-material-request/{self.name}'>{self.name}</a> "
                          f"({self.request_type}) chờ phê duyệt.</p>"
                          f"<p>Tổng: {frappe.format(self.total_estimated_cost, {'fieldtype':'Currency'})}</p>"),
-                delayed=False,
+                delayed=True,
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-07 _notify_managers")
@@ -149,7 +149,7 @@ class SCMaterialRequest(Document):
                 recipients=[self.owner],
                 subject=f"[SupplyCore] MR {self.name} {status}",
                 message=body,
-                delayed=False,
+                delayed=True,
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-07 _notify_owner")

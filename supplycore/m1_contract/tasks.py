@@ -65,5 +65,5 @@ def check_contract_expiry():
         recipients=recipients,
         subject=f"[SupplyCore] {len(expiring)} HĐK sắp hết hạn",
         message=message,
-        delayed=False,
+        delayed=True,
     )

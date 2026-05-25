@@ -42,5 +42,5 @@ def on_submit(doc, method=None):
         recipients=recipients,
         subject=f"[SupplyCore] Material Request {doc.name} chờ xử lý",
         message=message,
-        delayed=False,
+        delayed=True,
     )

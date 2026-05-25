@@ -148,7 +148,7 @@ def _send_expiry_email(rows, critical_days):
         frappe.sendmail(
             recipients=recipients,
             subject=f"[SupplyCore] {len(rows)} lô sắp hết hạn",
-            message=msg, delayed=False,
+            message=msg, delayed=True,
         )
     except Exception as e:
         frappe.log_error(message=f"Email scan_expiring failed: {e}",
