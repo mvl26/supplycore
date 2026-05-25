@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { MODULES } from '../modules'
 import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
-import { PERSONAS, PERSONA_LIST } from '../personas'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
 import { APP_VERSION, BUILD_DATE, RELEASE_NOTES } from '../version'
@@ -20,14 +19,14 @@ const access = useAccessStore()
 const collapsed = ref(localStorage.getItem('sc-sidebar') === '1')
 const sidebarOpen = ref(false)
 const userMenuOpen = ref(false)
-const personaSwitchOpen = ref(false)
 
 function toggleCollapse() {
   collapsed.value = !collapsed.value
   localStorage.setItem('sc-sidebar', collapsed.value ? '1' : '0')
 }
 
-// Active persona — auto-detected from roles unless admin has overridden it.
+// Active persona — derived 100% from logged-in user's Frappe roles.
+// There is intentionally no switcher: persona is RBAC, not preference.
 const persona = computed(() => access.activePersona)
 
 // Primary navigation (admin/fallback) — "không có phận sự thì không thấy"
@@ -73,20 +72,6 @@ const personaNav = computed(() => {
   if (current && current.items.length) out.push(current)
   return out
 })
-
-// Admin persona switcher items
-const personaOptions = computed(() =>
-  PERSONA_LIST.map(id => ({ id, ...PERSONAS[id] }))
-)
-function pickPersona(pid) {
-  access.setPersonaOverride(pid === access.detectedPersonaId ? null : pid)
-  personaSwitchOpen.value = false
-  router.push(PERSONAS[pid]?.home || '/dashboard')
-}
-function clearImpersonation() {
-  access.setPersonaOverride(null)
-  personaSwitchOpen.value = false
-}
 
 function isActive(path, exact = true) {
   if (path === '/dashboard') return route.path === '/' || route.path === '/dashboard'
@@ -172,11 +157,6 @@ async function logout() {
           <span class="inline-block mt-1.5 text-[9.5px] font-bold tracking-[0.04em]
                        bg-white/12 text-white/90 px-2 py-[2px] rounded-full">
             {{ persona.role }}
-          </span>
-          <span v-if="access.isImpersonating"
-            class="inline-block ml-1 text-[9.5px] font-bold tracking-[0.04em]
-                   bg-amber-400/25 text-amber-100 px-2 py-[2px] rounded-full">
-            QA preview
           </span>
         </div>
       </div>
@@ -313,63 +293,16 @@ async function logout() {
           <Icon name="bell" :size="19" />
         </router-link>
 
-        <!-- Admin-only persona switcher (QA preview) -->
-        <div v-if="access.is_admin" class="relative"
-          v-click-outside="() => personaSwitchOpen = false">
-          <button @click.stop="personaSwitchOpen = !personaSwitchOpen"
-            class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5
-                   bg-sc-bg-soft hover:bg-sc-royal-50 transition-colors"
-            :title="`Xem giao diện theo chân dung (${persona.role})`">
-            <span class="h-5 w-5 rounded flex items-center justify-center text-[10px]
-                         font-extrabold text-white flex-shrink-0"
-              :style="{ background: persona.color }">{{ persona.avatar }}</span>
-            <span class="hidden md:inline text-[12px] font-semibold text-sc-navy max-w-[120px] truncate">
-              {{ persona.name }}
-            </span>
-            <Icon name="chevron-down" :size="13"
-              class="text-sc-text-muted transition-transform duration-200"
-              :class="personaSwitchOpen ? 'rotate-180' : ''" />
-            <span v-if="access.isImpersonating"
-              class="h-2 w-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5
-                     ring-2 ring-sc-surface" />
-          </button>
-          <Transition name="sc-pop">
-            <div v-if="personaSwitchOpen"
-              class="absolute right-0 top-full mt-2 w-72 bg-sc-surface rounded-xl
-                     shadow-sc-lg border border-sc-border py-1 z-40 origin-top-right">
-              <div class="px-3.5 py-2 border-b border-sc-border">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-sc-text-muted">
-                  Xem giao diện theo chân dung
-                </div>
-                <div class="text-[10.5px] text-sc-text-muted mt-0.5">
-                  Chỉ thay đổi UI — dữ liệu vẫn theo quyền admin
-                </div>
-              </div>
-              <button v-for="p in personaOptions" :key="p.id"
-                @click="pickPersona(p.id)"
-                class="flex items-center gap-2.5 w-full text-left px-3.5 py-2 text-[13px]
-                       hover:bg-sc-bg-soft transition-colors"
-                :class="access.activePersonaId === p.id ? 'bg-sc-royal-50' : ''">
-                <span class="h-7 w-7 rounded-lg flex items-center justify-center text-white
-                             font-extrabold text-[12px] flex-shrink-0"
-                  :style="{ background: p.color }">{{ p.avatar }}</span>
-                <div class="min-w-0 flex-1">
-                  <div class="font-semibold text-sc-text truncate">{{ p.name }}</div>
-                  <div class="text-[10.5px] text-sc-text-muted truncate">{{ p.role }}</div>
-                </div>
-                <Icon v-if="access.activePersonaId === p.id" name="check" :size="14"
-                  class="text-sc-royal flex-shrink-0" />
-              </button>
-              <div v-if="access.isImpersonating" class="border-t border-sc-border mt-1 pt-1">
-                <button @click="clearImpersonation"
-                  class="w-full text-left px-3.5 py-2 text-[12px] text-sc-text-muted
-                         hover:bg-sc-bg-soft flex items-center gap-2">
-                  <Icon name="rotate-ccw" :size="13" />
-                  Khôi phục chân dung mặc định
-                </button>
-              </div>
-            </div>
-          </Transition>
+        <!-- Persona chip — read-only badge of the active persona (no switching) -->
+        <div v-if="persona && !persona.flat"
+          class="hidden md:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 bg-sc-bg-soft"
+          :title="`Phân quyền theo chân dung: ${persona.role}`">
+          <span class="h-5 w-5 rounded flex items-center justify-center text-[10px]
+                       font-extrabold text-white flex-shrink-0"
+            :style="{ background: persona.color }">{{ persona.avatar }}</span>
+          <span class="text-[12px] font-semibold text-sc-navy max-w-[160px] truncate">
+            {{ persona.name }}
+          </span>
         </div>
 
         <div class="h-6 w-px bg-sc-border mx-0.5 hidden sm:block" />
