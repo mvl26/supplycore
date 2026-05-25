@@ -32,6 +32,21 @@ class SCMaterialRequest(Document):
         if self.docstatus == 0:
             self.status = "Draft"
 
+    def before_submit(self):
+        """QAv3-BUG-M2-06: Block submit MR có total_estimated_cost <= 0.
+
+        MR loại Purchase / Urgent phải có giá trị ước tính > 0 — không
+        chấp nhận duyệt MR 'không có cơ sở giá'. Material Transfer Request
+        nội bộ không cần price → exempt.
+        """
+        if self.request_type in ("Purchase", "Urgent") and flt(self.total_estimated_cost) <= 0:
+            frappe.throw(_(
+                "SC-E023 ZERO_MR_COST: MR {0} có tổng ước tính = {1}. "
+                "MR loại {2} phải có đơn giá > 0 ở mọi dòng. "
+                "Kiểm tra HĐ khung hoặc nhập 'Đơn giá ước tính' từng dòng."
+            ).format(self.name, self.total_estimated_cost, self.request_type),
+                title="SC-E023 ZERO_MR_COST")
+
     def on_submit(self):
         """UC-07: submit → Pending (chờ duyệt). KHÔNG auto-approve."""
         self.db_set("status", "Pending")
