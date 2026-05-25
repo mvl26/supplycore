@@ -584,6 +584,91 @@ def save_doc(doctype, name, fields):
 
 
 @frappe.whitelist()
+def get_audit_trail(
+    doctype: str = "",
+    user: str = "",
+    from_date: str = "",
+    to_date: str = "",
+    limit: int = 200,
+):
+    """FEAT-003: Audit Trail global — filter theo doctype / user / khoảng thời gian.
+
+    Trả về danh sách thay đổi (tabVersion) cộng dồn từ mọi DocType SC.
+    Chỉ user có role SupplyCore Manager / Auditor / System Manager mới xem được.
+    """
+    roles = set(frappe.get_roles(frappe.session.user))
+    if not (roles & {"System Manager", "SupplyCore Manager", "SupplyCore Auditor"}):
+        frappe.throw(
+            _("Chỉ Quản lý hoặc Kiểm toán mới xem được Audit Trail"),
+            frappe.PermissionError,
+        )
+
+    filters = {}
+    if doctype:
+        filters["ref_doctype"] = doctype
+    else:
+        # Chỉ trả về các DocType bắt đầu SC * hoặc Framework Contract (in-scope)
+        filters["ref_doctype"] = (
+            "in",
+            tuple(
+                r.name for r in frappe.db.get_all(
+                    "DocType",
+                    filters={"module": ("in", ("Supplycore",
+                                               "M1 Contract", "M2 Planning",
+                                               "M3 Receiving", "M4 Wms",
+                                               "M5 Fefo", "M6 Transfer",
+                                               "M7 Dispensing", "M8 Accounting",
+                                               "M9 Stocktake", "M10 Traceability",
+                                               "M11 Dashboard"))},
+                    pluck="name",
+                )
+            ) or ("__none__",),
+        )
+    if user:
+        filters["owner"] = user
+    if from_date:
+        filters["creation"] = (">=", from_date)
+    if to_date:
+        existing = filters.get("creation")
+        filters["creation"] = (
+            ("between", [from_date or "1970-01-01", to_date])
+            if existing else ("<=", to_date)
+        )
+
+    rows = frappe.db.get_all(
+        "Version",
+        filters=filters,
+        fields=["name", "ref_doctype", "docname", "owner", "creation", "data"],
+        order_by="creation desc",
+        limit=int(limit) if limit else 200,
+    )
+
+    import json as _json
+    out = []
+    for r in rows:
+        change_count = 0
+        try:
+            d = _json.loads(r.data or "{}")
+            change_count = (
+                len(d.get("changed") or [])
+                + len(d.get("row_changed") or [])
+                + len(d.get("added") or [])
+                + len(d.get("removed") or [])
+            )
+        except Exception:
+            pass
+        out.append({
+            "name": r.name,
+            "doctype": r.ref_doctype,
+            "docname": r.docname,
+            "user": r.owner,
+            "when": r.creation,
+            "change_count": change_count,
+        })
+    return out
+
+
+@frappe.whitelist()
 def get_doc_versions(doctype, name, limit=50):
     """Trả lịch sử sửa từ tabVersion (track_changes=1) — diff field-level.
 

@@ -5,6 +5,10 @@ import { MODULES } from '../modules'
 import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
 import Icon from './Icon.vue'
+import Modal from './Modal.vue'
+import { APP_VERSION, BUILD_DATE, RELEASE_NOTES } from '../version'
+
+const showVersionModal = ref(false)
 
 const route = useRoute()
 const router = useRouter()
@@ -167,10 +171,12 @@ async function logout() {
             class="transition-transform duration-300 ease-sc" :class="collapsed ? 'rotate-180' : ''" />
           <span v-if="!collapsed" class="text-xs font-medium">Thu gọn thanh điều hướng</span>
         </button>
-        <div v-if="!collapsed" class="px-3 pt-1.5 text-[10.5px] text-white/35 flex items-center gap-1.5">
+        <button v-if="!collapsed" @click="showVersionModal = true"
+          class="w-full px-3 pt-1.5 text-[10.5px] text-white/35 hover:text-white/80 flex items-center gap-1.5 cursor-pointer text-left">
           <span class="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
-          <span>v0.1.0 · {{ auth.primaryRole }}</span>
-        </div>
+          <span>v{{ APP_VERSION }} · {{ auth.primaryRole }}</span>
+          <span class="ml-auto text-white/30">›</span>
+        </button>
       </div>
     </aside>
 
@@ -249,6 +255,38 @@ async function logout() {
         </div>
       </main>
     </div>
+
+    <!-- FEAT-005: Version / Changelog modal -->
+    <Modal :open="showVersionModal" title="Phiên bản & Changelog" @close="showVersionModal = false" size="lg">
+      <div class="space-y-1 text-sm mb-4 pb-3 border-b border-sc-border">
+        <div><span class="text-sc-text-muted">Phiên bản:</span> <strong>v{{ APP_VERSION }}</strong></div>
+        <div><span class="text-sc-text-muted">Build date:</span> {{ BUILD_DATE }}</div>
+        <div><span class="text-sc-text-muted">Role:</span> {{ auth.primaryRole }}</div>
+      </div>
+      <div class="space-y-5 max-h-[60vh] overflow-y-auto">
+        <div v-for="r in RELEASE_NOTES" :key="r.version">
+          <div class="flex items-baseline gap-2 mb-2">
+            <h3 class="font-semibold text-sc-navy">v{{ r.version }}</h3>
+            <span class="text-xs text-sc-text-muted">{{ r.date }} — {{ r.title }}</span>
+          </div>
+          <ul class="space-y-1.5 text-sm pl-1">
+            <li v-for="(i, k) in r.items" :key="k" class="flex items-start gap-2">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 mt-0.5"
+                :class="{
+                  'bg-red-100 text-red-700':    i.type === 'fix',
+                  'bg-blue-100 text-blue-700':  i.type === 'feat',
+                  'bg-purple-100 text-purple-700': i.type === 'ux',
+                  'bg-amber-100 text-amber-700':i.type === 'perf',
+                  'bg-gray-100 text-gray-700':  i.type === 'docs',
+                }">
+                {{ i.type.toUpperCase() }}
+              </span>
+              <span>{{ i.text }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 

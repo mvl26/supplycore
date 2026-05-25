@@ -157,6 +157,43 @@ const drillTo = {
 }
 
 function gotoDrill(key) { router.push(drillTo[key] || '/') }
+
+// FEAT-002: Export CSV cho widget "Top vật tư tiêu thụ" + "Xu hướng chi phí"
+function exportCsv(filename, rows, columns) {
+  const header = columns.map(c => `"${c.label}"`).join(',')
+  const body = rows.map(r => columns.map(c => {
+    const v = r[c.key]
+    if (v == null) return ''
+    const s = String(v).replace(/"/g, '""')
+    return /[",\n]/.test(s) ? `"${s}"` : s
+  }).join(',')).join('\n')
+  const blob = new Blob(['﻿' + header + '\n' + body], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename
+  document.body.appendChild(a); a.click(); a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function exportTopItems() {
+  exportCsv(`top_items_${new Date().toISOString().slice(0,10)}.csv`,
+    dashboard.value?.top_items || [],
+    [
+      { key: 'item_code', label: 'Mã VT' },
+      { key: 'item_name', label: 'Tên VT' },
+      { key: 'qty_used', label: 'Số lượng' },
+      { key: 'cost',     label: 'Chi phí (VND)' },
+    ])
+}
+
+function exportTrend() {
+  exportCsv(`cost_trend_${new Date().toISOString().slice(0,10)}.csv`,
+    trend.value || [],
+    [
+      { key: 'month', label: 'Tháng' },
+      { key: 'cost',  label: 'Chi phí (VND)' },
+    ])
+}
 </script>
 
 <template>
@@ -231,7 +268,13 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
       <div class="lg:col-span-2 sc-card p-5">
-        <h3 class="font-semibold text-sc-navy mb-3">Xu hướng chi phí 12 tháng</h3>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sc-navy">Xu hướng chi phí 12 tháng</h3>
+          <button v-if="trend.length" @click="exportTrend"
+            class="text-xs text-sc-royal hover:underline" title="Xuất dữ liệu chart sang CSV">
+            ⬇ CSV
+          </button>
+        </div>
         <div class="h-72">
           <Line v-if="trend.length" :data="chartData" :options="chartOptions" />
           <div v-else class="text-center py-20 text-sc-text-muted">Chưa có dữ liệu</div>
@@ -266,7 +309,13 @@ function gotoDrill(key) { router.push(drillTo[key] || '/') }
     <div class="sc-card p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold text-sc-navy">Top 10 vật tư tiêu thụ</h3>
-        <router-link to="/m4" class="text-xs text-sc-royal hover:underline">Xem kho →</router-link>
+        <div class="flex items-center gap-3">
+          <button v-if="dashboard.top_items.length" @click="exportTopItems"
+            class="text-xs text-sc-royal hover:underline" title="Xuất bảng sang CSV">
+            ⬇ CSV
+          </button>
+          <router-link to="/m4" class="text-xs text-sc-royal hover:underline">Xem kho →</router-link>
+        </div>
       </div>
       <table v-if="dashboard.top_items.length" class="sc-table">
         <thead><tr>
