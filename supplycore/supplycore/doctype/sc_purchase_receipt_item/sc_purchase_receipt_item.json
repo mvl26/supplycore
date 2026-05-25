@@ -3,6 +3,7 @@
  "field_order": ["item", "item_name", "qty", "uom", "rate", "amount",
                  "po_qty", "over_received_qty",
                  "section_batch", "batch_no", "manufacturing_date", "expiry_date", "supplier_batch_no",
+                 "manufacturer", "country_of_origin",
                  "section_wms", "warehouse", "target_bin", "po_item_ref"],
  "fields": [
   {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
@@ -18,7 +19,11 @@
   {"fieldname": "batch_no", "fieldtype": "Link", "options": "SC Batch", "label": "Lô (đã có)"},
   {"fieldname": "manufacturing_date", "fieldtype": "Date", "label": "Ngày SX (cho lô mới)"},
   {"fieldname": "expiry_date", "fieldtype": "Date", "label": "Hạn dùng (cho lô mới)"},
-  {"fieldname": "supplier_batch_no", "fieldtype": "Data", "label": "Số lô NCC"},
+  {"fieldname": "supplier_batch_no", "fieldtype": "Data", "label": "Số lô NCC",
+   "description": "Bắt buộc khi item có quản lý lô (truy xuất nguồn gốc Thông tư 22/2011/TT-BYT)"},
+  {"fieldname": "manufacturer", "fieldtype": "Data", "label": "Nhà sản xuất",
+   "description": "Bắt buộc khi item có quản lý lô — sẽ ghi vào SC Batch.manufacturer"},
+  {"fieldname": "country_of_origin", "fieldtype": "Data", "label": "Xuất xứ"},
 
   {"fieldname": "section_wms", "fieldtype": "Section Break", "label": "WMS / Tham chiếu"},
   {"fieldname": "warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho"},
