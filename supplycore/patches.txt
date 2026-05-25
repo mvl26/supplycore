@@ -15,3 +15,4 @@ supplycore.patches.v0_2.backfill_barcode
 supplycore.patches.v0_2.backfill_qi_supplier
 supplycore.patches.v0_2.rebuild_warehouse_tree
 supplycore.patches.v0_2.rebuild_tree_doctypes
+supplycore.patches.v0_2.add_perf_indexes
