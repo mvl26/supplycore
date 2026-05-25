@@ -47,8 +47,18 @@ class SCTransferRequest(Document):
 
     # ------------------------------------------------------------------
     def _validate_warehouses(self):
+        # QAv3-BUG-M6-01: hard-stop khi from=to. Tester báo có thể tạo TR
+        # với cùng kho — backend đã có check nhưng error code không rõ.
+        if not self.from_warehouse:
+            frappe.throw(_("Phải chọn kho nguồn"))
+        if not self.to_warehouse:
+            frappe.throw(_("Phải chọn kho đích"))
         if self.from_warehouse == self.to_warehouse:
-            frappe.throw(_("Kho nguồn và kho đích phải khác nhau"))
+            frappe.throw(_(
+                "SC-E024 SAME_WAREHOUSE: Kho nguồn ({0}) và kho đích phải KHÁC "
+                "nhau. Chuyển trong cùng 1 kho tạo bút toán ảo làm sai số liệu."
+            ).format(self.from_warehouse),
+                title="SC-E024 SAME_WAREHOUSE")
         for wh_field, wh_name in [("from_warehouse", self.from_warehouse),
                                     ("to_warehouse", self.to_warehouse)]:
             wh = frappe.db.get_value("SC Warehouse", wh_name,

@@ -113,8 +113,13 @@ class SCStockEntry(Document):
             frappe.throw(_("Cần from_warehouse cho {0}").format(self.entry_type))
         if self.entry_type in ("Material Receipt", "Material Transfer") and not self.to_warehouse:
             frappe.throw(_("Cần to_warehouse cho {0}").format(self.entry_type))
+        # QAv3-BUG-M6-01: cùng kho nguồn/đích → bút toán ảo
         if self.from_warehouse == self.to_warehouse and self.entry_type == "Material Transfer":
-            frappe.throw(_("Material Transfer phải có from_warehouse khác to_warehouse"))
+            frappe.throw(_(
+                "SC-E024 SAME_WAREHOUSE: Material Transfer phải có from_warehouse "
+                "({0}) KHÁC to_warehouse. Chuyển trong cùng kho tạo bút toán ảo."
+            ).format(self.from_warehouse),
+                title="SC-E024 SAME_WAREHOUSE")
 
     def _validate_items_and_compute(self):
         total_qty = 0

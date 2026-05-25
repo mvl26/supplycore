@@ -9,9 +9,27 @@ from frappe.utils import flt, today, now
 class SCInventoryCountSheet(Document):
 
     def validate(self):
+        # QAv3-BUG-M9-01: Block user submit value tùy ý vào summary fields.
+        # Schema có read_only=1 nhưng Frappe Desk admin có thể bypass.
+        # Lưu giá trị user submit để so sánh — nếu khác giá trị compute thì
+        # user đã cố ghi đè → log audit.
+        user_submitted = {
+            "total_items": flt(self.total_items),
+            "mismatched_items": flt(self.mismatched_items),
+            "total_variance_qty": flt(self.total_variance_qty),
+            "total_variance_value": flt(self.total_variance_value),
+        }
         self._snapshot_system_qty_if_new()
         self._compute_variances()
-        self._compute_summary()
+        self._compute_summary()  # overwrite summary fields từ items
+        for fname, user_val in user_submitted.items():
+            computed = flt(self.get(fname))
+            if user_val and abs(user_val - computed) > 0.01:
+                frappe.log_error(
+                    message=f"ICS {self.name}: user gửi {fname}={user_val} nhưng "
+                            f"system compute={computed}. Đã overwrite.",
+                    title="SC-E025 ICS_SUMMARY_TAMPERING",
+                )
         if self.docstatus == 0 and not self.status:
             self.status = "Draft"
 

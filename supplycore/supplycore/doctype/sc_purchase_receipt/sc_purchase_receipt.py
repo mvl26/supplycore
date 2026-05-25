@@ -22,8 +22,28 @@ class SCPurchaseReceipt(Document):
         self._compute_totals()
         self._validate_expiry()
         self._compute_over_receipt()
+        self._warn_no_po()
         if self.docstatus == 0 and not self.qc_status:
             self.qc_status = "Pending"
+
+    def _warn_no_po(self):
+        """QAv3-BUG-M3-11: cảnh báo (không block) khi tạo PR không có PO.
+
+        Kiểm soát nội bộ 3 chiều (PO-GR-Invoice) yêu cầu PO tham chiếu.
+        Trường hợp đặc biệt (mua khẩn cấp, mẫu thử) phải nhập no_po_reason
+        — đã có before_submit check. Đây là msgprint cảnh báo sớm.
+        """
+        if self.docstatus != 0:
+            return
+        if self.is_return:
+            return
+        if not self.purchase_order:
+            frappe.msgprint(
+                _("⚠ PR chưa có PO tham chiếu. Mua sắm có PO là chuẩn kiểm "
+                  "soát nội bộ 3 chiều (PO ↔ GR ↔ Invoice). Nếu mua khẩn cấp "
+                  "/ không có PO, vui lòng nhập 'Lý do không có PO' trước khi submit."),
+                indicator="orange", alert=True,
+            )
 
     def before_submit(self):
         if self.has_over_receipt and not self.over_receipt_acknowledged:
