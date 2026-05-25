@@ -7,6 +7,7 @@ from frappe.utils import getdate, today, now, date_diff, flt
 class SCBatch(Document):
 
     def validate(self):
+        self._validate_batch_id_chars()
         self._ensure_barcode()
         if self.expiry_date and self.manufacturing_date:
             if getdate(self.expiry_date) <= getdate(self.manufacturing_date):
@@ -24,6 +25,22 @@ class SCBatch(Document):
         self._compute_short_expiry()
         self._warn_duplicate_supplier_batch_no()
         self._enforce_short_expiry_ack()
+
+    def _validate_batch_id_chars(self):
+        """QA-BUG-M5-02/03: batch_id không được chứa ký tự đặc biệt URL.
+
+        '/', '\\', '?', '#', '%' gây lỗi routing khi mở /doc/SC Batch/<id>.
+        Cho phép letters/digits/dash/underscore/dot.
+        """
+        if not self.batch_id:
+            return
+        import re
+        if re.search(r"[/\\?#%]", self.batch_id):
+            frappe.throw(_(
+                "SC-E020 BATCH_ID_INVALID_CHAR: Batch ID '{0}' chứa ký tự "
+                "đặc biệt (/, \\, ?, #, %%) — gây lỗi URL routing. "
+                "Chỉ dùng chữ, số, dấu '-', '_', '.'"
+            ).format(self.batch_id), title="SC-E020 BATCH_ID_INVALID_CHAR")
 
     def _ensure_barcode(self):
         """Tự sinh barcode = batch_id khi tạo lô (nếu chưa có).
