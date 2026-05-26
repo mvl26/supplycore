@@ -408,17 +408,17 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
           </tbody>
           <tfoot>
             <tr class="bg-sc-bg border-t-2 border-sc-navy/20">
-              <td colspan="4" class="font-semibold text-sc-navy py-2.5 pl-3">
+              <td colspan="4" class="px-4 py-2.5 font-semibold text-sc-navy">
                 <span class="inline-flex items-center gap-2">
                   <Icon name="sigma" :size="14" />
                   TỔNG <span class="text-sc-text-muted font-normal">({{ items.length }} dòng)</span>
                 </span>
               </td>
-              <td class="text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.contract_qty) }}</td>
-              <td class="text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.ordered_qty) }}</td>
-              <td class="text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.remaining_qty) }}</td>
-              <td></td>
-              <td class="text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.total_amount) }}</td>
+              <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.contract_qty) }}</td>
+              <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.ordered_qty) }}</td>
+              <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.remaining_qty) }}</td>
+              <td class="px-4 py-2.5"></td>
+              <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.total_amount) }}</td>
             </tr>
           </tfoot>
         </table>

@@ -44,9 +44,41 @@ export const tests = [
       })
 
       const missing = Object.entries(checks).filter(([, v]) => !v).map(([k]) => k)
-      return missing.length === 0
-        ? { ok: true, detail: `FC ${fc}: hero + timeline + tiles + items + totals + approval OK` }
-        : { ok: false, detail: `FC ${fc} thiếu: ${missing.join(', ')}` }
+      if (missing.length) {
+        return { ok: false, detail: `FC ${fc} thiếu: ${missing.join(', ')}` }
+      }
+
+      // Alignment check: tfoot cells phải có cùng padding với tbody cells
+      const align = await page.evaluate(() => {
+        const table = document.querySelector('table.sc-table, table')
+        if (!table) return { ok: false, reason: 'no-table' }
+        const tbodyTd = table.querySelector('tbody td')
+        const tfootTds = table.querySelectorAll('tfoot td')
+        if (!tbodyTd || !tfootTds.length) return { ok: false, reason: 'no-cells' }
+        const tb = getComputedStyle(tbodyTd)
+        const bodyPx = `${tb.paddingLeft} ${tb.paddingRight} ${tb.paddingTop} ${tb.paddingBottom}`
+        const mismatched = []
+        tfootTds.forEach((td, i) => {
+          const tf = getComputedStyle(td)
+          const footPx = `${tf.paddingLeft} ${tf.paddingRight} ${tf.paddingTop} ${tf.paddingBottom}`
+          if (footPx !== bodyPx) mismatched.push(`col${i}:${footPx}`)
+        })
+        // Vertical alignment of first numeric tbody td vs first numeric tfoot td (column "SL HĐ" = idx 4)
+        const bodyRow = table.querySelector('tbody tr')
+        const bodyTds = bodyRow ? bodyRow.querySelectorAll('td') : []
+        const slhdBody = bodyTds[4]?.getBoundingClientRect()
+        const slhdFoot = tfootTds[1]?.getBoundingClientRect()
+        const xDiff = (slhdBody && slhdFoot) ? Math.abs(slhdBody.right - slhdFoot.right) : -1
+        return { ok: mismatched.length === 0 && xDiff <= 1,
+                 mismatched, bodyPx, xDiff,
+                 footCount: tfootTds.length }
+      })
+      if (!align.ok) {
+        return { ok: false,
+          detail: `Alignment fail mismatch=${(align.mismatched||[]).join('|').slice(0,120)} xDiff=${align.xDiff}` }
+      }
+      return { ok: true,
+        detail: `FC ${fc}: hero+timeline+tiles+items+totals+approval OK, tfoot align xDiff=${align.xDiff}px` }
     },
   },
 ]
