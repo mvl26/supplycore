@@ -184,7 +184,8 @@ MAPPINGS: dict[tuple[str, str], dict] = {
         "description": "Cấp phát cho BN từ Yêu cầu cấp phát — pull items đã duyệt",
         "source_link_field": "dispensing_request",
         "header_map": {
-            "from_warehouse": "from_warehouse",
+            "patient": "patient",
+            "department": "ward",
         },
         "items": {
             "source_child_field": "items",

@@ -564,7 +564,7 @@ export const FORM_SCHEMAS = {
         { name: 'department', label: 'Khoa yêu cầu', type: 'Link', linkTo: 'SC Department', required: true },
         { name: 'patient', label: 'Bệnh nhân (Patient-Specific)', type: 'Link', linkTo: 'SC Patient',
           dependOn: 'purpose' },
-        { name: 'from_warehouse', label: 'Kho cấp', type: 'Link', linkTo: 'SC Warehouse', required: true },
+        { name: 'from_warehouse', label: 'Kho cấp', type: 'Link', linkTo: 'SC Warehouse' },
         { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
       ]},
     ],
