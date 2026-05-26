@@ -199,6 +199,11 @@ class SCStockEntry(Document):
             if not batch.expiry_date:
                 continue
 
+            # Material Transfer giữa kho nội bộ: stock chưa rời hệ thống,
+            # FEFO chỉ enforce khi cấp phát (Material Issue).
+            if self.entry_type == "Material Transfer":
+                continue
+
             used = selected.get((row.item, self.from_warehouse), set())
             earlier = frappe.db.sql("""
                 SELECT b.name AS batch, b.expiry_date,
