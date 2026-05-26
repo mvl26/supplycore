@@ -19,6 +19,8 @@ import IrScopePanel from '../components/IrScopePanel.vue'
 import RouteGuidePanel from '../components/RouteGuidePanel.vue'
 import BarcodeDisplay from '../components/BarcodeDisplay.vue'
 import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
+import DetailViewGeneric from '../components/DetailViewGeneric.vue'
+import { DETAIL_CONFIGS } from '../detail-configs'
 import { useToastStore } from '../stores/toast'
 import { fmtDateTime, fmtNumber } from '../utils'
 import { statusLabel, isSubmittable } from '../modules'
@@ -559,6 +561,10 @@ function displayField(value, key) {
 
       <!-- Framework Contract: bố cục riêng — hero + timeline + value tiles + items totals -->
       <FrameworkContractDetail v-if="doctype === 'Framework Contract'" :doc="doc" class="mb-4" />
+
+      <!-- 11 doctype khác: config-driven generic detail view -->
+      <DetailViewGeneric v-else-if="DETAIL_CONFIGS[doctype]"
+        :doctype="doctype" :doc="doc" class="mb-4" />
 
       <template v-else>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
