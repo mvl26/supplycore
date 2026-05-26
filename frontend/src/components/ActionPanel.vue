@@ -60,6 +60,12 @@ const visible = computed(() => {
 })
 
 function openAction(a) {
+  // Nút navigate thuần — không call server, chỉ router.push
+  if (a.route) {
+    const r = typeof a.route === 'function' ? a.route(props.doc || {}) : a.route
+    if (r) router.push(r)
+    return
+  }
   if (a.args && a.args.length) {
     selected.value = a
     args.value = {}
@@ -157,7 +163,7 @@ const btnClass = {
       <Icon name="zap" :size="18" /> Hành động khả dụng
     </h3>
     <div class="flex flex-wrap gap-2">
-      <button v-for="a in visible" :key="a.method || a.apiMethod"
+      <button v-for="a in visible" :key="a.method || a.apiMethod || a.label"
         @click="openAction(a)" :disabled="running"
         :class="[btnClass[a.variant] || 'sc-btn-secondary',
                  'inline-flex items-center gap-1.5 text-sm disabled:opacity-50']">

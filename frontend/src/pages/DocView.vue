@@ -366,9 +366,8 @@ async function save() {
 }
 
 // Sau submit thì điều hướng tới trang phù hợp với UC
+// PR: KHÔNG auto-nav — phải QC xong, user tự bấm "Xếp hàng lên kệ" ở ActionPanel.
 const POST_SUBMIT_NAV = {
-  'SC Purchase Receipt': (d) => d?.docstatus === 1 && d.is_return === 0
-    ? { path: '/putaway', query: { warehouse: d.warehouse || '' } } : null,
   'SC Stock Entry': (d) => d?.docstatus === 1 && d.to_warehouse
     ? { path: '/putaway', query: { warehouse: d.to_warehouse } } : null,
 }

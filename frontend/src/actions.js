@@ -58,19 +58,25 @@ export const ACTIONS = {
   ],
 
   // === M3 Purchase Receipt — UC-09..14 ===
+  // Lô được tự sinh bởi backend ở on_submit (xem _create_batches_if_needed).
+  // QC nếu qc_required=1 cũng được tự tạo (_auto_create_qi). User không cần
+  // bấm tay 3 nút "Tạo Phiếu KCS / Tạo Lô / Xem Lô đã tạo".
+  //
+  // Sau khi QC hoàn tất (qc_status='Accepted' hoặc không cần QC) → 2 hành
+  // động chính: tạo Hoá đơn mua + Xếp hàng lên kệ.
   'SC Purchase Receipt': [
-    { method: 'make_quality_inspection', label: 'Tạo Phiếu KCS',    icon: 'flask-conical', variant: 'primary',
-      when: (d) => d.docstatus === 1 && d.is_return === 0 },
-    { method: 'create_batches',          label: 'Tạo Lô',           icon: 'tag', variant: 'primary',
-      when: (d) => d.docstatus === 1 && d.is_return === 0 },
-    { method: 'list_batches',            label: 'Xem Lô đã tạo',    icon: 'search', variant: 'secondary',
-      when: (d) => d.docstatus === 1 && d.is_return === 0 },
-    // UC-24 step 1: Tạo Hoá đơn mua từ PR (module-level function)
+    // UC-24 step 1: Tạo Hoá đơn mua từ PR
     { apiMethod: 'supplycore.m8_accounting.doctype.sc_purchase_invoice.sc_purchase_invoice.make_invoice_from_pr',
       apiNameArg: 'pr_name',
       label: 'Tạo Hoá đơn mua (PI)', icon: 'receipt', variant: 'primary',
-      when: (d) => d.docstatus === 1 && d.is_return === 0 && d.qc_status !== 'Rejected',
+      when: (d) => d.docstatus === 1 && d.is_return === 0
+        && (!d.qc_required || d.qc_status === 'Accepted'),
       navigateOnSuccess: { type: 'doc', dt: 'SC Purchase Invoice', from: 'result' } },
+    // Xếp hàng lên kệ — chỉ hiện khi QC đã xong (hoặc không cần QC)
+    { route: (d) => `/putaway?warehouse=${encodeURIComponent(d.to_warehouse || '')}`,
+      label: 'Xếp hàng lên kệ', icon: 'package-plus', variant: 'success',
+      when: (d) => d.docstatus === 1 && d.is_return === 0
+        && (!d.qc_required || d.qc_status === 'Accepted') },
     { method: 'make_debit_note',     label: 'Tạo Debit Note',          icon: 'file-text', variant: 'primary',
       when: (d) => d.is_return === 1 && d.docstatus === 1 && !d.debit_note },
     { method: 'make_credit_note',    label: 'Tạo Credit Note',         icon: 'banknote', variant: 'success',
