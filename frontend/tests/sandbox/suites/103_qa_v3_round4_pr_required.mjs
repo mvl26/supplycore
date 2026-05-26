@@ -1,11 +1,11 @@
-// Suite 103: QA v3 round 4 — SC Purchase Receipt row required (BUG-004/005)
+// Suite 103: SC Purchase Receipt row required (BUG-005)
 //
-// Cặp validation trên `before_submit` của SC Purchase Receipt cho dòng item
-// có `has_batch_no = 1` (xem sc_purchase_receipt.py:67-95):
-//   - SC-E013 MANUFACTURER_REQUIRED: thiếu 'Nhà sản xuất'
+// Validation trên `before_submit` của SC Purchase Receipt cho dòng item có
+// `has_batch_no = 1` (xem sc_purchase_receipt.py:67-90):
 //   - SC-E014 SUPPLIER_BATCH_REQUIRED: thiếu 'Số lô NCC'
 //
-// Suite 100 chỉ verify field tồn tại trong meta. Suite này thực sự build PR
+// Manufacturer KHÔNG còn bắt buộc — gỡ check SC-E013 theo yêu cầu nghiệp vụ.
+// Suite 100 chỉ verify field tồn tại trong meta; suite này thực sự build PR
 // draft → submit → xác nhận server reject với đúng error code, rồi cleanup.
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -84,37 +84,6 @@ function buildItem({ item, uom, supplierBatch, manufacturer }) {
 }
 
 export const tests = [
-  // ---------------------------------------------------------------------
-  // v3-M3-12 (BUG-004): PR submit thiếu manufacturer → SC-E013
-  // ---------------------------------------------------------------------
-  {
-    name: 'v3-M3-12: PR submit thiếu manufacturer → SC-E013 MANUFACTURER_REQUIRED',
-    run: async ({ page }) => {
-      const fx = await pickFixture(page)
-      if (!fx.item || !fx.warehouse || !fx.supplier || !fx.uom) {
-        return { ok: 'skip', detail: `Fixture thiếu (item=${fx.item} wh=${fx.warehouse} sup=${fx.supplier} uom=${fx.uom})` }
-      }
-      const draft = await createPrDraft(page, {
-        doctype: 'SC Purchase Receipt',
-        supplier: fx.supplier,
-        posting_date: todayISO(),
-        to_warehouse: fx.warehouse,
-        no_po_reason: 'TEST FIXTURE — không có PO (auto-tests SC-E013)',
-        items: [buildItem({ item: fx.item, uom: fx.uom, supplierBatch: 'TEST-LOT-E013', manufacturer: '' })],
-      })
-      if (!draft.name) {
-        return { ok: false, detail: `Không tạo được PR draft: status=${draft.status} exc="${draft.exc.slice(0, 120)}"` }
-      }
-      const sub = await submitPr(page, draft.name)
-      await deletePr(page, draft.name)
-      const blob = `${sub.exc} ${sub.msg}`
-      const ok = sub.status >= 400 && (blob.includes('SC-E013') || blob.includes('MANUFACTURER_REQUIRED'))
-      return ok
-        ? { ok: true, detail: `${draft.name} reject SC-E013 (HTTP ${sub.status})` }
-        : { ok: false, detail: `status=${sub.status} exc="${sub.exc.slice(0, 100)}" msg="${sub.msg.slice(0, 100)}"` }
-    },
-  },
-
   // ---------------------------------------------------------------------
   // v3-M3-13 (BUG-005): PR submit thiếu supplier_batch_no → SC-E014
   // ---------------------------------------------------------------------

@@ -61,10 +61,10 @@ class SCPurchaseReceipt(Document):
                 frappe.throw(_("SC-E-RETURN-REASON: Phải nhập 'Lý do trả hàng'"))
         # Mỗi dòng vật tư phải có Hạn dùng — phiếu nhập sinh 1 lô / 1 dòng item
         # (đơn N item → N lô). SC Batch bắt buộc expiry_date nên đây là tiền đề.
-        # BUG-004/005: nếu item có quản lý lô (has_batch_no=1) → bắt buộc thêm
-        # supplier_batch_no + manufacturer để truy xuất nguồn gốc
-        # (Thông tư 22/2011/TT-BYT).
-        missing_expiry, missing_supplier_batch, missing_mfr = [], [], []
+        # BUG-005: item có quản lý lô (has_batch_no=1) bắt buộc supplier_batch_no
+        # để truy xuất nguồn gốc (Thông tư 22/2011/TT-BYT). Manufacturer là
+        # thông tin nên có nhưng không bắt buộc — capture vào batch nếu nhập.
+        missing_expiry, missing_supplier_batch = [], []
         for r in self.items:
             if r.batch_no:
                 continue  # đã có lô — info đã ở batch, OK
@@ -74,8 +74,6 @@ class SCPurchaseReceipt(Document):
             if has_batch:
                 if not (r.supplier_batch_no and str(r.supplier_batch_no).strip()):
                     missing_supplier_batch.append(r.idx)
-                if not (r.manufacturer and str(r.manufacturer).strip()):
-                    missing_mfr.append(r.idx)
         if missing_expiry and not self.is_return:
             frappe.throw(_(
                 "SC-E-PR-MISSING-EXPIRY: Các dòng {0} chưa nhập Hạn dùng. "
@@ -88,11 +86,6 @@ class SCPurchaseReceipt(Document):
                 "Item có quản lý lô bắt buộc nhập Số lô NCC để truy xuất nguồn gốc "
                 "(Thông tư 22/2011/TT-BYT)."
             ).format(missing_supplier_batch), title="SC-E014 SUPPLIER_BATCH_REQUIRED")
-        if missing_mfr and not self.is_return:
-            frappe.throw(_(
-                "SC-E013 MANUFACTURER_REQUIRED: Các dòng {0} thiếu 'Nhà sản xuất'. "
-                "Item có quản lý lô bắt buộc khai báo Nhà sản xuất."
-            ).format(missing_mfr), title="SC-E013 MANUFACTURER_REQUIRED")
 
     def on_submit(self):
         self._create_batches_if_needed()
