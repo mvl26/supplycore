@@ -18,6 +18,7 @@ import IcsSummaryPanel from '../components/IcsSummaryPanel.vue'
 import IrScopePanel from '../components/IrScopePanel.vue'
 import RouteGuidePanel from '../components/RouteGuidePanel.vue'
 import BarcodeDisplay from '../components/BarcodeDisplay.vue'
+import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDateTime, fmtNumber } from '../utils'
 import { statusLabel, isSubmittable } from '../modules'
@@ -556,6 +557,10 @@ function displayField(value, key) {
     <!-- View mode (chỉ khi đã submit hoặc cancel — không phải draft) -->
     <template v-else>
 
+      <!-- Framework Contract: bố cục riêng — hero + timeline + value tiles + items totals -->
+      <FrameworkContractDetail v-if="doctype === 'Framework Contract'" :doc="doc" class="mb-4" />
+
+      <template v-else>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="sc-card p-5">
           <h3 class="font-semibold text-sc-navy mb-3">Thông tin chính</h3>
@@ -604,6 +609,7 @@ function displayField(value, key) {
           </table>
         </div>
       </div>
+      </template>
     </template>
 
     <!-- Lịch sử sửa (Version diffs) — thu gọn mặc định, mỗi log 1 dòng -->
