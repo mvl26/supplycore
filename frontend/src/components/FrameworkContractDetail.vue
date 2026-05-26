@@ -408,8 +408,11 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
           </tbody>
           <tfoot>
             <tr class="bg-sc-bg border-t-2 border-sc-navy/20">
-              <td colspan="4" class="font-semibold text-sc-navy text-right pr-3 py-2.5">
-                TỔNG
+              <td colspan="4" class="font-semibold text-sc-navy py-2.5 pl-3">
+                <span class="inline-flex items-center gap-2">
+                  <Icon name="sigma" :size="14" />
+                  TỔNG <span class="text-sc-text-muted font-normal">({{ items.length }} dòng)</span>
+                </span>
               </td>
               <td class="text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.contract_qty) }}</td>
               <td class="text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.ordered_qty) }}</td>
