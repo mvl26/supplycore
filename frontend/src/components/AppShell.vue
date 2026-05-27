@@ -37,6 +37,7 @@ const primaryNav = computed(() => [
   { to: '/putaway',          icon: 'package-plus',     label: 'Xếp hàng lên kệ',    show: access.canFeature('putaway') },
   { to: '/batch-trace',      icon: 'file-search',      label: 'Truy xuất lô',       show: access.canFeature('batch_trace') },
   { to: '/warehouse-map',    icon: 'map',              label: 'Bản đồ kho',         show: access.canFeature('warehouse_map') },
+  { to: '/map-editor',       icon: 'map-pinned',       label: 'Thiết kế bản đồ',    show: access.canFeature('map_editor') },
   { to: '/financial-reports',icon: 'wallet',           label: 'Báo cáo tài chính',  show: access.canFeature('financial_reports') },
   { to: '/users',            icon: 'users',            label: 'Người dùng & Quyền', show: access.canFeature('users') },
 ].filter(i => i.show))

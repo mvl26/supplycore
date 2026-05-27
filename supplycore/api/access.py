@@ -73,6 +73,7 @@ FEATURE_ROLES: dict[str, list[str]] = {
     "warehouse_map": ["System Manager", "SupplyCore Manager", "SupplyCore Storekeeper",
                        "Warehouse Officer", "Pharmacy Officer", "SupplyCore Ward Staff",
                        "SupplyCore Auditor"],
+    "map_editor":    ["System Manager", "SupplyCore Manager"],
 }
 
 # Doctype được FE quan tâm — dùng để batch-load permission
