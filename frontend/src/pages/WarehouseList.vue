@@ -144,7 +144,7 @@ function newWarehouse() {
   <div v-else-if="!total" class="sc-card p-10 text-center text-sc-text-muted">
     Không có kho khớp với bộ lọc
   </div>
-  <div v-else class="sc-card overflow-hidden">
+  <div v-else class="sc-card overflow-x-auto">
     <table class="sc-table">
       <thead>
         <tr>

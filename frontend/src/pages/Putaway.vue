@@ -198,7 +198,7 @@ async function saveAll() {
     <Icon name="check" :size="16" /> Không có hàng chờ xếp lên kệ
     <div class="text-xs mt-1">(Hàng vừa nhận qua PR/SE chưa được gán vị trí)</div>
   </div>
-  <div v-else class="sc-card overflow-hidden">
+  <div v-else class="sc-card overflow-x-auto">
     <table class="sc-table">
       <thead>
         <tr>
