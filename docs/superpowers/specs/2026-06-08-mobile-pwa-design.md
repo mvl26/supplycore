@@ -170,3 +170,17 @@ Mỗi đơn vị có ranh giới rõ: input/output xác định, test được r
 - Android Chrome: cài → mở standalone → tắt mạng mở lại → UI lên + banner offline.
 - iOS Safari: Thêm vào màn hình chính → icon/tên/status bar đúng → mở standalone.
 - Hồi quy: đăng nhập + 2–3 màn hình chính khi có mạng vẫn chạy như web.
+
+---
+
+## 7. Ghi chú triển khai — gotcha Frappe + PWA (đã gặp & xử lý)
+
+Năm điểm non-obvious phát hiện khi implement (bắt qua review), ghi lại để khỏi vấp lại:
+
+1. **Hook là `page_renderer` (SỐ ÍT).** Frappe đọc `frappe.get_hooks("page_renderer")` (`frappe/website/path_resolver.py`). `page_renderers` (số nhiều) chỉ là tên thư mục module → khai báo số nhiều sẽ bị bỏ qua âm thầm, `/sw.js` trả 404.
+2. **Node 18 thiếu `globalThis.crypto`** cho workbox-build (qua worker threads). Script build mang cờ `NODE_OPTIONS=--experimental-global-webcrypto` (scope riêng app, không đụng Node của bench). KHÔNG nâng Node cả bench (socketio pin v18.20.8).
+3. **Precache URL phải tuyệt đối.** SW phục vụ ở `/sw.js` (gốc) ⇒ Workbox phân giải URL tương đối theo gốc (`index.js` → `/index.js` 404). Dùng `manifestTransforms` ép entry globbed thành `/assets/supplycore/frontend/...`.
+4. **`manifest.webmanifest` & runtime Workbox không vào manifestTransforms.** vite-plugin-pwa thêm manifest vào precache *sau* transform; runtime nạp qua `importScripts("./workbox-*.js")`. Cả hai phân giải về gốc → 404 → install fail. Xử lý: (a) `inlineWorkboxRuntime: true` (gộp runtime vào sw.js, bỏ importScripts); (b) page_renderer phục vụ thêm `/manifest.webmanifest` ở gốc.
+5. **Scope phải đồng nhất, không lệch dấu `/`.** Vì URL canonical là `/supplycore` (không dấu `/`; `/supplycore/` bị nginx 301 về `/supplycore`), căn TẤT CẢ về `/supplycore`: manifest `start_url`+`scope`, VitePWA `scope`, `register()` scope, header `Service-Worker-Allowed`. `start_url` phải nằm trong `scope` (so khớp prefix).
+
+**Reload sau deploy:** `page_renderer`/`pwa.py`/shell template được gunicorn `--preload` nạp lúc khởi động → đổi backend phải **restart web** (`sudo supervisorctl restart frappe-bench-frappe-web` hoặc `sudo bench restart`) + `bench --site supplycore clear-cache`. Build output `public/frontend/` bị gitignore → mỗi deploy phải `cd frontend && yarn build` lại.
