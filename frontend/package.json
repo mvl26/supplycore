@@ -29,7 +29,8 @@
     "test:approval": "node tests/sandbox/runner.mjs 20_approval_workflow",
     "test:headed": "node tests/sandbox/runner.mjs --headed",
     "e2e": "node tests/sandbox/scenarios/e2e_main_flow.mjs",
-    "e2e:headed": "node tests/sandbox/scenarios/e2e_main_flow.mjs --headed"
+    "e2e:headed": "node tests/sandbox/scenarios/e2e_main_flow.mjs --headed",
+    "icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "chart.js": "^4.4.2",
@@ -45,6 +46,7 @@
     "autoprefixer": "^10.4.18",
     "playwright": "^1.59.1",
     "postcss": "^8.4.35",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.1",
     "vite": "^6.4.2"
   }
