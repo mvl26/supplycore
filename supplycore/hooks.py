@@ -69,6 +69,9 @@ website_route_rules = [
     {"from_route": "/supplycore/<path:app_path>", "to_route": "supplycore"},
 ]
 
+# Phục vụ /sw.js ở gốc để service worker kiểm soát được scope /supplycore/
+page_renderer = ["supplycore.pwa.ServiceWorkerRenderer"]
+
 # Khi truy cập domain root → đưa thẳng vào SPA SupplyCore (ko show Frappe Desk).
 website_redirects = [
     {"source": "/", "target": "/supplycore/", "redirect_http_status": 302},
