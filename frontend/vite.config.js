@@ -30,8 +30,21 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,png,svg,woff,woff2}'],
+        // SW phục vụ ở gốc /sw.js nhưng asset ở /assets/supplycore/frontend/. Workbox
+        // phân giải precache URL tương đối theo vị trí SW (/) → /index.js (404). Ép các
+        // entry globbed (js/css/icon/chunk) thành tuyệt đối dưới base. Riêng
+        // manifest.webmanifest do plugin thêm SAU transform nên không vào đây — nó được
+        // phục vụ ở gốc /manifest.webmanifest qua page_renderer (supplycore/pwa.py).
+        manifestTransforms: [
+          async (entries) => ({
+            manifest: entries.map((e) =>
+              e.url.startsWith('/') || e.url.startsWith('http')
+                ? e
+                : { ...e, url: '/assets/supplycore/frontend/' + e.url }
+            ),
+          }),
+        ],
         navigateFallback: null,        // build này không có index.html (input = src/main.js)
-        navigateFallbackDenylist: [/^\/api/, /^\/method/, /^\/app/],
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) => request.mode === 'navigate' && url.pathname.startsWith('/supplycore'),
