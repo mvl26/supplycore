@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
+import OfflineBanner from './OfflineBanner.vue'
 import { APP_VERSION, BUILD_DATE, RELEASE_NOTES } from '../version'
 
 const showVersionModal = ref(false)
@@ -102,6 +103,7 @@ async function logout() {
 
 <template>
   <div class="min-h-screen flex sc-app-bg">
+    <OfflineBanner />
     <!-- Mobile backdrop -->
     <Transition name="route">
       <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-sc-navy-900/55 backdrop-blur-[2px] md:hidden"
