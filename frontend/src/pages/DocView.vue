@@ -40,6 +40,7 @@ const doc = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const editing = ref(false)
+const batchItemName = ref('')   // tên vật tư của lô (fetch để in lên nhãn)
 const docFormRef = ref(null)  // expose validate() từ DocForm để highlight field thiếu
 
 const LINK_PENDING_KEY = 'sc-link-create-pending'
@@ -65,6 +66,16 @@ async function load() {
   loading.value = true
   try {
     doc.value = await getDoc(doctype.value, name.value)
+    // Lô: lấy tên vật tư (item_name) để in lên nhãn 50×30mm
+    batchItemName.value = ''
+    if (doctype.value === 'SC Batch' && doc.value?.item) {
+      try {
+        const r = await call('frappe.client.get_value', {
+          doctype: 'SC Item', filters: { name: doc.value.item }, fieldname: 'item_name',
+        })
+        batchItemName.value = r?.item_name || ''
+      } catch (e) {}
+    }
     // Auto-edit khi draft → user khỏi phải bấm "Sửa"
     // Trừ khi đã duyệt 3-tier (approval_stage=Approved) → khoá sửa
     editing.value = doc.value.docstatus === 0
@@ -286,9 +297,12 @@ const barcodeInfo = computed(() => {
   if (doctype.value === 'SC Batch') {
     const v = d.barcode || d.batch_id
     if (!v) return null
-    return { value: v, title: `Lô: ${d.batch_id || d.name}`,
-             subtitle: [d.item, d.expiry_date ? `HSD: ${d.expiry_date}` : '']
-               .filter(Boolean).join(' · ') }
+    // Nhãn lô: mã vạch (kèm mã barcode) + tên vật tư + HSD
+    return {
+      value: v,
+      title: batchItemName.value || d.item || '',
+      subtitle: d.expiry_date ? `HSD: ${d.expiry_date}` : '',
+    }
   }
   if (doctype.value === 'Bin Location') {
     const v = d.barcode || d.bin_code
