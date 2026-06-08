@@ -56,12 +56,12 @@ Thêm **3 mảnh** vào pipeline build/serve hiện có; mọi thứ khác giữ
 
 **Vấn đề:** App chạy ở route `/supplycore/*`, nhưng asset (gồm cả `sw.js` nếu để mặc định) nằm ở `/assets/supplycore/frontend/`. SW chỉ kiểm soát được các URL **cùng hoặc sâu hơn đường dẫn của chính nó**. SW ở `/assets/.../sw.js` → scope `/assets/.../` → **không** kiểm soát `/supplycore` ⇒ app không bao giờ được SW phục vụ.
 
-**Giải pháp:** phục vụ `sw.js` ở **gốc** `/sw.js` qua một www-controller của Frappe, rồi đăng ký với scope `/supplycore/`.
+**Giải pháp:** phục vụ `sw.js` ở **gốc** `/sw.js` qua **`page_renderer` hook** của Frappe (hook tên SỐ ÍT — `frappe.get_hooks("page_renderer")`, xác nhận tại `frappe/website/path_resolver.py`), rồi đăng ký với scope `/supplycore/`.
 
-- Tạo `supplycore/www/sw.js.py` (controller) đọc file đã build `public/frontend/sw.js` và trả về với:
+- Tạo `supplycore/pwa.py` với class `ServiceWorkerRenderer` (`can_render()` khớp path `"sw.js"`, `render()` đọc file đã build `public/frontend/sw.js`) và khai báo `page_renderer = ["supplycore.pwa.ServiceWorkerRenderer"]` trong `hooks.py`. Trả về `werkzeug.Response` với:
   - `Content-Type: application/javascript`
   - `Service-Worker-Allowed: /supplycore/`
-  - `Cache-Control: no-cache` (để bản SW mới luôn được kiểm tra)
+  - `Cache-Control: no-cache, max-age=0` (để bản SW mới luôn được kiểm tra)
 - SW ở `/sw.js` (gốc) → được phép scope tới `/supplycore/`. Đăng ký:
   `navigator.serviceWorker.register('/sw.js', { scope: '/supplycore/' })`
 - Tương tự, `manifest.webmanifest` phục vụ ở `/supplycore/manifest.webmanifest` qua www-controller (hoặc link tuyệt đối tới bản trong `/assets/...` — nội dung manifest mới là thứ quyết định scope, không phải vị trí file). Chọn **link tuyệt đối tới `/assets/supplycore/frontend/manifest.webmanifest`** cho đơn giản (manifest không bị ràng buộc scope như SW).

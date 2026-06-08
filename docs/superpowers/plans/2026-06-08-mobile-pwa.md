@@ -4,9 +4,9 @@
 
 **Goal:** Biến SPA SupplyCore hiện tại thành PWA cài được trên iOS & Android (cài từ trình duyệt, chạy standalone, cache vỏ app — dữ liệu vẫn online).
 
-**Architecture:** Thêm 3 mảnh vào pipeline build/serve sẵn có — (1) `vite-plugin-pwa` sinh `sw.js` + `manifest.webmanifest` + precache vỏ app; (2) bộ icon sinh từ logo mark Navy; (3) nhúng meta/manifest vào shell. Điểm khó scope service worker trên Frappe được giải bằng `page_renderers` hook phục vụ `/sw.js` ở gốc với header `Service-Worker-Allowed: /supplycore/`. Không sửa backend nghiệp vụ, không sửa nginx.
+**Architecture:** Thêm 3 mảnh vào pipeline build/serve sẵn có — (1) `vite-plugin-pwa` sinh `sw.js` + `manifest.webmanifest` + precache vỏ app; (2) bộ icon sinh từ logo mark Navy; (3) nhúng meta/manifest vào shell. Điểm khó scope service worker trên Frappe được giải bằng `page_renderer` hook phục vụ `/sw.js` ở gốc với header `Service-Worker-Allowed: /supplycore/`. Không sửa backend nghiệp vụ, không sửa nginx.
 
-**Tech Stack:** Vue 3 + Vite, `vite-plugin-pwa` (Workbox), `sharp` (rasterize SVG→PNG), Frappe `page_renderers` hook (Python).
+**Tech Stack:** Vue 3 + Vite, `vite-plugin-pwa` (Workbox), `sharp` (rasterize SVG→PNG), Frappe `page_renderer` hook (Python).
 
 **Spec:** `docs/superpowers/specs/2026-06-08-mobile-pwa-design.md`
 
@@ -24,8 +24,8 @@
 | `frontend/src/main.js` | Gọi `registerPwa()` sau mount | Modify |
 | `frontend/src/components/OfflineBanner.vue` | Banner khi mất mạng | Create |
 | `frontend/src/components/AppShell.vue` | Gắn `<OfflineBanner/>` | Modify |
-| `supplycore/pwa.py` | `page_renderers` class phục vụ `/sw.js` | Create |
-| `supplycore/hooks.py` | Khai báo `page_renderers` | Modify |
+| `supplycore/pwa.py` | `page_renderer` class phục vụ `/sw.js` | Create |
+| `supplycore/hooks.py` | Khai báo `page_renderer` | Modify |
 | `supplycore/www/supplycore.html` | Thêm manifest link + meta iOS | Modify |
 
 ---
@@ -214,7 +214,7 @@ git commit -m "feat(pwa): cắm vite-plugin-pwa — sinh manifest + service work
 
 ---
 
-## Task 3: Backend — phục vụ `/sw.js` ở gốc qua `page_renderers`
+## Task 3: Backend — phục vụ `/sw.js` ở gốc qua `page_renderer`
 
 **Files:**
 - Create: `supplycore/pwa.py`
@@ -261,12 +261,12 @@ class ServiceWorkerRenderer:
 
 Trong `supplycore/hooks.py`, thêm (gần khối `website_route_rules`, dòng ~71):
 ```python
-page_renderers = ["supplycore.pwa.ServiceWorkerRenderer"]
+page_renderer = ["supplycore.pwa.ServiceWorkerRenderer"]  # LƯU Ý: hook Frappe là page_renderer (SỐ ÍT)
 ```
 
 - [ ] **Step 3: Reload hook & verify header**
 
-`page_renderers` là Python hook → gunicorn (`--preload`) nạp lúc khởi động, nên phải **restart tiến trình web** mới có hiệu lực (không chỉ clear-cache).
+`page_renderer` là Python hook → gunicorn (`--preload`) nạp lúc khởi động, nên phải **restart tiến trình web** mới có hiệu lực (không chỉ clear-cache).
 
 Run:
 ```bash
@@ -555,4 +555,4 @@ git commit -m "docs(pwa): ghi kết quả kiểm thử cài đặt"
 - **TDD-style cho PWA:** domain này không hợp unit test thuần — mỗi task có bước verify cụ thể (kiểm file build, header qua curl, Lighthouse) đóng vai trò "test". Giữ commit nhỏ sau mỗi task.
 - **HTTPS bắt buộc:** SW không chạy trên HTTP (trừ localhost). Mọi kiểm thử cài đặt phải qua ngrok HTTPS.
 - **Thứ tự phụ thuộc:** Task 1 → 2 (icon path), Task 2 → 3 (cần sw.js đã build để renderer đọc), Task 2 → 5. Task 4, 6 độc lập. Task 7 sau cùng.
-- **Rollback:** gỡ `page_renderers` khỏi hooks.py + xoá thẻ manifest/meta trong shell + gỡ plugin PWA khỏi vite.config → về web thường. Không đụng dữ liệu/RBAC.
+- **Rollback:** gỡ `page_renderer` khỏi hooks.py + xoá thẻ manifest/meta trong shell + gỡ plugin PWA khỏi vite.config → về web thường. Không đụng dữ liệu/RBAC.
