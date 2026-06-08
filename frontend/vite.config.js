@@ -12,12 +12,12 @@ export default defineConfig({
       injectRegister: null,          // tự đăng ký trong src/pwa.js (cần custom path + scope)
       filename: 'sw.js',
       manifestFilename: 'manifest.webmanifest',
-      scope: '/supplycore/',
+      scope: '/supplycore',
       manifest: {
         name: 'SupplyCore — Cung ứng Bệnh viện',
         short_name: 'SupplyCore',
         start_url: '/supplycore',
-        scope: '/supplycore/',
+        scope: '/supplycore',
         display: 'standalone',
         background_color: '#1F4E79',
         theme_color: '#1F4E79',
@@ -29,6 +29,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // SW phục vụ ở gốc /sw.js → importScripts("./workbox-*.js") sẽ phân giải về
+        // /workbox-*.js (404). Gộp runtime vào sw.js để bỏ hẳn file rời + importScripts.
+        inlineWorkboxRuntime: true,
         globPatterns: ['**/*.{js,css,png,svg,woff,woff2}'],
         // SW phục vụ ở gốc /sw.js nhưng asset ở /assets/supplycore/frontend/. Workbox
         // phân giải precache URL tương đối theo vị trí SW (/) → /index.js (404). Ép các

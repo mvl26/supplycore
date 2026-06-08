@@ -3,7 +3,7 @@
 Vì app chạy ở /supplycore/* còn asset ở /assets/..., service worker phải nằm ở
 đường dẫn ANCESTOR của /supplycore để kiểm soát được route app (/assets/.../sw.js
 chỉ có scope /assets/...). Giải pháp: phục vụ /sw.js ở gốc với header
-Service-Worker-Allowed: /supplycore/.
+Service-Worker-Allowed: /supplycore.
 
 manifest.webmanifest cũng phải có ở GỐC /manifest.webmanifest: vite-plugin-pwa ghi
 nó vào precache của SW bằng URL tương đối ("manifest.webmanifest") — với SW phục vụ
@@ -39,6 +39,6 @@ class ServiceWorkerRenderer:
             content = "" if self.path == "manifest.webmanifest" else "// SupplyCore SW chưa build\n"
         resp = Response(content, mimetype=content_type)
         if needs_sw_allowed:
-            resp.headers["Service-Worker-Allowed"] = "/supplycore/"
+            resp.headers["Service-Worker-Allowed"] = "/supplycore"
         resp.headers["Cache-Control"] = "no-cache, max-age=0"
         return resp

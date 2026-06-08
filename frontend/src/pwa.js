@@ -1,4 +1,4 @@
-// Đăng ký service worker ở /sw.js với scope /supplycore/ (xem supplycore/pwa.py).
+// Đăng ký service worker ở /sw.js với scope /supplycore (xem supplycore/pwa.py).
 // injectRegister:null trong vite-plugin-pwa nên ta tự đăng ký để ép path + scope.
 import { useToastStore } from './stores/toast'
 
@@ -9,15 +9,15 @@ export function registerPwa() {
 
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/supplycore/' })
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/supplycore' })
       reg.addEventListener('updatefound', () => {
         const sw = reg.installing
         if (!sw) return
         sw.addEventListener('statechange', () => {
-          // Có bản mới và đang có controller cũ → mời tải lại.
+          // Có bản mới và đang có controller cũ. SW dùng autoUpdate (skipWaiting +
+          // clientsClaim) nên sẽ tự kích hoạt → controllerchange → tự reload bên dưới.
           if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-            useToastStore().push('Có bản cập nhật mới — chạm để tải lại', 'info', 0)
-            window.__sc_sw_waiting = reg.waiting || sw
+            useToastStore().push('Đã có bản cập nhật mới — đang tải lại…', 'info', 0)
           }
         })
       })
