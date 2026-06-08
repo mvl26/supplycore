@@ -4,9 +4,11 @@ import App from './App.vue'
 import router from './router'
 import { clickOutside } from './directives/clickOutside'
 import './assets/main.css'
+import { registerPwa } from './pwa'
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.directive('click-outside', clickOutside)
 app.mount('#app')
+registerPwa()
