@@ -13,3 +13,5 @@ supplycore/public/frontend/
 .vscode/
 build/
 dist/
+
+.superpowers/
