@@ -42,7 +42,9 @@ fi
 set -a; . ./.env; set +a
 
 # --- 3. GHCR login (private image) ----------------------------------------
-if ! $DOCKER pull "${IMAGE}:${IMAGE_TAG}" >/dev/null 2>&1; then
+if [ "${PULL_POLICY:-always}" = "never" ]; then
+  warn "PULL_POLICY=never — dùng image local ${IMAGE}:${IMAGE_TAG} (không pull GHCR)."
+elif ! $DOCKER pull "${IMAGE}:${IMAGE_TAG}" >/dev/null 2>&1; then
   say "Logging in to GitHub Container Registry to pull the private image…"
   if [ -z "${GHCR_USER:-}" ]; then
     read -rp 'GitHub username: ' GHCR_USER
