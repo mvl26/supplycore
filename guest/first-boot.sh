@@ -19,20 +19,23 @@ mkdir -p "$DATA_DIR/mariadb" "$DATA_DIR/sites" "$DATA_DIR/backups"
 
 IMAGE="${SC_IMAGE:-ghcr.io/mvl26/supplycore:latest}"
 
+# uid:gid user frappe trong image (mặc định 1000) — override entrypoint để chỉ chạy `id`.
+FRAPPE_UID="$(docker run --rm --entrypoint id "$IMAGE" -u frappe 2>/dev/null || true)"; FRAPPE_UID="${FRAPPE_UID:-1000}"
+FRAPPE_GID="$(docker run --rm --entrypoint id "$IMAGE" -g frappe 2>/dev/null || true)"; FRAPPE_GID="${FRAPPE_GID:-1000}"
+
 # Bind-mount /data/sites RỖNG không được Docker tự seed như named volume → thiếu
-# sites/common_site_config.json + apps.txt mà image đã dựng sẵn (configurator chết
-# FileNotFoundError). Seed 1 lần từ image khi sites rỗng — giống hành vi named volume.
+# sites/common_site_config.json + apps.txt mà image đã dựng sẵn (→ configurator chết).
+# Seed 1 lần từ image khi rỗng. Chạy như ROOT (--user 0 + override entrypoint=bash để
+# tránh entrypoint "Linking fresh assets" của image) → ghi được vào /dst dù /dst root-owned.
 # (Khi update: disk1 đã có site → sites KHÔNG rỗng → bỏ qua, giữ nguyên dữ liệu.)
 if [ -z "$(ls -A "$DATA_DIR/sites" 2>/dev/null)" ]; then
   echo "first-boot: seed sites/ từ image (lần đầu)"
-  docker run --rm -v "$DATA_DIR/sites:/dst" "$IMAGE" \
-    bash -c 'cp -a /home/frappe/frappe-bench/sites/. /dst/' || true
+  docker run --rm --user 0 --entrypoint bash -v "$DATA_DIR/sites:/dst" "$IMAGE" \
+    -c 'cp -a /home/frappe/frappe-bench/sites/. /dst/'
 fi
 
-# chown sites về đúng uid:gid user frappe trong image (mặc định 1000); no-op khi test non-root.
-FRAPPE_UID="$(docker run --rm "$IMAGE" id -u frappe 2>/dev/null || true)"
-FRAPPE_GID="$(docker run --rm "$IMAGE" id -g frappe 2>/dev/null || true)"
-chown -R "${FRAPPE_UID:-1000}:${FRAPPE_GID:-1000}" "$DATA_DIR/sites" 2>/dev/null || true
+# chown BẮT BUỘC: bind mount giữ owner host (=root); container frappe (uid trên) phải ghi được sites/.
+chown -R "$FRAPPE_UID:$FRAPPE_GID" "$DATA_DIR/sites" 2>/dev/null || true
 
 # DB_PASSWORD bền theo disk1: sinh 1 lần (atomic temp+mv), đọc lại nếu đã có.
 # Dùng -s (tồn tại VÀ khác rỗng) tránh kẹt file 0 byte nếu lần trước openssl chết giữa chừng.
