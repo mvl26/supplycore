@@ -134,6 +134,20 @@ jobs:
           packer version
           qemu-system-x86_64 --version
 
+      - name: Enable KVM access + diagnose
+        # GitHub-hosted ubuntu runner CÓ /dev/kvm nhưng quyền hạn chế → QEMU accel=kvm
+        # không khởi động ("Qemu failed to start"). Nới quyền /dev/kvm = 0666 (udev rule
+        # chuẩn dùng cho QEMU/Android-emulator trên Actions). Cũng in chẩn đoán để biết
+        # nếu runner KHÔNG có /dev/kvm (khi đó phải đổi sang larger/nested-virt runner).
+        run: |
+          set -x
+          egrep -c '(vmx|svm)' /proc/cpuinfo || echo "WARN: CPU không có cờ ảo hóa"
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+          ls -l /dev/kvm || echo "ERROR: /dev/kvm KHÔNG tồn tại trên runner này"
+
       - name: Packer init
         run: packer init guest/packer/
 
@@ -143,6 +157,8 @@ jobs:
         #   mở https://cloud-images.ubuntu.com/releases/jammy/ chọn release-YYYYMMDD hiện có,
         #   sửa ngày ở URL + lấy lại sha256 dòng 'ubuntu-22.04-server-cloudimg-amd64.img'
         #   trong .../release-<ngày>/SHA256SUMS.
+        env:
+          PACKER_LOG: "1"   # log chi tiết nếu QEMU vẫn không lên (để debug tiếp)
         run: |
           packer build \
             -var ubuntu_image=https://cloud-images.ubuntu.com/releases/jammy/release-20260515/ubuntu-22.04-server-cloudimg-amd64.img \
