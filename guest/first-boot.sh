@@ -17,9 +17,22 @@ export ADMIN_PASSWORD
 
 mkdir -p "$DATA_DIR/mariadb" "$DATA_DIR/sites" "$DATA_DIR/backups"
 
-# Bind-mount /data/sites do root tạo, nhưng container frappe ghi bằng uid 1000.
-# chown để container ghi được (chạy root trong VM; no-op khi test non-root).
-chown -R 1000:1000 "$DATA_DIR/sites" 2>/dev/null || true
+IMAGE="${SC_IMAGE:-ghcr.io/mvl26/supplycore:latest}"
+
+# Bind-mount /data/sites RỖNG không được Docker tự seed như named volume → thiếu
+# sites/common_site_config.json + apps.txt mà image đã dựng sẵn (configurator chết
+# FileNotFoundError). Seed 1 lần từ image khi sites rỗng — giống hành vi named volume.
+# (Khi update: disk1 đã có site → sites KHÔNG rỗng → bỏ qua, giữ nguyên dữ liệu.)
+if [ -z "$(ls -A "$DATA_DIR/sites" 2>/dev/null)" ]; then
+  echo "first-boot: seed sites/ từ image (lần đầu)"
+  docker run --rm -v "$DATA_DIR/sites:/dst" "$IMAGE" \
+    bash -c 'cp -a /home/frappe/frappe-bench/sites/. /dst/' || true
+fi
+
+# chown sites về đúng uid:gid user frappe trong image (mặc định 1000); no-op khi test non-root.
+FRAPPE_UID="$(docker run --rm "$IMAGE" id -u frappe 2>/dev/null || true)"
+FRAPPE_GID="$(docker run --rm "$IMAGE" id -g frappe 2>/dev/null || true)"
+chown -R "${FRAPPE_UID:-1000}:${FRAPPE_GID:-1000}" "$DATA_DIR/sites" 2>/dev/null || true
 
 # DB_PASSWORD bền theo disk1: sinh 1 lần (atomic temp+mv), đọc lại nếu đã có.
 # Dùng -s (tồn tại VÀ khác rỗng) tránh kẹt file 0 byte nếu lần trước openssl chết giữa chừng.
