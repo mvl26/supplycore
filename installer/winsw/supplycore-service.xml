@@ -2,10 +2,17 @@
 <service>
   <id>SupplyCore</id>
   <name>SupplyCore</name>
-  <description>SupplyCore (Frappe) chạy trong VM ẩn qua QEMU.</description>
+  <description>SupplyCore (Frappe) running in a hidden QEMU VM.</description>
   <executable>powershell.exe</executable>
-  <!-- workingdirectory = %SC_DATA% để log VM (run-vm.ps1 -serial file:supplycore-vm.log) nằm cạnh dữ liệu. -->
+  <!-- workingdirectory = %SC_DATA% so the VM log (run-vm.ps1 -serial file:supplycore-vm.log) sits next to the data. -->
   <workingdirectory>%SC_DATA%</workingdirectory>
+  <!-- The @@...@@ values are MARKERS replaced by Inno Setup at install time (installer/supplycore.iss).
+       WinSW provides these vars from its own <env> (precedence over system env) and expands
+       %SC_ACCEL%/%SC_DATA%/%SC_PORT% in <arguments> itself - independent of the SCM env cache.
+       NOTE: keep this file pure ASCII; the installer round-trips it through the system codepage. -->
+  <env name="SC_ACCEL" value="@@SC_ACCEL@@"/>
+  <env name="SC_DATA" value="@@SC_DATA@@"/>
+  <env name="SC_PORT" value="@@SC_PORT@@"/>
   <arguments>-NoProfile -ExecutionPolicy Bypass -File "%BASE%\launcher\run-vm.ps1" -Accel "%SC_ACCEL%" -Disk0 "%BASE%\disk0.qcow2" -Disk1 "%SC_DATA%\disk1.qcow2" -Port %SC_PORT% -SeedIso "%SC_DATA%\seed.iso"</arguments>
   <onfailure action="restart" delay="10 sec"/>
   <log mode="roll-by-size"><sizeThreshold>10240</sizeThreshold><keepFiles>5</keepFiles></log>

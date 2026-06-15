@@ -130,14 +130,38 @@ begin
   end;
 end;
 
-// Set a MACHINE-scope (HKLM) environment variable. The WinSW service runs as LocalSystem and
-// reads %SC_ACCEL%/%SC_DATA%/%SC_PORT% from the machine environment — these MUST be machine scope.
-// setx /M writes HKLM\...\Session Manager\Environment AND broadcasts WM_SETTINGCHANGE.
+// Set a MACHINE-scope (HKLM) environment variable. Belt-and-suspenders only: it lets a MANUAL
+// run-vm.ps1 invocation (outside the service) inherit SC_*. The WinSW service no longer depends
+// on this — it gets SC_ACCEL/SC_DATA/SC_PORT from its own <env> block (see SubstituteServiceXml),
+// which is immune to the SCM system-environment cache. setx /M writes
+// HKLM\...\Session Manager\Environment AND broadcasts WM_SETTINGCHANGE.
 function SetMachineEnv(const Name, Value: String): Boolean;
 var rc: Integer;
 begin
   Result := Exec(ExpandConstant('{sys}\setx.exe'), Name + ' "' + Value + '" /M',
                  '', SW_HIDE, ewWaitUntilTerminated, rc) and (rc = 0);
+end;
+
+// Bake the resolved SC_ACCEL/SC_DATA/SC_PORT into the WinSW service XML's own <env> block by
+// replacing the @@...@@ markers in the shipped template ({app}\SupplyCore-service.xml). WinSW
+// expands %SC_ACCEL%/%SC_DATA%/%SC_PORT% in <arguments> from this <env> — so the service is
+// self-contained and does NOT race the SCM system-environment cache. Must run BEFORE
+// "SupplyCore-service.exe install".
+function SubstituteServiceXml(const Accel, DataDir, Port: String): Boolean;
+var
+  raw: AnsiString;
+  xml, path: String;
+begin
+  Result := False;
+  path := ExpandConstant('{app}\SupplyCore-service.xml');
+  if not LoadStringFromFile(path, raw) then
+    Exit;
+  xml := raw;
+  StringChangeEx(xml, '@@SC_ACCEL@@', Accel, True);
+  StringChangeEx(xml, '@@SC_DATA@@', DataDir, True);
+  StringChangeEx(xml, '@@SC_PORT@@', Port, True);
+  raw := xml;
+  Result := SaveStringToFile(path, raw, False);
 end;
 
 function PSFile(const ScriptPath: String): String;
@@ -191,7 +215,8 @@ begin
   else if rc = 2 then
     NeedReboot := True; // WHPX just enabled — needs reboot before it actually works.
 
-  // 2) Persist machine-scope env vars for the LocalSystem WinSW service.
+  // 2) Belt-and-suspenders: persist machine-scope env vars so a MANUAL run-vm.ps1 inherits SC_*.
+  //    The service itself does NOT rely on these (see step 3b) — failures here are non-fatal.
   if not SetMachineEnv('SC_ACCEL', accel) then
     MsgBox('Không thể đặt biến môi trường SC_ACCEL.', mbError, MB_OK);
   if not SetMachineEnv('SC_DATA', dataDir) then
@@ -207,6 +232,16 @@ begin
   begin
     MsgBox('Khởi tạo dữ liệu (disk1/seed.iso) thất bại (mã ' + IntToStr(rc) + '). '
       + 'Cài đặt sẽ dừng phần khởi động dịch vụ; xem nhật ký để xử lý.', mbError, MB_OK);
+    Exit;
+  end;
+
+  // 3b) Bake resolved SC_ACCEL/SC_DATA/SC_PORT into the WinSW service XML's own <env> block.
+  //     This makes the service self-contained: WinSW expands %SC_*% in <arguments> from its <env>,
+  //     immune to the SCM system-environment cache — so it can start immediately, no reboot needed
+  //     (except the genuine WHPX rc=2 case). MUST happen before the service is installed.
+  if not SubstituteServiceXml(accel, dataDir, port) then
+  begin
+    MsgBox('Không thể ghi cấu hình dịch vụ (SupplyCore-service.xml). Cài đặt sẽ dừng.', mbError, MB_OK);
     Exit;
   end;
 
@@ -243,9 +278,9 @@ begin
     ShellExec('open', 'http://127.0.0.1:' + port + '/supplycore', '', '', SW_SHOW, ewNoWait, rc)
   else
   begin
-    // Graceful fallback: the service may have launched before SCM picked up the freshly-set
-    // machine env (SCM caches the system environment), or a TCG first boot is still slow.
-    // Defer to a reboot: the Automatic service restarts with fresh env, then we open the browser.
+    // Graceful fallback: not an env-cache race anymore (the service reads SC_* from its own <env>),
+    // but a TCG first boot (or slow disk) can still exceed the wait timeout. Defer to a reboot:
+    // the Automatic service restarts and we open the browser once healthy.
     NeedReboot := True;
     RegisterPostRebootBrowser(port);
     MsgBox('SupplyCore chưa phản hồi trong thời gian chờ. Vui lòng KHỞI ĐỘNG LẠI máy để hoàn tất; '
