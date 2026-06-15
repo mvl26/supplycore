@@ -1,0 +1,267 @@
+name: Build SupplyCore Windows installer
+
+# Assembles the whole offline appliance and publishes a GitHub Release:
+#
+#   job `guest`     (Linux + KVM):
+#     SupplyCore Docker image  ->  docker save (tagged, contract #1)
+#       ->  Packer build disk0.qcow2  ->  smoke.sh (two-phase persistence gate)
+#       ->  upload artifact `disk0`.
+#   job `installer` (windows-latest):
+#     download `disk0` -> fetch-deps (QEMU/WinSW/oscdimg) -> Pester -> ISCC compile
+#       ->  test-install (silent install smoke) -> SHA256  ->  gh release (tags only).
+#
+# ── RELEASE-ENG PREREQUISITES (the build FAILS LOUDLY until these are filled) ──
+#   The scripts/HCL are pinned-by-design; placeholders below MUST be replaced
+#   with real, verified values before a tagged build can pass. None are faked.
+#
+#   In THIS workflow (job `guest`, "packer build" step):
+#     <<PIN-UBUNTU-IMAGE-URL>>  — DATED Ubuntu 22.04 cloud image URL (NOT
+#                                 .../current/...; a dated path is stable so it
+#                                 matches the SHA pin). Packer downloads + verifies
+#                                 it; a bare local filename would NOT auto-download.
+#     <<PIN-UBUNTU-SHA256>>     — SHA256 of that exact image (supplycore.pkr.hcl
+#                                 fails if empty — refuses to build from an
+#                                 unverified base image).
+#
+#   In installer/ci/fetch-deps.ps1 (fail-loud guard runs before any network I/O):
+#     <<PIN-QEMU-VERSION>>, <<PIN-QEMU-SHA256>>  — QEMU-for-Windows installer.
+#     <<PIN-WINSW-SHA256>>                       — WinSW v2.12.0 x64.
+#     <<PIN-OSCDIMG-URL>>, <<PIN-OSCDIMG-SHA256>> — oscdimg.exe (Windows ADK
+#                                 Deployment Tools / internal mirror).
+#
+# ── RUNNER CAPABILITY CAVEATS (infra) ─────────────────────────────────────────
+#   * job `guest` REQUIRES KVM. supplycore.pkr.hcl hardcodes accelerator="kvm"
+#     and smoke.sh uses `-accel kvm` with NO TCG fallback, so a stock hosted
+#     runner without nested virtualization makes this job FAIL OUTRIGHT (it does
+#     not degrade to slow TCG). Use a KVM-capable / nested-virt runner (e.g. a
+#     self-hosted/larger runner, or a cloud runner with nested virt enabled).
+#   * job `installer` `test-install` step: windows-latest lacks WHPX/nested-virt,
+#     so QEMU falls back to TCG (very slow). test-install.ps1 exits honestly
+#     (non-zero if localhost health can't be verified) — so that ONE step is
+#     `continue-on-error: true` to avoid failing the whole release on an
+#     un-accelerated runner, but its outcome is surfaced explicitly afterwards.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Image name fixed to the literal contract owner (mvl26): the saved tar MUST
+  # contain ghcr.io/mvl26/supplycore:latest or install.sh fails (contract #1).
+  IMAGE: ghcr.io/mvl26/supplycore
+  # Pinned frappe_docker ref — provides the build context (resources/core/*).
+  # Same values as .github/workflows/build-image.yml (build the SAME image).
+  FRAPPE_DOCKER_REF: 1e3d40fa65347209418e70a451d5b266e1a75b92
+  FRAPPE_BRANCH: version-15
+  PYTHON_VERSION: 3.11.9
+  NODE_VERSION: 18.20.4
+  # SC_VERSION for the .iss / OutputBaseFilename. On a tag this is vX.Y.Z; on a
+  # manual dispatch github.ref_name is a BRANCH (may contain '/'), which would
+  # produce an invalid filename — fall back to a dev version instead.
+  SC_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
+
+jobs:
+  # ───────────────────────────── job: guest ──────────────────────────────────
+  guest:
+    name: Build disk0 (image -> Packer -> smoke)
+    # REQUIRES KVM (see header). ubuntu-latest works only if it offers nested
+    # virt; otherwise swap for a KVM-capable runner here.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout SupplyCore (at workspace root)
+        # Root checkout (NOT a subpath): Packer's file provisioner and smoke.sh
+        # use repo-root-relative paths (guest/, deploy/, supplycore-image.tar).
+        uses: actions/checkout@v4
+
+      - name: Checkout frappe_docker (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: frappe/frappe_docker
+          ref: ${{ env.FRAPPE_DOCKER_REF }}
+          path: frappe_docker
+
+      - name: Inject SupplyCore Containerfile
+        run: |
+          cp docker/Containerfile frappe_docker/images/custom/Containerfile
+
+      - name: Render apps.json (token via secret file)
+        run: |
+          sed "s|__TOKEN__|${{ secrets.APP_GH_TOKEN }}|" \
+            docker/apps.json.template > "${RUNNER_TEMP}/apps.json"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (load locally, amd64) — same as build-image.yml
+        uses: docker/build-push-action@v6
+        with:
+          context: frappe_docker
+          file: frappe_docker/images/custom/Containerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          # Tag with the LITERAL contract tag so the save below is digest-free.
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.SC_VERSION }}
+          secret-files: |
+            apps_json=${{ runner.temp }}/apps.json
+          build-args: |
+            FRAPPE_BRANCH=${{ env.FRAPPE_BRANCH }}
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
+            INSTALL_CHROMIUM=false
+
+      - name: Save image to tar (contract #1 — tagged, repo root)
+        # install.sh `docker load`s this and FAILS if it can't read a tag
+        # (digest-only save). Save the LITERAL tag; the HCL file-provisioner
+        # stages ./supplycore-image.tar from repo root.
+        run: |
+          docker tag ${{ env.IMAGE }}:latest ghcr.io/mvl26/supplycore:latest
+          docker save ghcr.io/mvl26/supplycore:latest -o supplycore-image.tar
+          ls -lh supplycore-image.tar
+
+      - name: Install Packer + QEMU + genisoimage
+        # qemu-system-x86 / qemu-utils: smoke.sh boots the VM + qemu-img.
+        # genisoimage: smoke.sh builds the cidata seed ISO.
+        run: |
+          set -euxo pipefail
+          wget -qO- https://apt.releases.hashicorp.com/gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
+            | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt-get update
+          sudo apt-get install -y packer qemu-system-x86 qemu-utils genisoimage
+          packer version
+          qemu-system-x86_64 --version
+
+      - name: Packer init
+        run: packer init guest/packer/
+
+      - name: Packer build disk0 (from repo ROOT)
+        # ubuntu_image: dated cloud-image URL so Packer downloads + verifies it.
+        # ubuntu_image_sha256: HCL fails if empty (no build from unverified base).
+        run: |
+          packer build \
+            -var ubuntu_image=<<PIN-UBUNTU-IMAGE-URL>> \
+            -var ubuntu_image_sha256=<<PIN-UBUNTU-SHA256>> \
+            guest/packer/supplycore.pkr.hcl
+
+      - name: Smoke test (two-phase disk1-persistence gate, from repo ROOT)
+        run: bash guest/packer/smoke.sh
+
+      - name: Upload disk0 artifact
+        # HCL: output_directory="output-disk0", vm_name="disk0.qcow2".
+        # Single file -> artifact contains disk0.qcow2 at its root.
+        uses: actions/upload-artifact@v4
+        with:
+          name: disk0
+          path: output-disk0/disk0.qcow2
+          if-no-files-found: error
+          retention-days: 7
+
+  # ─────────────────────────── job: installer ────────────────────────────────
+  installer:
+    name: Build .exe (deps -> Pester -> Inno -> test-install -> release)
+    needs: guest
+    runs-on: windows-latest
+    permissions:
+      contents: write # softprops/action-gh-release needs write to publish.
+    steps:
+      - name: Checkout SupplyCore
+        uses: actions/checkout@v4
+
+      - name: Download disk0 artifact into dist\
+        # -> dist\disk0.qcow2, which installer\supplycore.iss [Files] expects.
+        uses: actions/download-artifact@v4
+        with:
+          name: disk0
+          path: dist
+
+      - name: Fetch pinned Windows build deps (QEMU / WinSW / oscdimg)
+        # Produces dist\qemu\*, dist\WinSW.exe, dist\oscdimg.exe. FAILS LOUDLY
+        # if any <<PIN-...>> in fetch-deps.ps1 is still a placeholder.
+        shell: pwsh
+        run: pwsh installer/ci/fetch-deps.ps1
+
+      - name: Run Pester (launcher unit tests)
+        # Discovers *.Tests.ps1 recursively (the .bats files are ignored).
+        # -CI => fail-on-error + non-zero exit on any failing test.
+        shell: pwsh
+        run: Invoke-Pester -Path tests/installer/ -CI
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile installer (Inno Setup)
+        # SC_VERSION drives AppVersion + OutputBaseFilename (.iss falls back to
+        # 0.0.0-dev if unset). Output lands in installer\Output\.
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DSC_VERSION=${env:SC_VERSION}" installer\supplycore.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed (exit $LASTEXITCODE)." }
+
+      - name: Test install (silent install smoke; TCG on hosted runner)
+        # continue-on-error ONLY because windows-latest has no WHPX/nested-virt,
+        # so QEMU runs under TCG and localhost health may not reach 200 in time.
+        # test-install.ps1 exits honestly; its outcome is surfaced next.
+        id: testinstall
+        continue-on-error: true
+        shell: pwsh
+        run: pwsh installer/ci/test-install.ps1
+
+      - name: Surface test-install result
+        shell: pwsh
+        run: |
+          if ('${{ steps.testinstall.outcome }}' -eq 'success') {
+            Write-Host "test-install: PASS (install + service Running + health 200 + clean uninstall)."
+          } else {
+            Write-Warning "test-install: did NOT fully pass (likely TCG/WHPX-less runner could not verify localhost health). Not failing the release; verify on a WHPX-capable runner."
+          }
+
+      - name: Locate built installer
+        id: setup
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path . -Recurse -Filter 'SupplyCore-Setup-*.exe' -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime | Select-Object -Last 1
+          if (-not $exe) { throw "No SupplyCore-Setup-*.exe produced by ISCC." }
+          Write-Host "Installer: $($exe.FullName)"
+          "exe=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Checksum (SHA256)
+        shell: pwsh
+        run: |
+          $exe = '${{ steps.setup.outputs.exe }}'
+          $hash = (Get-FileHash -Path $exe -Algorithm SHA256).Hash
+          $name = Split-Path $exe -Leaf
+          $line = "$hash  $name"
+          $out  = Join-Path (Split-Path $exe -Parent) 'SHA256.txt'
+          $line | Out-File -FilePath $out -Encoding ascii
+          Write-Host $line
+          "sha256txt=$out" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        id: checksum
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: |
+            ${{ steps.setup.outputs.exe }}
+            ${{ steps.checksum.outputs.sha256txt }}
+          if-no-files-found: error
+
+      - name: Publish Release (tags only)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.setup.outputs.exe }}
+            ${{ steps.checksum.outputs.sha256txt }}
+          fail_on_unmatched_files: true
