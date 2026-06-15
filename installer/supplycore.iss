@@ -60,6 +60,23 @@ Source: "dist\disk0.qcow2";                         DestDir: "{app}";           
 ; --- WHPX enablement/check ---
 Source: "installer\whpx-check.ps1";                 DestDir: "{app}";                     Flags: ignoreversion
 
+[Icons]
+; Start Menu shortcuts cho IT bệnh viện: sao lưu / phục hồi dữ liệu (mức file disk1.qcow2, §5.3).
+; DisableProgramGroupPage=yes chỉ bỏ TRANG chọn group trong wizard — Inno vẫn tạo được icon dưới
+; nhóm {autoprograms}\SupplyCore. Cả 2 script tự kiểm tra quyền Administrator và TỰ NÂNG QUYỀN
+; (UAC qua Start-Process -Verb RunAs) khi cần — nên [Icons] không cần ép elevation. Nếu UAC bị chặn,
+; IT có thể bấm chuột phải shortcut > "Run as administrator".
+; - "Sao lưu": chạy không tham số → backup-export.ps1 mặc định DestDir = {commonappdata}\SupplyCore\exports.
+; - "Phục hồi": chạy không tham số → restore.ps1 mở hộp thoại chọn file .qcow2.
+Name: "{autoprograms}\SupplyCore\Sao lưu SupplyCore"; \
+  Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\launcher\backup-export.ps1"""; \
+  Comment: "Sao lưu dữ liệu SupplyCore ra {commonappdata}\SupplyCore\exports"
+Name: "{autoprograms}\SupplyCore\Phục hồi SupplyCore (chọn file)"; \
+  Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\launcher\restore.ps1"""; \
+  Comment: "Phục hồi dữ liệu SupplyCore từ file sao lưu .qcow2"
+
 [UninstallRun]
 ; Stop + uninstall the WinSW service. NOTE: we intentionally do NOT delete
 ; {commonappdata}\SupplyCore (disk1.qcow2 + DB + backups) — data is preserved on uninstall/update.

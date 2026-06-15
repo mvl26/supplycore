@@ -81,26 +81,31 @@ Bộ cài tách rõ "ứng dụng" và "dữ liệu" thành 2 ổ đĩa ảo:
 - Máy ảo **tự sao lưu hằng ngày lúc 02:00** (`bench backup --with-files`) vào thư mục `/data/backups` **bên trong** `disk1.qcow2`. Vì nằm trong disk1 nên backup sống qua update.
 - Lịch backup do timer trong máy ảo điều khiển (`OnCalendar=*-*-* 02:00:00`, có `Persistent=true` — nếu máy tắt lúc 02:00 thì chạy bù khi bật lại).
 
-> **Lấy backup ra ngoài Windows — v1: làm thủ công.**
-> Backup hiện nằm trong ổ đĩa ảo `disk1.qcow2`, **chưa có công cụ tự sao chép bản backup ra một thư mục Windows**. Việc lấy file backup ra ngoài là **thao tác thủ công nâng cao chạy trong máy ảo** (xem mục 8 về cách thao tác trong VM). **Các phiên bản sau sẽ tự động copy backup ra ngoài.**
-> Lưu ý quan trọng: nên định kỳ **sao lưu cả file `C:\ProgramData\SupplyCore\disk1.qcow2`** (khi dịch vụ đã dừng) sang nơi an toàn — đây là cách bảo toàn toàn bộ dữ liệu đơn giản nhất ở v1.
+### Lấy backup ra ngoài Windows — Start Menu "Sao lưu SupplyCore"
+
+Bộ cài tạo shortcut **Start Menu → SupplyCore → "Sao lưu SupplyCore"**. Bấm vào đó để sao lưu **toàn bộ dữ liệu** ra một file ngoài máy ảo:
+
+1. Bấm shortcut **"Sao lưu SupplyCore"**. Bấm **Yes** khi Windows hỏi nâng quyền Administrator (script tự yêu cầu — cần quyền này để dừng dịch vụ).
+2. Script **tự dừng dịch vụ SupplyCore** (để ổ đĩa nhất quán), **copy `disk1.qcow2`** thành một file có dấu thời gian rồi **tự khởi động lại dịch vụ** (nếu trước đó đang chạy).
+3. File backup nằm ở `C:\ProgramData\SupplyCore\exports\supplycore-data-<ngày-giờ>.qcow2`.
+4. **Hãy chép file `.qcow2` này sang nơi an toàn** (USB / ổ mạng) — đó là bản sao đầy đủ của toàn bộ CSDL + file đính kèm + backup hằng ngày trong guest.
+
+> **Lưu ý:** vì dịch vụ bị dừng trong lúc copy, máy ảo (và SupplyCore) sẽ tạm ngừng vài phút. Nên chạy ngoài giờ làm việc.
+> Nâng cao: có thể chỉ định thư mục đích khác bằng cách chạy `powershell -ExecutionPolicy Bypass -File "C:\Program Files\SupplyCore\launcher\backup-export.ps1" -DestDir "D:\backup-sc"` (chạy với quyền Administrator).
 
 ---
 
 ## 8. Phục hồi (restore)
 
-> **v1: thao tác thủ công nâng cao, chạy bên trong máy ảo.** Chưa có nút restore 1-click.
+Bộ cài tạo shortcut **Start Menu → SupplyCore → "Phục hồi SupplyCore (chọn file)"** để phục hồi từ một file backup `.qcow2` đã export ở mục 7 — **không cần thao tác bên trong máy ảo**.
 
-Bên trong máy ảo, lệnh restore thực tế là (qua wrapper `/opt/supplycore/bin/bench`, bản chất là `docker compose ... exec -T backend bench`):
+1. Bấm shortcut **"Phục hồi SupplyCore (chọn file)"**. Bấm **Yes** khi Windows hỏi nâng quyền Administrator (script tự yêu cầu).
+2. Hộp thoại mở ra để **chọn file `.qcow2`** cần phục hồi (mặc định trỏ vào thư mục `...\SupplyCore\exports`).
+3. Script hiện **cảnh báo + yêu cầu xác nhận** (gõ `yes`). Sau đó: dừng dịch vụ → **đổi tên dữ liệu hiện tại** thành `disk1.qcow2.bak-<ngày-giờ>` (giữ lại để dự phòng, không xoá) → copy file backup vào thay thế → khởi động lại dịch vụ.
+4. Sau khi xác nhận dữ liệu đã phục hồi đúng, có thể **xoá file `disk1.qcow2.bak-<ngày-giờ>`** trong `C:\ProgramData\SupplyCore` để giải phóng dung lượng.
 
-```bash
-bench --site supplycore.localhost restore <đường-dẫn-file-backup>
-```
-
-- Site cố định là **`supplycore.localhost`**.
-- File backup nằm trong `/data/backups` bên trong máy ảo.
-
-> **CẢNH BÁO:** Lệnh `restore` **ghi đè toàn bộ dữ liệu hiện tại**. Hãy chắc chắn trước khi chạy. Nên sao lưu trạng thái hiện tại (hoặc copy `disk1.qcow2`) trước khi restore.
+> **CẢNH BÁO:** Phục hồi **ghi đè toàn bộ dữ liệu hiện tại**. Dữ liệu cũ được giữ ở file `.bak-<ngày-giờ>` cho tới khi IT chủ động xoá — nếu phục hồi sai, có thể đổi tên file `.bak-` đó về `disk1.qcow2` (khi dịch vụ đã dừng) để khôi phục.
+> **Quyền:** cả hai shortcut sao lưu/phục hồi đều cần quyền **Administrator**; script tự nâng quyền (UAC). Nếu UAC bị chặn, bấm chuột phải shortcut → **"Run as administrator"**.
 
 ---
 

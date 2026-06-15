@@ -105,10 +105,13 @@ Phát hiện: `deploy/compose.yml` **đã tự lo provisioning** — service `co
 - Quy trình: stop service → backup tự động trước update → thay `disk0` → start → `first-boot.sh` phát hiện site đã tồn tại → chạy `bench migrate` → healthy.
 - Hoàn toàn offline (không pull registry). Re-runnable, idempotent.
 
-### 5.3 Backup / restore
-- Trong guest: systemd timer chạy `bench backup --with-files` định kỳ (mặc định hằng ngày) → `/data/backups` (trên disk1, sống qua update).
-- Host: shortcut "Sao lưu SupplyCore" copy `/data/backups` ra thư mục Windows do người dùng chọn (qua QEMU shared folder / scp tới guest).
-- Restore: README ghi rõ `bench restore <file>` trong guest; v1 thực hiện thủ công có hướng dẫn.
+### 5.3 Backup / restore (mức file disk1 — đã hiện thực)
+- **Trong guest:** systemd timer chạy `bench backup --with-files` định kỳ (mặc định hằng ngày) → `/data/backups` (trên disk1, sống qua update).
+- **Host export — không cần shell vào VM.** Toàn bộ dữ liệu (MariaDB + sites + `/data/backups`) nằm trong `disk1.qcow2`. Backup/restore làm ở mức **file của chính ổ đĩa đó** với dịch vụ đã dừng (qcow2 nhất quán trên đĩa vì VM tắt sạch + nhả khoá file):
+  - `installer/launcher/backup-export.ps1` — dừng dịch vụ `SupplyCore`, copy `disk1.qcow2` → `<DestDir>\supplycore-data-<yyyymmdd-HHmmss>.qcow2`, khởi động lại dịch vụ nếu trước đó đang chạy. `DestDir` mặc định = `<SC_DATA>\exports`.
+  - `installer/launcher/restore.ps1` — chọn file `.qcow2` (tham số `-BackupFile` hoặc hộp thoại OpenFileDialog), cảnh báo + xác nhận (`-Force` để bỏ qua), dừng dịch vụ, đổi tên `disk1.qcow2` hiện tại → `disk1.qcow2.bak-<timestamp>` (giữ lại để rollback), copy backup vào thay thế, khởi động lại dịch vụ. `catch` tự rollback (đổi tên `.bak-` về `disk1.qcow2`) nếu copy lỗi giữa chừng; `finally` LUÔN khởi động lại dịch vụ (kể cả khi lỗi) để SupplyCore không bị treo ở trạng thái dừng.
+  - Cả 2 script **tự kiểm tra + tự nâng quyền Administrator** (UAC qua `Start-Process -Verb RunAs`) — cần quyền này để điều khiển dịch vụ. Vì nâng quyền mở cửa sổ PowerShell mới rồi tự đóng khi xong (nuốt mất `Write-Host`), kết quả/lỗi cuối cùng được báo qua **MsgBox** (`System.Windows.Forms.MessageBox`); restore bỏ MsgBox khi chạy `-Force` (tự động).
+- **Start Menu shortcuts** (`installer/supplycore.iss` `[Icons]`): "Sao lưu SupplyCore" (chạy không tham số → export vào `...\exports`) và "Phục hồi SupplyCore (chọn file)" (chạy không tham số → hộp thoại chọn `.qcow2`).
 
 ### 5.4 Khởi tạo Administrator
 - Wizard Inno Setup có trường **mật khẩu Administrator** (bắt buộc, có xác nhận).
