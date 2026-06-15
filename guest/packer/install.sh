@@ -69,10 +69,12 @@ docker pull redis:6.2-alpine
 # (xem bước HARDEN ở cuối).
 cloud-init clean --logs || true
 
-# ── Gỡ user build (Packer SSH) + drop-in — KHÔNG để lọt vào appliance ship cho
-# bệnh viện. cloud-init clean KHÔNG undo config đã áp → phải xoá tường minh. ────
-userdel -f -r packer 2>/dev/null || true
-rm -f /etc/sudoers.d/90-cloud-init-users /etc/ssh/sshd_config.d/50-cloud-init.conf 2>/dev/null || true
+# ── Gỡ user build (Packer SSH) + drop-in ─────────────────────────────────────
+# KHÔNG gỡ ở đây: Packer chạy shutdown_command BẰNG user packer + sudo SAU khi
+# install.sh xong; nếu xoá user/sudoers ngay thì `sudo shutdown` fail → build treo.
+# Việc gỡ được thực hiện trong shutdown_command (xem supplycore.pkr.hcl): sudo
+# elevate khi sudoers còn hiệu lực → root xoá user/drop-in → shutdown. User build
+# KHÔNG lọt vào disk0 ship cho bệnh viện.
 
 # ── Trim để disk0 nhỏ ────────────────────────────────────────────────────────
 apt-get clean

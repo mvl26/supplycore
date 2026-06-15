@@ -64,7 +64,10 @@ source "qemu" "disk0" {
   ssh_password = "packer"
   ssh_timeout  = "20m"
 
-  shutdown_command = "sudo shutdown -P now"
+  # Gỡ user build NGAY trong shutdown: sudo elevate khi sudoers còn hiệu lực →
+  # root xoá user packer + drop-in (sudoers/sshd ssh_pwauth) → shutdown. Nhờ vậy
+  # build vẫn halt sạch mà user build KHÔNG lọt vào disk0 ship cho bệnh viện.
+  shutdown_command = "sudo bash -c 'userdel -f -r packer; rm -f /etc/sudoers.d/90-cloud-init-users /etc/ssh/sshd_config.d/50-cloud-init.conf; shutdown -P now'"
 }
 
 build {
