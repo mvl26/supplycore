@@ -40,8 +40,11 @@ New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
 $deps = @(
   [pscustomobject]@{
     Name   = 'QEMU for Windows (w64, NSIS installer)'
-    Url    = 'https://qemu.weilnetz.de/w64/qemu-w64-setup-<<PIN-QEMU-VERSION>>.exe'
-    Sha256 = '<<PIN-QEMU-SHA256>>'
+    # Version khuyến nghị: 20240426 (bản ổn định trên qemu.weilnetz.de/w64).
+    # NẾU 404: vào https://qemu.weilnetz.de/w64/ chọn 'qemu-w64-setup-YYYYMMDD.exe'
+    # mới hơn, sửa ngày dưới đây, rồi tải file ĐÓ và tính SHA256 dán vào Sha256.
+    Url    = 'https://qemu.weilnetz.de/w64/qemu-w64-setup-20240426.exe'
+    Sha256 = '<<PIN-QEMU-SHA256>>'   # = sha256sum của đúng file ngày 20240426 ở trên
     Out    = (Join-Path $DistDir 'qemu-setup.exe')
     Kind   = 'qemu'
   }

@@ -11,21 +11,16 @@ name: Build SupplyCore Windows installer
 #       ->  test-install (silent install smoke) -> SHA256  ->  gh release (tags only).
 #
 # ── RELEASE-ENG PREREQUISITES (the build FAILS LOUDLY until these are filled) ──
-#   The scripts/HCL are pinned-by-design; placeholders below MUST be replaced
-#   with real, verified values before a tagged build can pass. None are faked.
+#   Versions/URLs are PRE-FILLED with recommended values; only 3 SHA256 remain.
+#   (Confirm the pre-filled dates still resolve; bump + recompute SHA if 404.)
 #
-#   In THIS workflow (job `guest`, "packer build" step):
-#     <<PIN-UBUNTU-IMAGE-URL>>  — DATED Ubuntu 22.04 cloud image URL (NOT
-#                                 .../current/...; a dated path is stable so it
-#                                 matches the SHA pin). Packer downloads + verifies
-#                                 it; a bare local filename would NOT auto-download.
-#     <<PIN-UBUNTU-SHA256>>     — SHA256 of that exact image (supplycore.pkr.hcl
-#                                 fails if empty — refuses to build from an
-#                                 unverified base image).
-#
-#   In installer/ci/fetch-deps.ps1 (fail-loud guard runs before any network I/O):
-#     <<PIN-QEMU-VERSION>>, <<PIN-QEMU-SHA256>>  — QEMU-for-Windows installer.
-#     <<PIN-WINSW-SHA256>>                       — WinSW v2.12.0 x64.
+#   STILL TO FILL (3 × SHA256 — none faked, build fails until real):
+#     In job `guest`, "packer build" step:
+#       <<PIN-UBUNTU-SHA256>>   — SHA256 of the release-20240514 image (from the
+#                                 SHA256SUMS in that same release dir). URL pre-filled.
+#     In installer/ci/fetch-deps.ps1 (fail-loud guard runs before any network I/O):
+#       <<PIN-QEMU-SHA256>>     — sha256 of qemu-w64-setup-20240426.exe. URL pre-filled.
+#       <<PIN-WINSW-SHA256>>    — sha256 of WinSW-x64.exe v2.12.0. URL fixed.
 #   (No ISO-builder pin: make-data.ps1 builds the cidata seed ISO with IMAPI2FS —
 #    a COM API built into Windows — so oscdimg/ADK is no longer needed.)
 #
@@ -144,11 +139,14 @@ jobs:
         run: packer init guest/packer/
 
       - name: Packer build disk0 (from repo ROOT)
-        # ubuntu_image: dated cloud-image URL so Packer downloads + verifies it.
-        # ubuntu_image_sha256: HCL fails if empty (no build from unverified base).
+        # ubuntu_image: URL bản RELEASE có ngày (cây releases/ giữ lâu hơn cây jammy/ daily).
+        #   Khuyến nghị: release-20240514. NẾU 404 → mở https://cloud-images.ubuntu.com/releases/jammy/
+        #   chọn release-YYYYMMDD hiện có, sửa ngày ở URL bên dưới.
+        # ubuntu_image_sha256: lấy dòng 'ubuntu-22.04-server-cloudimg-amd64.img' trong SHA256SUMS
+        #   CÙNG thư mục release (.../release-<ngày>/SHA256SUMS). HCL fail nếu để trống.
         run: |
           packer build \
-            -var ubuntu_image=<<PIN-UBUNTU-IMAGE-URL>> \
+            -var ubuntu_image=https://cloud-images.ubuntu.com/releases/jammy/release-20240514/ubuntu-22.04-server-cloudimg-amd64.img \
             -var ubuntu_image_sha256=<<PIN-UBUNTU-SHA256>> \
             guest/packer/supplycore.pkr.hcl
 
