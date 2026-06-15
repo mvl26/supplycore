@@ -1,0 +1,14 @@
+#cloud-config
+# guest/cloud-init/user-data (template — installer điền ADMIN_PASSWORD)
+write_files:
+  - path: /data/supplycore.env
+    permissions: '0600'
+    content: |
+      DATA_DIR=/data
+      SITE_NAME=supplycore.local
+      COMPOSE_DIR=/opt/supplycore
+      ADMIN_PASSWORD=__ADMIN_PASSWORD__
+runcmd:
+  - mkdir -p /data
+  - systemctl enable --now first-boot.service
+  - systemctl enable --now backup.timer
