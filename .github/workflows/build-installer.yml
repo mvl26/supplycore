@@ -200,7 +200,8 @@ jobs:
 
       - name: Compile installer (Inno Setup)
         # SC_VERSION drives AppVersion + OutputBaseFilename (.iss falls back to
-        # 0.0.0-dev if unset). Output lands in installer\Output\.
+        # 0.0.0-dev if unset). Với SourceDir={#SourcePath}\.. (repo root) trong .iss,
+        # Output mặc định ở <repo-root>\Output\; bước release tìm .exe đệ quy nên không lệ thuộc.
         shell: pwsh
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"

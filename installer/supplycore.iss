@@ -29,6 +29,10 @@
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=SupplyCore
+; SourceDir = repo root ({#SourcePath} là thư mục chứa .iss = installer\). Nhờ vậy các
+; path trong [Files] (dist\, installer\, guest\) phân giải từ gốc repo, không bị lặp
+; thành installer\installer\... (Task 12 review).
+SourceDir={#SourcePath}\..
 DefaultDirName={commonpf}\SupplyCore
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
