@@ -17,6 +17,10 @@ export ADMIN_PASSWORD
 
 mkdir -p "$DATA_DIR/mariadb" "$DATA_DIR/sites" "$DATA_DIR/backups"
 
+# Bind-mount /data/sites do root tạo, nhưng container frappe ghi bằng uid 1000.
+# chown để container ghi được (chạy root trong VM; no-op khi test non-root).
+chown -R 1000:1000 "$DATA_DIR/sites" 2>/dev/null || true
+
 # DB_PASSWORD bền theo disk1: sinh 1 lần, đọc lại nếu đã có.
 DB_PW_FILE="$DATA_DIR/.db_password"
 if [ ! -f "$DB_PW_FILE" ]; then
