@@ -37,8 +37,22 @@ compose_up() {
   docker compose -f "$COMPOSE_DIR/compose.yml" -f "$COMPOSE_DIR/compose.override.yml" "$@"
 }
 
+# Dump trạng thái + log mọi service khi có sự cố (để debug từ serial log).
+dump_compose() {
+  echo "===== first-boot: DUMP compose ps ====="
+  compose_up ps || true
+  echo "===== first-boot: DUMP compose logs (tail) ====="
+  compose_up logs --no-color --tail=120 || true
+  echo "===== end dump ====="
+}
+
 # Đưa stack lên. Compose chờ create-site completed_successfully rồi mới start backend.
-compose_up up -d
+# Nếu up thất bại (vd configurator/create-site exit !=0) → in log đầy đủ rồi thoát lỗi.
+if ! compose_up up -d; then
+  echo "first-boot: 'compose up -d' THẤT BẠI — log bên dưới:"
+  dump_compose
+  exit 1
+fi
 
 # Chờ backend sẵn sàng trước khi migrate (tránh race cold boot).
 for _ in $(seq 1 60); do
@@ -49,4 +63,8 @@ for _ in $(seq 1 60); do
 done
 
 # create-site đã tạo site; migrate áp schema mới khi update (idempotent, an toàn lần đầu).
-bench --site "$SITE_NAME" migrate
+if ! bench --site "$SITE_NAME" migrate; then
+  echo "first-boot: 'bench migrate' THẤT BẠI — log bên dưới:"
+  dump_compose
+  exit 1
+fi
