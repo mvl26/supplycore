@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# guest/bin/bench — gọi bench thật trong container backend.
+set -euo pipefail
+COMPOSE_DIR="${COMPOSE_DIR:-/opt/supplycore}"
+exec docker compose -f "$COMPOSE_DIR/compose.yml" -f "$COMPOSE_DIR/compose.override.yml" \
+  exec -T backend bench "$@"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # guest/backup.sh — chạy bởi systemd timer; sao lưu site vào /data/backups (đĩa bền).
 set -euo pipefail
+[ -d /opt/supplycore/bin ] && export PATH="/opt/supplycore/bin:$PATH"
 DATA_DIR="${DATA_DIR:-/data}"
 SITE_NAME="${SITE_NAME:-supplycore.local}"
 mkdir -p "$DATA_DIR/backups"

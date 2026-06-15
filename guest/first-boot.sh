@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # guest/first-boot.sh — idempotent provisioning chạy bởi systemd oneshot mỗi lần boot.
 set -euo pipefail
+[ -d /opt/supplycore/bin ] && export PATH="/opt/supplycore/bin:$PATH"
 
 DATA_DIR="${DATA_DIR:-/data}"
 SITE_NAME="${SITE_NAME:-supplycore.local}"
