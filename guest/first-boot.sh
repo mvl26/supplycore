@@ -46,6 +46,8 @@ if [ ! -s "$DB_PW_FILE" ]; then
 else
   echo "first-boot: DB_PASSWORD reused"
 fi
+# Đẩy ngay xuống disk1 (đề phòng VM tắt trước khi ext4 commit/Docker giữ /data bận khi shutdown).
+sync || true
 DB_PASSWORD="$(cat "$DB_PW_FILE")"
 export DB_PASSWORD
 

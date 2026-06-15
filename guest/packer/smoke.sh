@@ -68,7 +68,7 @@ boot_vm() {
     -accel kvm \
     -m 4096 -smp 2 \
     -drive file="$overlay",if=virtio,format=qcow2 \
-    -drive file="$DISK1",if=virtio,format=qcow2 \
+    -drive file="$DISK1",if=virtio,format=qcow2,cache=writethrough \
     -drive file="$WORK/seed.iso",if=virtio,format=raw,readonly=on \
     -netdev "user,id=n0,hostfwd=tcp:127.0.0.1:${HOST_PORT}-:80" \
     -device virtio-net-pci,netdev=n0 \
@@ -135,6 +135,7 @@ fi
 echo "SMOKE PHA 1 PASS: app 200, disk1 mounted, DB_PASSWORD generated."
 
 powerdown_vm "$PIDFILE1" "$WORK/mon1.sock"
+sync || true   # flush host page cache → file qcow2 disk1 trước khi PHA 2 mở lại
 rm -f "$PIDFILE1"
 
 # ════════════════════════════ PHA 2 ══════════════════════════════════════════
