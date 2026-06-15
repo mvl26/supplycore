@@ -106,13 +106,14 @@ begin
       Result := False;
       Exit;
     end;
-    // Reject characters that would break the PowerShell command line used to pass the
-    // password to make-data.ps1 (double quote breaks out of the quoted arg; backtick is
-    // PowerShell's escape char). This guarantees the value substituted into cloud-init is
-    // exactly what the user typed (Correction C — no silent wrong-password substitution).
-    if (Pos('"', pw) > 0) or (Pos(#96, pw) > 0) then
+    // Reject characters that would break (a) the PowerShell command line used to pass the
+    // password to make-data.ps1 (" breaks out of the quoted arg; ` is PowerShell's escape),
+    // and (b) systemd EnvironmentFile parsing in the guest where ADMIN_PASSWORD is consumed
+    // (' and \ trigger systemd quote/escape handling). This guarantees the value reaching
+    // cloud-init + create-site is exactly what the user typed (Correction C + Task 11 review M3).
+    if (Pos('"', pw) > 0) or (Pos(#96, pw) > 0) or (Pos('''', pw) > 0) or (Pos('\', pw) > 0) then
     begin
-      MsgBox('Mật khẩu không được chứa ký tự " hoặc `.', mbError, MB_OK);
+      MsgBox('Mật khẩu không được chứa các ký tự: " `  '' \', mbError, MB_OK);
       Result := False;
       Exit;
     end;

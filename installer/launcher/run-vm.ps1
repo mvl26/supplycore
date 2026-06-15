@@ -11,6 +11,11 @@ param(
 
 function Build-QemuArgs {
   param($Accel, $Disk0, $Disk1, $Port, $SeedIso)
+  # Log VM theo path TUYỆT ĐỐI cạnh disk1 (%SC_DATA%) — khỏi lệ thuộc WinSW có
+  # expand <workingdirectory> hay không (tránh log rơi vào thư mục bất định).
+  $logDir = Split-Path -Parent $Disk1
+  if (-not $logDir) { $logDir = '.' }
+  $logFile = Join-Path $logDir 'supplycore-vm.log'
   return @(
     '-machine', "type=q35,accel=$Accel"
     '-cpu', 'max'
@@ -22,7 +27,7 @@ function Build-QemuArgs {
     '-netdev', "user,id=n0,hostfwd=tcp:127.0.0.1:$Port-:80"
     '-device', 'virtio-net-pci,netdev=n0'
     '-display', 'none'
-    '-serial', 'file:supplycore-vm.log'
+    '-serial', "file:$logFile"
   )
 }
 
