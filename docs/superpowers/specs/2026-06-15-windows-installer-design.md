@@ -65,11 +65,23 @@ Windows host (IT chỉ thấy phần này)
 | `installer/launcher/run-vm.ps1` (hoặc `.cmd`) | Build dòng lệnh QEMU (accel, disks, hostfwd), chạy headless, log | QEMU portable |
 | `installer/launcher/wait-healthy.ps1` | Poll `http://127.0.0.1:<PORT>/supplycore` tới khi 200 | — |
 | `guest/packer/supplycore.pkr.hcl` | Build disk0: Ubuntu cloud + Docker + load image + compose + first-boot | Packer, QEMU/KVM (CI) |
-| `guest/first-boot.sh` | Idempotent: tạo site nếu thiếu, set admin pw, bind volumes vào /data, `bench migrate` khi update | cloud-init / systemd oneshot |
+| `guest/first-boot.sh` | Idempotent (xem §4b): đảm bảo DB_PASSWORD bền → `compose up -d` → chờ backend healthy → `bench migrate`. Compose lo tạo site. | cloud-init / systemd oneshot |
 | `guest/backup.timer` + `guest/backup.sh` | `bench backup --with-files` → `/data/backups` | systemd timer |
 | `.github/workflows/build-installer.yml` | CI: build image → build disk0 → đóng `.exe` → publish artifact | GHCR build hiện có |
 
 Mỗi đơn vị test độc lập được: launcher test bằng disk giả + port; first-boot test trong CI Linux; installer test trên runner Windows.
+
+## 4b. Integration contract (chỉnh 2026-06-15, sau khi đọc kỹ `deploy/compose.yml`)
+
+Phát hiện: `deploy/compose.yml` **đã tự lo provisioning** — service `configurator` (set common_site_config) + `create-site` (`bench new-site --install-app supplycore`, idempotent qua `[ -d sites/$SITE_NAME ]`), và `backend` `depends_on: create-site: service_completed_successfully`. Vì vậy:
+
+- **Compose sở hữu provisioning.** `first-boot.sh` **KHÔNG** được `bench new-site`/`install-app` nữa (sẽ drop site create-site vừa tạo, install-app lần 2 lỗi → `set -e` → re-provision vô hạn). `first-boot.sh` thu gọn còn: đảm bảo `DB_PASSWORD` bền trên disk1 → `docker compose up -d` (có env) → chờ `backend` healthy → `bench migrate`. **Bỏ marker** (`create-site` + `migrate` đều idempotent).
+- **Offline (bắt buộc):** `compose.yml` mặc định `pull_policy: always` → air-gapped sẽ fail dù đã `docker load`. Guest env **phải** đặt `PULL_POLICY=never`.
+- **Tag image phải khớp:** compose resolve `${IMAGE:-ghcr.io/mvl26/supplycore}:${IMAGE_TAG:-latest}`. Image `docker load` trong disk0 **phải** mang đúng tag đó (tag-on-save về `ghcr.io/mvl26/supplycore:latest`), nếu không `pull_policy:never` không tìm thấy → VM không lên. **Smoke test Task 9 là cổng kiểm tra điều này.**
+- **Cổng:** `frontend` publish `${HTTP_PORT:-8080}:8080`. Guest env đặt `HTTP_PORT=80` để khớp hostfwd `…-:80` của run-vm.ps1 (run-vm/wait-healthy **không** cần sửa).
+- **SITE_NAME chuẩn hoá = `supplycore.localhost`** (mặc định của compose; nuôi `FRAPPE_SITE_NAME_HEADER`). Phải đồng nhất ở cloud-init + first-boot.
+- **`/data/supplycore.env`** (systemd `EnvironmentFile`, được compose interpolate qua env của first-boot.sh) mang: `DATA_DIR`, `COMPOSE_DIR`, `SITE_NAME=supplycore.localhost`, `HTTP_PORT=80`, `PULL_POLICY=never`, `ADMIN_PASSWORD=__…__`. **KHÔNG** chứa `DB_PASSWORD`.
+- **`DB_PASSWORD` bền theo disk1:** sinh 1 lần trong guest (`first-boot.sh`) nếu `/data/.db_password` thiếu, đọc lại nếu đã có (mariadb root password gắn với data trên disk1 — đổi password khi data đã init → auth fail). KHÔNG inject từ host (vì update thay disk0 → `/var/lib/cloud` mới → cloud-init coi là instance mới → write_files chạy lại, có thể clobber).
 
 ## 5. Xử lý 4 yêu cầu ẩn
 
