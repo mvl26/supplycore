@@ -4,6 +4,8 @@
   <name>SupplyCore</name>
   <description>SupplyCore (Frappe) chạy trong VM ẩn qua QEMU.</description>
   <executable>powershell.exe</executable>
+  <!-- workingdirectory = %SC_DATA% để log VM (run-vm.ps1 -serial file:supplycore-vm.log) nằm cạnh dữ liệu. -->
+  <workingdirectory>%SC_DATA%</workingdirectory>
   <arguments>-NoProfile -ExecutionPolicy Bypass -File "%BASE%\launcher\run-vm.ps1" -Accel "%SC_ACCEL%" -Disk0 "%BASE%\disk0.qcow2" -Disk1 "%SC_DATA%\disk1.qcow2" -Port %SC_PORT% -SeedIso "%SC_DATA%\seed.iso"</arguments>
   <onfailure action="restart" delay="10 sec"/>
   <log mode="roll-by-size"><sizeThreshold>10240</sizeThreshold><keepFiles>5</keepFiles></log>
