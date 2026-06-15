@@ -83,6 +83,16 @@ Phát hiện: `deploy/compose.yml` **đã tự lo provisioning** — service `co
 - **`/data/supplycore.env`** (systemd `EnvironmentFile`, được compose interpolate qua env của first-boot.sh) mang: `DATA_DIR`, `COMPOSE_DIR`, `SITE_NAME=supplycore.localhost`, `HTTP_PORT=80`, `PULL_POLICY=never`, `ADMIN_PASSWORD=__…__`. **KHÔNG** chứa `DB_PASSWORD`.
 - **`DB_PASSWORD` bền theo disk1:** sinh 1 lần trong guest (`first-boot.sh`) nếu `/data/.db_password` thiếu, đọc lại nếu đã có (mariadb root password gắn với data trên disk1 — đổi password khi data đã init → auth fail). KHÔNG inject từ host (vì update thay disk0 → `/var/lib/cloud` mới → cloud-init coi là instance mới → write_files chạy lại, có thể clobber).
 
+### 4b.1 Mount disk1 + tách env (chỉnh 2026-06-15, sau review Task 9)
+
+**Lỗi đã phát hiện:** trước đó KHÔNG có bước nào format/mount disk1 → `/data` nằm trên root fs của disk0 → **mất dữ liệu mỗi lần update**. Sửa:
+
+- **`ensure-data.service`** (systemd oneshot, `Before=docker.service first-boot.service`, `After=local-fs.target`) chạy `ensure-data.sh`: nếu `/dev/vdb` chưa có filesystem → `mkfs.ext4 -L supplycore-data` (chỉ lần đầu, KHÔNG format lại nếu đã có fs → không mất dữ liệu); mount `/dev/vdb` vào `/data`; ghi fstab idempotent. Thứ tự đĩa virtio: disk0=`vda`, disk1=`vdb`, seed.iso=`vdc` (theo run-vm.ps1 + smoke.sh).
+- **`first-boot.service`**: thêm `Requires=ensure-data.service` + `After=ensure-data.service` → `/data` (disk1) đã mount trước khi first-boot sinh `.db_password` và bind volumes.
+- **Tách env khỏi `/data`:** `supplycore.env` chuyển về **`/opt/supplycore/supplycore.env`** (trên disk0, do cloud-init `write_files` ghi). systemd `EnvironmentFile` trỏ tới đây. Lý do: `write_files` (init stage) chạy TRƯỚC khi mount `/data` → nếu để env dưới `/data` sẽ bị disk1 che. env là cấu hình (re-seed mỗi disk0), không phải dữ liệu; chỉ `DB_PASSWORD` (trên disk1) mới cần bền. Production cloud-init `runcmd` bỏ `mkdir -p /data` (ensure-data lo).
+- **Gỡ user build:** `install.sh` phải `userdel -f -r packer` + xoá sshd drop-in `ssh_pwauth`/sudoers của packer ở cuối (cloud-init clean KHÔNG undo các config đã apply → nếu không xoá, appliance ship kèm user root password `packer`).
+- **smoke.sh** phải assert `/data` là mount riêng (`mountpoint -q /data`) và (lý tưởng) dữ liệu sống qua swap disk0; nếu chỉ curl 200 thì pass giả.
+
 ## 5. Xử lý 4 yêu cầu ẩn
 
 ### 5.1 Lưu dữ liệu qua update (quan trọng nhất)
