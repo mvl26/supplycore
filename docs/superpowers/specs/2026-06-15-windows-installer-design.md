@@ -102,7 +102,7 @@ Phát hiện: `deploy/compose.yml` **đã tự lo provisioning** — service `co
 
 ### 5.4 Khởi tạo Administrator
 - Wizard Inno Setup có trường **mật khẩu Administrator** (bắt buộc, có xác nhận).
-- Truyền vào guest an toàn qua cloud-init user-data (không log plaintext). `first-boot.sh`: `bench new-site --admin-password <pw> --no-mariadb-socket` (site trống) → `bench install-app supplycore`.
+- Truyền vào guest an toàn qua cloud-init user-data → `/data/supplycore.env` (`ADMIN_PASSWORD`, không log plaintext). **Việc tạo site + cài app do service `create-site` của compose thực hiện** (xem §4b), `create-site` đọc `ADMIN_PASSWORD` từ env. `first-boot.sh` KHÔNG tạo site.
 - Nếu để trống: sinh mật khẩu ngẫu nhiên mạnh, hiển thị 1 lần cuối wizard + ghi vào file bảo mật cục bộ.
 
 ## 6. Build & phân phối (CI)

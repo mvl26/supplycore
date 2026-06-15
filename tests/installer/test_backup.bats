@@ -8,7 +8,7 @@ setup() {
 echo "bench \$*" >> "$STUB_LOG"
 EOF
   chmod +x "$TEST_DIR/bin/bench"
-  export SITE_NAME="supplycore.local"
+  export SITE_NAME="supplycore.localhost"
 }
 teardown() { rm -rf "$TEST_DIR"; }
 
