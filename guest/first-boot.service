@@ -1,0 +1,12 @@
+# guest/first-boot.service
+[Unit]
+Description=SupplyCore first-boot provisioning
+After=docker.service network-online.target
+Requires=docker.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/data/supplycore.env
+ExecStart=/opt/supplycore/first-boot.sh
+[Install]
+WantedBy=multi-user.target
