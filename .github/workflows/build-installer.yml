@@ -7,7 +7,7 @@ name: Build SupplyCore Windows installer
 #       ->  Packer build disk0.qcow2  ->  smoke.sh (two-phase persistence gate)
 #       ->  upload artifact `disk0`.
 #   job `installer` (windows-latest):
-#     download `disk0` -> fetch-deps (QEMU/WinSW/oscdimg) -> Pester -> ISCC compile
+#     download `disk0` -> fetch-deps (QEMU/WinSW) -> Pester -> ISCC compile
 #       ->  test-install (silent install smoke) -> SHA256  ->  gh release (tags only).
 #
 # ── RELEASE-ENG PREREQUISITES (the build FAILS LOUDLY until these are filled) ──
@@ -26,8 +26,8 @@ name: Build SupplyCore Windows installer
 #   In installer/ci/fetch-deps.ps1 (fail-loud guard runs before any network I/O):
 #     <<PIN-QEMU-VERSION>>, <<PIN-QEMU-SHA256>>  — QEMU-for-Windows installer.
 #     <<PIN-WINSW-SHA256>>                       — WinSW v2.12.0 x64.
-#     <<PIN-OSCDIMG-URL>>, <<PIN-OSCDIMG-SHA256>> — oscdimg.exe (Windows ADK
-#                                 Deployment Tools / internal mirror).
+#   (No ISO-builder pin: make-data.ps1 builds the cidata seed ISO with IMAPI2FS —
+#    a COM API built into Windows — so oscdimg/ADK is no longer needed.)
 #
 # ── RUNNER CAPABILITY CAVEATS (infra) ─────────────────────────────────────────
 #   * job `guest` REQUIRES KVM. supplycore.pkr.hcl hardcodes accelerator="kvm"
@@ -183,9 +183,10 @@ jobs:
           name: disk0
           path: dist
 
-      - name: Fetch pinned Windows build deps (QEMU / WinSW / oscdimg)
-        # Produces dist\qemu\*, dist\WinSW.exe, dist\oscdimg.exe. FAILS LOUDLY
-        # if any <<PIN-...>> in fetch-deps.ps1 is still a placeholder.
+      - name: Fetch pinned Windows build deps (QEMU / WinSW)
+        # Produces dist\qemu\*, dist\WinSW.exe. FAILS LOUDLY if any <<PIN-...>>
+        # in fetch-deps.ps1 is still a placeholder. (No ISO builder: make-data.ps1
+        # uses IMAPI2FS — a COM API built into Windows — for the cidata seed ISO.)
         shell: pwsh
         run: pwsh installer/ci/fetch-deps.ps1
 

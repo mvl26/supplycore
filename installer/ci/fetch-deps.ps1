@@ -7,7 +7,9 @@
 #   dist\qemu\qemu-system-x86_64.exe   (run-vm.ps1   -> {app}\launcher\qemu\...)
 #   dist\qemu\qemu-img.exe             (make-data.ps1 -> {app}\launcher\qemu\...)
 #   dist\WinSW.exe                     (-> {app}\SupplyCore-service.exe)
-#   dist\oscdimg.exe                   (make-data.ps1 builds cidata ISO with it)
+#
+# (make-data.ps1 tạo cidata ISO bằng IMAPI2FS — COM Windows sẵn có, KHÔNG cần
+#  oscdimg/ADK, nên không có build-dep ISO nào ở đây.)
 #
 # (dist\disk0.qcow2 KHÔNG phải việc của script này — do Packer Task 9 / CI Task 12.)
 #
@@ -29,16 +31,11 @@ New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
 # Bảng dependency PINNED.
 #
 # CÁC PLACEHOLDER Task 12 / release-eng PHẢI ĐIỀN trước khi build thật:
-#   - QEMU:    <<PIN-QEMU-VERSION>> trong Url  +  <<PIN-QEMU-SHA256>>
-#   - WinSW:   <<PIN-WINSW-SHA256>>            (Url đã pin sẵn v2.12.0)
-#   - oscdimg: <<PIN-OSCDIMG-URL>>             +  <<PIN-OSCDIMG-SHA256>>
+#   - QEMU:  <<PIN-QEMU-VERSION>> trong Url  +  <<PIN-QEMU-SHA256>>
+#   - WinSW: <<PIN-WINSW-SHA256>>            (Url đã pin sẵn v2.12.0)
 #
-# oscdimg.exe KHÔNG có bản standalone "sạch": nó nằm trong Windows ADK
-# Deployment Tools. CI PHẢI cung cấp một nguồn PINNED — ADK Deployment Tools
-# redistributable đã được mirror nội bộ, hoặc một internal mirror có checksum cố
-# định. (Phương án thay thế: dùng genisoimage/mkisofs qua choco — nhưng
-# make-data.ps1 hiện gọi oscdimg.exe, nên giữ contract này trừ khi đồng thời sửa
-# make-data.ps1, việc KHÔNG làm ở đây.)
+# (Không còn build-dep ISO: cidata ISO do make-data.ps1 tạo bằng IMAPI2FS — COM
+#  Windows sẵn có — nên KHÔNG cần oscdimg/ADK/mkisofs pinned ở đây.)
 # ---------------------------------------------------------------------------
 $deps = @(
   [pscustomobject]@{
@@ -53,13 +50,6 @@ $deps = @(
     Url    = 'https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW-x64.exe'
     Sha256 = '<<PIN-WINSW-SHA256>>'
     Out    = (Join-Path $DistDir 'WinSW.exe')
-    Kind   = 'file'
-  }
-  [pscustomobject]@{
-    Name   = 'oscdimg.exe (Windows ADK Deployment Tools / internal mirror)'
-    Url    = '<<PIN-OSCDIMG-URL>>'
-    Sha256 = '<<PIN-OSCDIMG-SHA256>>'
-    Out    = (Join-Path $DistDir 'oscdimg.exe')
     Kind   = 'file'
   }
 )
@@ -138,5 +128,4 @@ Write-Host "fetch-deps HOÀN TẤT. dist\ đã sẵn sàng cho ISCC:"
 Write-Host "  dist\qemu\qemu-system-x86_64.exe"
 Write-Host "  dist\qemu\qemu-img.exe"
 Write-Host "  dist\WinSW.exe"
-Write-Host "  dist\oscdimg.exe"
 Write-Host "  (dist\disk0.qcow2 do Packer/CI cung cấp riêng — không thuộc script này.)"

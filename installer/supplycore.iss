@@ -10,7 +10,6 @@
 ;   {app}\launcher\run-vm.ps1, wait-healthy.ps1, make-data.ps1
 ;   {app}\launcher\qemu\*              (QEMU portable incl. qemu-system-x86_64.exe + qemu-img.exe)
 ;   {app}\launcher\cloud-init\*        (user-data template + meta-data; consumed by make-data.ps1)
-;   {app}\launcher\oscdimg.exe         (ISO builder; consumed by make-data.ps1)
 ; Data (NEVER touched by uninstall), created at runtime by make-data.ps1:
 ;   {commonappdata}\SupplyCore\disk1.qcow2   (= %SC_DATA%\disk1.qcow2, persistent DB/files)
 ;   {commonappdata}\SupplyCore\seed.iso      (= %SC_DATA%\seed.iso, cloud-init cidata w/ admin pw)
@@ -50,8 +49,7 @@ Source: "dist\qemu\*";                              DestDir: "{app}\launcher\qem
 Source: "installer\launcher\*";                     DestDir: "{app}\launcher";            Flags: recursesubdirs ignoreversion
 ; --- Production cloud-init (template user-data + meta-data) — make-data.ps1 reads $PSScriptRoot\cloud-init\user-data ---
 Source: "guest\cloud-init\*";                       DestDir: "{app}\launcher\cloud-init"; Flags: recursesubdirs ignoreversion
-; --- ISO builder (CI-produced under dist by Task 13 fetch-deps) — make-data.ps1 calls $PSScriptRoot\oscdimg.exe ---
-Source: "dist\oscdimg.exe";                         DestDir: "{app}\launcher";            Flags: ignoreversion
+; (cidata seed.iso do make-data.ps1 tạo runtime bằng IMAPI2FS — COM Windows sẵn có — nên KHÔNG ship ISO builder nào.)
 ; --- WinSW service host (CI-produced under dist by Task 13) ---
 Source: "dist\WinSW.exe";                           DestDir: "{app}"; DestName: "SupplyCore-service.exe"; Flags: ignoreversion
 Source: "installer\winsw\supplycore-service.xml";   DestDir: "{app}"; DestName: "SupplyCore-service.xml"; Flags: ignoreversion

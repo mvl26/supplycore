@@ -6,7 +6,7 @@
 # Chạy bởi installer (Inno [Code] CurStepChanged ssPostInstall) với:
 #   make-data.ps1 -DataDir "C:\ProgramData\SupplyCore" -AdminPassword "<pw>"
 # qemu-img.exe nằm trong bundle QEMU portable ({app}\launcher\qemu, = $PSScriptRoot\qemu) — forward dep Task 13.
-# oscdimg.exe là công cụ tạo ISO đã chọn ({app}\launcher\oscdimg.exe, = $PSScriptRoot\oscdimg.exe) — forward dep Task 13.
+# seed.iso được tạo bằng IMAPI2FS (COM Windows sẵn có) — KHÔNG cần oscdimg/ADK/mkisofs (không phụ thuộc binary ngoài).
 # KHÔNG in/log mật khẩu plaintext.
 
 param(
@@ -18,8 +18,71 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $qemuImg = Join-Path $PSScriptRoot 'qemu\qemu-img.exe'
-$oscdimg = Join-Path $PSScriptRoot 'oscdimg.exe'
 $ciSrc   = Join-Path $PSScriptRoot 'cloud-init'
+
+# --- Helper: tạo ISO cidata (ISO9660 + Joliet) bằng IMAPI2FS (COM Windows sẵn có) ----------
+# cloud-init NoCloud cần: nhãn volume = 'cidata', chứa user-data + meta-data (tên thường).
+# Joliet giữ tên file thường (oscdimg -j2 / genisoimage -J tương đương). KHÔNG cần binary ngoài.
+function New-CidataIso {
+  param(
+    [Parameter(Mandatory = $true)][string]$SourceDir,
+    [Parameter(Mandatory = $true)][string]$IsoPath
+  )
+
+  $fsi = New-Object -ComObject IMAPI2FS.MsftFileSystemImage
+  try {
+    # FileSystemsToCreate: 1 = ISO9660, 2 = Joliet -> 3 = cả hai (Joliet giữ user-data/meta-data thường).
+    $fsi.FileSystemsToCreate = 3
+    $fsi.VolumeName = 'cidata'
+    # AddTree(dir, $false): thêm NỘI DUNG thư mục vào gốc ISO, không lồng thêm thư mục gốc thừa.
+    $fsi.Root.AddTree($SourceDir, $false)
+
+    $resultImage = $fsi.CreateResultImage()
+    # ImageStream là COM IStream — cast sang ComTypes.IStream để đọc Stat/Read theo block.
+    $istream = [System.Runtime.InteropServices.ComTypes.IStream]$resultImage.ImageStream
+
+    # Stat -> cbSize (kích thước ảnh). STATFLAG_NONAME = 1 (không cấp phát tên -> không leak BSTR).
+    $stat = New-Object System.Runtime.InteropServices.ComTypes.STATSTG
+    $istream.Stat([ref]$stat, 1)
+    $size = [int64]$stat.cbSize
+    if ($size -le 0) {
+      throw "IMAPI2FS trả ảnh rỗng (cbSize=$size) — hủy tạo seed.iso (tránh ISO 0 byte)."
+    }
+
+    # ISO9660 sector = 2048 byte; ImageStream của IMAPI2 luôn là bội số của block này.
+    $blockSize = 2048
+    $buffer = New-Object byte[] $blockSize
+    # pcbRead nhận số byte thực đọc mỗi lần Read (ULONG). Cấp phát rồi giải phóng ở finally.
+    $pcbRead = [System.Runtime.InteropServices.Marshal]::AllocHGlobal([System.IntPtr]::Size)
+    $out = [System.IO.File]::Open($IsoPath, [System.IO.FileMode]::Create,
+                                  [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+    try {
+      $remaining = $size
+      while ($remaining -gt 0) {
+        $toRead = [int][System.Math]::Min([int64]$blockSize, $remaining)
+        $istream.Read($buffer, $toRead, $pcbRead)
+        $read = [System.Runtime.InteropServices.Marshal]::ReadInt32($pcbRead)
+        if ($read -le 0) { break }   # EOF sớm bất thường -> dừng (assert non-empty bên dưới sẽ bắt).
+        $out.Write($buffer, 0, $read)
+        $remaining -= $read
+      }
+      $out.Flush()
+    }
+    finally {
+      $out.Dispose()
+      [System.Runtime.InteropServices.Marshal]::FreeHGlobal($pcbRead)
+    }
+  }
+  finally {
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($fsi) | Out-Null
+  }
+
+  # Assert: file tồn tại và non-empty (COM lỗi mà nuốt -> 0 byte ISO sẽ làm cloud-init treo).
+  $isoFile = Get-Item -LiteralPath $IsoPath -ErrorAction Stop
+  if ($isoFile.Length -le 0) {
+    throw "seed.iso rỗng (0 byte) sau khi tạo bằng IMAPI2FS — hủy (cloud-init sẽ không boot)."
+  }
+}
 
 # --- 0) DataDir ---
 if (-not (Test-Path -LiteralPath $DataDir)) {
@@ -67,10 +130,8 @@ try {
   Copy-Item -LiteralPath $metaSrc -Destination (Join-Path $tmp 'meta-data') -Force
 
   $seed = Join-Path $DataDir 'seed.iso'
-  Write-Host "Tạo seed.iso (nhãn cidata)..."
-  # oscdimg: -lcidata = volume label 'cidata'; -j2 = Joliet+ISO9660. (Windows ADK redistributable.)
-  & $oscdimg "-lcidata" "-j2" $tmp $seed
-  if ($LASTEXITCODE -ne 0) { throw "oscdimg tạo seed.iso thất bại (exit $LASTEXITCODE)." }
+  Write-Host "Tạo seed.iso (nhãn cidata) bằng IMAPI2FS (COM Windows)..."
+  New-CidataIso -SourceDir $tmp -IsoPath $seed
 
   Write-Host "Hoàn tất khởi tạo dữ liệu."
 }
