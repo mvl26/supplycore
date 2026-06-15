@@ -1,3 +1,4 @@
+# tests/installer/test_first_boot.bats
 setup() {
   export TEST_DIR="$(mktemp -d)"
   export DATA_DIR="$TEST_DIR/data"
@@ -13,22 +14,40 @@ EOF
     chmod +x "$TEST_DIR/bin/$cmd"
   done
   export ADMIN_PASSWORD="secret123"
-  export SITE_NAME="supplycore.local"
+  export SITE_NAME="supplycore.localhost"
+  export COMPOSE_DIR="$TEST_DIR/opt"
+  mkdir -p "$COMPOSE_DIR"
 }
 teardown() { rm -rf "$TEST_DIR"; }
 
-@test "lần đầu: tạo site + cài app khi marker chưa tồn tại" {
+@test "đưa stack lên + migrate, KHÔNG tạo site, KHÔNG marker" {
   run bash guest/first-boot.sh
   [ "$status" -eq 0 ]
-  grep -q "new-site" "$STUB_LOG"
-  grep -q "install-app supplycore" "$STUB_LOG"
-  [ -f "$DATA_DIR/.provisioned" ]
+  grep -q "compose .* up -d" "$STUB_LOG"
+  grep -q "migrate" "$STUB_LOG"
+  ! grep -q "new-site" "$STUB_LOG"
+  ! grep -q "install-app" "$STUB_LOG"
+  [ ! -f "$DATA_DIR/.provisioned" ]
 }
 
-@test "lần sau: KHÔNG tạo lại site, chạy migrate" {
-  touch "$DATA_DIR/.provisioned"
+@test "sinh DB_PASSWORD lần đầu vào /data/.db_password (0600)" {
   run bash guest/first-boot.sh
   [ "$status" -eq 0 ]
-  ! grep -q "new-site" "$STUB_LOG"
-  grep -q "migrate" "$STUB_LOG"
+  [ -f "$DATA_DIR/.db_password" ]
+  [ -s "$DATA_DIR/.db_password" ]
+  perm="$(stat -c '%a' "$DATA_DIR/.db_password")"
+  [ "$perm" = "600" ]
+}
+
+@test "DB_PASSWORD bền: tái dùng file đã có, không ghi đè" {
+  echo "fixedpw123" > "$DATA_DIR/.db_password"
+  run bash guest/first-boot.sh
+  [ "$status" -eq 0 ]
+  [ "$(cat "$DATA_DIR/.db_password")" = "fixedpw123" ]
+}
+
+@test "thiếu ADMIN_PASSWORD: thoát lỗi" {
+  unset ADMIN_PASSWORD
+  run bash guest/first-boot.sh
+  [ "$status" -ne 0 ]
 }

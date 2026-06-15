@@ -1,23 +1,44 @@
 #!/usr/bin/env bash
-# guest/first-boot.sh — idempotent provisioning chạy bởi systemd oneshot mỗi lần boot.
+# guest/first-boot.sh — systemd oneshot mỗi lần boot.
+# Compose (service create-site) lo tạo site + cài app. Script này KHÔNG tạo site:
+# đảm bảo DB_PASSWORD bền trên disk1, đưa stack lên (offline PULL_POLICY=never),
+# chờ backend sẵn sàng, rồi bench migrate (idempotent — áp schema mới khi update).
 set -euo pipefail
 [ -d /opt/supplycore/bin ] && export PATH="/opt/supplycore/bin:$PATH"
 
 DATA_DIR="${DATA_DIR:-/data}"
-SITE_NAME="${SITE_NAME:-supplycore.local}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:?ADMIN_PASSWORD bắt buộc}"
-MARKER="$DATA_DIR/.provisioned"
+SITE_NAME="${SITE_NAME:-supplycore.localhost}"
 COMPOSE_DIR="${COMPOSE_DIR:-/opt/supplycore}"
+: "${ADMIN_PASSWORD:?ADMIN_PASSWORD bắt buộc}"
+export SITE_NAME
+export PULL_POLICY="${PULL_POLICY:-never}"
+export HTTP_PORT="${HTTP_PORT:-80}"
+export ADMIN_PASSWORD
 
 mkdir -p "$DATA_DIR/mariadb" "$DATA_DIR/sites" "$DATA_DIR/backups"
 
-docker compose -f "$COMPOSE_DIR/compose.yml" -f "$COMPOSE_DIR/compose.override.yml" up -d
-
-if [ ! -f "$MARKER" ]; then
-  bench new-site "$SITE_NAME" --admin-password "$ADMIN_PASSWORD" --no-mariadb-socket --force
-  bench --site "$SITE_NAME" install-app supplycore
-  bench use "$SITE_NAME"
-  touch "$MARKER"
-else
-  bench --site "$SITE_NAME" migrate
+# DB_PASSWORD bền theo disk1: sinh 1 lần, đọc lại nếu đã có.
+DB_PW_FILE="$DATA_DIR/.db_password"
+if [ ! -f "$DB_PW_FILE" ]; then
+  ( umask 077; openssl rand -hex 24 > "$DB_PW_FILE" )
 fi
+DB_PASSWORD="$(cat "$DB_PW_FILE")"
+export DB_PASSWORD
+
+compose_up() {
+  docker compose -f "$COMPOSE_DIR/compose.yml" -f "$COMPOSE_DIR/compose.override.yml" "$@"
+}
+
+# Đưa stack lên. Compose chờ create-site completed_successfully rồi mới start backend.
+compose_up up -d
+
+# Chờ backend sẵn sàng trước khi migrate (tránh race cold boot).
+for _ in $(seq 1 60); do
+  if compose_up exec -T backend bench --site "$SITE_NAME" version >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
+done
+
+# create-site đã tạo site; migrate áp schema mới khi update (idempotent, an toàn lần đầu).
+bench --site "$SITE_NAME" migrate
