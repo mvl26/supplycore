@@ -30,10 +30,10 @@ New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
 # ---------------------------------------------------------------------------
 # Bảng dependency PINNED.
 #
-# URL đã PRE-FILL sẵn (QEMU 20240426 + WinSW v2.12.0). CHỈ CÒN 2 SHA256 phải điền:
-#   - QEMU:  <<PIN-QEMU-SHA256>>   (sha256 của qemu-w64-setup-20240426.exe)
-#   - WinSW: <<PIN-WINSW-SHA256>>  (sha256 của WinSW-x64.exe v2.12.0)
-# Nếu đổi version QEMU (404) thì sửa ngày trong Url rồi tính lại SHA256.
+# ĐÃ PIN ĐẦY ĐỦ (URL + SHA256 thật, verify 2026-06-15) — KHÔNG còn placeholder.
+#   - QEMU  20260501 (qemu.weilnetz.de/w64)
+#   - WinSW v2.12.0
+# Nếu URL 404 về sau: chọn bản mới, sửa URL + tính lại sha256sum dán vào Sha256.
 #
 # (Không còn build-dep ISO: cidata ISO do make-data.ps1 tạo bằng IMAPI2FS — COM
 #  Windows sẵn có — nên KHÔNG cần oscdimg/ADK/mkisofs pinned ở đây.)
@@ -41,18 +41,17 @@ New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
 $deps = @(
   [pscustomobject]@{
     Name   = 'QEMU for Windows (w64, NSIS installer)'
-    # Version khuyến nghị: 20240426 (bản ổn định trên qemu.weilnetz.de/w64).
-    # NẾU 404: vào https://qemu.weilnetz.de/w64/ chọn 'qemu-w64-setup-YYYYMMDD.exe'
-    # mới hơn, sửa ngày dưới đây, rồi tải file ĐÓ và tính SHA256 dán vào Sha256.
-    Url    = 'https://qemu.weilnetz.de/w64/qemu-w64-setup-20240426.exe'
-    Sha256 = '<<PIN-QEMU-SHA256>>'   # = sha256sum của đúng file ngày 20240426 ở trên
+    # Đã pin bản 20260501 + SHA256 thật (verify 2026-06-15). NẾU 404 về sau:
+    # vào https://qemu.weilnetz.de/w64/ chọn bản mới, sửa ngày + tính lại sha256sum.
+    Url    = 'https://qemu.weilnetz.de/w64/qemu-w64-setup-20260501.exe'
+    Sha256 = 'a8b29572afb4c6ad024b7de129c81033e9fd191b9e054e3a52ea0bed24ac19ef'
     Out    = (Join-Path $DistDir 'qemu-setup.exe')
     Kind   = 'qemu'
   }
   [pscustomobject]@{
     Name   = 'WinSW v2.12.0 (x64)'
     Url    = 'https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW-x64.exe'
-    Sha256 = '<<PIN-WINSW-SHA256>>'
+    Sha256 = '05b82d46ad331cc16bdc00de5c6332c1ef818df8ceefcd49c726553209b3a0da'
     Out    = (Join-Path $DistDir 'WinSW.exe')
     Kind   = 'file'
   }

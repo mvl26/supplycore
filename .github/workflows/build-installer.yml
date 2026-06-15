@@ -10,19 +10,18 @@ name: Build SupplyCore Windows installer
 #     download `disk0` -> fetch-deps (QEMU/WinSW) -> Pester -> ISCC compile
 #       ->  test-install (silent install smoke) -> SHA256  ->  gh release (tags only).
 #
-# ── RELEASE-ENG PREREQUISITES (the build FAILS LOUDLY until these are filled) ──
-#   Versions/URLs are PRE-FILLED with recommended values; only 3 SHA256 remain.
-#   (Confirm the pre-filled dates still resolve; bump + recompute SHA if 404.)
+# ── DEPENDENCY PINS — ĐÃ PIN ĐẦY ĐỦ (URL + SHA256 thật, verify 2026-06-15) ─────
+#   Không còn placeholder nào. Đã pin:
+#     QEMU  20260501  + sha256   (installer/ci/fetch-deps.ps1)
+#     WinSW v2.12.0   + sha256   (installer/ci/fetch-deps.ps1)
+#     Ubuntu release-20260515 + sha256 (bước "packer build" dưới đây)
+#   Nếu một URL 404 về sau (bản cũ bị dọn): chọn bản mới, sửa URL + tính lại sha256.
+#   (Seed ISO cidata do make-data.ps1 tạo bằng IMAPI2FS — COM Windows sẵn có —
+#    nên KHÔNG cần oscdimg/ADK.)
 #
-#   STILL TO FILL (3 × SHA256 — none faked, build fails until real):
-#     In job `guest`, "packer build" step:
-#       <<PIN-UBUNTU-SHA256>>   — SHA256 of the release-20240514 image (from the
-#                                 SHA256SUMS in that same release dir). URL pre-filled.
-#     In installer/ci/fetch-deps.ps1 (fail-loud guard runs before any network I/O):
-#       <<PIN-QEMU-SHA256>>     — sha256 of qemu-w64-setup-20240426.exe. URL pre-filled.
-#       <<PIN-WINSW-SHA256>>    — sha256 of WinSW-x64.exe v2.12.0. URL fixed.
-#   (No ISO-builder pin: make-data.ps1 builds the cidata seed ISO with IMAPI2FS —
-#    a COM API built into Windows — so oscdimg/ADK is no longer needed.)
+# ── VẪN CẦN (hạ tầng, không phải PIN) ─────────────────────────────────────────
+#   - Secret `APP_GH_TOKEN` (PAT read-only repo) để render apps.json.
+#   - Job `guest` cần runner CÓ KVM (Packer/QEMU accel=kvm, không fallback TCG).
 #
 # ── RUNNER CAPABILITY CAVEATS (infra) ─────────────────────────────────────────
 #   * job `guest` REQUIRES KVM. supplycore.pkr.hcl hardcodes accelerator="kvm"
@@ -140,14 +139,14 @@ jobs:
 
       - name: Packer build disk0 (from repo ROOT)
         # ubuntu_image: URL bản RELEASE có ngày (cây releases/ giữ lâu hơn cây jammy/ daily).
-        #   Khuyến nghị: release-20240514. NẾU 404 → mở https://cloud-images.ubuntu.com/releases/jammy/
-        #   chọn release-YYYYMMDD hiện có, sửa ngày ở URL bên dưới.
-        # ubuntu_image_sha256: lấy dòng 'ubuntu-22.04-server-cloudimg-amd64.img' trong SHA256SUMS
-        #   CÙNG thư mục release (.../release-<ngày>/SHA256SUMS). HCL fail nếu để trống.
+        #   Đã pin release-20260515 + SHA256 thật (verify 2026-06-15). NẾU 404 về sau →
+        #   mở https://cloud-images.ubuntu.com/releases/jammy/ chọn release-YYYYMMDD hiện có,
+        #   sửa ngày ở URL + lấy lại sha256 dòng 'ubuntu-22.04-server-cloudimg-amd64.img'
+        #   trong .../release-<ngày>/SHA256SUMS.
         run: |
           packer build \
-            -var ubuntu_image=https://cloud-images.ubuntu.com/releases/jammy/release-20240514/ubuntu-22.04-server-cloudimg-amd64.img \
-            -var ubuntu_image_sha256=<<PIN-UBUNTU-SHA256>> \
+            -var ubuntu_image=https://cloud-images.ubuntu.com/releases/jammy/release-20260515/ubuntu-22.04-server-cloudimg-amd64.img \
+            -var ubuntu_image_sha256=f6729b53d930d7f0c6691eb553cfa6be7109de9412125bf1bf2dc6747de8a44d \
             guest/packer/supplycore.pkr.hcl
 
       - name: Smoke test (two-phase disk1-persistence gate, from repo ROOT)
