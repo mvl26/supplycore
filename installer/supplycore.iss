@@ -73,12 +73,26 @@ begin
   NeedReboot := False;
   AdminPwPage := CreateInputQueryPage(wpSelectDir, 'Mật khẩu Administrator',
     'Đặt mật khẩu cho tài khoản Administrator của SupplyCore',
-    'Mật khẩu này dùng để đăng nhập SupplyCore lần đầu. Tránh các ký tự " và `.');
+    'Mật khẩu này dùng để đăng nhập SupplyCore lần đầu. Tránh các ký tự: " ` '' \');
   AdminPwPage.Add('Mật khẩu:', True);
+  // Prefill từ tham số dòng lệnh /ADMINPW= (rỗng nếu không truyền). Cho phép cài im lặng
+  // (/SILENT /ADMINPW=xxx) — bắt buộc cho CI smoke + IT deploy hàng loạt. Ở chế độ silent,
+  // trang wizard bị bỏ qua nhưng Values[0] vẫn giữ giá trị param này.
+  AdminPwPage.Values[0] := ExpandConstant('{param:ADMINPW|}');
   PortPage := CreateInputQueryPage(AdminPwPage.ID, 'Cổng truy cập',
     'Cổng localhost để mở SupplyCore (mặc định 80)', '');
   PortPage.Add('Cổng:', False);
-  PortPage.Values[0] := '80';
+  PortPage.Values[0] := ExpandConstant('{param:PORT|80}');
+end;
+
+// Lý do từ chối ký tự (rỗng = hợp lệ). Dùng cho cả wizard lẫn đường silent.
+function PwRejectReason(const pw: String): String;
+begin
+  Result := '';
+  if pw = '' then
+    Result := 'Mật khẩu Administrator trống. Cài im lặng phải truyền /ADMINPW=...'
+  else if (Pos('"', pw) > 0) or (Pos(#96, pw) > 0) or (Pos('''', pw) > 0) or (Pos('\', pw) > 0) then
+    Result := 'Mật khẩu không được chứa các ký tự: " `  '' \';
 end;
 
 function IsAllDigits(const S: String): Boolean;
@@ -94,26 +108,18 @@ begin
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
-var pw, port: String;
+var port, reason: String;
 begin
   Result := True;
   if CurPageID = AdminPwPage.ID then
   begin
-    pw := AdminPwPage.Values[0];
-    if pw = '' then
+    // Charset reject (xem PwRejectReason): bảo vệ command line PowerShell của make-data.ps1
+    // (" và `) và systemd EnvironmentFile trong guest (' và \). Đảm bảo mật khẩu tới
+    // cloud-init + create-site đúng hệt người dùng gõ (Correction C + Task 11 review M3).
+    reason := PwRejectReason(AdminPwPage.Values[0]);
+    if reason <> '' then
     begin
-      MsgBox('Vui lòng nhập mật khẩu Administrator.', mbError, MB_OK);
-      Result := False;
-      Exit;
-    end;
-    // Reject characters that would break (a) the PowerShell command line used to pass the
-    // password to make-data.ps1 (" breaks out of the quoted arg; ` is PowerShell's escape),
-    // and (b) systemd EnvironmentFile parsing in the guest where ADMIN_PASSWORD is consumed
-    // (' and \ trigger systemd quote/escape handling). This guarantees the value reaching
-    // cloud-init + create-site is exactly what the user typed (Correction C + Task 11 review M3).
-    if (Pos('"', pw) > 0) or (Pos(#96, pw) > 0) or (Pos('''', pw) > 0) or (Pos('\', pw) > 0) then
-    begin
-      MsgBox('Mật khẩu không được chứa các ký tự: " `  '' \', mbError, MB_OK);
+      MsgBox(reason, mbError, MB_OK);
       Result := False;
       Exit;
     end;
@@ -185,7 +191,7 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   rc: Integer;
-  dataDir, port, pw, accel: String;
+  dataDir, port, pw, accel, reason: String;
   waitTimeout: Integer;
   serviceStarted: Boolean;
 begin
@@ -195,7 +201,15 @@ begin
   dataDir := ExpandConstant('{commonappdata}\SupplyCore');
   port := Trim(PortPage.Values[0]);
   if port = '' then port := '80';
+  // pw đã prefill từ /ADMINPW= (silent) hoặc người dùng gõ (wizard). Validate LẠI ở đây
+  // vì cài im lặng KHÔNG chạy NextButtonClick — nếu không sẽ provision với mật khẩu rỗng/sai.
   pw := AdminPwPage.Values[0];
+  reason := PwRejectReason(pw);
+  if reason <> '' then
+  begin
+    MsgBox(reason + #13#10 + 'Cài im lặng: thêm /ADMINPW="<mật khẩu hợp lệ>".', mbError, MB_OK);
+    Exit; // không provision với mật khẩu rỗng/sai → dịch vụ không được cài → CI test-install fail rõ ràng.
+  end;
   ForceDirectories(dataDir);
 
   // 1) WHPX: enable/check accelerator. Exit codes (whpx-check.ps1):

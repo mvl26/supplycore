@@ -32,8 +32,11 @@ Write-Host "Bộ cài: $($setup.FullName)"
 # /VERYSILENT bỏ cả progress; /SUPPRESSMSGBOXES để không treo chờ dialog;
 # /NORESTART để CI tự kiểm soát reboot (WHPX-check có thể yêu cầu).
 Write-Host "Cài im lặng..."
+# /ADMINPW bắt buộc cho cài im lặng: wizard nhập mật khẩu bị bỏ qua ở chế độ silent,
+# nếu không truyền thì make-data nhận mật khẩu rỗng -> guard trong .iss dừng provision
+# -> service không cài -> test fail. Dùng mật khẩu test cố định (chỉ trong CI).
 $inst = Start-Process -FilePath $setup.FullName `
-  -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' `
+  -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/ADMINPW=Smoke12345', '/PORT=80' `
   -Wait -PassThru
 if ($inst.ExitCode -ne 0) {
   throw "test-install: bộ cài exit $($inst.ExitCode) (cài thất bại)."
