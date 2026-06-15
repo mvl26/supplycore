@@ -30,9 +30,10 @@ New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
 # ---------------------------------------------------------------------------
 # Bảng dependency PINNED.
 #
-# CÁC PLACEHOLDER Task 12 / release-eng PHẢI ĐIỀN trước khi build thật:
-#   - QEMU:  <<PIN-QEMU-VERSION>> trong Url  +  <<PIN-QEMU-SHA256>>
-#   - WinSW: <<PIN-WINSW-SHA256>>            (Url đã pin sẵn v2.12.0)
+# URL đã PRE-FILL sẵn (QEMU 20240426 + WinSW v2.12.0). CHỈ CÒN 2 SHA256 phải điền:
+#   - QEMU:  <<PIN-QEMU-SHA256>>   (sha256 của qemu-w64-setup-20240426.exe)
+#   - WinSW: <<PIN-WINSW-SHA256>>  (sha256 của WinSW-x64.exe v2.12.0)
+# Nếu đổi version QEMU (404) thì sửa ngày trong Url rồi tính lại SHA256.
 #
 # (Không còn build-dep ISO: cidata ISO do make-data.ps1 tạo bằng IMAPI2FS — COM
 #  Windows sẵn có — nên KHÔNG cần oscdimg/ADK/mkisofs pinned ở đây.)
