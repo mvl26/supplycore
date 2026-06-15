@@ -76,9 +76,11 @@ build {
     sources = [
       "deploy/compose.yml",
       "guest/compose.override.yml",
+      "guest/ensure-data.sh",
       "guest/first-boot.sh",
       "guest/backup.sh",
       "guest/bin/bench",
+      "guest/ensure-data.service",
       "guest/first-boot.service",
       "guest/backup.service",
       "guest/backup.timer",

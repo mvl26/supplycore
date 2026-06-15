@@ -3,5 +3,5 @@
 Description=SupplyCore daily backup
 [Service]
 Type=oneshot
-EnvironmentFile=/data/supplycore.env
+EnvironmentFile=/opt/supplycore/supplycore.env
 ExecStart=/opt/supplycore/backup.sh

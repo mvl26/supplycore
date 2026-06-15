@@ -17,6 +17,7 @@ users:
     shell: /bin/bash
     lock_passwd: false
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
-    # mật khẩu plaintext "packer" — chỉ tồn tại trong build VM phù du, bị xoá ở
-    # bước cloud-init clean; khớp ssh_password trong supplycore.pkr.hcl.
+    # mật khẩu plaintext "packer" — chỉ tồn tại trong build VM phù du. User +
+    # drop-in bị gỡ TƯỜNG MINH ở cuối install.sh (userdel + rm sudoers/sshd);
+    # cloud-init clean KHÔNG undo được. Khớp ssh_password trong supplycore.pkr.hcl.
     plain_text_passwd: packer

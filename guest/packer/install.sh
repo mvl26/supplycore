@@ -26,16 +26,18 @@ systemctl enable docker
 mkdir -p /opt/supplycore /opt/supplycore/bin
 cp /tmp/compose.yml          /opt/supplycore/compose.yml
 cp /tmp/compose.override.yml /opt/supplycore/compose.override.yml
+cp /tmp/ensure-data.sh       /opt/supplycore/ensure-data.sh
 cp /tmp/first-boot.sh        /opt/supplycore/first-boot.sh
 cp /tmp/backup.sh            /opt/supplycore/backup.sh
 cp /tmp/bench                /opt/supplycore/bin/bench
-chmod +x /opt/supplycore/first-boot.sh /opt/supplycore/backup.sh /opt/supplycore/bin/bench
+chmod +x /opt/supplycore/ensure-data.sh /opt/supplycore/first-boot.sh /opt/supplycore/backup.sh /opt/supplycore/bin/bench
 
-cp /tmp/first-boot.service /etc/systemd/system/first-boot.service
-cp /tmp/backup.service     /etc/systemd/system/backup.service
-cp /tmp/backup.timer       /etc/systemd/system/backup.timer
+cp /tmp/ensure-data.service /etc/systemd/system/ensure-data.service
+cp /tmp/first-boot.service  /etc/systemd/system/first-boot.service
+cp /tmp/backup.service      /etc/systemd/system/backup.service
+cp /tmp/backup.timer        /etc/systemd/system/backup.timer
 systemctl daemon-reload
-systemctl enable first-boot.service backup.timer
+systemctl enable ensure-data.service first-boot.service backup.timer
 
 # ── Load image SupplyCore + retag về ĐÚNG hợp đồng ───────────────────────────
 # compose resolve `ghcr.io/mvl26/supplycore:latest`; runtime đặt PULL_POLICY=never
@@ -62,9 +64,15 @@ docker pull mariadb:10.6
 docker pull redis:6.2-alpine
 
 # ── Cho phép disk0 re-provision ở first boot THẬT (seed production khác) ─────
-# Xoá build state + user packer phù du; first boot dùng seed cidata do
-# make-data.ps1 (Task 11) sinh.
+# Xoá build state để first boot dùng seed cidata do make-data.ps1 (Task 11) sinh.
+# LƯU Ý: cloud-init clean KHÔNG gỡ user/sudoers/sshd đã được áp dụng — phải gỡ tay
+# (xem bước HARDEN ở cuối).
 cloud-init clean --logs || true
+
+# ── Gỡ user build (Packer SSH) + drop-in — KHÔNG để lọt vào appliance ship cho
+# bệnh viện. cloud-init clean KHÔNG undo config đã áp → phải xoá tường minh. ────
+userdel -f -r packer 2>/dev/null || true
+rm -f /etc/sudoers.d/90-cloud-init-users /etc/ssh/sshd_config.d/50-cloud-init.conf 2>/dev/null || true
 
 # ── Trim để disk0 nhỏ ────────────────────────────────────────────────────────
 apt-get clean

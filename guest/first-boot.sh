@@ -25,6 +25,9 @@ chown -R 1000:1000 "$DATA_DIR/sites" 2>/dev/null || true
 DB_PW_FILE="$DATA_DIR/.db_password"
 if [ ! -f "$DB_PW_FILE" ]; then
   ( umask 077; openssl rand -hex 24 > "$DB_PW_FILE" )
+  echo "first-boot: DB_PASSWORD generated"
+else
+  echo "first-boot: DB_PASSWORD reused"
 fi
 DB_PASSWORD="$(cat "$DB_PW_FILE")"
 export DB_PASSWORD

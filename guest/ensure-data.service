@@ -1,0 +1,14 @@
+# guest/ensure-data.service
+[Unit]
+Description=SupplyCore — format+mount disk1 vào /data
+After=local-fs.target
+Before=docker.service first-boot.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/supplycore/ensure-data.sh
+# Đưa echo marker ra cả serial console (/dev/ttyS0) để smoke.sh assert được;
+# mặc định systemd chỉ ghi journal, `-serial file:` không bắt được.
+StandardOutput=journal+console
+[Install]
+WantedBy=multi-user.target
