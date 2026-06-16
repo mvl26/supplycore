@@ -68,6 +68,9 @@ def run():
         # --- Test 7: force_draft (OCR) — luôn Draft, không chuyển tồn ---
         out.append(_force_draft_test())
 
+        # --- Test 8: đọc file bàn giao JSON + Excel → canonical dict ---
+        out.append(_file_read_test())
+
         out.append("ALL TESTS PASSED")
     except Exception as e:
         out.append(f"FAIL: {type(e).__name__}: {e}")
@@ -320,6 +323,21 @@ def _force_draft_test():
     assert after == before, f"stock moved despite force_draft ({before}→{after})"
     assert tr.items[0].his_match_status == "OK" and tr.items[0].item == item
     return f"T7 status={r['status']} TR_docstatus={tr.docstatus} no_SE={not tr.stock_entry} stock_delta={after-before}"
+
+
+def _file_read_test():
+    import os
+    from supplycore.api.his_file_read import read_json_file, read_xlsx_file
+    base = os.path.join(os.path.dirname(__file__), "fixtures")
+    dj = read_json_file(os.path.join(base, "sample_slip.json"))
+    dx = read_xlsx_file(os.path.join(base, "sample_slip.xlsx"))
+    for d in (dj, dx):
+        assert d["slip_no"] == "PX-FIX", d.get("slip_no")
+        assert d["from_warehouse_name"] == "HIS Kho Nguồn Smoke"
+        assert len(d["lines"]) == 1
+        ln = d["lines"][0]
+        assert ln["his_code"] == "SMOKEHIS1" and ln["qty"] == 10.0
+    return f"T8 json_lines={len(dj['lines'])} xlsx_lines={len(dx['lines'])} ok"
 
 
 # --- minimal data helpers ---

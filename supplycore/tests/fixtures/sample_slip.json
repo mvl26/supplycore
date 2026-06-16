@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "slip_type": "transfer",
+  "profile": "default/c31-hd",
+  "slip_no": "PX-FIX",
+  "slip_date": "05/06/2026",
+  "from_warehouse_name": "HIS Kho Nguồn Smoke",
+  "to_warehouse_name": "HIS Kho Đích Smoke",
+  "lines": [
+    {
+      "tt": 1,
+      "name": "Smoke VT HIS",
+      "his_code": "SMOKEHIS1",
+      "uom": "Viên",
+      "batch_no": "SMOKELOT1",
+      "expiry": "01/01/2030",
+      "qty": 10,
+      "unit_price": 0,
+      "amount": 0
+    }
+  ]
+}
