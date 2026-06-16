@@ -130,7 +130,7 @@ def _match_line(line: dict, from_warehouse):
 # ---------------------------------------------------------------------------
 # Orchestration (testable)
 # ---------------------------------------------------------------------------
-def _process_extracted(data: dict, pdf_file_url=None, force_draft=False) -> dict:
+def _process_extracted(data: dict, pdf_file_url=None, force_draft=False, force_draft_note=None) -> dict:
     slip_no = (data.get("slip_no") or "").strip()
     if not slip_no:
         frappe.throw(_("SC-E-HIS-EXTRACT: Phiếu không có Số phiếu (slip_no)"),
@@ -170,10 +170,10 @@ def _process_extracted(data: dict, pdf_file_url=None, force_draft=False) -> dict
         "unmapped_items": unmapped_items, "unmapped_warehouses": unmapped_warehouses,
     }
 
-    # force_draft (backend OCR): OCR dễ sai số → KHÔNG bao giờ auto-submit, luôn
-    # tạo Draft điền sẵn để người dùng đối chiếu PDF rồi submit tay.
+    # force_draft: nguồn dễ sai (Excel sửa tay / OCR) → KHÔNG auto-submit, luôn tạo
+    # Draft điền sẵn để người dùng đối chiếu rồi submit tay.
     if force_draft:
-        note = _("Nguồn OCR — vui lòng đối chiếu với PDF gốc trước khi submit.")
+        note = force_draft_note or _("Nguồn tệp bàn giao — vui lòng đối chiếu trước khi submit.")
         return _do_draft_import(ctx, extra_note=note, forced=True)
 
     if not has_error:
@@ -297,7 +297,9 @@ def _read_and_process(path: str, pdf_file_url=None) -> dict:
                      title="SC-E-HIS-EXTRACT")
     # Excel có thể được sửa tay (nguồn sự thật) → KHÔNG auto-submit, luôn Draft đối chiếu.
     force_draft = lower.endswith((".xlsx", ".xls"))
-    return _process_extracted(data, pdf_file_url=pdf_file_url, force_draft=force_draft)
+    note = _("File Excel đã đối chiếu/sửa tay — kiểm tra lại rồi submit.") if force_draft else None
+    return _process_extracted(data, pdf_file_url=pdf_file_url, force_draft=force_draft,
+                              force_draft_note=note)
 
 
 @frappe.whitelist()
@@ -309,7 +311,7 @@ def import_slip_file(file_url: str) -> dict:
     """
     _check_permission()
     if not file_url:
-        frappe.throw(_("Thiếu file_url"))
+        frappe.throw(_("SC-E-HIS-EXTRACT: Thiếu file_url"), title="SC-E-HIS-EXTRACT")
     try:
         file_doc = frappe.get_doc("File", {"file_url": file_url})
     except frappe.DoesNotExistError:
