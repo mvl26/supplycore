@@ -40,6 +40,22 @@ dump_serials() {
   cat "$SERIAL2" >&2 2>/dev/null || true
 }
 
+# fail: dump serial TRƯỚC, in lý do SAU → lý do là dòng CUỐI log (dễ tìm).
+fail() {
+  dump_serials
+  echo "" >&2
+  echo "════════════════════════════════════════════════════════════" >&2
+  echo ">>>>> SMOKE FAIL: $* <<<<<" >&2
+  echo "════════════════════════════════════════════════════════════" >&2
+  exit 1
+}
+
+# Tóm tắt marker persistence để chẩn đoán nhanh (in ở cuối khi fail).
+markers_summary() {
+  echo "PHA1 generated: $(grep -c 'DB_PASSWORD generated' "$SERIAL1" 2>/dev/null || echo 0); reused: $(grep -c 'DB_PASSWORD reused' "$SERIAL1" 2>/dev/null || echo 0)" >&2
+  echo "PHA2 generated: $(grep -c 'DB_PASSWORD generated' "$SERIAL2" 2>/dev/null || echo 0); reused: $(grep -c 'DB_PASSWORD reused' "$SERIAL2" 2>/dev/null || echo 0)" >&2
+}
+
 cleanup() {
   for pf in "$PIDFILE1" "$PIDFILE2"; do
     [ -f "$pf" ] && kill "$(cat "$pf")" 2>/dev/null || true
@@ -105,32 +121,24 @@ PY
     sleep 2
   done
   # Tới đây nghĩa là graceful shutdown thất bại → disk1 có thể CHƯA flush.
-  echo "SMOKE FAIL: VM không tắt graceful trong 120s — disk1 có thể chưa flush." >&2
-  dump_serials
-  exit 1
+  fail "VM không tắt graceful trong 120s — disk1 có thể chưa flush."
 }
 
 # ════════════════════════════ PHA 1 ══════════════════════════════════════════
 qemu-img create -f qcow2 -b "$(readlink -f "$DISK0")" -F qcow2 "$WORK/disk0-overlay1.qcow2"
 
 if ! boot_vm "$WORK/disk0-overlay1.qcow2" "$SERIAL1" "$PIDFILE1" "$WORK/mon1.sock"; then
-  echo "SMOKE FAIL (PHA 1): /supplycore không trả 200 trong ~20 phút." >&2
-  dump_serials
-  exit 1
+  fail "(PHA 1) /supplycore không trả 200 trong ~20 phút."
 fi
 
 # site root cũng phải phục vụ (frontend nginx + FRAPPE_SITE_NAME_HEADER đúng)
-curl -fsS -o /dev/null "http://127.0.0.1:${HOST_PORT}/"
+curl -fsS -o /dev/null "http://127.0.0.1:${HOST_PORT}/" || fail "(PHA 1) site root '/' không trả 2xx."
 
 if ! grep -q "ensure-data: mounted /dev/vdb at /data" "$SERIAL1"; then
-  echo "SMOKE FAIL (PHA 1): không thấy 'ensure-data: mounted /dev/vdb at /data' — disk1 KHÔNG được mount." >&2
-  dump_serials
-  exit 1
+  fail "(PHA 1) không thấy 'ensure-data: mounted /dev/vdb at /data' — disk1 KHÔNG được mount."
 fi
 if ! grep -q "first-boot: DB_PASSWORD generated" "$SERIAL1"; then
-  echo "SMOKE FAIL (PHA 1): không thấy 'first-boot: DB_PASSWORD generated' — first-boot không chạy đúng trên disk1 trống." >&2
-  dump_serials
-  exit 1
+  fail "(PHA 1) không thấy 'DB_PASSWORD generated' — first-boot không chạy đúng trên disk1 trống."
 fi
 echo "SMOKE PHA 1 PASS: app 200, disk1 mounted, DB_PASSWORD generated."
 
@@ -144,23 +152,19 @@ rm -f "$PIDFILE1"
 qemu-img create -f qcow2 -b "$(readlink -f "$DISK0")" -F qcow2 "$WORK/disk0-overlay2.qcow2"
 
 if ! boot_vm "$WORK/disk0-overlay2.qcow2" "$SERIAL2" "$PIDFILE2" "$WORK/mon2.sock"; then
-  echo "SMOKE FAIL (PHA 2): /supplycore không trả 200 trong ~20 phút." >&2
-  dump_serials
-  exit 1
+  markers_summary
+  fail "(PHA 2) /supplycore không trả 200 trong ~20 phút."
 fi
 
-curl -fsS -o /dev/null "http://127.0.0.1:${HOST_PORT}/"
+curl -fsS -o /dev/null "http://127.0.0.1:${HOST_PORT}/" || fail "(PHA 2) site root '/' không trả 2xx."
 
 if grep -q "first-boot: DB_PASSWORD generated" "$SERIAL2"; then
-  echo "SMOKE FAIL (PHA 2): thấy 'DB_PASSWORD generated' — disk1 KHÔNG bền qua disk0 swap." >&2
-  echo "  → Đây CHÍNH XÁC là bug đang vá: dữ liệu sống trên disk0 và bị xoá mỗi lần update." >&2
-  dump_serials
-  exit 1
+  markers_summary
+  fail "(PHA 2) thấy 'DB_PASSWORD generated' — disk1 KHÔNG bền qua disk0 swap (dữ liệu mất mỗi update)."
 fi
 if ! grep -q "first-boot: DB_PASSWORD reused" "$SERIAL2"; then
-  echo "SMOKE FAIL (PHA 2): không thấy 'DB_PASSWORD reused' — first-boot không đọc lại trạng thái từ disk1." >&2
-  dump_serials
-  exit 1
+  markers_summary
+  fail "(PHA 2) không thấy 'DB_PASSWORD reused' — first-boot không đọc lại trạng thái từ disk1."
 fi
 
 powerdown_vm "$PIDFILE2" "$WORK/mon2.sock"
