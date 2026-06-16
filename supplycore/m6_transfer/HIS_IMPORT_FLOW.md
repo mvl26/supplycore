@@ -215,7 +215,7 @@ Backend OCR (không cần API key):
 - Lỗi đã sửa khi test thật: psm 6→4 (psm 6 đọc hỏng trang 2 layout bảng+chữ ký);
   dò đúng dòng header (tránh khớp 'TT' trong câu quy định); nhận diện dòng theo cột tiền;
   lọc ký tự lạ ở mã ('+2025GE185'→'2025GE185').
-- Hàm chạy thử lại: `supplycore.tests.smoke_his_import.ocr_real` (cần tesseract).
+- Lớp trích xuất (his_vision/his_ocr) đã chuyển sang standalone tool (B3); không còn trong app.
 
 File đã tạo/sửa:
 - SC Item: +`his_code`

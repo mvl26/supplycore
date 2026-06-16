@@ -62,9 +62,6 @@ def run():
         # --- Test 5: luồng UC-18 thủ công còn nguyên vẹn (regression) ---
         out.append(_manual_flow_intact_test())
 
-        # --- Test 6: OCR parse thuần (số VN, header, bảng word-box) ---
-        out.append(_ocr_parse_test())
-
         # --- Test 7: force_draft (OCR) — luôn Draft, không chuyển tồn ---
         out.append(_force_draft_test())
 
@@ -183,122 +180,6 @@ def _manual_flow_intact_test():
     assert src == "Manual", f"manual TR import_source={src}"
     assert tr2.docstatus == 1 and tr2.status == "Approved", f"{tr2.docstatus}/{tr2.status}"
     return f"T5 manual same_blocked={same_blocked} source={src} submit={tr2.docstatus}/{tr2.status}"
-
-
-def ocr_real():
-    """Chạy OCR thật trên docs/Phiếu ĐC KHo.pdf — xem kết quả trích xuất.
-
-    bench --site <site> execute supplycore.tests.smoke_his_import.ocr_real
-    """
-    import os
-    import frappe
-    from supplycore.utils.his_ocr import extract_slip_ocr
-    base = frappe.get_app_path("supplycore")  # .../apps/supplycore/supplycore
-    pdf = os.path.join(os.path.dirname(base), "docs", "Phiếu ĐC KHo.pdf")
-    print("PDF:", pdf, "exists:", os.path.exists(pdf))
-    data = extract_slip_ocr(pdf)
-    print("slip_no:", repr(data.get("slip_no")))
-    print("slip_date:", repr(data.get("slip_date")))
-    print("from_warehouse_name:", repr(data.get("from_warehouse_name")))
-    print("to_warehouse_name:", repr(data.get("to_warehouse_name")))
-    lines = data.get("lines") or []
-    print(f"--- {len(lines)} dòng ---")
-    for ln in lines:
-        print(f"  TT{ln.get('tt')}: code={ln.get('his_code')!r} name={ln.get('name')!r} "
-              f"uom={ln.get('uom')!r} lô={ln.get('batch_no')!r} hsd={ln.get('expiry')!r} "
-              f"sl={ln.get('qty')} dg={ln.get('unit_price')} tt={ln.get('amount')}")
-
-    # End-to-end: đẩy qua orchestration (force_draft như backend OCR) rồi rollback
-    from supplycore.api.his_import import _process_extracted
-    r = _process_extracted(data, force_draft=True)
-    print("=== orchestration ===")
-    print(f"  status={r['status']} TR={r['transfer_request']} "
-          f"total/ok/err={r['lines_total']}/{r['lines_ok']}/{r['lines_error']}")
-    print(f"  unmapped_warehouses={r['unmapped_warehouses']}")
-    print(f"  unmapped_items={r['unmapped_items'][:5]}{'...' if len(r['unmapped_items'])>5 else ''}")
-    frappe.db.rollback()
-    print("  (rolled back — không để lại dữ liệu)")
-
-
-def ocr_debug(psm="6", page="0"):
-    """Dump OCR thô (full text + word-box + cột nhận diện) để hiệu chỉnh parser."""
-    import os, frappe, pytesseract
-    from PIL import Image
-    from supplycore.utils.his_vision import render_pdf_to_pngs
-    from supplycore.utils.his_ocr import _find_columns, COLS
-    base = frappe.get_app_path("supplycore")
-    pdf = os.path.join(os.path.dirname(base), "docs", "Phiếu ĐC KHo.pdf")
-    import tempfile
-    with tempfile.TemporaryDirectory() as tmp:
-        pages = render_pdf_to_pngs(pdf, tmp)
-        print("=== NUM PAGES:", len(pages), "| viewing page", page, "===")
-        img = Image.open(pages[int(page)])
-        print("=== FULL TEXT (psm", psm, ") page1 ===")
-        print(pytesseract.image_to_string(img, lang="vie+eng", config=f"--psm {psm}"))
-        tsv = pytesseract.image_to_data(img, lang="vie+eng", config=f"--psm {psm}",
-                                        output_type=pytesseract.Output.DICT)
-        words = []
-        for i in range(len(tsv["text"])):
-            t = (tsv["text"][i] or "").strip()
-            if not t:
-                continue
-            try: conf = float(tsv["conf"][i])
-            except: conf = -1
-            words.append({"text": t, "left": tsv["left"][i], "top": tsv["top"][i],
-                          "width": tsv["width"][i], "height": tsv["height"][i],
-                          "conf": conf, "line": (tsv["block_num"][i], tsv["par_num"][i], tsv["line_num"][i])})
-        print(f"=== {len(words)} words (conf>0). First 80: ===")
-        for w in words[:80]:
-            print(f"  '{w['text']}' x={w['left']} y={w['top']} w={w['width']} conf={w['conf']:.0f} line={w['line']}")
-        cols, hy = _find_columns(words)
-        print("=== columns detected (header_y=%s) ===" % round(hy),
-              {c: round(cols[c]) for c in COLS if c in cols})
-
-
-def _ocr_parse_test():
-    from supplycore.utils.his_ocr import vn_number, parse_header, parse_words_to_slip
-    # số VN
-    assert vn_number("2.300") == 2300.0
-    assert vn_number("2.099,99") == 2099.99
-    assert vn_number("379,12") == 379.12
-    assert vn_number("180.824,59") == 180824.59
-    assert vn_number("") == 0.0 and vn_number("2") == 2.0
-
-    # header
-    txt = ("PHIẾU XUẤT ĐIỀU CHUYỂN\nNgày 09 tháng 06 năm 2026   Số: PX050626-00021923\n"
-           "Kho điều chuyển: Kho Khoa Điều trị Cao Cấp\nKho nhận: Kho lẻ nội trú\n")
-    h = parse_header(txt)
-    assert h["slip_no"] == "PX050626-00021923", h["slip_no"]
-    assert h["slip_date"] == "09/06/2026", h["slip_date"]
-    assert "Cao Cấp" in h["from_warehouse_name"], h["from_warehouse_name"]
-    assert "nội trú" in h["to_warehouse_name"], h["to_warehouse_name"]
-
-    # bảng word-box: 1 row + dòng nối tiếp (ghép tên + mã bị tách)
-    def w(t, left, top, line):
-        return {"text": t, "left": left, "top": top, "width": 40, "height": 20, "line": line}
-    words = [
-        # header (top=100)
-        w("TT", 40, 100, "H"), w("Mã", 380, 100, "H"), w("vị", 500, 100, "H"),
-        w("lô", 600, 100, "H"), w("Hạn", 700, 100, "H"), w("lượng", 800, 100, "H"),
-        w("giá", 900, 100, "H"), w("tiền", 1020, 100, "H"),
-        # row 1 (top=200)
-        w("1", 40, 200, "R1"), w("Betahistin", 200, 200, "R1"), w("2025GE24", 380, 200, "R1"),
-        w("Viên", 500, 200, "R1"), w("2602620", 600, 200, "R1"), w("01/03/2029", 700, 200, "R1"),
-        w("2", 800, 200, "R1"), w("2.300", 900, 200, "R1"), w("4.600", 1020, 200, "R1"),
-        # continuation (top=240) — tên dài + mã bị tách "0"
-        w("24", 200, 240, "R2"), w("24mg", 245, 240, "R2"), w("0", 380, 240, "R2"),
-        # stop row
-        w("Tổng", 200, 300, "R3"), w("tiền", 250, 300, "R3"), w("180.824,59", 1020, 300, "R3"),
-    ]
-    d = parse_words_to_slip(words, txt)
-    assert len(d["lines"]) == 1, f"expected 1 line, got {len(d['lines'])}"
-    ln = d["lines"][0]
-    assert ln["his_code"] == "2025GE240", ln["his_code"]
-    assert ln["name"] == "Betahistin 24 24mg", ln["name"]
-    assert ln["batch_no"] == "2602620" and ln["qty"] == 2.0
-    assert ln["unit_price"] == 2300.0 and ln["amount"] == 4600.0
-    return (f"T6 vn_number OK | header slip={h['slip_no']} | "
-            f"line his_code={ln['his_code']} name={ln['name']!r} qty={ln['qty']}")
 
 
 def _force_draft_test():
