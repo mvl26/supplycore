@@ -71,6 +71,9 @@ def run():
         # --- Test 8: đọc file bàn giao JSON + Excel → canonical dict ---
         out.append(_file_read_test())
 
+        # --- Test 9: import_slip_file (JSON) đi qua _read_and_process/_process_extracted ---
+        out.append(_import_file_test())
+
         out.append("ALL TESTS PASSED")
     except Exception as e:
         out.append(f"FAIL: {type(e).__name__}: {e}")
@@ -338,6 +341,17 @@ def _file_read_test():
         ln = d["lines"][0]
         assert ln["his_code"] == "SMOKEHIS1" and ln["qty"] == 10.0
     return f"T8 json_lines={len(dj['lines'])} xlsx_lines={len(dx['lines'])} ok"
+
+
+def _import_file_test():
+    """import_slip_file(JSON) khi chưa seed map/item → đi qua _read_and_process/_process_extracted."""
+    import os
+    from supplycore.api.his_import import _read_and_process
+    base = os.path.join(os.path.dirname(__file__), "fixtures")
+    r = _read_and_process(os.path.join(base, "sample_slip.json"))
+    assert r["status"] in ("draft_with_errors", "draft_review", "submitted"), r["status"]
+    assert r["his_slip_no"] == "PX-FIX"
+    return f"T9 import_file status={r['status']} slip={r['his_slip_no']}"
 
 
 # --- minimal data helpers ---

@@ -1,11 +1,11 @@
-"""Nhập phiếu chuyển kho tự động từ phiếu HIS (PDF) — UC-18B / M6 Transfer.
+"""Nhập phiếu chuyển kho tự động từ phiếu HIS — UC-18B / M6 Transfer.
 
 Luồng (xem m6_transfer/HIS_IMPORT_FLOW.md):
-  PDF → his_vision.extract_slip (Claude) → _process_extracted:
+  Tool his-slip-extractor → file .json/.xlsx → _read_and_process → _process_extracted:
     - chống import trùng (his_slip_no unique)
     - map kho HIS → SC Warehouse, match item theo his_code, match lô, check tồn
-    - khớp 100% → tạo TR → submit → make_stock_entry → submit SE → SLE (Received)
-    - có lỗi → tạo TR Draft staging, tô dòng lỗi, KHÔNG submit
+    - .json khớp 100% → tạo TR → submit → make_stock_entry → submit SE → SLE (Received)
+    - .xlsx / có lỗi → tạo TR Draft staging, tô dòng lỗi, KHÔNG submit
 
 `_process_extracted` chỉ phụ thuộc DB (không gọi Claude) → unit-test được bằng
 dữ liệu phiếu mẫu mà không cần API key.
@@ -283,38 +283,38 @@ def _build_log(slip_no, matched, unmapped_warehouses) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Endpoint
+# Đọc + xử lý file bàn giao từ tool his-slip-extractor
 # ---------------------------------------------------------------------------
-@frappe.whitelist()
-def import_transfer_slip(file_url: str, backend: str = None) -> dict:
-    """Nhập 1 phiếu chuyển kho HIS từ file PDF đã upload.
+def _read_and_process(path: str, pdf_file_url=None) -> dict:
+    from supplycore.api.his_file_read import read_json_file, read_xlsx_file
+    lower = path.lower()
+    if lower.endswith(".json"):
+        data = read_json_file(path)
+    elif lower.endswith((".xlsx", ".xls")):
+        data = read_xlsx_file(path)
+    else:
+        frappe.throw(_("SC-E-HIS-EXTRACT: Chỉ nhận file .json hoặc .xlsx"),
+                     title="SC-E-HIS-EXTRACT")
+    # Excel có thể được sửa tay (nguồn sự thật) → KHÔNG auto-submit, luôn Draft đối chiếu.
+    force_draft = lower.endswith((".xlsx", ".xls"))
+    return _process_extracted(data, pdf_file_url=pdf_file_url, force_draft=force_draft)
 
-    file_url: URL file PDF (vd /private/files/xxx.pdf hoặc /files/xxx.pdf).
-    backend:  'vision' (Claude API, có thể auto-submit) | 'ocr' (tesseract
-              offline, luôn tạo Draft để người đối chiếu). Mặc định lấy từ
-              site_config 'his_extract_backend', fallback 'vision'.
-    Trả report dict (xem _process_extracted).
+
+@frappe.whitelist()
+def import_slip_file(file_url: str) -> dict:
+    """Nhập 1 phiếu chuyển kho từ FILE do tool his-slip-extractor sinh ra.
+
+    file_url: URL file .json (máy) hoặc .xlsx (người đã đối chiếu/sửa). Trả report
+    dict (xem _process_extracted).
     """
     _check_permission()
     if not file_url:
         frappe.throw(_("Thiếu file_url"))
-
-    backend = (backend or frappe.conf.get("his_extract_backend") or "vision").lower()
-
     try:
         file_doc = frappe.get_doc("File", {"file_url": file_url})
     except frappe.DoesNotExistError:
         frappe.throw(_("Không tìm thấy file: {0}").format(file_url))
-    pdf_path = file_doc.get_full_path()
-
-    if backend == "ocr":
-        from supplycore.utils.his_ocr import extract_slip_ocr
-        data = extract_slip_ocr(pdf_path)
-        return _process_extracted(data, pdf_file_url=file_url, force_draft=True)
-
-    from supplycore.utils.his_vision import extract_slip
-    data = extract_slip(pdf_path)
-    return _process_extracted(data, pdf_file_url=file_url)
+    return _read_and_process(file_doc.get_full_path(), pdf_file_url=file_url)
 
 
 def _check_permission():
