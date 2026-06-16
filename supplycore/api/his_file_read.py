@@ -1,9 +1,18 @@
 """Đọc file bàn giao từ tool his-slip-extractor → dict canonical cho _process_extracted.
 Hỗ trợ JSON (máy) và Excel (người sửa tay — Excel là nguồn sự thật trên đường đó)."""
 import json
+import datetime
 import frappe
 from frappe import _
 from frappe.utils import flt, cint
+
+
+def _cell_str(v):
+    """Chuỗi hoá 1 ô Excel. Nếu user gõ lại ngày, openpyxl trả datetime → đưa về
+    DD/MM/YYYY (khớp _parse_date) thay vì 'YYYY-MM-DD 00:00:00' không parse được."""
+    if isinstance(v, (datetime.datetime, datetime.date)):
+        return v.strftime("%d/%m/%Y")
+    return str(v).strip() if v is not None else ""
 
 SUPPORTED_VERSION = 1
 LINE_COLUMNS = ["tt", "name", "his_code", "uom", "batch_no", "expiry",
@@ -40,22 +49,23 @@ def read_xlsx_file(path: str) -> dict:
                      title="SC-E-HIS-EXTRACT")
     lines = []
     for row in ls.iter_rows(min_row=2):
-        vals = {cols[i]: (c.value if c.value is not None else "") for i, c in enumerate(row)}
-        if all(v == "" for v in vals.values()):
+        vals = {cols[i]: (c.value if c.value is not None else "")
+                for i, c in enumerate(row) if i < len(cols)}
+        if all((v == "" for v in vals.values())):
             continue
         line = {}
         for k in LINE_COLUMNS:
             v = vals.get(k, "")
-            line[k] = flt(v) if k in NUM_COLS else str(v).strip()
+            line[k] = flt(v) if k in NUM_COLS else _cell_str(v)
         line["tt"] = cint(line["tt"])
         lines.append(line)
     return {
         "schema_version": SUPPORTED_VERSION,
         "slip_type": hdr.get("slip_type", "transfer"),
         "profile": hdr.get("profile", ""),
-        "slip_no": str(hdr.get("slip_no", "")).strip(),
-        "slip_date": str(hdr.get("slip_date", "")).strip(),
-        "from_warehouse_name": str(hdr.get("from_warehouse_name", "")).strip(),
-        "to_warehouse_name": str(hdr.get("to_warehouse_name", "")).strip(),
+        "slip_no": _cell_str(hdr.get("slip_no")),
+        "slip_date": _cell_str(hdr.get("slip_date")),
+        "from_warehouse_name": _cell_str(hdr.get("from_warehouse_name")),
+        "to_warehouse_name": _cell_str(hdr.get("to_warehouse_name")),
         "lines": lines,
     }
