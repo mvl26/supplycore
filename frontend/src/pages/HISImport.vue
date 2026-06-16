@@ -14,6 +14,8 @@ const fileName = ref('')
 const busy = ref(false)
 const result = ref(null)
 const errorMsg = ref('')
+const backend = ref('ocr')  // 'ocr' (tesseract offline) | 'vision' (Claude API)
+const overwrite = ref(false)  // ghi đè nếu đã có phiếu nháp cùng số phiếu
 
 function onPick(e) {
   const f = e.target.files && e.target.files[0]
@@ -24,20 +26,19 @@ function onPick(e) {
 }
 
 async function runImport() {
-  if (!file.value) { toast.error('Chọn file .json hoặc .xlsx từ tool trích xuất'); return }
+  if (!file.value) { toast.error('Chọn file PDF phiếu HIS trước'); return }
   busy.value = true
   result.value = null
   errorMsg.value = ''
   try {
     const up = await uploadFile(file.value, { isPrivate: true })
-    const r = await call('supplycore.api.his_import.import_slip_file', { file_url: up.file_url })
+    const r = await call('supplycore.api.his_import.import_transfer_slip',
+      { file_url: up.file_url, backend: backend.value, overwrite: overwrite.value ? 1 : 0 })
     result.value = r
-    if (r.status === 'submitted') {
-      toast.success(`Đã ghi nhận & submit phiếu ${r.his_slip_no} (${r.lines_ok} dòng)`)
-    } else if (r.status === 'draft_review') {
-      toast.success(`Đã nạp & tạo phiếu nháp ${r.his_slip_no} — đối chiếu rồi submit`)
+    if (r.status === 'draft_review') {
+      toast.success(`Đã nhận diện & tạo phiếu nháp ${r.his_slip_no} — đối chiếu rồi submit`)
     } else {
-      toast.warning(`Tạo phiếu nháp — ${r.lines_error} dòng cần sửa`)
+      toast.warning(`Tạo phiếu nháp ${r.his_slip_no} — ${r.lines_error} dòng cần sửa`)
     }
   } catch (e) {
     errorMsg.value = e.message || String(e)
@@ -57,30 +58,49 @@ function openTR() {
 <template>
   <div>
     <PageHeader title="Nhập phiếu chuyển kho HIS" icon="file-text"
-      code="M6 · UC-18B" subtitle="Nhập phiếu chuyển kho HIS từ file (JSON/Excel) do tool trích xuất sinh ra" />
+      code="M6 · UC-18B" subtitle="Đọc tự động phiếu xuất điều chuyển HIS (PDF) → phiếu nháp để sửa" />
 
     <div class="sc-card p-5 mb-5 max-w-2xl">
       <p class="text-[13px] text-sc-text-soft mb-4">
-        Chọn file <span class="font-medium">.json</span> hoặc <span class="font-medium">.xlsx</span>
-        do tool <span class="font-medium">his-slip-extractor</span> sinh ra từ phiếu HIS. Hệ thống đối chiếu
-        vật tư (theo Mã HIS) và kho, rồi:
-        JSON khớp 100% → tạo &amp; ghi nhận phiếu chuyển kho tự động;
-        Excel (đã đối chiếu/sửa tay) hoặc có dòng lỗi → tạo phiếu nháp để kiểm rồi submit.
+        Chọn file <span class="font-medium">PDF</span> phiếu "PHIẾU XUẤT ĐIỀU CHUYỂN" từ HIS.
+        Hệ thống nhận diện nội dung, đối chiếu vật tư (theo Mã HIS) và kho, rồi
+        <span class="font-medium">luôn tạo một phiếu chuyển kho dạng nháp</span> để bạn
+        đối chiếu với bản gốc, sửa nếu cần, rồi submit tay.
       </p>
+
+      <div class="mb-4">
+        <div class="text-[12px] font-semibold text-sc-text mb-1.5">Phương thức nhận diện</div>
+        <div class="flex flex-col gap-1.5">
+          <label class="flex items-start gap-2 cursor-pointer text-[13px]">
+            <input type="radio" value="ocr" v-model="backend" class="mt-0.5" />
+            <span><span class="font-medium">Quét OCR (offline)</span> — không cần API key, chạy được khi không có mạng. <span class="text-sc-text-muted">Độ chính xác trung bình, nên đối chiếu kỹ.</span></span>
+          </label>
+          <label class="flex items-start gap-2 cursor-pointer text-[13px]">
+            <input type="radio" value="vision" v-model="backend" class="mt-0.5" />
+            <span><span class="font-medium">AI (Vision)</span> — chính xác cao hơn. <span class="text-sc-text-muted">Cần cấu hình anthropic_api_key.</span></span>
+          </label>
+        </div>
+      </div>
 
       <label class="flex items-center gap-3 cursor-pointer">
         <span class="sc-btn-secondary text-sm inline-flex items-center gap-2">
-          <Icon name="upload" :size="16" /> Chọn file
+          <Icon name="upload" :size="16" /> Chọn PDF
         </span>
         <span class="text-[13px] text-sc-text-muted truncate">{{ fileName || 'Chưa chọn file' }}</span>
-        <input type="file" accept=".json,.xlsx,application/json" class="hidden" @change="onPick" />
+        <input type="file" accept="application/pdf,.pdf" class="hidden" @change="onPick" />
+      </label>
+
+      <label class="flex items-center gap-2 cursor-pointer text-[13px] mt-3">
+        <input type="checkbox" v-model="overwrite" />
+        <span>Ghi đè nếu phiếu nháp cùng số đã tồn tại
+          <span class="text-sc-text-muted">(quét lại sau khi sửa dữ liệu; không ảnh hưởng phiếu đã submit)</span></span>
       </label>
 
       <div class="mt-4">
         <button class="sc-btn-primary text-sm inline-flex items-center gap-2"
           :disabled="!file || busy" @click="runImport">
           <Icon :name="busy ? 'rotate-cw' : 'zap'" :size="16" :class="busy ? 'animate-spin' : ''" />
-          {{ busy ? 'Đang nhập…' : 'Nhập từ file' }}
+          {{ busy ? 'Đang đọc & nhập…' : 'Nhập tự động' }}
         </button>
       </div>
 

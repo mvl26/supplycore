@@ -7,7 +7,16 @@ description = "Hospital medical supply chain management — custom Frappe/ERPNex
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
-dependencies = []
+dependencies = [
+    # UC-18B: nhận diện phiếu chuyển kho HIS (PDF) in-app → his_extractor.
+    # Render PDF cần poppler-utils (pdftoppm) ở mức hệ thống.
+    # Backend 'ocr' (mặc định) cần system: tesseract-ocr + tesseract-ocr-vie.
+    "pytesseract>=0.3",  # backend 'ocr' offline
+    "Pillow>=10",        # đọc ảnh PNG cho OCR
+    "PyYAML>=6",         # nạp profile bệnh viện (his_extractor/profiles/*.yaml)
+    "jsonschema>=4",     # validate dict canonical theo schema
+    "anthropic>=0.40",   # backend 'vision' (Claude API) — tùy chọn
+]
 
 [build-system]
 requires = ["flit_core >=3.4,<4"]

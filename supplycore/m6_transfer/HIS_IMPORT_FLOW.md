@@ -257,3 +257,36 @@ OCR = config + (khi cần) code hook parser riêng.
 
 **Tham chiếu:** `docs/superpowers/specs/2026-06-15-his-slip-extractor-tool-design.md`,
 `docs/superpowers/plans/2026-06-15-his-slip-extractor-tool.md`. Repo tool: `his-slip-extractor`.
+
+## 13. ĐẢO LẠI — đưa trích xuất PDF về in-app (2026-06-16, chốt với người dùng)
+
+Quyết định mục 12 (tách tool) bị **đảo lại**: người dùng muốn chức năng đọc PDF **gắn
+trong hệ thống**, không tool riêng. Lý do nghiệp vụ: per-hospital customization vốn đã là
+**dữ liệu** (his_code + SC HIS Warehouse Map) chứ không phải code, nên không cần repo riêng;
+gắn in-app cho vận hành đơn giản (upload PDF thẳng trên UI).
+
+**Cách làm — vendor package vào app (KHÔNG khôi phục code cũ his_vision/his_ocr):**
+- Copy package trích xuất đã trưởng thành của tool vào `supplycore/his_extractor/`
+  (`errors/schema/config`, `profiles/` YAML theo bệnh viện, `extractors/` render+ocr+ocr_parse+vision).
+  Bỏ phần `cli.py`/`writers/` (chỉ dành cho tool). Giữ được **profile theo bệnh viện**
+  (onboard BV mới = thêm 1 file `.yaml`, không sửa code).
+- Endpoint **khôi phục**: `supplycore.api.his_import.import_transfer_slip(file_url, backend, profile)`:
+  - `backend`: site_config `his_extract_backend` > **mặc định `ocr`** (offline, hợp appliance).
+  - `profile`: site_config `his_extract_profile` > mặc định `default/c31-hd`.
+  - **LUÔN `force_draft=True`** → mọi phiếu PDF ra TR **Draft** cho người dùng sửa rồi submit
+    tay (không auto-submit, kể cả backend vision) — đúng yêu cầu "phiếu nháp sửa được".
+- API key vision lấy từ `frappe.conf.get("anthropic_api_key")` (không dùng `~/.his-extractor`).
+- Frontend `HISImport.vue`: **khôi phục upload PDF** + chọn backend (OCR mặc định) → gọi
+  `import_transfer_slip`.
+- `pyproject.toml`: thêm lại `pytesseract/Pillow/PyYAML/jsonschema/anthropic`
+  (system vẫn cần poppler `pdftoppm` + `tesseract-ocr-vie`).
+
+**Đường file (`import_slip_file` cho JSON/Excel) GIỮ NGUYÊN** như đường phụ — không bắt buộc.
+
+**Repo `his-slip-extractor` giữ nguyên, không xóa** nhưng **deprecated** (in-app là chuẩn).
+
+**Đã kiểm chứng (2026-06-16):**
+- `smoke_his_import.run` ALL PASSED, thêm **T10**: endpoint PDF→OCR in-app → Draft (12 dòng,
+  kho resolve qua map đã seed). T1 đổi tên kho MOCK sang giả (`*KHONGMAP`) để độc lập dữ liệu thật.
+- End-to-end qua bench console: `import_transfer_slip` trên `docs/Phiếu ĐC KHo.pdf` (backend ocr)
+  → TR Draft (docstatus 0, status `draft_with_errors`), idempotent (xóa theo his_slip_no trước/sau).

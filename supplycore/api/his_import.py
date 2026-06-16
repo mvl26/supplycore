@@ -1,13 +1,17 @@
 """Nhập phiếu chuyển kho tự động từ phiếu HIS — UC-18B / M6 Transfer.
 
 Luồng (xem m6_transfer/HIS_IMPORT_FLOW.md):
-  Tool his-slip-extractor → file .json/.xlsx → _read_and_process → _process_extracted:
+  Upload PDF → import_transfer_slip → his_extractor (render + ocr/vision theo
+  profile bệnh viện) → dict canonical → _process_extracted (LUÔN Draft để sửa).
+  (Đường phụ: file .json/.xlsx → import_slip_file → _read_and_process.)
+
+  _process_extracted:
     - chống import trùng (his_slip_no unique)
     - map kho HIS → SC Warehouse, match item theo his_code, match lô, check tồn
-    - .json khớp 100% → tạo TR → submit → make_stock_entry → submit SE → SLE (Received)
-    - .xlsx / có lỗi → tạo TR Draft staging, tô dòng lỗi, KHÔNG submit
+    - khớp 100% → tạo TR → submit → make_stock_entry → submit SE → SLE (Received)
+    - có lỗi / force_draft → tạo TR Draft staging, tô dòng lỗi, KHÔNG submit
 
-`_process_extracted` chỉ phụ thuộc DB (không gọi Claude) → unit-test được bằng
+`_process_extracted` chỉ phụ thuộc DB (không gọi Claude/OCR) → unit-test được bằng
 dữ liệu phiếu mẫu mà không cần API key.
 """
 
@@ -15,7 +19,7 @@ import datetime
 
 import frappe
 from frappe import _
-from frappe.utils import flt, today
+from frappe.utils import flt, sbool, today
 
 from supplycore.m6_transfer.doctype.sc_his_warehouse_map.sc_his_warehouse_map import (
     resolve_warehouse,
@@ -130,18 +134,32 @@ def _match_line(line: dict, from_warehouse):
 # ---------------------------------------------------------------------------
 # Orchestration (testable)
 # ---------------------------------------------------------------------------
-def _process_extracted(data: dict, pdf_file_url=None, force_draft=False, force_draft_note=None) -> dict:
+def _process_extracted(data: dict, pdf_file_url=None, force_draft=False,
+                       force_draft_note=None, overwrite=False) -> dict:
     slip_no = (data.get("slip_no") or "").strip()
     if not slip_no:
         frappe.throw(_("SC-E-HIS-EXTRACT: Phiếu không có Số phiếu (slip_no)"),
                      title="SC-E-HIS-EXTRACT")
 
-    # Idempotency — chống import trùng
-    existing = frappe.db.get_value("SC Transfer Request", {"his_slip_no": slip_no}, "name")
+    # Idempotency — chống import trùng. Nếu phiếu cũ còn Draft và overwrite=True
+    # → xoá nháp cũ rồi nhập lại (luồng quét lại sau khi sửa master data). KHÔNG
+    # bao giờ tự xoá phiếu đã submit (tồn kho đã ghi nhận).
+    existing = frappe.db.get_value("SC Transfer Request", {"his_slip_no": slip_no},
+                                   ["name", "docstatus"], as_dict=True)
     if existing:
-        frappe.throw(
-            _("SC-E-HIS-DUPLICATE: Phiếu {0} đã được import (TR {1}).").format(slip_no, existing),
-            title="SC-E-HIS-DUPLICATE")
+        if existing.docstatus == 0 and overwrite:
+            frappe.delete_doc("SC Transfer Request", existing.name,
+                              force=1, ignore_permissions=True)
+        elif existing.docstatus == 0:
+            frappe.throw(
+                _("SC-E-HIS-DUPLICATE: Phiếu {0} đã có phiếu nháp (TR {1}). "
+                  "Chọn 'Ghi đè phiếu nháp' để nhập lại, hoặc mở/xoá phiếu nháp đó.")
+                .format(slip_no, existing.name), title="SC-E-HIS-DUPLICATE")
+        else:
+            frappe.throw(
+                _("SC-E-HIS-DUPLICATE: Phiếu {0} đã được nhập & ghi nhận (TR {1}, đã submit). "
+                  "Không thể nhập lại.").format(slip_no, existing.name),
+                title="SC-E-HIS-DUPLICATE")
 
     slip_date = _parse_date(data.get("slip_date"))
     from_name = (data.get("from_warehouse_name") or "").strip()
@@ -285,7 +303,7 @@ def _build_log(slip_no, matched, unmapped_warehouses) -> str:
 # ---------------------------------------------------------------------------
 # Đọc + xử lý file bàn giao từ tool his-slip-extractor
 # ---------------------------------------------------------------------------
-def _read_and_process(path: str, pdf_file_url=None) -> dict:
+def _read_and_process(path: str, pdf_file_url=None, overwrite=False) -> dict:
     from supplycore.api.his_file_read import read_json_file, read_xlsx_file
     lower = path.lower()
     if lower.endswith(".json"):
@@ -299,11 +317,11 @@ def _read_and_process(path: str, pdf_file_url=None) -> dict:
     force_draft = lower.endswith((".xlsx", ".xls"))
     note = _("File Excel đã đối chiếu/sửa tay — kiểm tra lại rồi submit.") if force_draft else None
     return _process_extracted(data, pdf_file_url=pdf_file_url, force_draft=force_draft,
-                              force_draft_note=note)
+                              force_draft_note=note, overwrite=overwrite)
 
 
 @frappe.whitelist()
-def import_slip_file(file_url: str) -> dict:
+def import_slip_file(file_url: str, overwrite=False) -> dict:
     """Nhập 1 phiếu chuyển kho từ FILE do tool his-slip-extractor sinh ra.
 
     file_url: URL file .json (máy) hoặc .xlsx (người đã đối chiếu/sửa). Trả report
@@ -316,7 +334,63 @@ def import_slip_file(file_url: str) -> dict:
         file_doc = frappe.get_doc("File", {"file_url": file_url})
     except frappe.DoesNotExistError:
         frappe.throw(_("Không tìm thấy file: {0}").format(file_url))
-    return _read_and_process(file_doc.get_full_path(), pdf_file_url=file_url)
+    return _read_and_process(file_doc.get_full_path(), pdf_file_url=file_url,
+                             overwrite=sbool(overwrite))
+
+
+@frappe.whitelist()
+def import_transfer_slip(file_url: str, backend: str = None, profile: str = None,
+                         overwrite=False) -> dict:
+    """Nhận diện phiếu chuyển kho HIS từ FILE PDF đã upload → tạo TR Draft để sửa.
+
+    file_url: URL file PDF đã upload (vd /private/files/xxx.pdf).
+    backend:  'ocr' (tesseract offline — mặc định) | 'vision' (Claude API).
+              Mặc định lấy site_config 'his_extract_backend', fallback 'ocr'.
+    profile:  profile bệnh viện (vd 'default/c31-hd'). Mặc định site_config
+              'his_extract_profile', fallback 'default/c31-hd'.
+
+    LUÔN tạo TR Draft (force_draft) để người dùng đối chiếu/sửa rồi submit tay —
+    nguồn nhận diện (OCR/vision) không bao giờ chính xác tuyệt đối. Trả report
+    dict (xem _process_extracted).
+    """
+    _check_permission()
+    if not file_url:
+        frappe.throw(_("SC-E-HIS-EXTRACT: Thiếu file_url"), title="SC-E-HIS-EXTRACT")
+    try:
+        file_doc = frappe.get_doc("File", {"file_url": file_url})
+    except frappe.DoesNotExistError:
+        frappe.throw(_("Không tìm thấy file: {0}").format(file_url))
+    pdf_path = file_doc.get_full_path()
+
+    profile_name = profile or frappe.conf.get("his_extract_profile") or "default/c31-hd"
+
+    from supplycore.his_extractor.errors import ExtractError
+    from supplycore.his_extractor.profiles import load_profile
+    from supplycore.his_extractor.schema import validate
+    try:
+        prof = load_profile(profile_name)
+        # Ưu tiên: tham số > site_config > backend khai trong profile > 'ocr'.
+        backend = (backend or frappe.conf.get("his_extract_backend")
+                   or prof.get("backend") or "ocr").lower()
+        if backend == "vision":
+            from supplycore.his_extractor.extractors.vision import extract_vision
+            key = (frappe.conf.get("anthropic_api_key") or "").strip()
+            if not key:
+                frappe.throw(
+                    _("SC-E-HIS-EXTRACT: backend 'vision' cần anthropic_api_key trong "
+                      "site_config (hoặc dùng backend 'ocr')"),
+                    title="SC-E-HIS-EXTRACT")
+            data = extract_vision(pdf_path, prof, key)
+        else:
+            from supplycore.his_extractor.extractors.ocr import extract_ocr
+            data = extract_ocr(pdf_path, prof)
+        validate(data)
+    except ExtractError as e:
+        frappe.throw(_("SC-E-HIS-EXTRACT: {0}").format(str(e)), title="SC-E-HIS-EXTRACT")
+
+    note = _("Nhận diện từ PDF (backend {0}) — đối chiếu với bản gốc rồi submit.").format(backend)
+    return _process_extracted(data, pdf_file_url=file_url, force_draft=True,
+                              force_draft_note=note, overwrite=sbool(overwrite))
 
 
 def _check_permission():

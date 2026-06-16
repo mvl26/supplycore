@@ -9,11 +9,12 @@ from frappe.utils import today
 
 from supplycore.api.his_import import _process_extracted
 
+# Tên kho cố ý GIẢ + hậu tố KHONGMAP để test độc lập với dữ liệu map thật trong DB.
 MOCK = {
     "slip_no": "PX050626-SMOKE",
     "slip_date": "09/06/2026",
-    "from_warehouse_name": "Kho Khoa Điều trị Cao Cấp",
-    "to_warehouse_name": "Kho lẻ nội trú",
+    "from_warehouse_name": "SMOKE HIS Kho Nguồn KHONGMAP",
+    "to_warehouse_name": "SMOKE HIS Kho Đích KHONGMAP",
     "lines": [
         {"tt": 1, "name": "Betahistin 24 24mg", "his_code": "2025GE222", "uom": "Viên",
          "batch_no": "2602620", "expiry": "01/03/2029", "qty": 2, "unit_price": 2300, "amount": 4600},
@@ -35,7 +36,7 @@ def run():
         out.append(f"T1 unmapped_items={r['unmapped_items']}")
         assert r["status"] == "draft_with_errors", "expected draft_with_errors"
         assert r["lines_total"] == 3 and r["lines_error"] == 3
-        assert set(r["unmapped_warehouses"]) == {"Kho Khoa Điều trị Cao Cấp", "Kho lẻ nội trú"}
+        assert set(r["unmapped_warehouses"]) == {"SMOKE HIS Kho Nguồn KHONGMAP", "SMOKE HIS Kho Đích KHONGMAP"}
 
         tr = frappe.get_doc("SC Transfer Request", r["transfer_request"])
         out.append(f"T1 TR docstatus={tr.docstatus} status={tr.status} source={tr.import_source} rows={len(tr.items)}")
@@ -52,6 +53,16 @@ def run():
             dup_ok = "SC-E-HIS-DUPLICATE" in str(e)
         out.append(f"T2 duplicate_blocked={dup_ok}")
         assert dup_ok, "duplicate not blocked"
+
+        # --- Test 11: overwrite phiếu nháp cùng số → xoá nháp cũ + tạo lại, không trùng ---
+        slip = MOCK["slip_no"]
+        old = frappe.db.get_value("SC Transfer Request", {"his_slip_no": slip}, "name")
+        r11 = _process_extracted(MOCK, overwrite=True)
+        new = r11["transfer_request"]
+        cnt = frappe.db.count("SC Transfer Request", {"his_slip_no": slip})
+        out.append(f"T11 overwrite old={old} new={new} count={cnt}")
+        assert new != old and cnt == 1, "overwrite must replace draft, leave exactly 1"
+        assert not frappe.db.exists("SC Transfer Request", old), "old draft not deleted"
 
         # --- Test 3: clean path (auto-submit) với dữ liệu tối thiểu ---
         out.append(_clean_path_test())
@@ -70,6 +81,9 @@ def run():
 
         # --- Test 9: import_slip_file (JSON) đi qua _read_and_process/_process_extracted ---
         out.append(_import_file_test())
+
+        # --- Test 10: endpoint PDF in-app (OCR) → luôn Draft (skip nếu thiếu tool/PDF) ---
+        out.append(_pdf_endpoint_test())
 
         out.append("ALL TESTS PASSED")
     except Exception as e:
@@ -233,6 +247,41 @@ def _import_file_test():
     assert r["status"] in ("draft_with_errors", "draft_review", "submitted"), r["status"]
     assert r["his_slip_no"] == "PX-FIX"
     return f"T9 import_file status={r['status']} slip={r['his_slip_no']}"
+
+
+def _pdf_endpoint_test():
+    """import_transfer_slip (PDF→OCR in-app) luôn tạo Draft. Skip nếu môi trường thiếu."""
+    import os
+    import shutil
+    pdf = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..",
+                                         "docs", "Phiếu ĐC KHo.pdf"))
+    if not (shutil.which("pdftoppm") and shutil.which("tesseract") and os.path.exists(pdf)):
+        return "T10 SKIP (thiếu pdftoppm/tesseract/PDF mẫu)"
+    try:
+        import pytesseract
+        if "vie" not in pytesseract.get_languages(config=""):
+            return "T10 SKIP (thiếu tesseract 'vie')"
+    except Exception:
+        return "T10 SKIP (pytesseract chưa sẵn sàng)"
+
+    # tự seed map kho (tên thật trên phiếu) để test độc lập — rollback ở cuối run()
+    _ensure_map("Kho Khoa Điều trị Cao Cấp", _ensure_warehouse("Kho Khoa Điều trị Cao Cấp"))
+    _ensure_map("Kho lẻ nội trú", _ensure_warehouse("Kho lẻ nội trú"))
+    # tránh đụng TR thật cùng slip_no (nếu có)
+    for nm in frappe.get_all("SC Transfer Request",
+                             filters={"his_slip_no": "PX050626-00021923"}, pluck="name"):
+        frappe.delete_doc("SC Transfer Request", nm, force=1, delete_permanently=True)
+
+    fdoc = frappe.get_doc({"doctype": "File", "file_name": "smoke_his.pdf", "is_private": 1,
+                           "content": open(pdf, "rb").read()}).insert(ignore_permissions=True)
+    from supplycore.api.his_import import import_transfer_slip
+    r = import_transfer_slip(file_url=fdoc.file_url, backend="ocr")
+    tr = frappe.get_doc("SC Transfer Request", r["transfer_request"])
+    assert tr.docstatus == 0, "PDF endpoint phải tạo Draft (docstatus 0)"
+    assert r["status"].startswith("draft"), f"status phải draft_*, got {r['status']}"
+    assert r["from_warehouse"] and r["to_warehouse"], "kho phải resolve (đã seed map)"
+    return (f"T10 PDF→OCR status={r['status']} TR_docstatus={tr.docstatus} "
+            f"lines={r['lines_total']} wh_ok={bool(r['from_warehouse'] and r['to_warehouse'])}")
 
 
 # --- minimal data helpers ---
