@@ -222,24 +222,6 @@ jobs:
           & $iscc "/DSC_VERSION=${env:SC_VERSION}" installer\supplycore.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC failed (exit $LASTEXITCODE)." }
 
-      - name: Test install (silent install smoke; TCG on hosted runner)
-        # continue-on-error ONLY because windows-latest has no WHPX/nested-virt,
-        # so QEMU runs under TCG and localhost health may not reach 200 in time.
-        # test-install.ps1 exits honestly; its outcome is surfaced next.
-        id: testinstall
-        continue-on-error: true
-        shell: pwsh
-        run: pwsh installer/ci/test-install.ps1
-
-      - name: Surface test-install result
-        shell: pwsh
-        run: |
-          if ('${{ steps.testinstall.outcome }}' -eq 'success') {
-            Write-Host "test-install: PASS (install + service Running + health 200 + clean uninstall)."
-          } else {
-            Write-Warning "test-install: did NOT fully pass (likely TCG/WHPX-less runner could not verify localhost health). Not failing the release; verify on a WHPX-capable runner."
-          }
-
       - name: Locate built installer
         id: setup
         shell: pwsh
@@ -280,3 +262,25 @@ jobs:
             ${{ steps.setup.outputs.exe }}
             ${{ steps.checksum.outputs.sha256txt }}
           fail_on_unmatched_files: true
+
+      # ── test-install chạy CUỐI + có timeout (KHÔNG chặn release) ────────────────
+      # windows-latest KHÔNG có WHPX/nested-virt → installer ssPostInstall chạy
+      # wait-healthy chờ VM (TCG) rất lâu, có thể treo. Đặt timeout-minutes để bước
+      # tự bị kill thay vì treo tới job-timeout 6h. Release đã publish ở trên rồi nên
+      # kết quả bước này KHÔNG ảnh hưởng file .exe. (App đã được kiểm thật ở job `guest`/KVM.)
+      - name: Test install (bonus smoke; KHÔNG chặn release; TCG trên hosted runner)
+        id: testinstall
+        continue-on-error: true
+        timeout-minutes: 20
+        shell: pwsh
+        run: pwsh installer/ci/test-install.ps1
+
+      - name: Surface test-install result
+        if: always()
+        shell: pwsh
+        run: |
+          if ('${{ steps.testinstall.outcome }}' -eq 'success') {
+            Write-Host "test-install: PASS (install + service Running + health 200 + clean uninstall)."
+          } else {
+            Write-Warning "test-install: KHÔNG pass đầy đủ (hosted runner thiếu WHPX → QEMU TCG không kịp 200, hoặc bị timeout 20'). KHÔNG ảnh hưởng release — .exe đã publish; app đã verify ở job guest/KVM. Cần xác minh end-to-end trên máy/runner có WHPX."
+          }
