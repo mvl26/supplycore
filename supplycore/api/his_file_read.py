@@ -31,7 +31,7 @@ def read_xlsx_file(path: str) -> dict:
     if "header" not in wb.sheetnames or "lines" not in wb.sheetnames:
         frappe.throw(_("SC-E-HIS-EXTRACT: Excel thiếu sheet 'header'/'lines'"),
                      title="SC-E-HIS-EXTRACT")
-    hdr = {r[0].value: r[1].value for r in wb["header"].iter_rows() if r[0].value}
+    hdr = {r[0].value: r[1].value for r in wb["header"].iter_rows() if len(r) > 1 and r[0].value}
     _check_version(hdr.get("schema_version"))
     ls = wb["lines"]
     cols = [c.value for c in ls[1]]
@@ -41,7 +41,7 @@ def read_xlsx_file(path: str) -> dict:
     lines = []
     for row in ls.iter_rows(min_row=2):
         vals = {cols[i]: (c.value if c.value is not None else "") for i, c in enumerate(row)}
-        if all((v == "" or v is None) for v in vals.values()):
+        if all(v == "" for v in vals.values()):
             continue
         line = {}
         for k in LINE_COLUMNS:
