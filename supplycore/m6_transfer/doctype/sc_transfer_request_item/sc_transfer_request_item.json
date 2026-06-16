@@ -4,6 +4,7 @@
   "item", "item_name", "uom",
   "column_break_1", "requested_qty", "approved_qty", "transferred_qty",
   "section_batch", "batch", "available_at_source",
+  "section_his", "his_match_status", "his_raw_code", "his_raw_name", "his_note",
   "remarks"
  ],
  "fields": [
@@ -18,6 +19,12 @@
   {"fieldname": "section_batch", "fieldtype": "Section Break", "label": "Batch (FEFO sẽ chọn nếu để trống)", "collapsible": 1},
   {"fieldname": "batch", "fieldtype": "Link", "options": "SC Batch", "label": "Lô"},
   {"fieldname": "available_at_source", "fieldtype": "Float", "label": "Tồn tại kho nguồn", "read_only": 1, "description": "Snapshot từ SC SLE"},
+
+  {"fieldname": "section_his", "fieldtype": "Section Break", "label": "Đối chiếu HIS (UC-18B)", "collapsible": 1, "depends_on": "eval:doc.his_match_status"},
+  {"fieldname": "his_match_status", "fieldtype": "Select", "options": "\nOK\nItem Not Found\nBatch Not Found\nInsufficient Stock\nWarehouse Not Mapped", "label": "Đối chiếu HIS", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "his_raw_code", "fieldtype": "Data", "label": "Mã HIS (gốc)", "read_only": 1},
+  {"fieldname": "his_raw_name", "fieldtype": "Data", "label": "Tên VT (HIS gốc)", "read_only": 1},
+  {"fieldname": "his_note", "fieldtype": "Data", "label": "Ghi chú đối chiếu", "read_only": 1},
 
   {"fieldname": "remarks", "fieldtype": "Data", "label": "Ghi chú"}
  ],

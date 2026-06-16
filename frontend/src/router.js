@@ -14,6 +14,7 @@ import FinancialReports from './pages/FinancialReports.vue'
 import BatchTrace from './pages/BatchTrace.vue'
 import WarehouseMapPage from './pages/WarehouseMapPage.vue'
 import MapEditor from './pages/MapEditor.vue'
+import HISImport from './pages/HISImport.vue'
 import Forbidden from './pages/Forbidden.vue'
 import { useAuthStore } from './stores/auth'
 import { useAccessStore } from './stores/access'
@@ -38,6 +39,7 @@ const router = createRouter({
     { path: '/batch-trace', name: 'batchTrace', component: BatchTrace, meta: { title: 'Truy xuất lô', requireFeature: 'batch_trace' } },
     { path: '/warehouse-map', name: 'warehouseMap', component: WarehouseMapPage, meta: { title: 'Bản đồ kho', requireFeature: 'warehouse_map' } },
     { path: '/map-editor', name: 'mapEditor', component: MapEditor, meta: { title: 'Thiết kế bản đồ', requireFeature: 'map_editor' } },
+    { path: '/his-import', name: 'hisImport', component: HISImport, meta: { title: 'Nhập phiếu HIS' } },
     { path: '/403', name: 'forbidden', component: Forbidden, meta: { title: 'Không có quyền' } },
 
     { path: '/:catch(.*)*', name: 'notfound', component: NotFound, meta: { title: '404' } },

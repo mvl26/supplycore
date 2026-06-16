@@ -28,6 +28,13 @@
   "approved_at",
   "section_total",
   "total_qty",
+  "section_his",
+  "import_source",
+  "his_slip_no",
+  "his_slip_date",
+  "column_break_his",
+  "his_pdf",
+  "his_import_log",
   "section_other",
   "remarks",
   "amended_from"
@@ -174,6 +181,55 @@
    "label": "Tổng SL yêu cầu",
    "read_only": 1,
    "in_list_view": 1
+  },
+  {
+   "fieldname": "section_his",
+   "fieldtype": "Section Break",
+   "label": "Nguồn HIS (UC-18B)",
+   "collapsible": 1,
+   "depends_on": "eval:doc.import_source==='HIS Import'"
+  },
+  {
+   "fieldname": "import_source",
+   "fieldtype": "Select",
+   "options": "Manual\nHIS Import",
+   "label": "Nguồn phiếu",
+   "default": "Manual",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "his_slip_no",
+   "fieldtype": "Data",
+   "label": "Số phiếu HIS",
+   "unique": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Số phiếu xuất điều chuyển HIS — unique, chống import trùng"
+  },
+  {
+   "fieldname": "his_slip_date",
+   "fieldtype": "Date",
+   "label": "Ngày phiếu HIS",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_his",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "his_pdf",
+   "fieldtype": "Attach",
+   "label": "File phiếu HIS gốc",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "his_import_log",
+   "fieldtype": "Small Text",
+   "label": "Nhật ký import",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "section_other",

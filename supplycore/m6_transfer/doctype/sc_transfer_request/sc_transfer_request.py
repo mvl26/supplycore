@@ -15,6 +15,14 @@ from frappe.utils import flt, getdate, today, now
 class SCTransferRequest(Document):
 
     def validate(self):
+        # UC-18B: phiếu nhập từ HIS có dòng lỗi được tạo dạng staging Draft —
+        # bỏ qua các check cứng (kho/ngày/tồn) để lưu được phiếu nháp kèm dòng
+        # lỗi cho user sửa tay. Khi user sửa & save lại (không còn flag) hoặc
+        # submit → validation đầy đủ áp dụng như luồng UC-18 chuẩn.
+        if self.flags.get("his_import_staging"):
+            self._compute_total()
+            self.status = "Draft"
+            return
         self._validate_warehouses()
         self._validate_dates()
         self._fill_available_qty()
@@ -24,8 +32,10 @@ class SCTransferRequest(Document):
             self.status = "Draft"
 
     def on_submit(self):
-        # UC-18 step 5: cross-tier → enforce Manager role
-        if self.requires_manager_approval:
+        # UC-18 step 5: cross-tier → enforce Manager role.
+        # UC-18B: phiếu nhập từ HIS là GHI NHẬN việc đã xuất kho thực tế bên HIS
+        # (nguồn sự thật), không phải yêu cầu cần Manager phê duyệt → bỏ qua check.
+        if self.requires_manager_approval and self.import_source != "HIS Import":
             user_roles = set(frappe.get_roles(frappe.session.user))
             if not (user_roles & {"SupplyCore Manager", "System Manager"}):
                 frappe.throw(_(

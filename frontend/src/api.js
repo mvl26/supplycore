@@ -366,3 +366,14 @@ export function fileToBase64(file) {
     r.readAsDataURL(file)
   })
 }
+
+// === Upload file (Frappe /api/method/upload_file) → trả {file_url, ...} ===
+// Dùng cho UC-18B: upload PDF phiếu HIS rồi nhập tự động.
+export async function uploadFile(file, { isPrivate = true, folder = 'Home' } = {}) {
+  const fd = new FormData()
+  fd.append('file', file, file.name)
+  fd.append('is_private', isPrivate ? '1' : '0')
+  fd.append('folder', folder)
+  const data = await request('/api/method/upload_file', { method: 'POST', body: fd })
+  return data.message  // { file_url, file_name, ... }
+}
