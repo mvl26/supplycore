@@ -14,7 +14,6 @@ const fileName = ref('')
 const busy = ref(false)
 const result = ref(null)
 const errorMsg = ref('')
-const method = ref('vision')  // 'vision' (Claude API) | 'ocr' (tesseract offline)
 
 function onPick(e) {
   const f = e.target.files && e.target.files[0]
@@ -25,19 +24,18 @@ function onPick(e) {
 }
 
 async function runImport() {
-  if (!file.value) { toast.error('Chọn file PDF phiếu HIS trước'); return }
+  if (!file.value) { toast.error('Chọn file .json hoặc .xlsx từ tool trích xuất'); return }
   busy.value = true
   result.value = null
   errorMsg.value = ''
   try {
     const up = await uploadFile(file.value, { isPrivate: true })
-    const r = await call('supplycore.api.his_import.import_transfer_slip',
-      { file_url: up.file_url, backend: method.value })
+    const r = await call('supplycore.api.his_import.import_slip_file', { file_url: up.file_url })
     result.value = r
     if (r.status === 'submitted') {
       toast.success(`Đã ghi nhận & submit phiếu ${r.his_slip_no} (${r.lines_ok} dòng)`)
     } else if (r.status === 'draft_review') {
-      toast.success(`Đã quét & tạo phiếu nháp ${r.his_slip_no} — kiểm tra rồi submit`)
+      toast.success(`Đã nạp & tạo phiếu nháp ${r.his_slip_no} — đối chiếu rồi submit`)
     } else {
       toast.warning(`Tạo phiếu nháp — ${r.lines_error} dòng cần sửa`)
     }
@@ -59,43 +57,30 @@ function openTR() {
 <template>
   <div>
     <PageHeader title="Nhập phiếu chuyển kho HIS" icon="file-text"
-      code="M6 · UC-18B" subtitle="Đọc tự động phiếu xuất điều chuyển HIS (PDF) bằng AI" />
+      code="M6 · UC-18B" subtitle="Nhập phiếu chuyển kho HIS từ file (JSON/Excel) do tool trích xuất sinh ra" />
 
     <div class="sc-card p-5 mb-5 max-w-2xl">
       <p class="text-[13px] text-sc-text-soft mb-4">
-        Chọn file PDF phiếu "PHIẾU XUẤT ĐIỀU CHUYỂN" từ HIS. Hệ thống đọc nội dung,
-        đối chiếu vật tư (theo Mã HIS) và kho, rồi:
-        khớp 100% → tạo &amp; ghi nhận phiếu chuyển kho tự động;
-        có dòng lỗi → tạo phiếu nháp để sửa tay.
+        Chọn file <span class="font-medium">.json</span> hoặc <span class="font-medium">.xlsx</span>
+        do tool <span class="font-medium">his-slip-extractor</span> sinh ra từ phiếu HIS. Hệ thống đối chiếu
+        vật tư (theo Mã HIS) và kho, rồi:
+        JSON khớp 100% → tạo &amp; ghi nhận phiếu chuyển kho tự động;
+        Excel (đã đối chiếu/sửa tay) hoặc có dòng lỗi → tạo phiếu nháp để kiểm rồi submit.
       </p>
-
-      <div class="mb-4">
-        <div class="text-[12px] font-semibold text-sc-text mb-1.5">Phương thức đọc</div>
-        <div class="flex flex-col gap-1.5">
-          <label class="flex items-start gap-2 cursor-pointer text-[13px]">
-            <input type="radio" value="vision" v-model="method" class="mt-0.5" />
-            <span><span class="font-medium">AI (Vision)</span> — chính xác cao, khớp 100% tự ghi nhận &amp; submit. <span class="text-sc-text-muted">Cần cấu hình API key.</span></span>
-          </label>
-          <label class="flex items-start gap-2 cursor-pointer text-[13px]">
-            <input type="radio" value="ocr" v-model="method" class="mt-0.5" />
-            <span><span class="font-medium">Quét OCR (offline)</span> — không cần API key. Luôn tạo phiếu nháp điền sẵn để <span class="font-medium text-amber-700">bạn đối chiếu PDF rồi submit tay</span>.</span>
-          </label>
-        </div>
-      </div>
 
       <label class="flex items-center gap-3 cursor-pointer">
         <span class="sc-btn-secondary text-sm inline-flex items-center gap-2">
-          <Icon name="upload" :size="16" /> Chọn PDF
+          <Icon name="upload" :size="16" /> Chọn file
         </span>
         <span class="text-[13px] text-sc-text-muted truncate">{{ fileName || 'Chưa chọn file' }}</span>
-        <input type="file" accept="application/pdf,.pdf" class="hidden" @change="onPick" />
+        <input type="file" accept=".json,.xlsx,application/json" class="hidden" @change="onPick" />
       </label>
 
       <div class="mt-4">
         <button class="sc-btn-primary text-sm inline-flex items-center gap-2"
           :disabled="!file || busy" @click="runImport">
           <Icon :name="busy ? 'rotate-cw' : 'zap'" :size="16" :class="busy ? 'animate-spin' : ''" />
-          {{ busy ? 'Đang đọc & nhập…' : 'Nhập tự động' }}
+          {{ busy ? 'Đang nhập…' : 'Nhập từ file' }}
         </button>
       </div>
 
@@ -112,7 +97,7 @@ function openTR() {
             :class="result.status === 'submitted' ? 'sc-badge-success'
               : (result.status === 'draft_review' ? 'sc-badge-info' : 'sc-badge-warning')">
             {{ result.status === 'submitted' ? 'Đã ghi nhận (submitted)'
-              : (result.status === 'draft_review' ? 'Phiếu nháp (đã quét — cần đối chiếu)'
+              : (result.status === 'draft_review' ? 'Phiếu nháp (đã nạp — cần đối chiếu)'
               : 'Phiếu nháp (cần sửa)') }}
           </span>
           <span class="font-mono text-[12px] text-sc-text-muted">{{ result.his_slip_no }}</span>
