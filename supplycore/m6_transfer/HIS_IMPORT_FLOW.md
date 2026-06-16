@@ -225,3 +225,35 @@ File đã tạo/sửa:
 - utils/his_vision.py, api/his_import.py
 - frontend: pages/HISImport.vue, route /his-import, nút ModuleHub (m6), api.uploadFile
 - pyproject.toml: +anthropic; tests/smoke_his_import.py
+
+## 12. Tách lớp trích xuất ra tool standalone (2026-06-16)
+
+Lớp trích xuất PDF (vision + ocr) đã được **tách khỏi SupplyCore** thành tool độc lập
+`his-slip-extractor` (repo Git riêng, không phụ thuộc Frappe). Lý do: mỗi bệnh viện có
+mẫu phiếu/định dạng PDF khác nhau → onboard bệnh viện mới = thêm 1 "profile" trong tool,
+KHÔNG sửa SupplyCore.
+
+**Mô hình bàn giao qua file:**
+- Tool đọc PDF → xuất **JSON** (máy import) + **Excel** (người đối chiếu/sửa tay).
+- SupplyCore nhận file qua endpoint `supplycore.api.his_import.import_slip_file(file_url)`:
+  - `.json` → nguồn máy, khớp 100% có thể auto-submit.
+  - `.xlsx` → có thể đã sửa tay (nguồn sự thật) → luôn tạo Draft để đối chiếu rồi submit.
+- Đọc file: `supplycore/api/his_file_read.py` (`read_json_file` / `read_xlsx_file`) → dict
+  canonical → `_process_extracted` (đối chiếu/map/idempotency **GIỮ NGUYÊN**).
+
+**Hợp đồng** = JSON schema có version (`schema_version=1`, `slip_type`, `profile`, `slip_no`,
+`slip_date`, `from/to_warehouse_name`, `lines[...]`) + layout cột Excel cố định
+(`tt,name,his_code,uom,batch_no,expiry,qty,unit_price,amount`).
+
+**Hai điểm soát khác nhau:** sửa lỗi *trích xuất* ở tool (Excel); sửa lỗi *đối chiếu*
+ở SupplyCore (luồng Draft hiện có).
+
+**Đã gỡ khỏi SupplyCore:** `utils/his_vision.py`, `utils/his_ocr.py`, endpoint
+`import_transfer_slip`, dep `anthropic`/`pytesseract`. Frontend `HISImport.vue` đổi sang
+upload file JSON/Excel.
+
+**Onboard bệnh viện mới:** thêm profile trong tool — Vision = config thuần (prompt + schema),
+OCR = config + (khi cần) code hook parser riêng.
+
+**Tham chiếu:** `docs/superpowers/specs/2026-06-15-his-slip-extractor-tool-design.md`,
+`docs/superpowers/plans/2026-06-15-his-slip-extractor-tool.md`. Repo tool: `his-slip-extractor`.
