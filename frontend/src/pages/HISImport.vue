@@ -14,7 +14,7 @@ const fileName = ref('')
 const busy = ref(false)
 const result = ref(null)
 const errorMsg = ref('')
-const backend = ref('ocr')  // 'ocr' (tesseract offline) | 'vision' (Claude API)
+const backend = ref('ocr')  // chỉ OCR offline (Vision/Claude chưa bật — cần anthropic_api_key)
 const overwrite = ref(false)  // ghi đè nếu đã có phiếu nháp cùng số phiếu
 
 function onPick(e) {
@@ -68,18 +68,9 @@ function openTR() {
         đối chiếu với bản gốc, sửa nếu cần, rồi submit tay.
       </p>
 
-      <div class="mb-4">
-        <div class="text-[12px] font-semibold text-sc-text mb-1.5">Phương thức nhận diện</div>
-        <div class="flex flex-col gap-1.5">
-          <label class="flex items-start gap-2 cursor-pointer text-[13px]">
-            <input type="radio" value="ocr" v-model="backend" class="mt-0.5" />
-            <span><span class="font-medium">Quét OCR (offline)</span> — không cần API key, chạy được khi không có mạng. <span class="text-sc-text-muted">Độ chính xác trung bình, nên đối chiếu kỹ.</span></span>
-          </label>
-          <label class="flex items-start gap-2 cursor-pointer text-[13px]">
-            <input type="radio" value="vision" v-model="backend" class="mt-0.5" />
-            <span><span class="font-medium">AI (Vision)</span> — chính xác cao hơn. <span class="text-sc-text-muted">Cần cấu hình anthropic_api_key.</span></span>
-          </label>
-        </div>
+      <div class="mb-4 text-[12px] text-sc-text-muted">
+        Phương thức nhận diện: <span class="font-medium text-sc-text">Quét OCR (offline)</span>
+        — không cần API key, chạy được khi không có mạng. Nên đối chiếu kỹ với bản gốc.
       </div>
 
       <label class="flex items-center gap-3 cursor-pointer">
