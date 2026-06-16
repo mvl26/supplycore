@@ -165,6 +165,16 @@ jobs:
             -var ubuntu_image_sha256=f6729b53d930d7f0c6691eb553cfa6be7109de9412125bf1bf2dc6747de8a44d \
             guest/packer/supplycore.pkr.hcl
 
+      - name: Compress disk0 (qcow2 zlib) — giảm kích thước .exe
+        # qcow2 từ Packer KHÔNG nén → rất to. convert -c nén zlib (giảm ~40-60%).
+        # Smoke + production vẫn boot read-write được trên qcow2 nén (đọc giải nén,
+        # ghi cluster mới không nén). Nén TRƯỚC smoke để smoke kiểm chính ảnh sẽ ship.
+        run: |
+          set -euxo pipefail
+          qemu-img convert -O qcow2 -c output-disk0/disk0.qcow2 output-disk0/disk0-c.qcow2
+          mv -f output-disk0/disk0-c.qcow2 output-disk0/disk0.qcow2
+          ls -lh output-disk0/disk0.qcow2
+
       - name: Smoke test (two-phase disk1-persistence gate, from repo ROOT)
         run: bash guest/packer/smoke.sh
 
@@ -254,13 +264,32 @@ jobs:
             ${{ steps.checksum.outputs.sha256txt }}
           if-no-files-found: error
 
+      - name: Decide Release assets (GitHub giới hạn 2 GiB/file)
+        id: relassets
+        shell: pwsh
+        run: |
+          $exe = '${{ steps.setup.outputs.exe }}'
+          $sha = '${{ steps.checksum.outputs.sha256txt }}'
+          $sz  = (Get-Item $exe).Length
+          $limit = 2147483648
+          if ($sz -lt $limit) {
+            $files = "$exe`n$sha"
+            $note  = "Đính kèm: SupplyCore-Setup + SHA256.txt."
+            Write-Host "exe $([math]::Round($sz/1MB)) MB < 2 GiB → đính kèm .exe vào Release."
+          } else {
+            $files = "$sha"
+            $note  = "⚠️ .exe = $([math]::Round($sz/1MB)) MB > 2 GiB (vượt giới hạn GitHub Release). Tải .exe từ **Actions → run này → Artifacts → installer**. Chỉ SHA256.txt đính ở đây."
+            Write-Warning "exe $([math]::Round($sz/1MB)) MB >= 2 GiB → KHÔNG đính .exe (Release chỉ có SHA256 + ghi chú)."
+          }
+          "files<<EOF`n$files`nEOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "note=$note"            | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Publish Release (tags only)
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ${{ steps.setup.outputs.exe }}
-            ${{ steps.checksum.outputs.sha256txt }}
+          body: ${{ steps.relassets.outputs.note }}
+          files: ${{ steps.relassets.outputs.files }}
           fail_on_unmatched_files: true
 
       # ── test-install chạy CUỐI + có timeout (KHÔNG chặn release) ────────────────
