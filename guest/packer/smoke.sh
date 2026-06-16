@@ -103,25 +103,42 @@ boot_vm() {
   return 1
 }
 
-# powerdown_vm <pidfile> <monitor_sock> — tắt GRACEFUL + chờ tiến trình thoát để
-# disk1 được flush. KHÔNG kill -9: có thể mất ghi disk1 (mất ý nghĩa phép thử bền).
-powerdown_vm() {
-  local pidfile="$1" monsock="$2" pid
-  pid="$(cat "$pidfile")"
-  python3 - "$monsock" <<'PY'
+# mon_send <monitor_sock> <hmp_command> — gửi 1 lệnh tới HMP monitor (text).
+mon_send() {
+  python3 - "$1" "$2" <<'PY'
 import socket, sys
 s = socket.socket(socket.AF_UNIX)
 s.connect(sys.argv[1])
-s.sendall(b"system_powerdown\n")
+s.sendall((sys.argv[2] + "\n").encode())
 s.close()
 PY
-  local i
-  for i in $(seq 1 60); do
-    kill -0 "$pid" 2>/dev/null || return 0
-    sleep 2
-  done
-  # Tới đây nghĩa là graceful shutdown thất bại → disk1 có thể CHƯA flush.
-  fail "VM không tắt graceful trong 120s — disk1 có thể chưa flush."
+}
+
+# wait_exit <pid> <tries> <sleep> — trả 0 nếu tiến trình thoát trong thời gian chờ.
+wait_exit() {
+  local pid="$1" tries="$2" slp="$3" i
+  for i in $(seq 1 "$tries"); do kill -0 "$pid" 2>/dev/null || return 0; sleep "$slp"; done
+  return 1
+}
+
+# powerdown_vm <pidfile> <monitor_sock> — tắt VM, KHÔNG fail (disk1 cache=writethrough +
+# guest đã sync .db_password → ghi đã durable trong file qcow2 dù tắt không "sạch"):
+#   1) ACPI graceful (cần acpid trong guest) → chờ 60s.
+#   2) fallback QMP/HMP 'quit' → qemu thoát, flush cache writethrough → chờ 20s.
+#   3) last resort kill/-9. Mọi đường đều để disk1 nguyên vẹn nhờ writethrough.
+powerdown_vm() {
+  local pidfile="$1" monsock="$2" pid
+  pid="$(cat "$pidfile")"
+  mon_send "$monsock" system_powerdown || true
+  wait_exit "$pid" 30 2 && return 0
+  echo "powerdown: ACPI không tắt trong 60s → fallback 'quit'." >&2
+  mon_send "$monsock" quit || true
+  wait_exit "$pid" 10 2 && return 0
+  echo "powerdown: 'quit' không xong → kill." >&2
+  kill "$pid" 2>/dev/null || true
+  wait_exit "$pid" 10 1 && return 0
+  kill -9 "$pid" 2>/dev/null || true
+  return 0
 }
 
 # ════════════════════════════ PHA 1 ══════════════════════════════════════════

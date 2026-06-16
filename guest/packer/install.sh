@@ -19,8 +19,12 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
   > /etc/apt/sources.list.d/docker.list
 apt-get update
 apt-get install -y \
-  docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+  acpid
 systemctl enable docker
+# acpid: để guest phản hồi nút nguồn ACPI (qemu system_powerdown) → tắt sạch.
+# Quan trọng cho shutdown/restore trên máy thật + smoke test tắt VM graceful.
+systemctl enable acpid
 
 # ── Dàn file vào /opt/supplycore (Packer file-provisioner đã stage vào /tmp) ──
 mkdir -p /opt/supplycore /opt/supplycore/bin
