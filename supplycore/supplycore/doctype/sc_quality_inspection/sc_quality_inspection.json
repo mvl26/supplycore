@@ -53,6 +53,7 @@
    "options": "SC Purchase Receipt",
    "label": "Phiếu nhập",
    "reqd": 1,
+   "read_only": 1,
    "in_standard_filter": 1,
    "search_index": 1
   },
@@ -72,6 +73,7 @@
    "options": "SC Item",
    "label": "Item",
    "reqd": 1,
+   "read_only": 1,
    "in_list_view": 1,
    "in_standard_filter": 1
   },
@@ -96,12 +98,14 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "options": "SC Batch",
-   "label": "Lô"
+   "label": "Lô",
+   "read_only": 1
   },
   {
    "fieldname": "received_qty",
    "fieldtype": "Float",
-   "label": "SL nhận"
+   "label": "SL nhận",
+   "read_only": 1
   },
   {
    "fieldname": "section_inspector",
@@ -114,6 +118,7 @@
    "options": "User",
    "label": "Inspected By",
    "reqd": 1,
+   "read_only": 1,
    "default": "user"
   },
   {

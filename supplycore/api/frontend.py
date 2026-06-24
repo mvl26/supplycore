@@ -265,6 +265,12 @@ def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
         ORDER BY i.item_name, sle.warehouse, b.expiry_date ASC
         LIMIT 500
     """, params, as_dict=True)
+    # L21/T09: đánh dấu tồn KHẢ DỤNG = đã QC Đạt và KHÔNG bị khoá. Lô chưa QC
+    # (Pending/NULL), Không đạt (Rejected), Có điều kiện (Conditional) hoặc bị
+    # khoá KHÔNG tính vào tồn khả dụng — frontend cộng riêng để không thổi phồng
+    # tồn. Vẫn trả về mọi dòng để hiển thị nhóm riêng kèm badge trạng thái.
+    for r in rows:
+        r["available"] = 1 if (r.get("qc_status") == "Accepted" and not r.get("blocked")) else 0
     return rows
 
 

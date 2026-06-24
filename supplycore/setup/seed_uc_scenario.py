@@ -449,18 +449,30 @@ def _phase3_purchase_orders(ctx):
         po.transaction_date = add_days(today(), -5 + i)
         po.schedule_date = add_days(today(), 10)
         if i < len(fcs):
+            # PO gắn HĐ khung PHẢI đặt đúng NCC + vật tư trong HĐK và không vượt
+            # SL còn lại (ràng buộc L12/L14). Lấy thẳng từ HĐK cho nhất quán.
             po.framework_contract = fcs[i].name
-        # Use items[0:3], [3:6], [6:9] — only first 9 items
-        slice_start = i * 3
-        for j, item in enumerate(items[slice_start:slice_start + 3]):
-            uom = frappe.db.get_value("SC Item", item, "uom")
-            po.append("items", {
-                "item": item, "uom": uom,
-                "qty": 50 + (j * 25),
-                "rate": 15000 + (j * 5000),
-                "warehouse": wh,
-                "schedule_date": add_days(today(), 10),
-            })
+            for fci in fcs[i].items[:3]:
+                cap = flt(getattr(fci, "remaining_qty", None) or fci.contract_qty)
+                po.append("items", {
+                    "item": fci.item_code, "uom": fci.uom,
+                    "qty": min(50.0, cap) if cap > 0 else 1.0,
+                    "rate": flt(fci.unit_price) or 15000,
+                    "warehouse": wh,
+                    "schedule_date": add_days(today(), 10),
+                })
+        else:
+            # PO không gắn HĐK — item tự do, không bị ràng buộc HĐK
+            slice_start = i * 3
+            for j, item in enumerate(items[slice_start:slice_start + 3]):
+                uom = frappe.db.get_value("SC Item", item, "uom")
+                po.append("items", {
+                    "item": item, "uom": uom,
+                    "qty": 50 + (j * 25),
+                    "rate": 15000 + (j * 5000),
+                    "warehouse": wh,
+                    "schedule_date": add_days(today(), 10),
+                })
         # Bypass 2-tier approval
         po.approval_stage = "Approved"
         po.flags.ignore_permissions = True

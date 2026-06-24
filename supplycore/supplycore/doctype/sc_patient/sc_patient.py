@@ -21,6 +21,20 @@ BHYT_CARD_REGEX = re.compile(r"^[A-Z]{2}[1-5]-?[0-9]{2}-?[0-9]{10}$")
 class SCPatient(Document):
     def validate(self):
         self._validate_bhyt_card_no()
+        self._validate_bhyt_rate()
+
+    def _validate_bhyt_rate(self):
+        """T17: tỷ lệ BHYT phải trong [0, 100]."""
+        rate = self.bhyt_payment_rate
+        if rate is None or rate == "":
+            return
+        from frappe.utils import flt
+        rate = flt(rate)
+        if rate < 0 or rate > 100:
+            frappe.throw(_(
+                "SC-E031 BHYT_RATE_RANGE: Tỷ lệ BHYT phải trong khoảng 0–100% "
+                "(hiện: {0}%)."
+            ).format(rate), title="SC-E031 BHYT_RATE_RANGE")
 
     def _validate_bhyt_card_no(self):
         if not self.bhyt_card_no:

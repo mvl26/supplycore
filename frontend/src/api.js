@@ -289,6 +289,29 @@ export const dataIo = {
   }),
 }
 
+// === Phiếu cha-con — xuất/nhập Excel 2 sheet (engine chung, theo doctype) ===
+// Hỗ trợ: Framework Contract, SC Transfer Request, SC Purchase Receipt,
+//         SC Dispensing Request, SC Patient Dispensing.
+export const voucherIo = {
+  export: (doctype, opts = {}) => call('supplycore.api.voucher_io.export_voucher', {
+    doctype,
+    filters: opts.filters ? JSON.stringify(opts.filters) : '',
+    order_by: opts.order_by || 'modified desc',
+    limit: opts.limit || 10000,
+  }),
+  template: (doctype, opts = {}) => call('supplycore.api.voucher_io.voucher_template', {
+    doctype,
+    with_data: opts.with_data ? 1 : 0,
+    limit: opts.limit || 50,
+  }),
+  import: (doctype, payload) => call('supplycore.api.voucher_io.import_voucher', {
+    doctype,
+    content_b64: payload.content_b64,
+    dry_run: payload.dry_run === false ? 0 : 1,
+    allow_create: payload.allow_create === false ? 0 : 1,
+  }),
+}
+
 // === Bản đồ kho — khuôn viên BV + sơ đồ bin ===
 export const warehouseMap = {
   site: (targetWarehouse) => call('supplycore.api.warehouse_map.get_site_map',
