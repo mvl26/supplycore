@@ -357,7 +357,7 @@ function exportTrend() {
             <td class="font-mono text-xs">{{ item.item_code }}</td>
             <td>{{ item.item_name }}</td>
             <td class="text-right font-mono">{{ fmtShort(item.qty_used) }}</td>
-            <td class="text-right font-mono">{{ fmtShort(item.cost) }}</td>
+            <td class="text-right font-mono" :title="fmtVND(item.cost)">{{ fmtVND(item.cost) }}</td>
           </tr>
         </tbody>
       </table>
@@ -392,7 +392,7 @@ function exportTrend() {
               <td class="p-1 font-mono">{{ t.item_code }}</td>
               <td class="p-1">{{ t.item_name }}</td>
               <td class="p-1 text-right font-mono">{{ fmtShort(t.qty_used) }}</td>
-              <td class="p-1 text-right font-mono">{{ fmtShort(t.cost) }}</td>
+              <td class="p-1 text-right font-mono" :title="fmtVND(t.cost)">{{ fmtVND(t.cost) }}</td>
             </tr>
           </tbody>
         </table>

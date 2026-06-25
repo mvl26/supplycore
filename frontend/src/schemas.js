@@ -258,7 +258,9 @@ export const FORM_SCHEMAS = {
         { name: 'supplier', label: 'Nhà cung cấp', type: 'Link', linkTo: 'SC Supplier', required: true },
         { name: 'contract_number', label: 'Tên / Số hợp đồng', type: 'Data', required: true,
           hint: 'Tên hoặc số hợp đồng (vd: HĐ-2026-NCC-A001)' },
-        { name: 'contract_date', label: 'Ngày ký', type: 'Date', required: true },
+        { name: 'contract_date', label: 'Ngày ký', type: 'Date', required: true,
+          hint: 'Chọn ngày ký → tự điền Hiệu lực từ = ngày ký, Hết hạn = +1 năm (vẫn sửa được)',
+          derive: [{ target: 'valid_from', op: 'copy' }, { target: 'valid_to', op: 'plus1year' }] },
         { name: 'valid_from', label: 'Hiệu lực từ', type: 'Date', required: true },
         { name: 'valid_to', label: 'Hết hạn', type: 'Date', required: true },
       ]},
@@ -269,8 +271,8 @@ export const FORM_SCHEMAS = {
         { name: 'delivery_terms', label: 'Điều khoản giao hàng', type: 'Small Text' },
       ]},
       { title: 'Tệp đính kèm & người tạo', fields: [
-        { name: 'attachment', label: 'Bản mềm hợp đồng (PDF)', type: 'Attach',
-          hint: 'Đính kèm file PDF bản mềm hợp đồng đã ký' },
+        { name: 'attachments', label: 'Tài liệu hợp đồng (1 hoặc nhiều tệp)', type: 'AttachMultiple',
+          hint: 'Có thể chọn nhiều tệp cùng lúc hoặc thêm dần (PDF/ảnh/Word)' },
         { name: 'owner', label: 'Người tạo', type: 'Data', readonly: true,
           hint: 'Tự động ghi user tạo HĐ — không sửa được' },
         { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
@@ -304,7 +306,7 @@ export const FORM_SCHEMAS = {
             { value: 'Material Issue', label: 'Xuất kho' },
           ], default: 'Purchase' },
         { name: 'transaction_date', label: 'Ngày tạo', type: 'Date', required: true, default: 'today' },
-        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', required: true },
+        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', required: true, warnPastDate: true },
         { name: 'warehouse', label: 'Kho nhận', type: 'Link', linkTo: 'SC Warehouse', required: true },
         { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
       ]},
@@ -320,7 +322,8 @@ export const FORM_SCHEMAS = {
         { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract', width: '18%',
           scope: { itemField: 'item' } },
         { name: 'estimated_unit_cost', label: 'Đơn giá ƯT', type: 'Currency', width: '18%' },
-        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', width: '15%' },
+        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', width: '15%',
+          inheritFrom: 'schedule_date', warnPastDate: true },
       ],
     },
   },
@@ -939,6 +942,63 @@ export const FORM_SCHEMAS = {
         { name: 'recipient_roles', label: 'Roles (phẩy)', type: 'Small Text' },
         { name: 'extra_emails', label: 'Email bổ sung (phẩy)', type: 'Small Text' },
       ]},
+    ],
+  },
+}
+
+// ============================================================
+// CR-03 · Quick-create — cấu hình "Tạo nhanh" trong droplist.
+// Mọi Link field có linkTo nằm trong registry này sẽ tự hiện
+// nút "➕ Tạo mới" + mở QuickCreateModal (không rời trang).
+// Field tối thiểu = field bắt buộc của doctype (để insert thành công).
+// ============================================================
+export const QUICK_CREATE = {
+  'SC Supplier': {
+    title: 'Tạo nhanh Nhà cung cấp',
+    prefillField: 'supplier_name',
+    fields: [
+      { name: 'supplier_name', label: 'Tên NCC', type: 'Data', required: true },
+      { name: 'supplier_type', label: 'Loại NCC', type: 'Select', required: true, options: [
+        { value: 'Nhà sản xuất', label: 'Nhà sản xuất' },
+        { value: 'Nhà phân phối', label: 'Nhà phân phối' },
+        { value: 'Đại lý', label: 'Đại lý' },
+        { value: 'Khác', label: 'Khác' },
+      ] },
+      { name: 'tax_id', label: 'Mã số thuế', type: 'Data', required: true },
+      { name: 'email_id', label: 'Email', type: 'Data', required: true },
+      { name: 'mobile_no', label: 'Điện thoại', type: 'Data', required: true },
+      { name: 'address', label: 'Địa chỉ', type: 'Small Text', required: true },
+    ],
+  },
+  'SC Item': {
+    title: 'Tạo nhanh Vật tư',
+    prefillField: 'item_name',
+    fields: [
+      { name: 'item_code', label: 'Mã VT', type: 'Data', required: true },
+      { name: 'item_name', label: 'Tên vật tư', type: 'Data', required: true },
+      { name: 'uom', label: 'Đơn vị tồn (UOM)', type: 'Link', linkTo: 'SC UOM', required: true },
+    ],
+  },
+  'SC Warehouse': {
+    title: 'Tạo nhanh Kho',
+    prefillField: 'warehouse_name',
+    fields: [
+      { name: 'warehouse_name', label: 'Tên kho', type: 'Data', required: true },
+    ],
+  },
+  'SC Patient': {
+    title: 'Tạo nhanh Bệnh nhân',
+    prefillField: 'patient_name',
+    fields: [
+      { name: 'patient_id', label: 'Mã BN', type: 'Data', required: true },
+      { name: 'patient_name', label: 'Họ tên', type: 'Data', required: true },
+    ],
+  },
+  'SC Department': {
+    title: 'Tạo nhanh Khoa/Phòng',
+    prefillField: 'department_name',
+    fields: [
+      { name: 'department_name', label: 'Tên khoa/phòng', type: 'Data', required: true },
     ],
   },
 }

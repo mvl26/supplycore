@@ -48,6 +48,7 @@
   "termination_minutes",
   "section_other",
   "attachment",
+  "attachments",
   "remarks",
   "amended_from"
  ],
@@ -115,6 +116,7 @@
 
   {"fieldname": "section_other", "fieldtype": "Section Break", "label": "Khác", "collapsible": 1},
   {"fieldname": "attachment", "fieldtype": "Attach", "label": "File hợp đồng (PDF)"},
+  {"fieldname": "attachments", "fieldtype": "Long Text", "label": "Tài liệu đính kèm (nhiều tệp)", "description": "JSON [{url,name}] — quản lý qua form SPA"},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
   {"fieldname": "amended_from", "fieldtype": "Link", "options": "Framework Contract", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
  ],

@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtShort, fmtDate } from '../utils'
+import { fmtNumber, fmtShort, fmtDate, fmtVND } from '../utils'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -334,7 +334,7 @@ onMounted(loadSuggestions)
               <td class="font-mono text-xs">{{ r.batch || '—' }}</td>
               <td class="text-right font-mono">{{ fmtNumber(r.qty) }}</td>
               <td class="text-right font-mono">{{ fmtNumber(r.avg_rate) }}</td>
-              <td class="text-right font-mono font-semibold">{{ fmtShort(r.value) }}</td>
+              <td class="text-right font-mono font-semibold" :title="fmtVND(r.value)">{{ fmtVND(r.value) }}</td>
             </tr>
           </tbody>
         </table>

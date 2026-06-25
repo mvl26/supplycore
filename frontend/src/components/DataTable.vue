@@ -1,6 +1,7 @@
 <script setup>
 import { statusLabel } from '../modules'
 import Icon from './Icon.vue'
+import { fmtDate, fmtDateTime } from '../utils'
 
 const props = defineProps({
   rows:    { type: Array, default: () => [] },
@@ -18,9 +19,9 @@ const emit = defineEmits(['rowClick', 'sort'])
 function fmt(value, col) {
   if (value == null) return ''
   if (col.format) return col.format(value)
-  if (col.type === 'date' && value) return new Date(value).toLocaleDateString('vi-VN')
-  if (col.type === 'datetime' && value) return new Date(value).toLocaleString('vi-VN')
-  if (col.type === 'currency') return new Intl.NumberFormat('vi-VN').format(Number(value) || 0)
+  if (col.type === 'date' && value) return fmtDate(value)
+  if (col.type === 'datetime' && value) return fmtDateTime(value)
+  if (col.type === 'currency') return (Number(value) || 0).toLocaleString('vi-VN') + ' ₫'
   if (col.type === 'int') return Number(value).toLocaleString('vi-VN')
   if (col.type === 'badge') {
     const map = col.badgeMap || {}

@@ -84,8 +84,34 @@ watch(schema, (s) => {
   }
 }, { immediate: true })
 
+// L04: addYears cho date yyyy-mm-dd
+function addYears(ymd, n) {
+  if (!ymd) return ymd
+  const [y, m, d] = String(ymd).split('-').map(Number)
+  if (!y) return ymd
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1))
+  dt.setUTCFullYear(dt.getUTCFullYear() + n)
+  return dt.toISOString().slice(0, 10)
+}
+
+// Schema-driven derive: field nguồn khai báo `derive: [{target, op}]`
+// op: 'copy' | 'plus1year'. Áp khi field nguồn đổi (vẫn cho user sửa target sau đó).
+function applyDerives(next, name, value) {
+  for (const sec of (schema.value?.sections || [])) {
+    for (const f of sec.fields) {
+      if (f.name !== name || !f.derive || !value) continue
+      for (const d of f.derive) {
+        if (d.op === 'copy') next[d.target] = value
+        else if (d.op === 'plus1year') next[d.target] = addYears(value, 1)
+      }
+    }
+  }
+}
+
 function updateField(name, value) {
-  emit('update:modelValue', { ...doc.value, [name]: value })
+  const next = { ...doc.value, [name]: value }
+  applyDerives(next, name, value)
+  emit('update:modelValue', next)
 }
 
 async function handleLinkSelected(field, linked) {
@@ -138,8 +164,9 @@ function isVisible(field) {
 
     <div v-if="schema.items" class="sc-card p-5 mb-4">
       <ChildTable :model-value="doc[schema.items.field] || []"
-        :schema="schema.items" :readonly="readonly"
-        @update:model-value="v => updateField(schema.items.field, v)" />
+        :schema="schema.items" :readonly="readonly" :parent-doc="doc" :doctype="doctype"
+        @update:model-value="v => updateField(schema.items.field, v)"
+        @create-new="(p) => emit('createNew', p)" />
     </div>
   </form>
 </template>

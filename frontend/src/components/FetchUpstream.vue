@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { fetchUpstream } from '../api'
 import { useToastStore } from '../stores/toast'
 import Icon from './Icon.vue'
+import { fmtDate } from '../utils'
 
 const props = defineProps({
   targetDoctype: { type: String, required: true },
@@ -77,7 +78,7 @@ async function applyFetch(srcName) {
 function formatVal(v, key) {
   if (v == null || v === '') return '—'
   if (key.includes('date') || key.includes('_at') || key.includes('_to')) {
-    try { return new Date(v).toLocaleDateString('vi-VN') } catch { return v }
+    try { return fmtDate(v) } catch { return v }
   }
   if (key.includes('total') || key.includes('value') || key.includes('amount')) {
     if (typeof v === 'number') return v.toLocaleString('vi-VN')

@@ -8,6 +8,7 @@ import Icon from '../components/Icon.vue'
 import Modal from '../components/Modal.vue'
 import FieldInput from '../components/FieldInput.vue'
 import Pagination from '../components/Pagination.vue'
+import { fmtDateTime } from '../utils'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -83,7 +84,7 @@ const sevLabel = (s) => ({
   Critical: 'Nghiêm trọng', Warning: 'Cảnh báo', Info: 'Thông tin',
 }[s] || s)
 
-const fmt = (d) => d ? new Date(d).toLocaleString('vi-VN') : ''
+const fmt = (d) => d ? fmtDateTime(d) : ''
 
 function openAction(a, type) {
   selected.value = a

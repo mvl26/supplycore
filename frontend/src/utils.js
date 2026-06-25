@@ -16,5 +16,22 @@ export const fmtShort = (v) => {
   return n.toLocaleString('vi-VN')
 }
 
-export const fmtDate = (v) => v ? new Date(v).toLocaleDateString('vi-VN') : ''
-export const fmtDateTime = (v) => v ? new Date(v).toLocaleString('vi-VN') : ''
+// T04: thống nhất dd/mm/yyyy (chuẩn VN, có số 0 đứng đầu). Parse thẳng chuỗi
+// ISO yyyy-mm-dd để tránh lệch múi giờ.
+export const fmtDate = (v) => {
+  if (!v) return ''
+  const s = String(v)
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`
+  const d = new Date(s)
+  if (isNaN(d)) return ''
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+export const fmtDateTime = (v) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (isNaN(d)) return ''
+  const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return `${date} ${time}`
+}

@@ -6,14 +6,33 @@ child table chính.
 
 Module: `supplycore/api/voucher_io.py` — API `supplycore.api.voucher_io.*`.
 
-## Doctype được hỗ trợ (CONFIGS)
-| Doctype | Nhãn | Sheet phiếu | Mã | item child |
+## Doctype được hỗ trợ (CONFIGS) — phủ 7 chứng từ CR-01 + Yêu cầu cấp phát
+| Doctype | Nhãn | Mã | item child | Ghi chú |
 |---|---|---|---|---|
-| Framework Contract | Hợp đồng khung | Hợp đồng | SC-FC | FC Item (`item_code`) |
-| SC Transfer Request | Yêu cầu chuyển kho | Phiếu | SC-TR | SC Transfer Request Item (`item`) |
-| SC Purchase Receipt | Phiếu nhập (tiếp nhận) | Phiếu | SC-PR | SC Purchase Receipt Item (`item`) |
-| SC Dispensing Request | Yêu cầu cấp phát | Phiếu | SC-DR | SC DR Item (`item`) |
-| SC Patient Dispensing | Cấp phát bệnh nhân | Phiếu | SC-PD | SC PD Item (`item`) |
+| Framework Contract | Hợp đồng khung | SC-FC | FC Item (`item_code`) | guard theo `approval_stage` |
+| SC Material Request | Yêu cầu mua | SC-MR | SC Material Request Item (`item`) | |
+| SC Purchase Order | Đơn mua | SC-PO | SC Purchase Order Item (`item`) | guard theo `approval_stage` |
+| SC Purchase Receipt | Phiếu nhập (tiếp nhận) | SC-PR | SC Purchase Receipt Item (`item`) | |
+| SC Transfer Request | Yêu cầu chuyển kho | SC-TR | SC Transfer Request Item (`item`) | |
+| SC Dispensing Request | Yêu cầu cấp phát | SC-DR | SC DR Item (`item`) | thêm ngoài CR (theo y/c) |
+| SC Patient Dispensing | Cấp phát bệnh nhân | SC-PD | SC PD Item (`item`) | |
+| SC Inventory Count Sheet | Phiếu kiểm kê | SC-ICS | SC ICS Item (`item`) | `require_items=False` |
+
+Chưa làm: SC Quality Inspection (CR ghi "ít liên quan", 1 dòng/phiếu) — bỏ qua.
+Đối chiếu tài liệu: `docs/PHAN_TICH_YEUCAU_CAITIEN_CR_20260624.md` (CR-01 + CR-02 — đã làm cả hai).
+
+## CR-02 — Import/Export/Tải mẫu ngay tại lưới trong form (ChildTable)
+- Backend: `parse_child_rows(doctype, content_b64, file_type)` → parse 1 sheet vật tư,
+  validate từng dòng (item/uom tồn tại, SL>0 trừ ICS), trả `{rows_ok, rows_error}` — **KHÔNG ghi DB**.
+  `child_template(doctype, file_type)` → file mẫu chỉ cột vật tư (xlsx/csv).
+- Frontend: `ChildTable.vue` thêm nút **Tải mẫu / Import / Export** (hiện khi doctype ∈
+  `VOUCHER_IO_DOCTYPES`). Import → modal: chọn file → kiểm tra (preview ok/lỗi) → **nạp dòng hợp lệ
+  vào lưới in-memory** (mặc định Thêm, có tuỳ chọn Thay thế); tự tính cột compute. Export = CSV
+  client-side từ lưới đang có (chưa lưu).
+- Hành vi mặc định: **bỏ dòng lỗi + báo rõ + nạp dòng hợp lệ** (không lưu im lặng).
+- Lưu ý: vài field phụ (PR `manufacturing_date`/`batch_no`, DR `batch`, MR `remarks`/`warehouse`,
+  ICS `reason`) import + LƯU bình thường nhưng hiện chưa có cột trong lưới FORM_SCHEMAS — chỉ là
+  không hiển thị/sửa được trên lưới (có thể thêm cột sau nếu cần).
 
 Thêm doctype mới = thêm 1 entry vào `CONFIGS` + 1 chuỗi vào `VOUCHER_IO_DOCTYPES`
 (frontend/src/pages/DocList.vue). Không phải viết code mới.

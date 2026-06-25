@@ -163,7 +163,96 @@ CONFIGS: dict[str, dict] = {
         "link_item": {"item": "SC Item", "uom": "SC UOM", "batch": "SC Batch", "warehouse": "SC Warehouse"},
         "editable_stage_field": None, "editable_stages": None,
     },
+    "SC Material Request": {
+        "label": "Yêu cầu mua",
+        "sheet_parent": "Phiếu",
+        "header_cols": [
+            ("Mã phiếu", "name"), ("Loại yêu cầu", "request_type"), ("Ngày yêu cầu", "transaction_date"),
+            ("Ngày cần", "schedule_date"), ("Khoa phòng", "department"), ("Kho đích", "warehouse"),
+            ("Trạng thái", "status"), ("Tổng SL", "total_qty"), ("Tổng ước tính (VND)", "total_estimated_cost"),
+            ("Người tạo", "owner"), ("Lý do", "reason"), ("Ghi chú", "remarks"),
+        ],
+        "header_writable": {"request_type", "transaction_date", "schedule_date", "department",
+                            "warehouse", "reason", "remarks"},
+        "child_field": "items", "child_doctype": "SC Material Request Item", "item_key": "item",
+        "item_cols": [
+            ("Mã phiếu", "parent"), ("STT", "idx"), ("Mã VT", "item"), ("Tên VT", "item_name"),
+            ("SL", "qty"), ("UOM", "uom"), ("HĐ khung", "framework_contract"),
+            ("Đơn giá ƯT (VND)", "estimated_unit_cost"), ("Thành tiền (VND)", "estimated_amount"),
+            ("Kho đích", "warehouse"), ("Ngày cần", "schedule_date"), ("Ghi chú", "remarks"),
+        ],
+        "item_writable": {"item", "qty", "uom", "framework_contract", "estimated_unit_cost",
+                          "warehouse", "schedule_date", "remarks"},
+        "required_create": ["request_type", "transaction_date", "schedule_date"],
+        "link_header": {"department": "SC Department", "warehouse": "SC Warehouse"},
+        "link_item": {"item": "SC Item", "uom": "SC UOM", "framework_contract": "Framework Contract",
+                      "warehouse": "SC Warehouse"},
+        "editable_stage_field": None, "editable_stages": None,
+    },
+    "SC Purchase Order": {
+        "label": "Đơn mua",
+        "sheet_parent": "Phiếu",
+        "header_cols": [
+            ("Mã phiếu", "name"), ("NCC", "supplier"), ("Tên NCC", "supplier_name"),
+            ("Ngày PO", "transaction_date"), ("Ngày giao DK", "schedule_date"), ("Kho nhận", "to_warehouse"),
+            ("ĐK thanh toán", "payment_terms"), ("ĐK giao hàng", "delivery_terms"),
+            ("HĐ khung", "framework_contract"), ("Tổng SL", "total_qty"), ("Tổng giá trị (VND)", "grand_total"),
+            ("Trạng thái", "status"), ("Người tạo", "owner"), ("Ghi chú", "remarks"),
+        ],
+        "header_writable": {"supplier", "transaction_date", "schedule_date", "to_warehouse",
+                            "payment_terms", "delivery_terms", "framework_contract", "remarks"},
+        "child_field": "items", "child_doctype": "SC Purchase Order Item", "item_key": "item",
+        "item_cols": [
+            ("Mã phiếu", "parent"), ("STT", "idx"), ("Mã VT", "item"), ("Tên VT", "item_name"),
+            ("SL", "qty"), ("UOM", "uom"), ("Đơn giá (VND)", "rate"), ("Thành tiền (VND)", "amount"),
+            ("Kho", "warehouse"), ("Ngày cần", "schedule_date"),
+        ],
+        "item_writable": {"item", "qty", "uom", "rate", "warehouse", "schedule_date"},
+        "required_create": ["supplier", "transaction_date", "schedule_date"],
+        "link_header": {"supplier": "SC Supplier", "to_warehouse": "SC Warehouse",
+                        "framework_contract": "Framework Contract"},
+        "link_item": {"item": "SC Item", "uom": "SC UOM", "warehouse": "SC Warehouse"},
+        "editable_stage_field": "approval_stage", "editable_stages": {"", "Draft", "Rejected"},
+    },
+    "SC Inventory Count Sheet": {
+        "label": "Phiếu kiểm kê",
+        "sheet_parent": "Phiếu",
+        "header_cols": [
+            ("Mã phiếu", "name"), ("Ngày kiểm kê", "count_date"), ("Kho", "warehouse"),
+            ("Phạm vi", "count_scope"), ("Nhóm vật tư", "item_group"), ("Zone bin", "bin_zone"),
+            ("Trạng thái", "status"), ("Tổng items", "total_items"), ("Người tạo", "owner"),
+            ("Ghi chú", "remarks"),
+        ],
+        "header_writable": {"count_date", "warehouse", "count_scope", "item_group", "bin_zone", "remarks"},
+        "child_field": "items", "child_doctype": "SC ICS Item", "item_key": "item",
+        "item_cols": [
+            ("Mã phiếu", "parent"), ("STT", "idx"), ("Mã VT", "item"), ("Tên VT", "item_name"),
+            ("UOM", "uom"), ("Lô", "batch"), ("Bin", "bin_location"), ("SL hệ thống", "system_qty"),
+            ("SL thực tế", "actual_qty"), ("Chênh lệch", "difference"), ("Lý do", "reason"),
+            ("Ghi chú", "remarks"),
+        ],
+        "item_writable": {"item", "uom", "batch", "bin_location", "actual_qty", "reason", "remarks"},
+        "required_create": ["count_date", "warehouse", "count_scope"],
+        "require_items": False,  # ICS cho phép phiếu kiểm kê rỗng (snapshot tự điền)
+        "link_header": {"warehouse": "SC Warehouse", "item_group": "SC Item Group"},
+        "link_item": {"item": "SC Item", "uom": "SC UOM", "batch": "SC Batch", "bin_location": "Bin Location"},
+        "editable_stage_field": None, "editable_stages": None,
+    },
 }
+
+
+# Field SL chính của mỗi child (để CR-02 validate SL > 0).
+ITEM_QTY_FIELD = {
+    "Framework Contract": "contract_qty",
+    "SC Material Request": "qty",
+    "SC Purchase Order": "qty",
+    "SC Purchase Receipt": "qty",
+    "SC Transfer Request": "requested_qty",
+    "SC Dispensing Request": "requested_qty",
+    "SC Patient Dispensing": "qty",
+    "SC Inventory Count Sheet": "actual_qty",
+}
+ALLOW_ZERO_QTY = {"SC Inventory Count Sheet"}  # kiểm kê: SL thực tế = 0 hợp lệ
 
 
 def _cfg(doctype: str) -> dict:
@@ -249,8 +338,9 @@ def _coerce(value: Any, ftype: str) -> Any:
     return value.strip() if isinstance(value, str) else str(value)
 
 
-def _read_sheet(ws, cols: list[tuple[str, str]]) -> list[dict]:
-    """Đọc 1 sheet → list dict {fieldname: value}. Tự nhận diện header 1 hay 2 dòng."""
+def _map_rows(rows2d: list[list], cols: list[tuple[str, str]]) -> list[dict]:
+    """Map list-of-rows → list dict {fieldname: value}. Tự nhận diện header 1/2 dòng.
+    Header chấp nhận cả fieldname lẫn label (lowercase)."""
     alias: dict[str, str] = {}
     fieldnames = {fn.lower() for _l, fn in cols}
     for label, fn in cols:
@@ -260,7 +350,7 @@ def _read_sheet(ws, cols: list[tuple[str, str]]) -> list[dict]:
     def _norm(row):
         return [(str(c).strip() if c is not None else "") for c in row]
 
-    rows = [_norm(r) for r in ws.iter_rows(values_only=True)]
+    rows = [_norm(r) for r in rows2d]
     if not rows:
         return []
     header_idx = 0
@@ -282,6 +372,26 @@ def _read_sheet(ws, cols: list[tuple[str, str]]) -> list[dict]:
                 rec[fn] = r[i] if i < len(r) else None
         out.append(rec)
     return out
+
+
+def _read_sheet(ws, cols: list[tuple[str, str]]) -> list[dict]:
+    """Đọc 1 worksheet openpyxl → list dict (qua _map_rows)."""
+    return _map_rows([list(r) for r in ws.iter_rows(values_only=True)], cols)
+
+
+def _rows_from_file(content_b64: str, file_type: str) -> list[list]:
+    """Đọc file CSV/XLSX (1 sheet đầu) → list-of-rows (cho CR-02 grid import)."""
+    raw = base64.b64decode(content_b64)
+    ft = (file_type or "xlsx").lower()
+    if ft == "csv":
+        import csv as _csv
+        text = raw.decode("utf-8-sig", errors="replace")
+        return [list(r) for r in _csv.reader(io.StringIO(text))]
+    _require_openpyxl()
+    from openpyxl import load_workbook
+    wb = load_workbook(io.BytesIO(raw), data_only=True, read_only=True)
+    ws = wb.active
+    return [list(r) for r in ws.iter_rows(values_only=True)]
 
 
 def _guide_lines(cfg: dict) -> list[str]:
@@ -546,7 +656,7 @@ def import_voucher(doctype: str, content_b64: str, dry_run: int | str = 1,
             if missing:
                 errors.append(_("{0} {1}: tạo mới thiếu {2}").format(cfg["label"], key, ", ".join(missing)))
                 has_err = True
-            if not payload["__items__"]:
+            if cfg.get("require_items", True) and not payload["__items__"]:
                 errors.append(_("{0} {1}: tạo mới cần ≥1 dòng vật tư").format(cfg["label"], key))
                 has_err = True
             action = "create"
@@ -599,3 +709,101 @@ def import_voucher(doctype: str, content_b64: str, dry_run: int | str = 1,
         frappe.db.commit()
 
     return {"dry_run": is_dry, "summary": summary, "preview": preview, "errors": errors}
+
+
+# ---------------------------------------------------------------------------
+# CR-02 — Import/Export/Template ngay tại lưới "Danh mục vật tư" trong form
+#   (parse + validate, KHÔNG ghi DB — frontend nạp vào lưới in-memory)
+# ---------------------------------------------------------------------------
+def _child_grid_cols(cfg: dict) -> list[tuple[str, str]]:
+    """Cột cho lưới (bỏ parent + idx — không cần khi nhập trong form)."""
+    return [(l, f) for l, f in cfg["item_cols"] if f not in ("parent", "idx")]
+
+
+@frappe.whitelist()
+def child_template(doctype: str, file_type: str = "xlsx") -> dict:
+    """Tải file mẫu CHỈ cột vật tư (child) cho lưới trong form — CR-02."""
+    cfg = _cfg(doctype)
+    _check_perm(doctype, "read")
+    cols = _child_grid_cols(cfg)
+    labels = [l for l, _f in cols]
+    fields = [f for _l, f in cols]
+    fname = f"{_safe_filename(cfg['child_doctype'])}_template"
+
+    if (file_type or "xlsx").lower() == "csv":
+        import csv as _csv
+        buf = io.StringIO()
+        w = _csv.writer(buf)
+        w.writerow(labels)
+        w.writerow(fields)
+        text = "﻿" + buf.getvalue()
+        return {"filename": f"{fname}.csv", "content_type": "text/csv; charset=utf-8",
+                "content_b64": base64.b64encode(text.encode("utf-8")).decode("ascii")}
+
+    _require_openpyxl()
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+    wb = Workbook(); ws = wb.active; ws.title = SHEET_ITEM
+    ws.append(labels); ws.append(fields)
+    for c in ws[1]:
+        c.font = Font(bold=True)
+    b = io.BytesIO(); wb.save(b); b.seek(0)
+    return {"filename": f"{fname}.xlsx",
+            "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "content_b64": base64.b64encode(b.read()).decode("ascii")}
+
+
+@frappe.whitelist()
+def parse_child_rows(doctype: str, content_b64: str, file_type: str = "xlsx") -> dict:
+    """Parse + validate file vật tư cho lưới trong form (CR-02). KHÔNG ghi DB.
+
+    Trả {total, ok_count, error_count, rows_ok, rows_error}:
+      - rows_ok: list dict field con (đã coerce) + item_name → frontend nạp vào lưới.
+      - rows_error: [{line, item, errors[]}] để hiển thị, KHÔNG nạp dòng lỗi.
+    """
+    cfg = _cfg(doctype)
+    _check_perm(doctype, "read")
+    ft_c = _ftypes(cfg["child_doctype"])
+    keyf = cfg["item_key"]
+    qtyf = ITEM_QTY_FIELD.get(doctype)
+    allow_zero = doctype in ALLOW_ZERO_QTY
+
+    recs = _map_rows(_rows_from_file(content_b64, file_type), cfg["item_cols"])
+    rows_ok: list[dict] = []
+    rows_error: list[dict] = []
+    for i, rec in enumerate(recs, start=1):
+        errs: list[str] = []
+        code = rec.get(keyf)
+        code = str(code).strip() if code not in (None, "") else None
+
+        out: dict[str, Any] = {}
+        for fn in cfg["item_writable"]:
+            if fn in rec:
+                v = _coerce(rec.get(fn), ft_c.get(fn, "Data"))
+                if v is not None:
+                    out[fn] = v
+        if code:
+            out[keyf] = code
+        else:
+            errs.append(_("thiếu Mã VT"))
+
+        for fn, dt in cfg["link_item"].items():
+            v = out.get(fn)
+            if v and not frappe.db.exists(dt, v):
+                errs.append(_("{0} '{1}' không tồn tại").format(fn, v))
+
+        if "uom" in cfg["item_writable"] and not out.get("uom"):
+            errs.append(_("thiếu UOM"))
+        if qtyf and not allow_zero and flt(out.get(qtyf) or 0) <= 0:
+            errs.append(_("SL phải > 0"))
+
+        if errs:
+            rows_error.append({"line": i, "item": code or "", "errors": errs})
+        else:
+            nm = frappe.db.get_value("SC Item", code, "item_name")
+            if nm:
+                out["item_name"] = nm
+            rows_ok.append(out)
+
+    return {"total": len(recs), "ok_count": len(rows_ok),
+            "error_count": len(rows_error), "rows_ok": rows_ok, "rows_error": rows_error}

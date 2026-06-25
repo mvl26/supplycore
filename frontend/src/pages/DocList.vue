@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getList, count } from '../api'
+import { getList, count, VOUCHER_IO_DOCTYPES as VIO_LIST } from '../api'
 import { DT } from '../modules'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
@@ -12,10 +12,7 @@ import ListImportExport from '../components/ListImportExport.vue'
 import VoucherIO from '../components/VoucherIO.vue'
 
 // Doctype hỗ trợ xuất/nhập Excel 2 sheet (phiếu cha-con) — khớp voucher_io.CONFIGS
-const VOUCHER_IO_DOCTYPES = new Set([
-  'Framework Contract', 'SC Transfer Request', 'SC Purchase Receipt',
-  'SC Dispensing Request', 'SC Patient Dispensing',
-])
+const VOUCHER_IO_DOCTYPES = new Set(VIO_LIST)
 import { useAccessStore } from '../stores/access'
 import { useToastStore } from '../stores/toast'
 

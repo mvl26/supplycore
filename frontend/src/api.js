@@ -161,14 +161,16 @@ export async function call(method, args = {}) {
 // === REST resources ===
 // Dùng custom backend API để bypass Frappe v15 field whitelist
 export async function getList(doctype, params = {}) {
-  return call('supplycore.api.frontend.list_docs', {
+  const payload = {
     doctype,
     fields: params.fields || ['name'],
     filters: params.filters || {},
     order_by: params.order_by || 'modified desc',
     limit: params.limit || 20,
     start: params.start || 0,
-  })
+  }
+  if (params.or_filters) payload.or_filters = params.or_filters
+  return call('supplycore.api.frontend.list_docs', payload)
 }
 
 export async function getDoc(doctype, name) {
@@ -290,8 +292,9 @@ export const dataIo = {
 }
 
 // === Phiếu cha-con — xuất/nhập Excel 2 sheet (engine chung, theo doctype) ===
-// Hỗ trợ: Framework Contract, SC Transfer Request, SC Purchase Receipt,
-//         SC Dispensing Request, SC Patient Dispensing.
+// Hỗ trợ: Framework Contract, SC Material Request, SC Purchase Order,
+//   SC Purchase Receipt, SC Transfer Request, SC Dispensing Request,
+//   SC Patient Dispensing, SC Inventory Count Sheet.
 export const voucherIo = {
   export: (doctype, opts = {}) => call('supplycore.api.voucher_io.export_voucher', {
     doctype,
@@ -310,7 +313,21 @@ export const voucherIo = {
     dry_run: payload.dry_run === false ? 0 : 1,
     allow_create: payload.allow_create === false ? 0 : 1,
   }),
+  // CR-02 — import/template ngay tại lưới trong form (parse, KHÔNG ghi DB)
+  childTemplate: (doctype, opts = {}) => call('supplycore.api.voucher_io.child_template', {
+    doctype, file_type: opts.file_type || 'xlsx',
+  }),
+  parseChild: (doctype, payload) => call('supplycore.api.voucher_io.parse_child_rows', {
+    doctype, content_b64: payload.content_b64, file_type: payload.file_type || 'xlsx',
+  }),
 }
+
+// Doctype hỗ trợ xuất/nhập phiếu cha-con (khớp voucher_io.CONFIGS).
+export const VOUCHER_IO_DOCTYPES = [
+  'Framework Contract', 'SC Material Request', 'SC Purchase Order',
+  'SC Purchase Receipt', 'SC Transfer Request', 'SC Dispensing Request',
+  'SC Patient Dispensing', 'SC Inventory Count Sheet',
+]
 
 // === Bản đồ kho — khuôn viên BV + sơ đồ bin ===
 export const warehouseMap = {

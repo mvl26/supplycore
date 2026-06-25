@@ -11,10 +11,11 @@ from frappe.utils import flt
 
 
 @frappe.whitelist()
-def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start=0):
+def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start=0, or_filters=None):
     """List docs với fields linh hoạt — bypass Frappe.client.get_list whitelist.
 
     Vẫn check role permission qua frappe.has_permission.
+    or_filters: list điều kiện OR (vd tìm theo mã HOẶC tên) — L11/T05.
     """
     if not frappe.has_permission(doctype, "read"):
         frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
@@ -24,13 +25,14 @@ def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start
         fields = json.loads(fields)
     if isinstance(filters, str):
         filters = json.loads(filters)
+    if isinstance(or_filters, str):
+        or_filters = json.loads(or_filters)
 
     fields = fields or ["name"]
     filters = filters or {}
 
     try:
-        return frappe.db.get_all(
-            doctype,
+        kwargs = dict(
             fields=fields,
             filters=filters,
             order_by=order_by or "modified desc",
@@ -38,9 +40,41 @@ def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start
             start=int(start) if start else 0,
             ignore_permissions=False,
         )
+        if or_filters:
+            kwargs["or_filters"] = or_filters
+        return frappe.db.get_all(doctype, **kwargs)
     except Exception as e:
         frappe.log_error(message=f"list_docs({doctype}): {e}", title="frontend.list_docs")
         frappe.throw(_("Lỗi truy vấn {0}: {1}").format(doctype, str(e)[:200]))
+
+
+@frappe.whitelist()
+def search_framework_contract(q=None, limit=20):
+    """L11: tìm HĐ khung theo mã HĐ, số HĐ, mã NCC, tên NCC, và MÃ/TÊN VẬT TƯ
+    trong danh mục (child) — điều mà or_filters đơn giản không làm được."""
+    if not frappe.has_permission("Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung"), frappe.PermissionError)
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = """WHERE fc.name LIKE %(like)s
+                  OR fc.supplier LIKE %(like)s
+                  OR fc.supplier_name LIKE %(like)s
+                  OR fc.contract_number LIKE %(like)s
+                  OR EXISTS (
+                     SELECT 1 FROM `tabFC Item` fci
+                     WHERE fci.parent = fc.name
+                       AND (fci.item_code LIKE %(like)s OR fci.item_name LIKE %(like)s)
+                  )"""
+    return frappe.db.sql(f"""
+        SELECT fc.name, fc.contract_number, fc.supplier_name
+        FROM `tabFramework Contract` fc
+        {cond}
+        ORDER BY fc.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
 
 
 @frappe.whitelist()

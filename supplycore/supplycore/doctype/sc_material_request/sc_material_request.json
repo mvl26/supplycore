@@ -15,6 +15,7 @@
   "department",
   "warehouse",
   "requested_by",
+  "requested_by_name",
   "section_link",
   "procurement_plan",
   "auto_generated",
@@ -83,6 +84,13 @@
    "fieldtype": "Link",
    "options": "User",
    "label": "Người yêu cầu"
+  },
+  {
+   "fieldname": "requested_by_name",
+   "fieldtype": "Data",
+   "label": "Tên người yêu cầu",
+   "fetch_from": "requested_by.full_name",
+   "read_only": 1
   },
   {
    "fieldname": "section_link",

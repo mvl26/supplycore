@@ -2,7 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { call } from '../api'
-import { fmtDate, fmtNumber, fmtShort } from '../utils'
+import { fmtDate, fmtNumber, fmtShort, fmtVND } from '../utils'
 import { fieldLabel } from '../i18n'
 import { statusLabel } from '../modules'
 import Icon from './Icon.vue'
@@ -76,9 +76,10 @@ function fmt(value, key) {
   if (value == null || value === '') return '—'
   if (/_date$/.test(key)) return fmtDate(value)
   if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value, key)
-  if (/total|value|amount|qty|cost|balance|pays/.test(key) && typeof value === 'number') {
-    return fmtShort(value)
+  if (/total|value|amount|cost|balance|pays/.test(key) && typeof value === 'number') {
+    return fmtVND(value)
   }
+  if (/qty/.test(key) && typeof value === 'number') return fmtNumber(value)
   if (value === 1) return 'Có'
   if (value === 0) return '—'
   return value

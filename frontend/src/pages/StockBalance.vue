@@ -156,7 +156,7 @@ const qcLabel = (s) => ({
     </div>
     <div class="sc-card p-4">
       <div class="text-xs text-sc-text-muted">Giá trị khả dụng</div>
-      <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ fmtShort(totals.availValue) }} VND</div>
+      <div class="text-2xl font-bold font-mono text-sc-navy mt-1" :title="fmtVND(totals.availValue)">{{ fmtShort(totals.availValue) }} VND</div>
     </div>
     <div class="sc-card p-4">
       <div class="text-xs text-sc-text-muted">Tồn chờ xử lý (chưa QC / từ chối / khoá)</div>
@@ -225,7 +225,7 @@ const qcLabel = (s) => ({
               </span>
             </td>
             <td class="text-right font-mono font-semibold">{{ fmtNumber(r.qty) }}</td>
-            <td class="text-right font-mono">{{ fmtShort(r.value) }}</td>
+            <td class="text-right font-mono" :title="fmtVND(r.value)">{{ fmtVND(r.value) }}</td>
           </tr>
         </tbody>
       </table>

@@ -7,6 +7,10 @@ from frappe.utils import flt, getdate
 class SCMaterialRequest(Document):
 
     def validate(self):
+        # L10: luôn ghi nhận người yêu cầu (mặc định = người tạo) để panel duyệt
+        # không bị trống "Bối cảnh".
+        if not self.requested_by:
+            self.requested_by = self.owner or frappe.session.user
         total_qty = 0
         total = 0
         for r in self.items:

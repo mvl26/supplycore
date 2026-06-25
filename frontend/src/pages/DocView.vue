@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, call } from '../api'
 import { DT } from '../modules'
-import { FORM_SCHEMAS } from '../schemas'
+import { FORM_SCHEMAS, QUICK_CREATE } from '../schemas'
+import QuickCreateModal from '../components/QuickCreateModal.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
 import ActionPanel from '../components/ActionPanel.vue'
@@ -22,7 +23,7 @@ import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
 import DetailViewGeneric from '../components/DetailViewGeneric.vue'
 import { DETAIL_CONFIGS } from '../detail-configs'
 import { useToastStore } from '../stores/toast'
-import { fmtDateTime, fmtNumber } from '../utils'
+import { fmtDate, fmtDateTime, fmtNumber } from '../utils'
 import { statusLabel, isSubmittable } from '../modules'
 import { fieldLabel } from '../i18n'
 
@@ -40,11 +41,19 @@ const doc = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const editing = ref(false)
+// L16: theo dõi thay đổi chưa lưu — chỉ hiện "Gửi duyệt" khi đã Lưu (sạch).
+const dirty = ref(false)
+watch(() => doc.value, () => { dirty.value = true })
+async function markClean() { await nextTick(); dirty.value = false }
 const batchItemName = ref('')   // tên vật tư của lô (fetch để in lên nhãn)
 const docFormRef = ref(null)  // expose validate() từ DocForm để highlight field thiếu
 
 const LINK_PENDING_KEY = 'sc-link-create-pending'
 const LINK_RESULT_KEY  = 'sc-link-create-result'
+
+// CR-03: state cho modal "Tạo nhanh" (không rời trang).
+// target xác định nơi điền kết quả: top-level field hoặc dòng child.
+const quickCreate = ref(null)  // { doctype, prefill, target: { childField?, rowIdx?, fieldName } }
 
 async function load() {
   if (isNew.value) {
@@ -91,6 +100,7 @@ async function load() {
         toast.success(`Đã chọn ${result.field}: ${result.newName}`)
       }
     } catch (e) {}
+    await markClean()
   } catch (e) {
     toast.error(`Không tải được: ${e.message}`)
     doc.value = null
@@ -105,6 +115,23 @@ async function onCreateNewLink(payload) {
   const field = payload?.field || payload
   const searchText = payload?.search || ''
   if (!field?.linkTo) return
+
+  // CR-03: nếu doctype hỗ trợ quick-create → mở MODAL ngay (không rời trang).
+  const qc = QUICK_CREATE[field.linkTo]
+  if (qc) {
+    const prefill = {}
+    if (searchText && qc.prefillField) prefill[qc.prefillField] = searchText
+    quickCreate.value = {
+      doctype: field.linkTo,
+      prefill,
+      target: (payload && payload.childField != null)
+        ? { childField: payload.childField, rowIdx: payload.rowIdx, fieldName: field.name }
+        : { fieldName: field.name },
+    }
+    return
+  }
+
+  // Fallback (doctype chưa hỗ trợ quick-create, vd SC Batch): điều hướng + prefill cũ.
   const prefill = {}
   // UX-004: pre-fill tên/mã từ text user đã gõ trong dropdown search.
   // Map per-doctype field name chính (vd Item Group dùng group_name).
@@ -141,6 +168,50 @@ async function onCreateNewLink(payload) {
     prefill,
   }))
   router.push(`/doc/${encodeURIComponent(field.linkTo)}/new`)
+}
+
+// CR-03: bản ghi vừa tạo nhanh → tự điền vào đúng trường (top-level hoặc dòng
+// child) + tự điền các cột phụ fetchFrom (vd item_name, supplier_name) ngay từ
+// doc vừa tạo (đã có đủ field), không cần round-trip thêm.
+function onQuickCreated({ name, doc: created }) {
+  const qc = quickCreate.value
+  quickCreate.value = null
+  if (!qc || !name || !doc.value) return
+  const t = qc.target
+  if (t.childField != null) {
+    // Child: cột nào có fetchFrom.source === field vừa set → lấy target_field từ doc mới
+    const cols = schema.value?.items?.columns || []
+    const companions = {}
+    for (const c of cols) {
+      if (c.fetchFrom && c.fetchFrom.source === t.fieldName) {
+        const v = created?.[c.fetchFrom.target_field]
+        if (v != null) companions[c.name] = v
+      }
+    }
+    const arr = Array.isArray(doc.value[t.childField]) ? [...doc.value[t.childField]] : []
+    if (arr[t.rowIdx]) {
+      arr[t.rowIdx] = { ...arr[t.rowIdx], [t.fieldName]: name, ...companions }
+      doc.value = { ...doc.value, [t.childField]: arr }
+    }
+  } else {
+    // Top-level: field vừa set tự khai fetchFrom → set doc[target_field]
+    const companions = {}
+    const f = findHeaderField(t.fieldName)
+    if (f?.fetchFrom) {
+      const v = created?.[f.fetchFrom.target_field]
+      if (v != null) companions[f.fetchFrom.target_field] = v
+    }
+    doc.value = { ...doc.value, [t.fieldName]: name, ...companions }
+  }
+}
+
+function findHeaderField(fieldName) {
+  for (const sec of (schema.value?.sections || [])) {
+    for (const f of (sec.fields || [])) {
+      if (f.name === fieldName) return f
+    }
+  }
+  return null
 }
 
 watch(() => route.fullPath, load)
@@ -287,7 +358,7 @@ function changeSummary(v) {
   return `${labels.length} thay đổi — ${shown}${more}`
 }
 function fmtLogTime(s) {
-  try { return new Date(s).toLocaleString('vi-VN') } catch (e) { return s }
+  try { return fmtDateTime(s) } catch (e) { return s }
 }
 
 // === Barcode quét được (SC Batch / Bin Location) ===
@@ -449,8 +520,8 @@ const STATUS_KEYS = new Set([
 function displayField(value, key) {
   if (value == null || value === '') return '—'
   if (typeof value === 'object') return JSON.stringify(value).slice(0, 100)
-  if (/_date$/.test(key) && value) return new Date(value).toLocaleDateString('vi-VN')
-  if (/_at$/.test(key) && value) return new Date(value).toLocaleString('vi-VN')
+  if (/_date$/.test(key) && value) return fmtDate(value)
+  if (/_at$/.test(key) && value) return fmtDateTime(value)
   if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value, key)
   if (/value|amount|total|cost|rate/.test(key) && typeof value === 'number') {
     return fmtNumber(value)
@@ -491,11 +562,13 @@ function displayField(value, key) {
             <template v-if="saving">Đang lưu...</template>
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
-          <button v-if="doc.docstatus === 0 && isSubmittable(doctype)" @click="doSubmit"
+          <button v-if="doc.docstatus === 0 && isSubmittable(doctype) && !dirty" @click="doSubmit"
             :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm"
             title="Gửi bản ghi vào quy trình duyệt. Sau khi gửi sẽ không sửa được trừ khi Huỷ duyệt.">
             <Icon name="upload" :size="14" /> Gửi duyệt
           </button>
+          <span v-else-if="doc.docstatus === 0 && isSubmittable(doctype) && dirty"
+            class="text-xs text-sc-text-muted self-center italic">Lưu để hiện nút Gửi duyệt</span>
         </template>
         <template v-else>
           <!-- Đã duyệt 3-tier nhưng chưa Submit → cho Submit kích hoạt -->
@@ -568,6 +641,11 @@ function displayField(value, key) {
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
       </div>
     </template>
+
+    <!-- CR-03: modal Tạo nhanh bản ghi tham chiếu (NCC, Vật tư, Kho, BN, Khoa…) -->
+    <QuickCreateModal v-if="quickCreate"
+      :doctype="quickCreate.doctype" :prefill="quickCreate.prefill"
+      @created="onQuickCreated" @close="quickCreate = null" />
 
     <!-- View mode (chỉ khi đã submit hoặc cancel — không phải draft) -->
     <template v-else>

@@ -42,6 +42,19 @@ const router = createRouter({
     { path: '/his-import', name: 'hisImport', component: HISImport, meta: { title: 'Nhập phiếu HIS' } },
     { path: '/403', name: 'forbidden', component: Forbidden, meta: { title: 'Không có quyền' } },
 
+    // T01: alias URL ngữ nghĩa → redirect tới route chuẩn (dễ nhớ/chia sẻ)
+    { path: '/contracts', redirect: '/list/Framework%20Contract' },
+    { path: '/suppliers', redirect: '/list/SC%20Supplier' },
+    { path: '/items', redirect: '/list/SC%20Item' },
+    { path: '/purchase-orders', redirect: '/list/SC%20Purchase%20Order' },
+    { path: '/material-requests', redirect: '/list/SC%20Material%20Request' },
+    { path: '/receipts', redirect: '/list/SC%20Purchase%20Receipt' },
+    { path: '/transfers', redirect: '/list/SC%20Transfer%20Request' },
+    { path: '/dispensing', redirect: '/list/SC%20Patient%20Dispensing' },
+    { path: '/quality', redirect: '/list/SC%20Quality%20Inspection' },
+    { path: '/stocktake', redirect: '/list/SC%20Inventory%20Count%20Sheet' },
+    { path: '/inventory', redirect: '/stock-balance' },
+
     { path: '/:catch(.*)*', name: 'notfound', component: NotFound, meta: { title: '404' } },
   ],
 })

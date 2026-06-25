@@ -14,6 +14,7 @@ class FrameworkContract(Document):
 
     def validate(self):
         self._guard_locked_after_approval()
+        self._default_dates()
         self._validate_dates()
         self._validate_supplier_active()
         self._compute_items()
@@ -71,6 +72,17 @@ class FrameworkContract(Document):
     # ------------------------------------------------------------------
     # Validation
     # ------------------------------------------------------------------
+    def _default_dates(self):
+        """L04: mặc định Hiệu lực từ = Ngày ký; Hết hạn = Ngày ký + 1 năm khi
+        chưa nhập (vẫn cho sửa). Backstop cho luồng API/import (UI đã tự điền)."""
+        if not self.contract_date:
+            return
+        if not self.valid_from:
+            self.valid_from = self.contract_date
+        if not self.valid_to:
+            from frappe.utils import add_years
+            self.valid_to = add_years(getdate(self.contract_date), 1)
+
     def _validate_dates(self):
         if getdate(self.valid_to) <= getdate(self.valid_from):
             frappe.throw(_("Ngày hết hạn phải sau ngày hiệu lực"), title="SC-E-DATE")

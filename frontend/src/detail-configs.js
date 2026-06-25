@@ -286,12 +286,15 @@ export const DETAIL_CONFIGS = {
     ],
     sections: [
       { title: 'Bối cảnh', icon: 'info', fields: [
-        { label: 'Khoa yêu cầu', value: (d) => d.department },
+        // L10: người yêu cầu hiển thị Tên (account), không để trống
+        { label: 'Người yêu cầu', value: (d) => {
+          const acc = d.requested_by || d.owner || '—'
+          return d.requested_by_name ? `${d.requested_by_name} (${acc})` : acc
+        } },
+        { label: 'Khoa yêu cầu', value: (d) => d.department || '—' },
         { label: 'Kho đích', value: (d) => d.warehouse },
-        { label: 'Người yêu cầu', value: (d) => d.requested_by },
         { label: 'Procurement Plan', value: (d) => d.procurement_plan,
           link: (d) => d.procurement_plan ? `/doc/Procurement Plan/${d.procurement_plan}` : null },
-        { label: 'Auto-generated', value: (d) => d.auto_generated ? 'Có' : '—' },
         { label: 'Lý do', value: (d) => d.reason, pre: true },
         { label: 'Lý do từ chối', value: (d) => d.rejection_reason, pre: true },
       ]},
