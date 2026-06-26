@@ -36,6 +36,29 @@ SYSTEM_FIELDS = {
 }
 
 
+# Định dạng tiền tệ VND cho ô Excel: "1.234.567 ₫", 0 chữ số thập phân.
+# Giá trị ô vẫn là SỐ → đọc lại (data_only) không vỡ round-trip import.
+VND_NUMFMT = '#,##0" ₫"'
+
+
+def _currency_fields(doctype: str) -> set[str]:
+    return {df.fieldname for df in frappe.get_meta(doctype).fields
+            if df.fieldtype == "Currency"}
+
+
+def _currency_idx(doctype: str, headers: list[str]) -> set[int]:
+    """Chỉ số cột (0-based) là field Currency."""
+    cur = _currency_fields(doctype)
+    return {i for i, h in enumerate(headers) if h in cur}
+
+
+def _vnd_int(value: Any) -> str:
+    """Chuỗi số nguyên VND cho CSV (không phân tách nghìn → nhập lại an toàn)."""
+    if value in (None, ""):
+        return ""
+    return str(int(round(flt(value))))
+
+
 def _check_perm(doctype: str, perm: str) -> None:
     if not frappe.has_permission(doctype, perm):
         frappe.throw(_("Không có quyền {0} {1}").format(perm, doctype),
@@ -145,22 +168,34 @@ def get_doctype_schema(doctype: str) -> dict:
 # Template + export
 # ---------------------------------------------------------------------------
 
-def _row_to_strings(row: dict, headers: list[str]) -> list[str]:
-    out: list[str] = []
+def _row_to_strings(row: dict, headers: list[str],
+                    currency_set: set[str] | None = None) -> list[Any]:
+    """Chuyển record → list ô. Ô tiền tệ giữ dạng SỐ (để XLSX format VND +
+    round-trip), ô khác → chuỗi. currency_set=None → mọi ô là chuỗi (cũ)."""
+    currency_set = currency_set or set()
+    out: list[Any] = []
     for h in headers:
         v = row.get(h)
-        out.append("" if v is None else str(v))
+        if h in currency_set:
+            out.append(None if v in (None, "") else flt(v))
+        else:
+            out.append("" if v is None else str(v))
     return out
 
 
 def _build_file(filename_base: str, headers: list[str], rows: list[list[Any]],
-                file_type: str, label_row: list[str] | None = None) -> dict:
+                file_type: str, label_row: list[str] | None = None,
+                currency_idx: set[int] | None = None) -> dict:
     """Build CSV/XLSX file.
 
     label_row (optional): nếu truyền, sẽ ghi LÀM DÒNG 1 (tên hiển thị frontend),
     headers thành dòng 2 (fieldname), data từ dòng 3. Đây là format 2-dòng-header
     dùng cho list import/export inline.
+
+    currency_idx (optional): chỉ số cột (0-based) là tiền tệ. XLSX → number_format
+    VND (ô vẫn là số); CSV → ghi số nguyên VND (round-trip an toàn).
     """
+    currency_idx = currency_idx or set()
     file_type = (file_type or "csv").lower()
     if file_type == "xlsx":
         try:
@@ -175,6 +210,11 @@ def _build_file(filename_base: str, headers: list[str], rows: list[list[Any]],
         ws.append(headers)
         for r in rows:
             ws.append(r)
+        if currency_idx:
+            first_data = 3 if label_row is not None else 2
+            for ci in currency_idx:
+                for rn in range(first_data, ws.max_row + 1):
+                    ws.cell(row=rn, column=ci + 1).number_format = VND_NUMFMT
         buf = io.BytesIO()
         wb.save(buf)
         buf.seek(0)
@@ -184,13 +224,18 @@ def _build_file(filename_base: str, headers: list[str], rows: list[list[Any]],
             "content_b64": base64.b64encode(buf.read()).decode("ascii"),
         }
     # CSV (default) — UTF-8 BOM để Excel đọc tiếng Việt đúng
+    def _csv_row(r: list[Any]) -> list[Any]:
+        if not currency_idx:
+            return r
+        return [_vnd_int(v) if i in currency_idx else v for i, v in enumerate(r)]
+
     buf = io.StringIO()
     w = csv.writer(buf, quoting=csv.QUOTE_MINIMAL)
     if label_row is not None:
         w.writerow(label_row)
     w.writerow(headers)
     for r in rows:
-        w.writerow(r)
+        w.writerow(_csv_row(r))
     text = "﻿" + buf.getvalue()
     return {
         "filename": f"{filename_base}.csv",
@@ -200,11 +245,18 @@ def _build_file(filename_base: str, headers: list[str], rows: list[list[Any]],
 
 
 def _label_for_fields(doctype: str, fields: list[str]) -> list[str]:
-    """Trả label hiển thị frontend cho mỗi fieldname (dòng 1 của file)."""
+    """Trả label hiển thị frontend cho mỗi fieldname (dòng 1 của file).
+
+    Trường bắt buộc (reqd) được gắn dấu ' *' cuối label để người nhập biết
+    cột nào không được bỏ trống. Dấu chỉ nằm ở dòng label (dòng 1) — dòng
+    fieldname (dòng 2) giữ nguyên nên import round-trip không bị ảnh hưởng.
+    """
     meta = frappe.get_meta(doctype)
     label_map = {df.fieldname: (df.label or df.fieldname) for df in meta.fields}
+    reqd_set = {df.fieldname for df in meta.fields if df.reqd}  # 'name' không tính (autoname)
     label_map.setdefault("name", _("Mã / ID"))
-    return [label_map.get(f, f) for f in fields]
+    return [(label_map.get(f, f) + " *") if f in reqd_set else label_map.get(f, f)
+            for f in fields]
 
 
 def _safe_filename(doctype: str) -> str:
@@ -259,18 +311,23 @@ def get_template(doctype: str, file_type: str = "csv",
                     cr.pop("idx", None)
                     child_data_by_record.setdefault(pname, {}).setdefault(cdf.fieldname, []).append(cr)
 
+        cur_set = _currency_fields(doctype)
         for r in records:
             row: list[Any] = []
             for h in headers:
                 if h in child_names:
                     items = child_data_by_record.get(r["name"], {}).get(h, [])
                     row.append(json.dumps(items, default=str, ensure_ascii=False) if items else "")
+                elif h in cur_set:
+                    v = r.get(h)
+                    row.append(None if v in (None, "") else flt(v))
                 else:
                     v = r.get(h)
                     row.append("" if v is None else str(v))
             rows.append(row)
 
-    return _build_file(_safe_filename(doctype), headers, rows, file_type)
+    return _build_file(_safe_filename(doctype), headers, rows, file_type,
+                       currency_idx=_currency_idx(doctype, headers))
 
 
 @frappe.whitelist()
@@ -290,8 +347,10 @@ def export_data(doctype: str, fields=None, filters=None,
 
     records = frappe.get_all(doctype, fields=fields, filters=filters or {},
                               order_by=order_by, limit=cint(limit) or 10000)
-    rows = [_row_to_strings(r, fields) for r in records]
-    return _build_file(_safe_filename(doctype), fields, rows, file_type)
+    cur_set = _currency_fields(doctype)
+    rows = [_row_to_strings(r, fields, cur_set) for r in records]
+    return _build_file(_safe_filename(doctype), fields, rows, file_type,
+                       currency_idx=_currency_idx(doctype, fields))
 
 
 @frappe.whitelist()
@@ -332,9 +391,11 @@ def export_list(doctype: str, columns=None, filters=None,
     records = frappe.get_all(doctype, fields=columns, filters=filters or {},
                               order_by=order_by or "modified desc",
                               limit=cint(limit) or 10000)
-    rows = [_row_to_strings(r, columns) for r in records]
+    cur_set = _currency_fields(doctype)
+    rows = [_row_to_strings(r, columns, cur_set) for r in records]
     out = _build_file(_safe_filename(doctype), columns, rows, file_type,
-                       label_row=label_row)
+                       label_row=label_row,
+                       currency_idx=_currency_idx(doctype, columns))
     out["row_count"] = len(rows)
     out["columns"] = columns
     return out

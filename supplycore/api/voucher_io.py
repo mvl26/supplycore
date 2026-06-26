@@ -29,6 +29,10 @@ from supplycore.api.data_io import _check_perm, _safe_filename
 SHEET_GUIDE = "Hướng dẫn"
 SHEET_ITEM = "Vật tư"
 
+# Định dạng tiền tệ VND cho ô Excel: hiển thị "1.234.567 ₫" nhưng GIÁ TRỊ vẫn là số
+# (load_workbook data_only đọc ra số) → nhập lại không vỡ. 0 chữ số thập phân (VND).
+VND_NUMFMT = '#,##0" ₫"'
+
 # ---------------------------------------------------------------------------
 # CẤU HÌNH TỪNG DOCTYPE
 #   header_cols / item_cols : (label hiển thị, fieldname) theo đúng thứ tự cột.
@@ -262,6 +266,24 @@ def _cfg(doctype: str) -> dict:
     return cfg
 
 
+def _required_item_fields(doctype: str, cfg: dict) -> set[str]:
+    """Field vật tư bắt buộc khi nhập — khớp đúng với parse_child_rows:
+    Mã VT (item_key) + UOM (nếu writable) + SL chính (trừ doctype cho phép SL=0)."""
+    req = {cfg["item_key"]}
+    if "uom" in cfg["item_writable"]:
+        req.add("uom")
+    qtyf = ITEM_QTY_FIELD.get(doctype)
+    if qtyf and doctype not in ALLOW_ZERO_QTY:
+        req.add(qtyf)
+    return req
+
+
+def _mark_required(cols: list[tuple[str, str]], required: set[str]) -> list[str]:
+    """Dựng dòng label, gắn ' *' vào cột bắt buộc. Chỉ áp dòng label (dòng 1);
+    dòng fieldname (dòng 2) giữ nguyên → import round-trip an toàn."""
+    return [(l + " *") if f in required else l for l, f in cols]
+
+
 @frappe.whitelist()
 def list_voucher_doctypes() -> list[str]:
     """Danh sách doctype hỗ trợ — frontend dùng để bật nút Xuất/Nhập 2-sheet."""
@@ -415,6 +437,7 @@ def _guide_lines(cfg: dict) -> list[str]:
         "► CHỈ phiếu đang Draft mới cập nhật/ghi đè được. Phiếu đã duyệt/đã ghi sổ sẽ bị BỎ QUA.",
         "",
         "► Cột chữ xám (Tên VT, Thành tiền, Tổng…, Người tạo, Trạng thái) chỉ để xem — không cần nhập.",
+        "► Cột có dấu * ở tên cột là BẮT BUỘC khi tạo phiếu mới — không được bỏ trống.",
         "► Ngày dạng dd/mm/yyyy (vd 20/06/2026). Số tiền có thể có dấu phẩy (vd 2,848,000).",
     ]
 
@@ -422,7 +445,20 @@ def _guide_lines(cfg: dict) -> list[str]:
 # ---------------------------------------------------------------------------
 # Export
 # ---------------------------------------------------------------------------
-def _build_workbook(cfg: dict, parents: list[dict],
+def _currency_cols(doctype: str, cols: list[tuple]) -> list[int]:
+    """Chỉ số cột (1-based) là field Currency → áp định dạng tiền tệ VND."""
+    cur = {f for f, t in _ftypes(doctype).items() if t == "Currency"}
+    return [i for i, (_l, f) in enumerate(cols, start=1) if f in cur]
+
+
+def _apply_vnd_format(ws, col_idxs: list[int], first_data_row: int):
+    """Đặt number_format VND cho các cột tiền tệ, chỉ từ dòng dữ liệu trở đi."""
+    for ci in col_idxs:
+        for row in range(first_data_row, ws.max_row + 1):
+            ws.cell(row=row, column=ci).number_format = VND_NUMFMT
+
+
+def _build_workbook(doctype: str, cfg: dict, parents: list[dict],
                     items_by_parent: dict[str, list[dict]], guide: bool):
     from openpyxl import Workbook
     from openpyxl.styles import Font
@@ -440,14 +476,17 @@ def _build_workbook(cfg: dict, parents: list[dict],
         ws_g["A1"].font = Font(bold=True, size=13)
         ws_g.column_dimensions["A"].width = 95
 
-    ws_p.append([l for l, _f in cfg["header_cols"]])
+    req_header = set(cfg.get("required_create", []))
+    req_item = _required_item_fields(doctype, cfg)
+
+    ws_p.append(_mark_required(cfg["header_cols"], req_header))
     ws_p.append([f for _l, f in cfg["header_cols"]])
     for c in ws_p[1]:
         c.font = bold
     for p in parents:
         ws_p.append([_fmt_cell(p.get(f)) for _l, f in cfg["header_cols"]])
 
-    ws_i.append([l for l, _f in cfg["item_cols"]])
+    ws_i.append(_mark_required(cfg["item_cols"], req_item))
     ws_i.append([f for _l, f in cfg["item_cols"]])
     for c in ws_i[1]:
         c.font = bold
@@ -459,6 +498,10 @@ def _build_workbook(cfg: dict, parents: list[dict],
                 row.append(p["name"] if f == "parent" else _fmt_cell(it.get(f)))
             ws_i.append(row)
             item_count += 1
+
+    # Định dạng tiền tệ VND cho các cột Currency (dữ liệu từ dòng 3; dòng 1-2 là header).
+    _apply_vnd_format(ws_p, _currency_cols(doctype, cfg["header_cols"]), 3)
+    _apply_vnd_format(ws_i, _currency_cols(cfg["child_doctype"], cfg["item_cols"]), 3)
 
     buf = io.BytesIO()
     wb.save(buf)
@@ -489,7 +532,7 @@ def _do_export(doctype: str, filters=None, order_by="modified desc",
             for r in rows:
                 items_by_parent.setdefault(r["parent"], []).append(r)
 
-    content, item_count = _build_workbook(cfg, parents, items_by_parent, guide=guide)
+    content, item_count = _build_workbook(doctype, cfg, parents, items_by_parent, guide=guide)
     suffix = "" if cint(with_data) else "_template"
     return {
         "filename": f"{_safe_filename(doctype)}{suffix}.xlsx",
@@ -726,7 +769,7 @@ def child_template(doctype: str, file_type: str = "xlsx") -> dict:
     cfg = _cfg(doctype)
     _check_perm(doctype, "read")
     cols = _child_grid_cols(cfg)
-    labels = [l for l, _f in cols]
+    labels = _mark_required(cols, _required_item_fields(doctype, cfg))
     fields = [f for _l, f in cols]
     fname = f"{_safe_filename(cfg['child_doctype'])}_template"
 
