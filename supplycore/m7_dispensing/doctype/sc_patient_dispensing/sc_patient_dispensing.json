@@ -140,6 +140,7 @@
   {
    "fieldname": "total_cost",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng chi phí",
    "read_only": 1,
@@ -148,6 +149,7 @@
   {
    "fieldname": "bhyt_covered",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "BHYT chi trả",
    "read_only": 1,
@@ -160,6 +162,7 @@
   {
    "fieldname": "patient_pays",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "BN tự trả",
    "read_only": 1,
@@ -168,6 +171,7 @@
   {
    "fieldname": "ceiling_overage",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Phần vượt giá trần",
    "read_only": 1,

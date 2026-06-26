@@ -11,7 +11,7 @@
   {"fieldname": "column_break_1", "fieldtype": "Column Break"},
   {"fieldname": "head_user", "fieldtype": "Link", "options": "User", "label": "Trưởng khoa"},
   {"fieldname": "phone", "fieldtype": "Data", "label": "Điện thoại"},
-  {"fieldname": "monthly_dispensing_quota", "fieldtype": "Currency", "options": "VND", "label": "Hạn mức cấp phát/tháng (VND)", "default": "0", "description": "0 = không giới hạn. Vượt → cần Manager xác nhận khi submit DR (UC-20)"},
+  {"fieldname": "monthly_dispensing_quota", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Hạn mức cấp phát/tháng (VND)", "default": "0", "description": "0 = không giới hạn. Vượt → cần Manager xác nhận khi submit DR (UC-20)"},
   {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0"},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
  ],

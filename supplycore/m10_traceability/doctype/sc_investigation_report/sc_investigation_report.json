@@ -45,7 +45,7 @@
   {"fieldname": "actual_qty", "fieldtype": "Float", "label": "Tồn thực tế (manual count)"},
   {"fieldname": "column_break_comp", "fieldtype": "Column Break"},
   {"fieldname": "variance_qty", "fieldtype": "Float", "label": "Δ qty", "read_only": 1},
-  {"fieldname": "variance_value", "fieldtype": "Currency", "options": "VND", "label": "Δ giá trị", "read_only": 1},
+  {"fieldname": "variance_value", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Δ giá trị", "read_only": 1},
 
   {"fieldname": "section_findings", "fieldtype": "Section Break", "label": "Bất thường phát hiện"},
   {"fieldname": "anomalies_detected", "fieldtype": "Int", "label": "Số bất thường", "read_only": 1, "in_list_view": 1},

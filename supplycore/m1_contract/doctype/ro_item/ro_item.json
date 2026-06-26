@@ -25,8 +25,8 @@
   {"fieldname": "qty", "fieldtype": "Float", "label": "SL gọi", "reqd": 1, "in_list_view": 1, "non_negative": 1, "columns": 1},
   {"fieldname": "available_qty", "fieldtype": "Float", "label": "Còn theo HĐK", "read_only": 1, "no_copy": 1, "description": "Số lượng còn lại của FC Item tương ứng"},
   {"fieldname": "section_price", "fieldtype": "Section Break"},
-  {"fieldname": "unit_price", "fieldtype": "Currency", "label": "Đơn giá HĐK", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1},
-  {"fieldname": "amount", "fieldtype": "Currency", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1}
+  {"fieldname": "unit_price", "fieldtype": "Currency", "precision": "0", "label": "Đơn giá HĐK", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "amount", "fieldtype": "Currency", "precision": "0", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1}
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",

@@ -25,8 +25,8 @@
   {"fieldname": "ordered_qty", "fieldtype": "Float", "label": "SL đã đặt", "read_only": 1, "default": "0", "no_copy": 1},
   {"fieldname": "remaining_qty", "fieldtype": "Float", "label": "SL còn lại", "read_only": 1, "no_copy": 1},
   {"fieldname": "section_price", "fieldtype": "Section Break"},
-  {"fieldname": "unit_price", "fieldtype": "Currency", "label": "Đơn giá", "options": "VND", "reqd": 1, "in_list_view": 1, "non_negative": 1, "columns": 1},
-  {"fieldname": "total_amount", "fieldtype": "Currency", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1}
+  {"fieldname": "unit_price", "fieldtype": "Currency", "precision": "0", "label": "Đơn giá", "options": "VND", "reqd": 1, "in_list_view": 1, "non_negative": 1, "columns": 1},
+  {"fieldname": "total_amount", "fieldtype": "Currency", "precision": "0", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1}
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",

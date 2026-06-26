@@ -36,7 +36,7 @@
   {"fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "label": "Document"},
   {"fieldname": "column_break_link", "fieldtype": "Column Break"},
   {"fieldname": "due_date", "fieldtype": "Date", "label": "Hạn xử lý"},
-  {"fieldname": "value_amount", "fieldtype": "Currency", "options": "VND", "label": "Giá trị liên quan"},
+  {"fieldname": "value_amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Giá trị liên quan"},
 
   {"fieldname": "section_assign", "fieldtype": "Section Break", "label": "Phân công & Snooze", "collapsible": 1},
   {"fieldname": "assigned_to", "fieldtype": "Link", "options": "User", "label": "Người phụ trách",

@@ -147,6 +147,7 @@
   {
    "fieldname": "total_estimated_cost",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng ước tính",
    "read_only": 1,

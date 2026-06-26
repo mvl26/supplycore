@@ -16,6 +16,7 @@ const props = defineProps({
   showLabel:  { type: Boolean, default: true },
   readonly:   { type: Boolean, default: false },
   context:    { type: Object, default: () => ({}) },  // row trong child table hoặc doc trong form
+  parentDoc:  { type: Object, default: () => ({}) },  // doc cha (header) — để scope theo field ở header (vd kho nguồn)
 })
 const emit = defineEmits(['update:modelValue', 'selected', 'createNew'])
 
@@ -33,6 +34,20 @@ const isPastDateWarn = computed(() => {
 const extraFilters = ref([])
 async function resolveScope() {
   const scope = props.field.scope
+  if (!scope) { extraFilters.value = []; return }
+  // SC Item giới hạn theo KHO: chỉ hiện vật tư có tồn (>0) trong kho nguồn của phiếu.
+  // warehouseFromParent=true → kho ở header (doc cha); ngược lại kho ở chính dòng (context).
+  // Chưa chọn kho → không giới hạn (hiện toàn bộ); kho không có tồn → dropdown rỗng.
+  if (props.field.linkTo === 'SC Item' && scope.warehouseField) {
+    const src = scope.warehouseFromParent ? props.parentDoc : props.context
+    const wh = src?.[scope.warehouseField]
+    if (!wh) { extraFilters.value = []; return }
+    try {
+      const items = await call('supplycore.api.frontend.items_in_warehouse', { warehouse: wh })
+      extraFilters.value = [['name', 'in', (items && items.length) ? items : ['__none__']]]
+    } catch (e) { extraFilters.value = [] }
+    return
+  }
   if (!scope?.itemField) { extraFilters.value = []; return }
   const itemVal = props.context?.[scope.itemField]
   if (!itemVal) { extraFilters.value = []; return }
@@ -54,8 +69,16 @@ async function resolveScope() {
     extraFilters.value = []
   }
 }
-watch(() => [props.field.scope, props.context?.[props.field.scope?.itemField]],
-  resolveScope, { immediate: true })
+watch(() => {
+  const s = props.field.scope
+  return [
+    s,
+    s?.itemField ? props.context?.[s.itemField] : null,
+    s?.warehouseField
+      ? (s.warehouseFromParent ? props.parentDoc?.[s.warehouseField] : props.context?.[s.warehouseField])
+      : null,
+  ]
+}, resolveScope, { immediate: true })
 
 function update(v) {
   if (props.readonly || props.field.readonly) return

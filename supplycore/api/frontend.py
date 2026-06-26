@@ -309,6 +309,23 @@ def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
 
 
 @frappe.whitelist()
+def items_in_warehouse(warehouse=None):
+    """Danh sách MÃ vật tư CÓ TỒN (>0) trong 1 kho — để giới hạn dropdown vật tư
+    ở phiếu chuyển kho / cấp phát chỉ hiện VT thực sự đang có trong kho nguồn.
+    Trả list[str] mã item; rỗng nếu kho không truyền hoặc không có tồn."""
+    if not warehouse:
+        return []
+    rows = frappe.db.sql("""
+        SELECT sle.item
+        FROM `tabSC Stock Ledger Entry` sle
+        WHERE sle.warehouse = %(wh)s AND sle.is_cancelled = 0
+        GROUP BY sle.item
+        HAVING COALESCE(SUM(sle.qty_change), 0) > 0
+    """, {"wh": warehouse})
+    return [r[0] for r in rows]
+
+
+@frappe.whitelist()
 def warehouse_stock_for_item(warehouse, item=None):
     """List batches của item (hoặc tất cả) trong warehouse với bin + qty.
     UC-18: hỗ trợ TR form khi user chọn item → hiện tồn + bin.

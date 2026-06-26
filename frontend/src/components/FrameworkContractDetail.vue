@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import Icon from './Icon.vue'
-import { fmtNumber, fmtDate, fmtDateTime } from '../utils'
+import { fmtNumber, fmtVND, fmtVNDShort, fmtDate, fmtDateTime } from '../utils'
 
 const props = defineProps({
   doc: { type: Object, required: true },
@@ -95,15 +95,11 @@ const approvalSteps = computed(() => {
 })
 
 function fmtMoney(v) {
-  return fmtNumber(v)
+  return fmtVND(v)
 }
 
 function fmtMoneyShort(v) {
-  const n = Number(v) || 0
-  if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.00$/, '') + ' tỷ'
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + ' tr'
-  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'k'
-  return fmtNumber(n)
+  return fmtVNDShort(v)
 }
 
 const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s.by))
@@ -208,7 +204,7 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
         <div class="font-mono text-xl font-semibold text-sc-navy leading-none">
           {{ fmtMoneyShort(value.total) }}
         </div>
-        <div class="text-xs text-sc-text-muted mt-1 font-mono">{{ fmtMoney(value.total) }} đ</div>
+        <div class="text-xs text-sc-text-muted mt-1 font-mono">{{ fmtMoney(value.total) }}</div>
       </div>
 
       <div class="sc-card p-4">
@@ -251,7 +247,7 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
         <h3 class="font-semibold text-sc-navy text-sm flex items-center gap-2">
           <Icon name="bar-chart-3" :size="15" /> Phân bổ giá trị hợp đồng
         </h3>
-        <span class="text-xs text-sc-text-muted font-mono">{{ fmtMoney(value.total) }} đ</span>
+        <span class="text-xs text-sc-text-muted font-mono">{{ fmtMoney(value.total) }}</span>
       </div>
       <div class="flex h-3 rounded-full overflow-hidden bg-sc-border/60">
         <div class="bg-sc-navy transition-all" :style="{ width: value.usedPct + '%' }"
@@ -400,9 +396,9 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
                   ? 'text-sc-text-muted' : 'text-sc-navy font-semibold'">
                 {{ fmtNumber(row.remaining_qty ?? ((row.contract_qty || 0) - (row.ordered_qty || 0))) }}
               </td>
-              <td class="text-right font-mono">{{ fmtNumber(row.unit_price) }}</td>
+              <td class="text-right font-mono">{{ fmtMoney(row.unit_price) }}</td>
               <td class="text-right font-mono font-semibold text-sc-navy">
-                {{ fmtNumber(row.total_amount || (row.contract_qty || 0) * (row.unit_price || 0)) }}
+                {{ fmtMoney(row.total_amount || (row.contract_qty || 0) * (row.unit_price || 0)) }}
               </td>
             </tr>
           </tbody>
@@ -418,7 +414,7 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
               <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.ordered_qty) }}</td>
               <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.remaining_qty) }}</td>
               <td class="px-4 py-2.5"></td>
-              <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtNumber(totals.total_amount) }}</td>
+              <td class="px-4 py-2.5 text-right font-mono font-semibold text-sc-navy">{{ fmtMoney(totals.total_amount) }}</td>
             </tr>
           </tfoot>
         </table>

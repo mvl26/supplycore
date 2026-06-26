@@ -4,7 +4,7 @@
 //
 // Field accessor `(d) => ...` runs against the loaded doc.
 
-import { fmtDate, fmtDateTime } from './utils'
+import { fmtDate, fmtDateTime, fmtVND } from './utils'
 
 const today = () => new Date()
 const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000)
@@ -61,7 +61,7 @@ export const DETAIL_CONFIGS = {
     },
     tiles: [
       { icon: 'wallet', label: 'Tổng giá trị', value: (d) => d.grand_total, fmt: 'moneyShort',
-        sublabel: (d) => d.grand_total ? `${Number(d.grand_total).toLocaleString('vi-VN')} đ` : null },
+        sublabel: (d) => d.grand_total ? fmtVND(d.grand_total) : null },
       { icon: 'list', label: 'Số dòng vật tư', value: (d) => (d.items || []).length, fmt: 'number' },
       { icon: 'boxes', label: 'Tổng SL đặt', value: (d) => d.total_qty, fmt: 'number' },
       { icon: 'package-check', label: 'Đã nhận',
@@ -219,7 +219,7 @@ export const DETAIL_CONFIGS = {
         accent: (d) => Number(d.outstanding_amount) > 0 ? 'amber' : 'emerald' },
       { icon: 'scale', label: '3-way match',
         value: (d) => d.three_way_match_status || '—',
-        sublabel: (d) => d.match_variance_amount ? `Lệch ${Number(d.match_variance_amount).toLocaleString('vi-VN')} đ` : null,
+        sublabel: (d) => d.match_variance_amount ? `Lệch ${fmtVND(d.match_variance_amount)}` : null,
         accent: (d) => d.three_way_match_status === 'Mismatch' ? 'critical' :
                        d.three_way_match_status === 'Match' ? 'emerald' : 'default' },
     ],
@@ -533,7 +533,7 @@ export const DETAIL_CONFIGS = {
         sublabel: (d) => d.bhyt_payment_rate ? `${d.bhyt_payment_rate}% theo BHYT` : null,
         accent: 'emerald' },
       { icon: 'user', label: 'BN tự trả', value: (d) => d.patient_pays, fmt: 'moneyShort',
-        sublabel: (d) => d.ceiling_overage ? `Vượt trần ${Number(d.ceiling_overage).toLocaleString('vi-VN')}` : null,
+        sublabel: (d) => d.ceiling_overage ? `Vượt trần ${fmtVND(d.ceiling_overage)}` : null,
         accent: (d) => Number(d.ceiling_overage) > 0 ? 'amber' : 'default' },
       { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
     ],

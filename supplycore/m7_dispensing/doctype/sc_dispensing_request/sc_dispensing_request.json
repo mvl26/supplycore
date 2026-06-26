@@ -155,6 +155,7 @@
   {
    "fieldname": "total_estimated_value",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng ước tính (VND)",
    "read_only": 1

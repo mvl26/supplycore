@@ -133,6 +133,7 @@
   {
    "fieldname": "total_value",
    "fieldtype": "Currency",
+   "precision": "0",
    "label": "Tổng giá trị",
    "options": "VND",
    "read_only": 1

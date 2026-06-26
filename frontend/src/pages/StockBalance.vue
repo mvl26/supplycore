@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Pagination from '../components/Pagination.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtShort, fmtVND, fmtDate } from '../utils'
+import { fmtNumber, fmtVNDShort, fmtVND, fmtDate } from '../utils'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -156,7 +156,7 @@ const qcLabel = (s) => ({
     </div>
     <div class="sc-card p-4">
       <div class="text-xs text-sc-text-muted">Giá trị khả dụng</div>
-      <div class="text-2xl font-bold font-mono text-sc-navy mt-1" :title="fmtVND(totals.availValue)">{{ fmtShort(totals.availValue) }} VND</div>
+      <div class="text-2xl font-bold font-mono text-sc-navy mt-1" :title="fmtVND(totals.availValue)">{{ fmtVNDShort(totals.availValue) }}</div>
     </div>
     <div class="sc-card p-4">
       <div class="text-xs text-sc-text-muted">Tồn chờ xử lý (chưa QC / từ chối / khoá)</div>

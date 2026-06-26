@@ -297,7 +297,7 @@ function loadIntoGrid() {
             <td class="px-2 py-1 text-sc-text-muted text-xs align-top pt-3">{{ idx + 1 }}</td>
             <td v-for="c in schema.columns" :key="c.name" class="px-2 py-1 align-top">
               <FormField :model-value="r[c.name]"
-                :field="c" :context="r" size="sm" :show-label="false"
+                :field="c" :context="r" :parent-doc="parentDoc" size="sm" :show-label="false"
                 @update:model-value="v => updateCell(idx, c.name, v)"
                 @selected="(linked) => handleLinkSelected(idx, c, linked)"
                 @create-new="(p) => emit('createNew', { ...(p || {}), field: c, childField: schema.field, rowIdx: idx })" />

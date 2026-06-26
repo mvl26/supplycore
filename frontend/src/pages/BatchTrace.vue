@@ -5,7 +5,7 @@ import { call } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtDate } from '../utils'
+import { fmtNumber, fmtVND, fmtDate } from '../utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -337,7 +337,7 @@ const missingLabel = {
                 :class="m.qty_change > 0 ? 'text-sc-success' : 'text-sc-danger'">
                 {{ m.qty_change > 0 ? '+' : '' }}{{ fmtNumber(m.qty_change) }}
               </td>
-              <td class="text-right font-mono">{{ fmtNumber(m.valuation_rate) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(m.valuation_rate) }}</td>
               <td class="text-xs">
                 <span class="text-sc-royal hover:underline cursor-pointer font-mono"
                   @click="voucherLink(m.voucher_type, m.voucher_no)">
@@ -385,9 +385,9 @@ const missingLabel = {
               </td>
               <td>{{ d.ward }}</td>
               <td class="text-right font-mono">{{ fmtNumber(d.qty) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(d.unit_cost) }}</td>
-              <td class="text-right font-mono text-green-700">{{ fmtNumber(d.bhyt_amount) }}</td>
-              <td class="text-right font-mono text-amber-700">{{ fmtNumber(d.patient_pays) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(d.unit_cost) }}</td>
+              <td class="text-right font-mono text-green-700">{{ fmtVND(d.bhyt_amount) }}</td>
+              <td class="text-right font-mono text-amber-700">{{ fmtVND(d.patient_pays) }}</td>
             </tr>
           </tbody>
         </table>

@@ -19,8 +19,8 @@
   {"fieldname": "voucher_detail_no", "fieldtype": "Data", "label": "Detail row"},
 
   {"fieldname": "section_amount", "fieldtype": "Section Break", "label": "Số tiền"},
-  {"fieldname": "debit", "fieldtype": "Currency", "options": "VND", "label": "Nợ", "default": "0", "in_list_view": 1},
-  {"fieldname": "credit", "fieldtype": "Currency", "options": "VND", "label": "Có", "default": "0", "in_list_view": 1},
+  {"fieldname": "debit", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Nợ", "default": "0", "in_list_view": 1},
+  {"fieldname": "credit", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Có", "default": "0", "in_list_view": 1},
   {"fieldname": "against_account", "fieldtype": "Data", "label": "Đối ứng"},
 
   {"fieldname": "section_party", "fieldtype": "Section Break", "label": "Đối tượng"},

@@ -42,8 +42,8 @@
   {"fieldname": "status", "fieldtype": "Select", "options": "Draft\nApproved\nConverted\nCancelled", "label": "Trạng thái", "default": "Draft", "in_list_view": 1, "in_standard_filter": 1, "read_only": 1, "search_index": 1},
   {"fieldname": "purchase_order", "fieldtype": "Link", "options": "SC Purchase Order", "label": "Purchase Order tạo từ RO", "read_only": 1, "no_copy": 1},
   {"fieldname": "column_break_2", "fieldtype": "Column Break"},
-  {"fieldname": "total_amount", "fieldtype": "Currency", "label": "Tổng giá trị (VND)", "options": "VND", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "remaining_value_at_release", "fieldtype": "Currency", "label": "HĐK còn lại tại thời điểm tạo", "options": "VND", "read_only": 1, "no_copy": 1, "description": "Snapshot remaining_value của HĐK khi RO được tạo"},
+  {"fieldname": "total_amount", "fieldtype": "Currency", "precision": "0", "label": "Tổng giá trị (VND)", "options": "VND", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "remaining_value_at_release", "fieldtype": "Currency", "precision": "0", "label": "HĐK còn lại tại thời điểm tạo", "options": "VND", "read_only": 1, "no_copy": 1, "description": "Snapshot remaining_value của HĐK khi RO được tạo"},
 
   {"fieldname": "section_other", "fieldtype": "Section Break", "label": "Khác", "collapsible": 1},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},

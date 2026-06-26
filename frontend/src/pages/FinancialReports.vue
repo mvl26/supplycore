@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtShort, fmtDate, fmtVND } from '../utils'
+import { fmtNumber, fmtVNDShort, fmtDate, fmtVND } from '../utils'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -310,7 +310,7 @@ onMounted(loadSuggestions)
       </div>
       <div class="sc-card p-4">
         <div class="text-xs text-sc-text-muted">Giá trị tồn (VND)</div>
-        <div class="text-2xl font-bold font-mono text-sc-success mt-1">{{ fmtShort(data.total_value) }}</div>
+        <div class="text-2xl font-bold font-mono text-sc-success mt-1">{{ fmtVNDShort(data.total_value) }}</div>
       </div>
     </div>
     <div class="sc-card overflow-hidden">
@@ -333,7 +333,7 @@ onMounted(loadSuggestions)
               <td>{{ r.warehouse }}</td>
               <td class="font-mono text-xs">{{ r.batch || '—' }}</td>
               <td class="text-right font-mono">{{ fmtNumber(r.qty) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.avg_rate) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.avg_rate) }}</td>
               <td class="text-right font-mono font-semibold" :title="fmtVND(r.value)">{{ fmtVND(r.value) }}</td>
             </tr>
           </tbody>
@@ -348,11 +348,11 @@ onMounted(loadSuggestions)
       <div v-for="b in apBuckets" :key="b.key"
         :class="['sc-card p-3 border-2', bucketCls[b.key] || '']">
         <div class="text-xs text-sc-text-muted">{{ b.label }}</div>
-        <div class="text-lg font-bold font-mono mt-1">{{ fmtShort(b.amount) }}</div>
+        <div class="text-lg font-bold font-mono mt-1">{{ fmtVNDShort(b.amount) }}</div>
       </div>
     </div>
     <div class="sc-card p-3 text-sm">
-      Tổng công nợ outstanding: <strong class="font-mono text-sc-danger">{{ fmtNumber(data.total_outstanding) }} VND</strong>
+      Tổng công nợ outstanding: <strong class="font-mono text-sc-danger">{{ fmtVND(data.total_outstanding) }}</strong>
       tại ngày {{ fmtDate(data.as_of_date) }}
     </div>
     <div class="sc-card overflow-hidden">
@@ -379,9 +379,9 @@ onMounted(loadSuggestions)
               <td class="font-mono text-xs">{{ r.supplier_invoice_no }}</td>
               <td>{{ fmtDate(r.invoice_date) }}</td>
               <td>{{ fmtDate(r.due_date) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.grand_total) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.paid_amount) }}</td>
-              <td class="text-right font-mono font-semibold text-sc-danger">{{ fmtNumber(r.outstanding_amount) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.grand_total) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.paid_amount) }}</td>
+              <td class="text-right font-mono font-semibold text-sc-danger">{{ fmtVND(r.outstanding_amount) }}</td>
               <td>
                 <span class="text-xs px-2 py-0.5 rounded"
                   :class="bucketCls[r.bucket] || ''">{{ r.bucket }}</span>
@@ -401,7 +401,7 @@ onMounted(loadSuggestions)
   <div v-else-if="active === 'period'" class="space-y-4">
     <div class="sc-card p-4">
       <div class="text-xs text-sc-text-muted">Chi phí vật tư kỳ {{ fmtDate(data.from_date) }} → {{ fmtDate(data.to_date) }}</div>
-      <div class="text-3xl font-bold font-mono text-sc-navy mt-2">{{ fmtNumber(data.total_cost) }} VND</div>
+      <div class="text-3xl font-bold font-mono text-sc-navy mt-2">{{ fmtVND(data.total_cost) }}</div>
     </div>
     <div class="sc-card overflow-hidden">
       <div class="overflow-x-auto">
@@ -420,7 +420,7 @@ onMounted(loadSuggestions)
               <td class="font-medium">{{ r.item_group }}</td>
               <td class="text-right font-mono">{{ r.pi_count }}</td>
               <td class="text-right font-mono">{{ fmtNumber(r.total_qty) }}</td>
-              <td class="text-right font-mono font-semibold">{{ fmtNumber(r.subtotal) }}</td>
+              <td class="text-right font-mono font-semibold">{{ fmtVND(r.subtotal) }}</td>
               <td class="text-right font-mono">
                 {{ data.total_cost > 0 ? ((r.subtotal / data.total_cost) * 100).toFixed(1) : '0' }}%
               </td>
@@ -436,19 +436,19 @@ onMounted(loadSuggestions)
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="sc-card p-4">
         <div class="text-xs text-sc-text-muted">Tổng chi phí</div>
-        <div class="text-xl font-bold font-mono text-sc-navy">{{ fmtShort(data.summary.total_cost) }}</div>
+        <div class="text-xl font-bold font-mono text-sc-navy">{{ fmtVNDShort(data.summary.total_cost) }}</div>
       </div>
       <div class="sc-card p-4 bg-green-50">
         <div class="text-xs text-sc-text-muted">BHYT chi trả</div>
-        <div class="text-xl font-bold font-mono text-green-700">{{ fmtShort(data.summary.total_bhyt_covered) }}</div>
+        <div class="text-xl font-bold font-mono text-green-700">{{ fmtVNDShort(data.summary.total_bhyt_covered) }}</div>
       </div>
       <div class="sc-card p-4 bg-amber-50">
         <div class="text-xs text-sc-text-muted">BN tự trả</div>
-        <div class="text-xl font-bold font-mono text-amber-700">{{ fmtShort(data.summary.total_patient_pays) }}</div>
+        <div class="text-xl font-bold font-mono text-amber-700">{{ fmtVNDShort(data.summary.total_patient_pays) }}</div>
       </div>
       <div class="sc-card p-4 bg-red-50">
         <div class="text-xs text-sc-text-muted">Vượt trần</div>
-        <div class="text-xl font-bold font-mono text-red-700">{{ fmtShort(data.summary.total_ceiling_overage) }}</div>
+        <div class="text-xl font-bold font-mono text-red-700">{{ fmtVNDShort(data.summary.total_ceiling_overage) }}</div>
       </div>
     </div>
     <div class="sc-card overflow-hidden">
@@ -473,10 +473,10 @@ onMounted(loadSuggestions)
               <td class="text-right font-mono">{{ r.pd_count }}</td>
               <td class="text-right font-mono">{{ r.patient_count }}</td>
               <td class="text-right font-mono">{{ fmtNumber(r.total_qty) }}</td>
-              <td class="text-right font-mono font-semibold">{{ fmtNumber(r.total_cost) }}</td>
-              <td class="text-right font-mono text-green-700">{{ fmtNumber(r.total_bhyt_covered) }}</td>
-              <td class="text-right font-mono text-amber-700">{{ fmtNumber(r.total_patient_pays) }}</td>
-              <td class="text-right font-mono text-red-700">{{ fmtNumber(r.total_ceiling_overage) }}</td>
+              <td class="text-right font-mono font-semibold">{{ fmtVND(r.total_cost) }}</td>
+              <td class="text-right font-mono text-green-700">{{ fmtVND(r.total_bhyt_covered) }}</td>
+              <td class="text-right font-mono text-amber-700">{{ fmtVND(r.total_patient_pays) }}</td>
+              <td class="text-right font-mono text-red-700">{{ fmtVND(r.total_ceiling_overage) }}</td>
             </tr>
           </tbody>
         </table>

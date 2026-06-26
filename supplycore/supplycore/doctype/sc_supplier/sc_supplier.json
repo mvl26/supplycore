@@ -51,7 +51,7 @@
    "options": "\nNet 30\nNet 60\nNet 90\nCOD\n50/50\nKhác",
    "label": "Điều khoản thanh toán",
    "description": "Net 30/60/90 = số ngày trả sau ngày HĐ; COD = trả ngay; 50/50 = đặt cọc"},
-  {"fieldname": "credit_limit", "fieldtype": "Currency", "label": "Hạn mức tín dụng", "options": "VND"},
+  {"fieldname": "credit_limit", "fieldtype": "Currency", "precision": "0", "label": "Hạn mức tín dụng", "options": "VND"},
   {"fieldname": "column_break_3", "fieldtype": "Column Break"},
   {"fieldname": "bank_name", "fieldtype": "Data", "label": "Tên ngân hàng",
    "description": "VD: Vietcombank, BIDV, Techcombank"},

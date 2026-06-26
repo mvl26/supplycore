@@ -33,8 +33,8 @@
   {"fieldname": "third_count_qty", "fieldtype": "Float", "label": "SL đếm lần 3", "non_negative": 1, "description": "UC-27 6a: đếm lần 3 khi recount vẫn chênh > threshold — cần Manager chứng kiến"},
 
   {"fieldname": "section_value", "fieldtype": "Section Break", "label": "Giá trị chênh lệch"},
-  {"fieldname": "valuation_rate", "fieldtype": "Currency", "options": "VND", "label": "Đơn giá tham chiếu", "read_only": 1},
-  {"fieldname": "variance_value", "fieldtype": "Currency", "options": "VND", "label": "Δ giá trị", "read_only": 1},
+  {"fieldname": "valuation_rate", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Đơn giá tham chiếu", "read_only": 1},
+  {"fieldname": "variance_value", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Δ giá trị", "read_only": 1},
 
   {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
   {"fieldname": "reason", "fieldtype": "Select",

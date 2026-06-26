@@ -16,6 +16,17 @@ export const fmtShort = (v) => {
   return n.toLocaleString('vi-VN')
 }
 
+// Tiền tệ rút gọn KÈM ký hiệu ₫ (tỷ / tr / k) — dùng cho tile dashboard/detail.
+// < 1.000 → fmtVND đầy đủ (đã có ₫).
+export const fmtVNDShort = (v) => {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return fmtVND(0)
+  if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(2).replace(/\.00$/, '') + ' tỷ ₫'
+  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + ' tr ₫'
+  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(0) + 'k ₫'
+  return fmtVND(n)
+}
+
 // T04: thống nhất dd/mm/yyyy (chuẩn VN, có số 0 đứng đầu). Parse thẳng chuỗi
 // ISO yyyy-mm-dd để tránh lệch múi giờ.
 export const fmtDate = (v) => {
