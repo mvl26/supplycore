@@ -331,10 +331,15 @@ export const FORM_SCHEMAS = {
   'SC Purchase Order': {
     sections: [
       { title: 'Thông tin chung', fields: [
-        { name: 'supplier', label: 'NCC', type: 'Link', linkTo: 'SC Supplier', required: true },
+        { name: 'supplier', label: 'NCC', type: 'Link', linkTo: 'SC Supplier', required: true,
+          readonlyWhenSet: 'framework_contract',
+          hint: 'Khi đã chọn HĐ khung, NCC bị khoá theo hợp đồng — bấm "Đặt lại" để chọn NCC khác' },
         { name: 'transaction_date', label: 'Ngày PO', type: 'Date', required: true, default: 'today' },
         { name: 'schedule_date', label: 'Ngày giao DK', type: 'Date', required: true },
-        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract' },
+        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract',
+          readonlyWhenSet: 'framework_contract',
+          fetchFrom: { target_doctype: 'Framework Contract', target_field: 'supplier' },
+          hint: 'Chọn HĐ khung sẽ tự điền & khoá NCC. Bấm "Đặt lại" để chọn HĐ khung khác' },
         { name: 'delivery_terms', label: 'Điều khoản giao', type: 'Small Text' },
       ]},
     ],
@@ -405,7 +410,6 @@ export const FORM_SCHEMAS = {
           hint: 'Lấy từ phiếu nhập — QC chỉ kết luận Đạt/Không đạt' },
         { name: 'inspected_by', label: 'Người kiểm', type: 'Link', linkTo: 'User', readonly: true,
           hint: 'Tự ghi nhận theo người kết luận QC' },
-        { name: 'checklist_template', label: 'Bộ tiêu chuẩn', type: 'Link', linkTo: 'QC Checklist Template' },
       ]},
       { title: 'Kết quả', fields: [
         { name: 'manual_inspection', label: 'Kiểm thủ công', type: 'Check' },
@@ -539,7 +543,8 @@ export const FORM_SCHEMAS = {
     items: {
       field: 'items', label: 'Chi tiết',
       columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%' },
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%',
+          scope: { warehouseField: 'from_warehouse', warehouseFromParent: true } },
         { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
@@ -576,7 +581,8 @@ export const FORM_SCHEMAS = {
     items: {
       field: 'items', label: 'Chi tiết',
       columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '32%' },
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '32%',
+          scope: { warehouseField: 'from_warehouse', warehouseFromParent: true } },
         { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '15%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
@@ -606,7 +612,8 @@ export const FORM_SCHEMAS = {
         api: 'supplycore.api.frontend.pd_item_autofetch',
       },
       columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '24%' },
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '24%',
+          scope: { warehouseField: 'warehouse' } },
         { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', required: true, width: '18%' },
         { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' } },

@@ -131,6 +131,14 @@ function isVisible(field) {
   if (!field.dependOn) return true
   return !!doc.value[field.dependOn]
 }
+
+// Field bị khoá khi field nguồn (readonlyWhenSet) đã có giá trị — vd PO tạo từ
+// HĐ khung: chọn framework_contract xong thì khoá luôn supplier + framework_contract.
+function fieldReadonly(field) {
+  if (props.readonly || field.readonly) return true
+  if (field.readonlyWhenSet && doc.value[field.readonlyWhenSet]) return true
+  return false
+}
 </script>
 
 <template>
@@ -150,7 +158,7 @@ function isVisible(field) {
               isFieldInvalid(f) ? 'sc-field-invalid' : '',
             ]">
             <FormField :model-value="doc[f.name]"
-              :field="f" :context="doc" :readonly="readonly"
+              :field="f" :context="doc" :readonly="fieldReadonly(f)"
               @update:model-value="v => updateField(f.name, v)"
               @selected="linked => handleLinkSelected(f, linked)"
               @create-new="(payload) => emit('createNew', payload?.field ? payload : { field: f, ...(payload || {}) })" />

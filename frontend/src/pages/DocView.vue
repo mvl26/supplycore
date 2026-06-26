@@ -23,7 +23,7 @@ import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
 import DetailViewGeneric from '../components/DetailViewGeneric.vue'
 import { DETAIL_CONFIGS } from '../detail-configs'
 import { useToastStore } from '../stores/toast'
-import { fmtDate, fmtDateTime, fmtNumber } from '../utils'
+import { fmtDate, fmtDateTime, fmtNumber, today } from '../utils'
 import { statusLabel, isSubmittable } from '../modules'
 import { fieldLabel } from '../i18n'
 
@@ -107,6 +107,29 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+// Đặt lại form (chỉ ở chế độ tạo mới): xoá hết dữ liệu user nhập, đưa phiếu về
+// trạng thái mới tinh (áp lại default như today). Dùng để chọn lại HĐ khung/NCC
+// khi PO đã bị khoá theo framework_contract.
+function resetForm() {
+  if (!isNew.value) return
+  const filled = Object.keys(doc.value || {}).filter(
+    k => !['doctype', 'docstatus'].includes(k)
+      && doc.value[k] != null && doc.value[k] !== ''
+      && !(Array.isArray(doc.value[k]) && doc.value[k].length === 0)
+  )
+  if (filled.length && !confirm('Đặt lại phiếu? Mọi thông tin đã nhập sẽ bị xoá về trắng.')) return
+  const fresh = { doctype: doctype.value, docstatus: 0 }
+  if (schema.value?.items) fresh[schema.value.items.field] = []
+  for (const sec of (schema.value?.sections || [])) {
+    for (const f of (sec.fields || [])) {
+      if (f.default !== undefined) fresh[f.name] = f.default === 'today' ? today() : f.default
+    }
+  }
+  doc.value = fresh
+  try { sessionStorage.removeItem(LINK_PENDING_KEY) } catch (e) {}
+  toast.success('Đã đặt lại phiếu')
 }
 
 // Khi user bấm "+ Tạo mới" trên Link field → lưu state rồi navigate sang form new
@@ -551,6 +574,9 @@ function displayField(value, key) {
         <span v-if="statusBadge && !isNew" :class="['sc-badge', statusBadge.cls]">{{ statusBadge.text }}</span>
 
         <template v-if="isNew">
+          <button v-if="schema" @click="resetForm" :disabled="saving" class="sc-btn-secondary text-sm">
+            <Icon name="rotate-cw" :size="14" /> Đặt lại
+          </button>
           <button @click="save" :disabled="saving" class="sc-btn-primary text-sm">
             <template v-if="saving">Đang lưu...</template>
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
