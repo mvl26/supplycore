@@ -12,6 +12,16 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today, getdate
 
+# 5 tiêu chí QC nhập kho mẫu — seed sẵn cho mỗi SC Quality Inspection auto-tạo (KCS thêm/bớt được).
+# Giữ ĐỒNG BỘ với frontend schemas.js → 'SC Quality Inspection'.items.defaultRows
+_DEFAULT_QI_CRITERIA = [
+    "Bao bì, nhãn mác nguyên vẹn, đầy đủ thông tin",
+    "Số lô khớp chứng từ",
+    "Hạn sử dụng còn đủ theo quy định",
+    "Quy cách, số lượng đúng đặt hàng",
+    "Cảm quan đạt (màu sắc, hình thức, không hư hỏng/biến chất)",
+]
+
 
 class SCPurchaseReceipt(Document):
 
@@ -457,7 +467,6 @@ class SCPurchaseReceipt(Document):
                                          {"purchase_receipt": self.name, "item": r.item, "pr_item_ref": r.name})
             if existing:
                 continue
-            template = _find_checklist_template(r.item)
             qi = frappe.new_doc("SC Quality Inspection")
             qi.inspection_date = today()
             qi.purchase_receipt = self.name
@@ -466,12 +475,11 @@ class SCPurchaseReceipt(Document):
             qi.supplier = self.supplier
             qi.batch = r.batch_no
             qi.received_qty = r.qty
-            qi.checklist_template = template
             qi.inspected_by = frappe.session.user if frappe.session.user not in (None, "Guest") else "Administrator"
-            if template:
-                tpl = frappe.get_doc("QC Checklist Template", template)
-                for crit in sorted(tpl.criteria, key=lambda c: c.sequence or 0):
-                    qi.append("readings", {"specification": crit.criterion_name, "status": ""})
+            # Bỏ QC Checklist Template: seed sẵn 5 tiêu chí QC nhập kho mẫu để KCS tick (thêm/bớt được).
+            # Giữ ĐỒNG BỘ với frontend schemas.js → 'SC Quality Inspection'.items.defaultRows
+            for spec in _DEFAULT_QI_CRITERIA:
+                qi.append("readings", {"specification": spec, "status": ""})
             qi.flags.ignore_permissions = True
             try:
                 qi.insert()

@@ -53,12 +53,8 @@ class SCQualityInspection(Document):
             self.inspected_by = frappe.session.user
         if self.equipment_unavailable:
             return  # On Hold submit OK
-        # T07: bắt buộc gắn Bộ tiêu chuẩn (checklist) trước khi kết luận QC
-        if not self.checklist_template:
-            frappe.throw(_(
-                "SC-E033 QC_CHECKLIST_REQUIRED: Phải chọn 'Bộ tiêu chuẩn' "
-                "(QC Checklist Template) trước khi kết luận/Gửi duyệt QC."
-            ), title="SC-E033 QC_CHECKLIST_REQUIRED")
+        # Đã bỏ QC Checklist Template (SC-E033 không còn áp dụng): KCS điền trực tiếp
+        # các dòng tiêu chí (mặc định 5 dòng mẫu). Chỉ cần ≥1 tiêu chí có kết quả.
         if not self.readings:
             frappe.throw(_("SC-E-QI-READINGS: Phải nhập kết quả cho ít nhất 1 tiêu chí trước khi submit"))
         set_count = sum(1 for r in self.readings if r.status)

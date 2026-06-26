@@ -435,6 +435,15 @@ export const FORM_SCHEMAS = {
     ],
     items: {
       field: 'readings', label: 'Tiêu chí kiểm tra',
+      // Bỏ QC Checklist Template: hiện sẵn 5 tiêu chí QC nhập kho mẫu để KCS tick (thêm/bớt được).
+      // Giữ ĐỒNG BỘ với backend sc_purchase_receipt.py::_DEFAULT_QI_CRITERIA.
+      defaultRows: [
+        { specification: 'Bao bì, nhãn mác nguyên vẹn, đầy đủ thông tin', status: '' },
+        { specification: 'Số lô khớp chứng từ', status: '' },
+        { specification: 'Hạn sử dụng còn đủ theo quy định', status: '' },
+        { specification: 'Quy cách, số lượng đúng đặt hàng', status: '' },
+        { specification: 'Cảm quan đạt (màu sắc, hình thức, không hư hỏng/biến chất)', status: '' },
+      ],
       bulkActions: [
         { label: 'Accept tất cả', variant: 'success', set: { status: 'Accepted' } },
         { label: 'Reject tất cả', variant: 'danger',  set: { status: 'Rejected' } },

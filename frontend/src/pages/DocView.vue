@@ -60,7 +60,9 @@ async function load() {
     // Init empty doc with defaults; childtable empty array
     doc.value = { doctype: doctype.value, docstatus: 0 }
     if (schema.value?.items) {
-      doc.value[schema.value.items.field] = []
+      // Seed dòng mặc định nếu schema khai báo (vd QC: hiện sẵn 5 dòng tiêu chí trống)
+      const dr = schema.value.items.defaultRows
+      doc.value[schema.value.items.field] = Array.isArray(dr) ? dr.map(r => ({ ...r })) : []
     }
     editing.value = true
     // Nếu đang trong vòng round-trip "+ Tạo mới Link" → prefill từ doc gốc
@@ -75,6 +77,16 @@ async function load() {
   loading.value = true
   try {
     doc.value = await getDoc(doctype.value, name.value)
+    // QC nháp (docstatus 0) chưa có dòng tiêu chí → seed sẵn 5 dòng mẫu trống để KCS điền.
+    // Chỉ áp dụng cho bản nháp & khi bảng đang rỗng (không chèn vào phiếu đã chốt/đã có dòng).
+    {
+      const sItems = schema.value?.items
+      const dr = sItems?.defaultRows
+      if (Array.isArray(dr) && doc.value?.docstatus === 0
+          && (!doc.value[sItems.field] || doc.value[sItems.field].length === 0)) {
+        doc.value[sItems.field] = dr.map(r => ({ ...r }))
+      }
+    }
     // Lô: lấy tên vật tư (item_name) để in lên nhãn 50×30mm
     batchItemName.value = ''
     if (doctype.value === 'SC Batch' && doc.value?.item) {
