@@ -20,15 +20,15 @@ def mobile_login(usr, pwd):
     check_password là hàm được LoginManager.authenticate gọi nội bộ, đảm bảo
     cùng exception type (frappe.AuthenticationError).
     """
-    # Xác thực password — raise AuthenticationError nếu sai
-    check_password(usr, pwd)
+    # Xác thực password — raise AuthenticationError nếu sai; trả về username canonical (DB)
+    usr = check_password(usr, pwd)
 
-    # Kiểm tra user enabled (check_password không làm việc này)
-    if not frappe.db.get_value("User", usr, "enabled"):
+    # Load user một lần, kiểm tra enabled trước khi ghi bất kỳ thứ gì
+    user_doc = frappe.get_doc("User", usr)
+    if not user_doc.enabled:
         raise frappe.AuthenticationError
 
-    api_secret = _ensure_api_credentials(usr)
-    user_doc = frappe.get_doc("User", usr)
+    api_secret = _ensure_api_credentials(user_doc)
     return {
         "user": usr,
         "full_name": user_doc.full_name or usr,
@@ -38,13 +38,12 @@ def mobile_login(usr, pwd):
     }
 
 
-def _ensure_api_credentials(user: str) -> str:
+def _ensure_api_credentials(user_doc) -> str:
     """Sinh api_key (nếu chưa có) và api_secret mới; lưu vào User.
 
     Frappe lưu api_secret dưới dạng Password (hashed) — ta trả về plaintext
     ngay trước khi save để client dùng được. Lần sau login sẽ tạo secret mới.
     """
-    user_doc = frappe.get_doc("User", user)
     if not user_doc.api_key:
         user_doc.api_key = frappe.generate_hash(length=15)
     api_secret = frappe.generate_hash(length=15)
