@@ -149,7 +149,7 @@ export async function mobileLoginApi(serverUrl, usr, pwd) {
   })
   const body = await res.json().catch(() => null)
   if (!res.ok) throw new Error(parseFrappeError(body) || `HTTP ${res.status}`)
-  return body.message // Frappe bọc kết quả whitelisted trong .message
+  return body?.message // Frappe bọc kết quả whitelisted trong .message
 }
 
 export async function login(usr, pwd) {

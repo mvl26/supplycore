@@ -48,4 +48,14 @@ describe('mobileLoginApi', () => {
     const result = await mobileLoginApi('https://example.com', 'u2', 'p2')
     expect(result).toEqual(mockMessage)
   })
+
+  it('rejects with parsed error message on 401 AuthenticationError', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ exc_type: 'AuthenticationError', exception: 'AuthenticationError: Bad credentials' }),
+    })
+    const { mobileLoginApi } = await import('../src/api.js')
+    await expect(mobileLoginApi('https://x.com', 'u', 'p')).rejects.toThrow('Bad credentials')
+  })
 })
