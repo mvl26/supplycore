@@ -67,7 +67,8 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   if (to.meta.public) return next()
   // Mobile routes bypass web auth guard — handled by the mobile guard below.
-  if (to.meta.mobile) return next()
+  // Gate on isNative() so web users hitting /m/* still go through web auth checks.
+  if (to.meta.mobile && isNative()) return next()
   if (auth.isGuest) {
     if (to.path !== '/login') {
       return next({ path: '/login', query: { redirect: to.fullPath } })
