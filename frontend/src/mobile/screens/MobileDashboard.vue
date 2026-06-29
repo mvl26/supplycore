@@ -55,7 +55,7 @@
     <p v-if="alertsLoading" class="m-muted">Đang tải...</p>
 
     <template v-else>
-      <p v-if="!alerts.length" class="m-muted">Khong co canh bao.</p>
+      <p v-if="!alerts.length" class="m-muted">Không có cảnh báo.</p>
       <ul v-else class="m-list">
         <li v-for="a in alerts" :key="a.name" class="m-card">
           <div class="m-card-top">
@@ -140,7 +140,7 @@ async function loadAlerts() {
     })
     alerts.value = Array.isArray(rows) ? rows : []
   } catch (e) {
-    toast.error(e.message || 'Khong the tai danh sach canh bao.')
+    toast.error(e.message || 'Không thể tải danh sách cảnh báo.')
     alerts.value = []
   } finally {
     alertsLoading.value = false
