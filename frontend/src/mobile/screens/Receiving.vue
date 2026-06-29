@@ -84,7 +84,7 @@
       </p>
 
       <ul v-else class="rc-list">
-        <li v-for="(it, i) in current.items" :key="i" class="rc-card rc-item-card">
+        <li v-for="(it, i) in current.items" :key="it.name || i" class="rc-card rc-item-card">
           <!-- Tên vật tư -->
           <div class="rc-card-title">{{ it.item_name || it.item }}</div>
           <div v-if="it.item_name" class="rc-item-code">{{ it.item }}</div>
@@ -206,6 +206,10 @@ async function scanBatch(it) {
 
 async function confirm() {
   if (saving.value) return
+  if (current.value.items && current.value.items.every(it => !Number(it.qty))) {
+    toast.warning('Vui lòng nhập số lượng nhận cho ít nhất một dòng.')
+    return
+  }
   saving.value = true
   try {
     // Ghi toàn bộ mảng items (giữ tất cả field, chỉ qty + supplier_batch_no được chỉnh)
