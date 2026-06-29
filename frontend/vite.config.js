@@ -9,6 +9,8 @@ import fs from 'fs'
 const isNativeBuild = !!process.env.CAP_BUILD
 
 // Plugin: sinh dist/index.html cho Capacitor (cap sync yêu cầu file này làm entry).
+// HTML được tạo INLINE ở đây vì entry point là src/main.js (không phải HTML entry) —
+// không đọc file ngoài; index.native.html đã bị xoá để tránh nhầm lẫn.
 function nativeIndexHtml() {
   return {
     name: 'native-index-html',
