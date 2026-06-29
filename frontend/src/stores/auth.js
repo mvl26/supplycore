@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { login as apiLogin, logout as apiLogout, getSession, getUserInfo, mobileLoginApi } from '../api'
-import { setServerUrl, setToken } from '../platform'
+import { setServerUrl, setToken, clearToken } from '../platform'
 import { useAccessStore } from './access'
 
 export const useAuthStore = defineStore('auth', {
@@ -82,6 +82,13 @@ export const useAuthStore = defineStore('auth', {
     },
     async doLogout() {
       try { await apiLogout() } catch (e) {}
+      this.user = { name: 'Guest', is_guest: true, roles: [] }
+      useAccessStore().reset()
+      this.booted = false
+    },
+    // Native-only logout: clear stored token, reset to Guest, no server session call.
+    async mobileLogout() {
+      await clearToken()
       this.user = { name: 'Guest', is_guest: true, roles: [] }
       useAccessStore().reset()
       this.booted = false
