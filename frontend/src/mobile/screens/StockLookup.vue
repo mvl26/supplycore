@@ -54,7 +54,7 @@
           <div class="sl-item-name">{{ item.item_name || '' }}</div>
         </li>
       </ul>
-      <p v-if="items.length === 0 && searched" class="sl-muted">Không tìm thấy vật tư.</p>
+      <p v-if="items.length === 0 && searched" class="sl-muted">Không tìm thấy vật tư / lô.</p>
     </template>
 
     <!-- Kết quả tồn kho / lô -->
@@ -222,6 +222,8 @@ async function selectItem(item) {
   loading.value = true
   try {
     await loadStock(item)
+  } catch (e) {
+    toast.error(`Lỗi tải tồn kho: ${e.message}`)
   } finally {
     loading.value = false
   }
