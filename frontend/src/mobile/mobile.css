@@ -97,6 +97,8 @@
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); animation: m-shimmer 1.25s infinite; }
 @keyframes m-shimmer { 100% { transform: translateX(100%); } }
 .m-sk-card { height: 92px; border-radius: var(--m-r); }
+.m-sk-kpi { height: 72px; border-radius: var(--m-r); }
+.m-sk-line { height: 14px; border-radius: 6px; }
 
 /* ---- Empty / error states ---- */
 .m-state { display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding: 44px 24px; color: var(--m-ink-3); }

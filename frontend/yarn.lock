@@ -859,10 +859,35 @@
   dependencies:
     tslib "^2.1.0"
 
+"@capacitor/haptics@^6.0.3":
+  version "6.0.3"
+  resolved "https://registry.npmjs.org/@capacitor/haptics/-/haptics-6.0.3.tgz"
+  integrity sha512-6yKF0+lRUZEEx1GDFWgnKHia974np7o1OgmRl/btL9cSMZh0TSDZTyDMH/qcy4AM39CfuIeLs4N4h5lwixXLuQ==
+
+"@capacitor/keyboard@^6.0.4":
+  version "6.0.4"
+  resolved "https://registry.npmjs.org/@capacitor/keyboard/-/keyboard-6.0.4.tgz"
+  integrity sha512-tNeyQGxIOTiSv3g+dTxJ/plVpGMnB4daJuCHz1E2Kelo+jOx+FKlyFY9L1Ow144SCzuXK48NXr8WoxXfXgQEKA==
+
+"@capacitor/network@^6.0.4":
+  version "6.0.4"
+  resolved "https://registry.npmjs.org/@capacitor/network/-/network-6.0.4.tgz"
+  integrity sha512-ywtlM3wJ3evci0T9zl3aGXGvd96pkiQDeoxrGR3rAqcBpf9DQubMGdFRmHma3frn2Fd/MBDYlgleu+nWDXunAg==
+
 "@capacitor/preferences@^6.0.4":
   version "6.0.4"
   resolved "https://registry.npmjs.org/@capacitor/preferences/-/preferences-6.0.4.tgz"
   integrity sha512-ziauSI1pgdyl+gduvvf8lInvzF3Wdyu/ok+u7NlnhKp8XOj9plJgtnXZWFiR8CiCK5wMvo+gFaNh3zhMyEUwpA==
+
+"@capacitor/splash-screen@^6.0.4":
+  version "6.0.4"
+  resolved "https://registry.npmjs.org/@capacitor/splash-screen/-/splash-screen-6.0.4.tgz"
+  integrity sha512-uJXR+28cdaie7zIIUBvgkWgHim6Gr1itJym9voIMTmrjXkOaPtejwxYJsdQWPJz9zgGnSbXuC1mNNibLgv3OpQ==
+
+"@capacitor/status-bar@^6.0.3":
+  version "6.0.3"
+  resolved "https://registry.npmjs.org/@capacitor/status-bar/-/status-bar-6.0.3.tgz"
+  integrity sha512-nFlgSmtx6Zwaw0tEvZgQsWHBeOfWWB/AvEoCApopLT4mHkBVoSrwkLvy2PjZs5wxCbsmqvQczr3XCyTwaDZVQg==
 
 "@esbuild/linux-x64@0.21.5":
   version "0.21.5"
