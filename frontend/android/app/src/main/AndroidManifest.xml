@@ -38,4 +38,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Quét barcode tra cứu/tiếp nhận (@capacitor-mlkit/barcode-scanning) -->
+    <uses-permission android:name="android.permission.CAMERA" />
 </manifest>
