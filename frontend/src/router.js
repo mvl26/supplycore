@@ -18,9 +18,11 @@ import HISImport from './pages/HISImport.vue'
 import Forbidden from './pages/Forbidden.vue'
 import { useAuthStore } from './stores/auth'
 import { useAccessStore } from './stores/access'
+import { mobileRoutes } from './mobile/mobileRoutes'
+import { isNative, getServerUrl, getToken } from './platform'
 
 const router = createRouter({
-  history: createWebHistory('/supplycore/'),
+  history: createWebHistory(isNative() ? '/' : '/supplycore/'),
   routes: [
     { path: '/login',  name: 'login', component: Login, meta: { public: true, layout: 'blank', title: 'Đăng nhập' } },
     { path: '/',       name: 'home', component: Dashboard, meta: { title: 'Dashboard' } },
@@ -55,6 +57,8 @@ const router = createRouter({
     { path: '/stocktake', redirect: '/list/SC%20Inventory%20Count%20Sheet' },
     { path: '/inventory', redirect: '/stock-balance' },
 
+    ...mobileRoutes,
+
     { path: '/:catch(.*)*', name: 'notfound', component: NotFound, meta: { title: '404' } },
   ],
 })
@@ -62,6 +66,8 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   if (to.meta.public) return next()
+  // Mobile routes bypass web auth guard — handled by the mobile guard below.
+  if (to.meta.mobile) return next()
   if (auth.isGuest) {
     if (to.path !== '/login') {
       return next({ path: '/login', query: { redirect: to.fullPath } })
@@ -112,6 +118,22 @@ router.beforeEach(async (to, from, next) => {
   }
 
   next()
+})
+
+// Guard native: enforce server+token, redirect to /m/setup when missing.
+// Runs after the web auth guard (which skips meta.mobile routes via the check above).
+router.beforeEach(async (to) => {
+  if (!isNative()) {
+    // Web: let all routes through this guard — web auth guard already handled it.
+    return true
+  }
+  if (to.meta.mobile) {
+    if (to.name === 'mSetup') return true
+    const ok = (await getServerUrl()) && (await getToken())
+    return ok ? true : { name: 'mSetup' }
+  }
+  // Native but targeting a non-mobile route → redirect to mobile shell.
+  return { path: '/m' }
 })
 
 router.afterEach((to) => {
