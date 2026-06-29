@@ -101,7 +101,7 @@ async function loadList() {
       filters: cfg.filters,
       fields: cfg.fields,
       order_by: 'creation desc',
-      limit_page_length: 50,
+      limit: 50,
     })
   } catch (e) {
     toast.error(e.message ?? 'Lỗi tải danh sách')

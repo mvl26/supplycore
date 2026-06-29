@@ -136,7 +136,7 @@ async function loadAlerts() {
       fields: ['name', 'alert_date', 'alert_type', 'severity', 'title', 'message'],
       filters: [['resolved', '=', 0]],
       order_by: 'alert_date desc',
-      limit_page_length: 50,
+      limit: 50,
     })
     alerts.value = Array.isArray(rows) ? rows : []
   } catch (e) {

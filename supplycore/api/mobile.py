@@ -6,6 +6,7 @@ thế session+CSRF. App native dùng header:
 """
 
 import frappe
+from frappe.auth import get_login_attempt_tracker
 from frappe.utils.password import check_password
 
 
@@ -14,19 +15,38 @@ def mobile_login(usr, pwd):
     """Xác thực username/password, trả về api_key:api_secret.
 
     Raise frappe.AuthenticationError nếu credentials sai hoặc user bị disabled.
+    Raise frappe.SecurityException nếu tài khoản bị khoá do đăng nhập sai nhiều lần.
+
+    Sử dụng Frappe's LoginAttemptTracker (frappe.auth.get_login_attempt_tracker)
+    để đếm và khoá tài khoản khi vượt ngưỡng allow_consecutive_login_attempts
+    từ System Settings (mặc định 3 lần, khoá 5 phút).
 
     Note: dùng check_password thay LoginManager() vì LoginManager.__init__ trên
     Frappe v15 truy cập frappe.local.request.path (unavailable ngoài HTTP context).
     check_password là hàm được LoginManager.authenticate gọi nội bộ, đảm bảo
     cùng exception type (frappe.AuthenticationError).
     """
+    # Brute-force protection: kiểm tra lockout trước khi xác thực
+    tracker = get_login_attempt_tracker(usr, raise_locked_exception=False)
+    if not tracker.is_user_allowed():
+        raise frappe.SecurityException(
+            "Tài khoản tạm khoá do đăng nhập sai nhiều lần. Vui lòng thử lại sau."
+        )
+
     # Xác thực password — raise AuthenticationError nếu sai; trả về username canonical (DB)
-    usr = check_password(usr, pwd)
+    try:
+        usr = check_password(usr, pwd)
+    except frappe.AuthenticationError:
+        tracker.add_failure_attempt()
+        raise
 
     # Load user một lần, kiểm tra enabled trước khi ghi bất kỳ thứ gì
     user_doc = frappe.get_doc("User", usr)
     if not user_doc.enabled:
         raise frappe.AuthenticationError
+
+    # Đặt lại bộ đếm thất bại khi đăng nhập thành công
+    tracker.add_success_attempt()
 
     api_secret = _ensure_api_credentials(user_doc)
     return {
@@ -51,15 +71,3 @@ def _ensure_api_credentials(user_doc) -> str:
     user_doc.save(ignore_permissions=True)
     frappe.db.commit()
     return api_secret
-
-
-@frappe.whitelist()
-def scan_barcode(barcode: str):
-    """Trả về Item / Batch / Bin Location khớp barcode."""
-    return {}
-
-
-@frappe.whitelist()
-def confirm_putaway(batch_no: str, bin_location: str, qty: float):
-    """Xác nhận putaway từ PDA — tạo Stock Entry Material Transfer."""
-    return {"ok": True}
