@@ -5,10 +5,13 @@ import router from './router'
 import { clickOutside } from './directives/clickOutside'
 import './assets/main.css'
 import { registerPwa } from './pwa'
+import { isNative } from './platform'
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.directive('click-outside', clickOutside)
 app.mount('#app')
-registerPwa()
+// PWA service worker chỉ cho web. Trên native (Capacitor) KHÔNG đăng ký SW:
+// SW build theo base web /supplycore → precache URL sai (404) + can thiệp WebView.
+if (!isNative()) registerPwa()
