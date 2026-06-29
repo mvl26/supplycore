@@ -137,6 +137,21 @@ function parseFrappeError(body) {
 }
 
 // === Auth ===
+
+// Gọi endpoint vend token. Phải gọi TRƯỚC khi có token → tự dựng URL tuyệt đối.
+export async function mobileLoginApi(serverUrl, usr, pwd) {
+  const base = String(serverUrl).replace(/\/+$/, '')
+  const res = await fetch(`${base}/api/method/supplycore.api.mobile.mobile_login`, {
+    method: 'POST',
+    credentials: 'omit',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ usr, pwd }),
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(parseFrappeError(body) || `HTTP ${res.status}`)
+  return body.message // Frappe bọc kết quả whitelisted trong .message
+}
+
 export async function login(usr, pwd) {
   const fd = new FormData()
   fd.append('usr', usr)

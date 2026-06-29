@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { login as apiLogin, logout as apiLogout, getSession, getUserInfo } from '../api'
+import { login as apiLogin, logout as apiLogout, getSession, getUserInfo, mobileLoginApi } from '../api'
+import { setServerUrl, setToken } from '../platform'
 import { useAccessStore } from './access'
 
 export const useAuthStore = defineStore('auth', {
@@ -52,6 +53,25 @@ export const useAuthStore = defineStore('auth', {
         // Reset booted flag để boot() refresh user info từ session mới
         this.booted = false
         await this.boot()
+        return true
+      } catch (e) {
+        this.loginError = e.message || 'Đăng nhập thất bại'
+        return false
+      } finally {
+        this.loginLoading = false
+      }
+    },
+    async mobileLogin(serverUrl, usr, pwd) {
+      this.loginError = null
+      this.loginLoading = true
+      try {
+        const r = await mobileLoginApi(serverUrl, usr, pwd)
+        await setServerUrl(serverUrl)
+        await setToken(r.api_key, r.api_secret)
+        this.user = { name: r.user, full_name: r.full_name, email: r.user,
+          is_guest: false, roles: r.roles || [] }
+        this.booted = true
+        await useAccessStore().load(true)
         return true
       } catch (e) {
         this.loginError = e.message || 'Đăng nhập thất bại'
