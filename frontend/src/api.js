@@ -1,6 +1,6 @@
 // Frappe REST API client — standalone SupplyCore
 
-import { isNative, getServerUrl, getToken } from './platform'
+import { isNative, getServerUrl, getToken, clearToken } from './platform'
 
 const getCsrf = () => {
   if (typeof window === 'undefined') return null
@@ -45,6 +45,11 @@ async function request(path, options = {}) {
   })
   let body = null
   try { body = await res.json() } catch (e) { /* ignore */ }
+  // Native: token hết hạn/sai (401/403) → xoá token + báo app về màn đăng nhập.
+  if ((res.status === 401 || res.status === 403) && isNative()) {
+    try { await clearToken() } catch (e) {}
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('sc:unauth'))
+  }
   if (!res.ok) {
     const msg = parseFrappeError(body) || `HTTP ${res.status}`
     const err = new Error(msg)

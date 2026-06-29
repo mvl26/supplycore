@@ -9,6 +9,15 @@ const config: CapacitorConfig = {
   server: { androidScheme: 'https' },
   plugins: {
     CapacitorHttp: { enabled: true }, // bỏ qua CORS browser cho request native
+    SplashScreen: {
+      launchShowDuration: 600,
+      launchAutoHide: false,          // app tự ẩn sau khi mount (initNative)
+      backgroundColor: '#1F4E79',
+      androidSpinnerStyle: 'small',
+      spinnerColor: '#FFFFFF',
+    },
+    StatusBar: { style: 'DARK', backgroundColor: '#1F4E79' },
+    Keyboard: { resize: 'native' },
   },
 }
 
