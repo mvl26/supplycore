@@ -1,5 +1,5 @@
 <!-- frontend/src/mobile/screens/Receiving.vue
-     Màn hình Tiếp nhận / Nhập kho — mobile.
+     Màn hình Tiếp nhận / Nhập kho — mobile (giao diện premium).
 
      LUỒNG:
        1. Danh sách phiếu SC Purchase Receipt ở trạng thái Draft (docstatus=0)
@@ -12,137 +12,172 @@
        uom, rate, warehouse, supplier_batch_no, batch_no, manufacturing_date, expiry_date
 -->
 <template>
-  <div class="rc-page">
+  <MPullRefresh :refreshing="loading" @refresh="load">
+    <MTopBar title="Tiếp nhận" sub="Phiếu nhập chờ xử lý" />
 
-    <!-- ── DANH SÁCH PHIẾU NHẬP CHỜ ── -->
-    <template v-if="!current">
-      <div class="rc-header">
-        <span class="rc-title">Phiếu nhập chờ xử lý</span>
-        <button class="rc-refresh-btn" :disabled="loading" @click="load" title="Tải lại">
-          <Icon name="refresh" :size="18" />
-        </button>
-      </div>
+    <div class="m-page">
 
-      <p v-if="loading" class="rc-muted">Đang tải...</p>
+      <!-- ── DANH SÁCH PHIẾU NHẬP CHỜ ── -->
+      <template v-if="!current">
+        <!-- Đang tải -->
+        <MSkeleton v-if="loading" :count="4" />
 
-      <p v-else-if="rows.length === 0" class="rc-muted">Không có phiếu nhập chờ.</p>
+        <!-- Lỗi tải -->
+        <MErrorState
+          v-else-if="loadError"
+          :message="loadError"
+          @retry="load"
+        />
 
-      <ul v-else class="rc-list">
-        <li
-          v-for="r in rows"
-          :key="r.name"
-          class="rc-card rc-card--clickable"
-          @click="open(r.name)"
+        <!-- Rỗng -->
+        <MEmpty
+          v-else-if="rows.length === 0"
+          icon="truck"
+          title="Không có phiếu nhập chờ"
+          sub="Tất cả phiếu đã được xử lý"
+        />
+
+        <!-- Danh sách -->
+        <ul v-else class="m-list">
+          <li
+            v-for="r in rows"
+            :key="r.name"
+            class="m-card m-card--tap m-rise"
+            @click="open(r.name)"
+          >
+            <div class="rc-card-header">
+              <span class="m-card__title">{{ r.name }}</span>
+              <Icon name="chevron-right" :size="16" class="m-card__chev" />
+            </div>
+            <div class="m-card__row">
+              <span>NCC</span>
+              <b>{{ r.supplier_name || r.supplier || '—' }}</b>
+            </div>
+            <div class="m-card__row">
+              <span>Kho nhập</span>
+              <b>{{ r.to_warehouse || '—' }}</b>
+            </div>
+            <div class="m-card__row">
+              <span>Ngày</span>
+              <b>{{ fmtDate(r.posting_date) }}</b>
+            </div>
+          </li>
+        </ul>
+      </template>
+
+      <!-- ── CHI TIẾT PHIẾU NHẬP ── -->
+      <template v-else>
+        <!-- Hàng quay lại -->
+        <div class="rc-back-row">
+          <button class="m-btn m-btn--ghost m-btn--sm rc-back-btn" @click="backToList">
+            <Icon name="arrow-left" :size="16" /> Danh sách
+          </button>
+          <span class="rc-detail-name">{{ current.name }}</span>
+        </div>
+
+        <!-- Meta phiếu -->
+        <div class="m-card">
+          <div class="m-card__row">
+            <span>NCC</span>
+            <b>{{ current.supplier_name || current.supplier || '—' }}</b>
+          </div>
+          <div class="m-card__row">
+            <span>Kho nhập</span>
+            <b>{{ current.to_warehouse || '—' }}</b>
+          </div>
+          <div v-if="current.purchase_order" class="m-card__row">
+            <span>PO</span>
+            <b class="rc-mono">{{ current.purchase_order }}</b>
+          </div>
+          <div v-if="current.qc_required" class="m-card__row">
+            <span>QC</span>
+            <MBadge status="Pending" label="Yêu cầu KCS" />
+          </div>
+        </div>
+
+        <!-- Không có vật tư -->
+        <MEmpty
+          v-if="!current.items || current.items.length === 0"
+          icon="package"
+          title="Phiếu không có dòng vật tư"
+        />
+
+        <!-- Danh sách vật tư -->
+        <ul v-else class="m-list">
+          <li
+            v-for="(it, i) in current.items"
+            :key="it.name || i"
+            class="m-card rc-item-card"
+          >
+            <!-- Tên vật tư -->
+            <div class="m-card__title">{{ it.item_name || it.item }}</div>
+            <div v-if="it.item_name" class="rc-item-code">{{ it.item }}</div>
+
+            <!-- SL nhận — field thực: qty -->
+            <label class="m-field">
+              <span>
+                SL nhận
+                <span v-if="it.po_qty != null" class="rc-field-hint">(SL PO: {{ it.po_qty }})</span>
+              </span>
+              <input
+                v-model.number="it.qty"
+                type="number"
+                inputmode="decimal"
+                min="0"
+                class="m-input rc-input-qty"
+                placeholder="0"
+              />
+            </label>
+
+            <!-- Quét lô NCC → supplier_batch_no -->
+            <div class="rc-scan-row">
+              <button class="m-btn m-btn--ghost m-btn--sm rc-scan-btn" @click="scanBatch(it)">
+                <Icon name="scan" :size="16" /> Quét lô NCC
+              </button>
+              <span v-if="it.supplier_batch_no" class="m-badge m-badge--info rc-batch-val">
+                {{ it.supplier_batch_no }}
+              </span>
+            </div>
+          </li>
+        </ul>
+
+        <!-- Nút xác nhận -->
+        <button
+          class="m-btn m-btn--ok"
+          :disabled="saving"
+          @click="confirm"
         >
-          <div class="rc-card-title">{{ r.name }}</div>
-          <div class="rc-card-row">
-            <span class="rc-label">NCC</span>
-            <span class="rc-val">{{ r.supplier_name || r.supplier || '—' }}</span>
-          </div>
-          <div class="rc-card-row">
-            <span class="rc-label">Kho nhập</span>
-            <span class="rc-val">{{ r.to_warehouse || '—' }}</span>
-          </div>
-          <div class="rc-card-row">
-            <span class="rc-label">Ngày</span>
-            <span class="rc-val">{{ fmtDate(r.posting_date) }}</span>
-          </div>
-        </li>
-      </ul>
-    </template>
-
-    <!-- ── CHI TIẾT PHIẾU NHẬP ── -->
-    <template v-else>
-      <div class="rc-back-row">
-        <button class="rc-back-btn" @click="backToList">
-          <Icon name="arrow-left" :size="16" /> Danh sách
+          <Icon name="check-circle" :size="18" />
+          <span v-if="saving">Đang xử lý...</span>
+          <span v-else>Xác nhận nhận hàng</span>
         </button>
-        <span class="rc-detail-name">{{ current.name }}</span>
-      </div>
+      </template>
 
-      <div class="rc-detail-meta">
-        <div class="rc-card-row">
-          <span class="rc-label">NCC</span>
-          <span class="rc-val">{{ current.supplier_name || current.supplier || '—' }}</span>
-        </div>
-        <div class="rc-card-row">
-          <span class="rc-label">Kho nhập</span>
-          <span class="rc-val">{{ current.to_warehouse || '—' }}</span>
-        </div>
-        <div v-if="current.purchase_order" class="rc-card-row">
-          <span class="rc-label">PO</span>
-          <span class="rc-val rc-mono">{{ current.purchase_order }}</span>
-        </div>
-        <div v-if="current.qc_required" class="rc-card-row">
-          <span class="rc-label">QC</span>
-          <span class="rc-badge rc-badge--warn">Yêu cầu KCS</span>
-        </div>
-      </div>
-
-      <p v-if="!current.items || current.items.length === 0" class="rc-muted">
-        Phiếu không có dòng vật tư.
-      </p>
-
-      <ul v-else class="rc-list">
-        <li v-for="(it, i) in current.items" :key="it.name || i" class="rc-card rc-item-card">
-          <!-- Tên vật tư -->
-          <div class="rc-card-title">{{ it.item_name || it.item }}</div>
-          <div v-if="it.item_name" class="rc-item-code">{{ it.item }}</div>
-
-          <!-- SL nhận — field thực: qty -->
-          <label class="rc-field">
-            <span class="rc-field-label">
-              SL nhận
-              <span v-if="it.po_qty != null" class="rc-field-hint">(SL PO: {{ it.po_qty }})</span>
-            </span>
-            <input
-              v-model.number="it.qty"
-              type="number"
-              inputmode="decimal"
-              min="0"
-              class="rc-input-qty"
-              placeholder="0"
-            />
-          </label>
-
-          <!-- Số lô NCC — supplier_batch_no -->
-          <div class="rc-scan-row">
-            <button class="rc-scan-btn" @click="scanBatch(it)">
-              <Icon name="scan" :size="16" /> Quét lô NCC
-            </button>
-            <span v-if="it.supplier_batch_no" class="rc-batch-val rc-mono">
-              {{ it.supplier_batch_no }}
-            </span>
-          </div>
-        </li>
-      </ul>
-
-      <button
-        class="rc-confirm-btn"
-        :disabled="saving"
-        @click="confirm"
-      >
-        <span v-if="saving">Đang xử lý...</span>
-        <span v-else>Xác nhận nhận hàng</span>
-      </button>
-    </template>
-
-  </div>
+    </div>
+  </MPullRefresh>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import Icon from '../../components/Icon.vue'
+import MTopBar from '../ui/MTopBar.vue'
+import MBadge from '../ui/MBadge.vue'
+import MSkeleton from '../ui/MSkeleton.vue'
+import MEmpty from '../ui/MEmpty.vue'
+import MErrorState from '../ui/MErrorState.vue'
+import MPullRefresh from '../ui/MPullRefresh.vue'
+import { tapLight, notifySuccess, notifyError } from '../native'
 import { getList, getDoc, updateDoc, submitDoc } from '../../api'
 import { useScanner } from '../useScanner'
 import { useToastStore } from '../../stores/toast'
 
 const DT = 'SC Purchase Receipt'
 
-const rows    = ref([])
-const current = ref(null)
-const loading = ref(false)
-const saving  = ref(false)
+const rows      = ref([])
+const current   = ref(null)
+const loading   = ref(false)
+const saving    = ref(false)
+const loadError = ref(null)
 
 const { scan } = useScanner()
 const toast    = useToastStore()
@@ -160,6 +195,7 @@ function fmtDate(d) {
 
 async function load() {
   loading.value = true
+  loadError.value = null
   try {
     rows.value = await getList(DT, {
       filters: [['docstatus', '=', 0]],
@@ -168,6 +204,7 @@ async function load() {
       limit: 50,
     })
   } catch (e) {
+    loadError.value = e.message
     toast.error(`Lỗi tải danh sách: ${e.message}`)
   } finally {
     loading.value = false
@@ -177,6 +214,7 @@ async function load() {
 // ─── Mở chi tiết phiếu ───────────────────────────────────────────────────────
 
 async function open(name) {
+  tapLight()
   loading.value = true
   try {
     current.value = await getDoc(DT, name)
@@ -194,6 +232,7 @@ function backToList() {
 // ─── Quét lô NCC → ghi vào supplier_batch_no ─────────────────────────────────
 
 async function scanBatch(it) {
+  tapLight()
   const code = await scan()
   if (code) {
     it.supplier_batch_no = code
@@ -215,11 +254,13 @@ async function confirm() {
     // Ghi toàn bộ mảng items (giữ tất cả field, chỉ qty + supplier_batch_no được chỉnh)
     await updateDoc(DT, current.value.name, { items: current.value.items })
     await submitDoc(DT, current.value.name)
+    notifySuccess()
     toast.success('Đã xác nhận nhận hàng và cập nhật tồn kho.')
     current.value = null
     await load()
   } catch (e) {
     // Giữ ở detail view để người dùng có thể sửa và thử lại
+    notifyError()
     toast.error(`Lỗi xác nhận: ${e.message}`)
   } finally {
     saving.value = false
@@ -230,103 +271,26 @@ onMounted(load)
 </script>
 
 <style scoped>
-.rc-page {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-bottom: 20px;
-}
-
-/* ── Header danh sách ── */
-.rc-header {
+/* ── Header card (mã phiếu + chevron) ── */
+.rc-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 6px;
 }
-.rc-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1F4E79;
-}
-.rc-refresh-btn {
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: #fff;
-  padding: 6px 10px;
-  color: #1F4E79;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-.rc-refresh-btn:disabled { opacity: .45; cursor: not-allowed; }
-.rc-refresh-btn:active { background: #f3f4f6; }
-
-/* ── Trạng thái muted ── */
-.rc-muted { color: #9ca3af; font-size: 13px; text-align: center; margin: 16px 0; }
-
-/* ── Danh sách ── */
-.rc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-
-/* ── Thẻ chung ── */
-.rc-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px 14px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.rc-card--clickable { cursor: pointer; }
-.rc-card--clickable:active { background: #f0f4f8; }
-
-.rc-card-title {
-  font-weight: 600;
-  color: #1F4E79;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-.rc-card-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-}
-.rc-label { color: #6b7280; }
-.rc-val   { font-weight: 500; color: #111827; }
-.rc-mono  { font-family: monospace; }
-
-/* ── Badge ── */
-.rc-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.rc-badge--warn { background: #fef9c3; color: #854d0e; }
 
 /* ── Quay lại ── */
 .rc-back-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .rc-back-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #2E75B6;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
   flex-shrink: 0;
 }
 .rc-detail-name {
-  font-weight: 600;
-  color: #1F4E79;
+  font-weight: 650;
+  color: var(--m-navy);
   font-size: 14px;
   flex: 1;
   overflow: hidden;
@@ -334,55 +298,31 @@ onMounted(load)
   white-space: nowrap;
 }
 
-/* ── Meta phiếu ── */
-.rc-detail-meta {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 14px;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 /* ── Card vật tư ── */
-.rc-item-card { gap: 8px; }
-.rc-item-code { font-size: 11px; color: #6b7280; font-family: monospace; margin-top: -4px; }
+.rc-item-card { gap: 10px; }
+.rc-item-code {
+  font-size: 11px;
+  color: var(--m-ink-3);
+  font-family: monospace;
+  margin-top: -6px;
+}
 
-/* ── Field SL nhận ── */
-.rc-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.rc-field-label {
-  font-size: 12px;
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+/* ── Field hint SL PO ── */
 .rc-field-hint {
   font-size: 11px;
-  color: #9ca3af;
-}
-.rc-input-qty {
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1F4E79;
-  outline: none;
-  width: 100%;
-  box-sizing: border-box;
-}
-.rc-input-qty:focus {
-  border-color: #1F4E79;
-  box-shadow: 0 0 0 2px rgba(31,78,121,.15);
+  color: var(--m-ink-3);
+  margin-left: 4px;
 }
 
-/* ── Quét lô ── */
+/* ── Input SL nhận — fontsizen lớn cho dễ gõ mobile ── */
+.rc-input-qty {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--m-navy);
+  text-align: right;
+}
+
+/* ── Hàng quét lô ── */
 .rc-scan-row {
   display: flex;
   align-items: center;
@@ -390,41 +330,13 @@ onMounted(load)
   flex-wrap: wrap;
 }
 .rc-scan-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: #fff;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: #374151;
-  cursor: pointer;
   flex-shrink: 0;
 }
-.rc-scan-btn:active { background: #f3f4f6; }
 .rc-batch-val {
-  font-size: 13px;
-  color: #1F4E79;
-  font-weight: 600;
+  font-family: monospace;
+  letter-spacing: .02em;
 }
 
-/* ── Nút xác nhận ── */
-.rc-confirm-btn {
-  background: #1F4E79;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 14px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 4px;
-  width: 100%;
-}
-.rc-confirm-btn:disabled {
-  opacity: .55;
-  cursor: not-allowed;
-}
-.rc-confirm-btn:not(:disabled):active { background: #163d61; }
+/* ── Mono (PO ref) ── */
+.rc-mono { font-family: monospace; }
 </style>
