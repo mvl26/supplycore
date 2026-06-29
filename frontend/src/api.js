@@ -1,24 +1,45 @@
 // Frappe REST API client — standalone SupplyCore
 
+import { isNative, getServerUrl, getToken } from './platform'
+
 const getCsrf = () => {
+  if (typeof window === 'undefined') return null
   if (window.sc_csrf && window.sc_csrf !== '{{ csrf_token }}') return window.sc_csrf
   const meta = document.querySelector('meta[name="csrf-token"]')
   return (meta && meta.content && meta.content !== '{{ csrf_token }}') ? meta.content : null
 }
 
 let _csrf = getCsrf()
-export const setCsrf = (v) => { _csrf = v; window.sc_csrf = v }
+export const setCsrf = (v) => { _csrf = v; if (typeof window !== 'undefined') window.sc_csrf = v }
+
+// Native: prefix base URL đã cấu hình. Web: giữ path tương đối (same-origin).
+export async function resolveUrl(path) {
+  if (!isNative()) return path
+  const base = await getServerUrl()
+  if (!base) return path
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`
+}
+
+async function authHeaders() {
+  if (!isNative()) return {} // web dùng CSRF như cũ
+  const t = await getToken()
+  return t ? { Authorization: `token ${t.key}:${t.secret}` } : {}
+}
 
 async function request(path, options = {}) {
   const isForm = options.body instanceof FormData
   const headers = {
     'Accept': 'application/json',
-    'X-Frappe-CSRF-Token': _csrf || getCsrf() || '',
+    // Web: gửi CSRF. Native: không cần CSRF (token auth) — vẫn vô hại nếu rỗng.
+    'X-Frappe-CSRF-Token': isNative() ? '' : (_csrf || getCsrf() || ''),
+    ...(await authHeaders()),
     ...(options.headers || {}),
   }
   if (!isForm) headers['Content-Type'] = 'application/json'
-  const res = await fetch(path, {
-    credentials: 'include',
+  const url = await resolveUrl(path)
+  const res = await fetch(url, {
+    // Native dùng token (không cookie); web giữ 'include' để gửi session cookie.
+    credentials: isNative() ? 'omit' : 'include',
     ...options,
     headers,
   })
@@ -220,12 +241,13 @@ export async function runDocMethod(doctype, name, method, args = {}) {
     dn: name,
   })
   if (Object.keys(args).length) params.set('args', JSON.stringify(args))
-  const res = await fetch(`/api/method/run_doc_method?${params.toString()}`, {
+  const res = await fetch(await resolveUrl(`/api/method/run_doc_method?${params.toString()}`), {
     method: 'POST',
-    credentials: 'include',
+    credentials: isNative() ? 'omit' : 'include',
     headers: {
       'Accept': 'application/json',
-      'X-Frappe-CSRF-Token': _csrf || getCsrf() || '',
+      'X-Frappe-CSRF-Token': isNative() ? '' : (_csrf || getCsrf() || ''),
+      ...(await authHeaders()),
     },
   })
   const body = await res.json().catch(() => ({}))
