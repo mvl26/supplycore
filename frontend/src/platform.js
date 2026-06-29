@@ -17,7 +17,7 @@ export function isNative() {
 async function prefs() {
   if (_prefs) return _prefs
   if (!isNative()) return null
-  const mod = await import('@capacitor/preferences')
+  const mod = await import(/* @vite-ignore */ '@capacitor/preferences')
   _prefs = mod.Preferences
   return _prefs
 }

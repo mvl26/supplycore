@@ -2,11 +2,40 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import fs from 'fs'
 
 // Build vào supplycore/public/frontend/ để Frappe serve qua /assets/supplycore/frontend/
+// Khi CAP_BUILD=1: build native bundle ra dist/ với base='./' (relative assets, Capacitor).
+const isNativeBuild = !!process.env.CAP_BUILD
+
+// Plugin: sinh dist/index.html cho Capacitor (cap sync yêu cầu file này làm entry).
+function nativeIndexHtml() {
+  return {
+    name: 'native-index-html',
+    apply: 'build',
+    closeBundle() {
+      const html = `<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>SupplyCore</title>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./index.js"><\/script>
+  </body>
+</html>`
+      fs.writeFileSync(path.resolve(__dirname, 'dist/index.html'), html)
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     vue(),
+    ...(isNativeBuild ? [nativeIndexHtml()] : []),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: null,          // tự đăng ký trong src/pwa.js (cần custom path + scope)
@@ -84,23 +113,44 @@ export default defineConfig({
       },
     },
   },
-  build: {
-    outDir: '../supplycore/public/frontend',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: 'src/main.js',
-      output: {
-        entryFileNames: 'index.js',
-        chunkFileNames: 'chunks/[name]-[hash].js',
-        assetFileNames: (info) => info.name === 'main.css' || info.name?.endsWith('.css')
-          ? 'index.css'
-          : 'assets/[name]-[hash][extname]',
-        manualChunks: {
-          'vue-vendor': ['vue', 'vue-router', 'pinia'],
-          'chart': ['chart.js', 'vue-chartjs'],
+  build: isNativeBuild
+    ? {
+        // Native Capacitor build: relative base, emits dist/ for cap sync
+        outDir: 'dist',
+        emptyOutDir: true,
+        rollupOptions: {
+          input: 'src/main.js',
+          output: {
+            entryFileNames: 'index.js',
+            chunkFileNames: 'chunks/[name]-[hash].js',
+            assetFileNames: (info) => info.name === 'main.css' || info.name?.endsWith('.css')
+              ? 'index.css'
+              : 'assets/[name]-[hash][extname]',
+            manualChunks: {
+              'vue-vendor': ['vue', 'vue-router', 'pinia'],
+              'chart': ['chart.js', 'vue-chartjs'],
+            },
+          },
+        },
+      }
+    : {
+        // Web build: Frappe serves from /assets/supplycore/frontend/
+        outDir: '../supplycore/public/frontend',
+        emptyOutDir: true,
+        rollupOptions: {
+          input: 'src/main.js',
+          output: {
+            entryFileNames: 'index.js',
+            chunkFileNames: 'chunks/[name]-[hash].js',
+            assetFileNames: (info) => info.name === 'main.css' || info.name?.endsWith('.css')
+              ? 'index.css'
+              : 'assets/[name]-[hash][extname]',
+            manualChunks: {
+              'vue-vendor': ['vue', 'vue-router', 'pinia'],
+              'chart': ['chart.js', 'vue-chartjs'],
+            },
+          },
         },
       },
-    },
-  },
-  base: '/assets/supplycore/frontend/',
+  base: isNativeBuild ? './' : '/assets/supplycore/frontend/',
 })
