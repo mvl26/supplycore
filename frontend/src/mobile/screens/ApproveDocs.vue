@@ -46,6 +46,13 @@ import { getList, getDoc } from '../../api'
 import { useToastStore } from '../../stores/toast'
 import ActionPanel from '../../components/ActionPanel.vue'
 import Icon from '../../components/Icon.vue'
+import MTopBar from '../ui/MTopBar.vue'
+import MBadge from '../ui/MBadge.vue'
+import MSkeleton from '../ui/MSkeleton.vue'
+import MEmpty from '../ui/MEmpty.vue'
+import MErrorState from '../ui/MErrorState.vue'
+import MPullRefresh from '../ui/MPullRefresh.vue'
+import { tapLight, notifySuccess } from '../native'
 
 const toast = useToastStore()
 
@@ -83,6 +90,7 @@ const doctypeKeys = Object.keys(DOCTYPE_CONFIG)
 const activeDoctype = ref(doctypeKeys[0])
 const rows          = ref([])
 const loading       = ref(false)
+const hasError      = ref(false)
 
 // Detail view
 const activeDoc     = ref(null)
@@ -94,6 +102,7 @@ const activeConfig = computed(() => DOCTYPE_CONFIG[activeDoctype.value])
 // ── Methods ──────────────────────────────────────────────────────────────────
 async function loadList() {
   loading.value = true
+  hasError.value = false
   rows.value = []
   try {
     const cfg = activeConfig.value
@@ -104,6 +113,7 @@ async function loadList() {
       limit: 50,
     })
   } catch (e) {
+    hasError.value = true
     toast.error(e.message ?? 'Lỗi tải danh sách')
   } finally {
     loading.value = false
@@ -112,12 +122,14 @@ async function loadList() {
 
 function selectDoctype(dt) {
   if (dt === activeDoctype.value && !activeDoc.value) return
+  tapLight()
   activeDoctype.value = dt
   activeDoc.value = null
   loadList()
 }
 
 async function openDoc(name) {
+  tapLight()
   detailLoading.value = true
   activeDoc.value = { name }   // placeholder so detail view renders immediately
   try {
@@ -136,6 +148,7 @@ function back() {
 
 async function onAfter() {
   // Phiếu vừa được duyệt/từ chối → trở về danh sách và reload
+  notifySuccess()
   activeDoc.value = null
   await loadList()
 }
@@ -145,266 +158,115 @@ loadList()
 </script>
 
 <template>
-  <div class="m-approve">
+  <MPullRefresh :refreshing="loading" @refresh="loadList">
 
-    <!-- Doctype chip selector -->
-    <div class="m-approve__tabs">
-      <button
-        v-for="dt in doctypeKeys"
-        :key="dt"
-        :class="['m-chip', dt === activeDoctype ? 'm-chip--on' : '']"
-        @click="selectDoctype(dt)"
-      >
-        {{ DOCTYPE_CONFIG[dt].label }}
-      </button>
-    </div>
+    <MTopBar title="Duyệt phiếu" sub="Phiếu chờ phê duyệt" />
 
-    <!-- ── LIST VIEW ─────────────────────────────────────────────────── -->
-    <template v-if="!activeDoc">
-      <div v-if="loading" class="m-state">
-        <Icon name="loader" :size="18" class="m-spin" />
-        Đang tải...
-      </div>
+    <div class="m-page">
 
-      <ul v-else-if="rows.length" class="m-list">
-        <li
-          v-for="r in rows"
-          :key="r.name"
-          class="m-card"
-          @click="openDoc(r.name)"
+      <!-- Chip selector doctype -->
+      <div class="m-chips">
+        <button
+          v-for="dt in doctypeKeys"
+          :key="dt"
+          :class="['m-chip', dt === activeDoctype ? 'm-chip--on' : '']"
+          @click="selectDoctype(dt)"
         >
-          <div class="m-card__title">
-            <Icon name="file-text" :size="14" />
-            {{ r.name }}
-          </div>
-          <div class="m-card__row">
-            <span>Ngày tạo</span>
-            <b>{{ r.creation?.slice(0, 10) }}</b>
-          </div>
-          <div v-if="r.approval_stage" class="m-card__row">
-            <span>Giai đoạn</span>
-            <span class="m-badge">{{ r.approval_stage }}</span>
-          </div>
-          <div v-if="r.status" class="m-card__row">
-            <span>Trạng thái</span>
-            <span class="m-badge">{{ r.status }}</span>
-          </div>
-          <div v-if="r.supplier" class="m-card__row">
-            <span>Nhà cung cấp</span>
-            <b>{{ r.supplier }}</b>
-          </div>
-          <div v-if="r.department" class="m-card__row">
-            <span>Khoa/Phòng</span>
-            <b>{{ r.department }}</b>
-          </div>
-          <div class="m-card__arrow">
-            <Icon name="chevron-right" :size="16" />
-          </div>
-        </li>
-      </ul>
-
-      <div v-else class="m-state m-state--empty">
-        <Icon name="inbox" :size="32" />
-        <p>Không có phiếu chờ duyệt.</p>
-      </div>
-    </template>
-
-    <!-- ── DETAIL VIEW ───────────────────────────────────────────────── -->
-    <template v-else>
-      <button class="m-back" @click="back">
-        <Icon name="arrow-left" :size="16" />
-        Quay lại
-      </button>
-
-      <!-- Key fields summary -->
-      <div class="m-card m-detail">
-        <div class="m-detail__name">{{ activeDoc.name }}</div>
-        <div v-if="activeDoc.creation" class="m-card__row">
-          <span>Ngày tạo</span>
-          <b>{{ activeDoc.creation?.slice(0, 10) }}</b>
-        </div>
-        <div v-if="activeDoc.approval_stage" class="m-card__row">
-          <span>Giai đoạn</span>
-          <span class="m-badge">{{ activeDoc.approval_stage }}</span>
-        </div>
-        <div v-if="activeDoc.status" class="m-card__row">
-          <span>Trạng thái</span>
-          <span class="m-badge">{{ activeDoc.status }}</span>
-        </div>
-        <div v-if="activeDoc.supplier" class="m-card__row">
-          <span>Nhà cung cấp</span>
-          <b>{{ activeDoc.supplier }}</b>
-        </div>
-        <div v-if="activeDoc.department" class="m-card__row">
-          <span>Khoa/Phòng</span>
-          <b>{{ activeDoc.department }}</b>
-        </div>
+          {{ DOCTYPE_CONFIG[dt].label }}
+        </button>
       </div>
 
-      <!-- Loading indicator while fetching full doc -->
-      <div v-if="detailLoading" class="m-state">
-        <Icon name="loader" :size="18" class="m-spin" />
-        Đang tải chi tiết...
-      </div>
+      <!-- ── LIST VIEW ─────────────────────────────────────────────────── -->
+      <template v-if="!activeDoc">
 
-      <!-- ActionPanel handles all approve/reject logic, arg prompts, and method calls -->
-      <div v-else class="m-action-wrap">
-        <ActionPanel
-          :doctype="activeDoctype"
-          :doc="activeDoc"
-          @after="onAfter"
+        <!-- Loading skeleton -->
+        <MSkeleton v-if="loading" :count="4" />
+
+        <!-- Error state -->
+        <MErrorState v-else-if="hasError" @retry="loadList" />
+
+        <!-- List -->
+        <ul v-else-if="rows.length" class="m-list">
+          <li
+            v-for="r in rows"
+            :key="r.name"
+            class="m-card m-card--tap m-rise"
+            @click="openDoc(r.name)"
+          >
+            <div class="m-card__title">{{ r.name }}</div>
+            <div class="m-card__row">
+              <span>Ngày tạo</span>
+              <b>{{ r.creation?.slice(0, 10) }}</b>
+            </div>
+            <div v-if="r.supplier" class="m-card__row">
+              <span>Nhà cung cấp</span>
+              <b>{{ r.supplier }}</b>
+            </div>
+            <div v-if="r.department" class="m-card__row">
+              <span>Khoa/Phòng</span>
+              <b>{{ r.department }}</b>
+            </div>
+            <div class="m-card__row" style="margin-top:4px">
+              <MBadge :status="r.approval_stage || r.status" />
+              <Icon name="chevron-right" :size="16" class="m-card__chev" />
+            </div>
+          </li>
+        </ul>
+
+        <!-- Empty -->
+        <MEmpty
+          v-else
+          icon="clipboard-check"
+          title="Không có phiếu chờ duyệt"
+          sub="Tất cả phiếu đã được xử lý."
         />
-      </div>
-    </template>
 
-  </div>
+      </template>
+
+      <!-- ── DETAIL VIEW ───────────────────────────────────────────────── -->
+      <template v-else>
+
+        <!-- Back button -->
+        <button class="m-btn m-btn--ghost m-btn--sm" style="align-self:flex-start" @click="back">
+          <Icon name="arrow-left" :size="16" />
+          Quay lại
+        </button>
+
+        <!-- Doc summary card -->
+        <div class="m-card">
+          <div class="m-card__title" style="font-size:16px;margin-bottom:8px">{{ activeDoc.name }}</div>
+          <div v-if="activeDoc.creation" class="m-card__row">
+            <span>Ngày tạo</span>
+            <b>{{ activeDoc.creation?.slice(0, 10) }}</b>
+          </div>
+          <div v-if="activeDoc.supplier" class="m-card__row">
+            <span>Nhà cung cấp</span>
+            <b>{{ activeDoc.supplier }}</b>
+          </div>
+          <div v-if="activeDoc.department" class="m-card__row">
+            <span>Khoa/Phòng</span>
+            <b>{{ activeDoc.department }}</b>
+          </div>
+          <div v-if="activeDoc.approval_stage || activeDoc.status" class="m-card__row" style="margin-top:4px">
+            <span>Trạng thái</span>
+            <MBadge :status="activeDoc.approval_stage || activeDoc.status" />
+          </div>
+        </div>
+
+        <!-- Loading indicator while fetching full doc -->
+        <MSkeleton v-if="detailLoading" :count="2" />
+
+        <!-- ActionPanel handles all approve/reject logic, arg prompts, and method calls -->
+        <div v-else class="m-card" style="padding:0;overflow:hidden">
+          <ActionPanel
+            :doctype="activeDoctype"
+            :doc="activeDoc"
+            @after="onAfter"
+          />
+        </div>
+
+      </template>
+
+    </div>
+  </MPullRefresh>
 </template>
-
-<style scoped>
-.m-approve {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 2px;
-}
-
-/* ── Chips ── */
-.m-approve__tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-.m-approve__tabs::-webkit-scrollbar { display: none; }
-
-.m-chip {
-  white-space: nowrap;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-.m-chip--on {
-  background: #1F4E79;
-  color: #fff;
-  border-color: #1F4E79;
-}
-
-/* ── List ── */
-.m-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* ── Card ── */
-.m-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px;
-  background: #fff;
-  cursor: pointer;
-  position: relative;
-  transition: box-shadow 0.15s;
-}
-.m-card:active {
-  box-shadow: 0 0 0 2px #2E75B633;
-}
-.m-card__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  color: #1F4E79;
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-.m-card__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: #4b5563;
-  padding: 3px 0;
-}
-.m-card__arrow {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-}
-
-/* ── Badge ── */
-.m-badge {
-  background: #EFF6FF;
-  color: #1F4E79;
-  border: 1px solid #BFDBFE;
-  border-radius: 4px;
-  padding: 1px 7px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-/* ── State (loading / empty) ── */
-.m-state {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #9ca3af;
-  font-size: 13px;
-  padding: 16px 0;
-}
-.m-state--empty {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
-  gap: 10px;
-  color: #9ca3af;
-}
-.m-state--empty p {
-  margin: 0;
-  font-size: 14px;
-}
-
-/* Spin animation for loader icon */
-@keyframes spin { to { transform: rotate(360deg); } }
-.m-spin { animation: spin 1s linear infinite; }
-
-/* ── Detail view ── */
-.m-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #1F4E79;
-  font-size: 14px;
-  font-weight: 500;
-  background: none;
-  border: none;
-  padding: 4px 0;
-  cursor: pointer;
-}
-.m-detail {
-  cursor: default;
-}
-.m-detail__name {
-  font-weight: 700;
-  font-size: 15px;
-  color: #1F4E79;
-  margin-bottom: 8px;
-  word-break: break-all;
-}
-
-/* ── ActionPanel wrapper ── */
-.m-action-wrap {
-  /* Constrain ActionPanel to mobile width; it may use Tailwind flex-wrap */
-  overflow-x: hidden;
-}
-</style>
