@@ -186,8 +186,17 @@ export async function getSession() {
 
 export async function getUserInfo(name) {
   try {
-    const d = await request(`/api/resource/User/${encodeURIComponent(name)}?fields=${encodeURIComponent('["name","full_name","email","user_image","roles.role as role"]')}`)
-    return d.data
+    // POST RPC thay vì GET /api/resource/User/<name>?fields=[...]: query có
+    // ngoặc/khoảng trắng bị double-encode trên native → cold-start mất roles.
+    const d = await call('supplycore.api.frontend.get_doc', { doctype: 'User', name })
+    if (!d) return null
+    return {
+      name: d.name,
+      full_name: d.full_name,
+      email: d.email || d.name,
+      user_image: d.user_image,
+      roles: (d.roles || []).map((r) => r.role),
+    }
   } catch (e) {
     return null
   }
@@ -259,23 +268,27 @@ export async function cancelDoc(doctype, name) {
 
 // Run a doctype instance method (whitelisted via @frappe.whitelist on doc class)
 export async function runDocMethod(doctype, name, method, args = {}) {
-  // Frappe v15: use /api/method/run_doc_method (mapped to frappe.handler.run_doc_method)
-  const params = new URLSearchParams({
-    method,
-    dt: doctype,
-    dn: name,
-  })
-  if (Object.keys(args).length) params.set('args', JSON.stringify(args))
-  const res = await fetch(await resolveUrl(`/api/method/run_doc_method?${params.toString()}`), {
+  // dt/dn/method đưa vào BODY (KHÔNG query string): doctype "SC ..." có dấu cách
+  // → query bị CapacitorHttp double-encode %20→%2520 trên native → server
+  // ImportError 'sc%20purchase%20order' → nút Duyệt hỏng. Body né hẳn (đã verify).
+  const payload = { method, dt: doctype, dn: name }
+  if (Object.keys(args).length) payload.args = JSON.stringify(args)
+  const res = await fetch(await resolveUrl('/api/method/run_doc_method'), {
     method: 'POST',
     credentials: isNative() ? 'omit' : 'include',
     headers: {
       'Accept': 'application/json',
+      'Content-Type': 'application/json',
       'X-Frappe-CSRF-Token': isNative() ? '' : (_csrf || getCsrf() || ''),
       ...(await authHeaders()),
     },
+    body: JSON.stringify(payload),
   })
   const body = await res.json().catch(() => ({}))
+  if ((res.status === 401) && isNative()) {
+    try { await clearToken() } catch (e) {}
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('sc:unauth'))
+  }
   if (!res.ok) {
     const msg = parseFrappeError(body) || `HTTP ${res.status}`
     throw new Error(msg)

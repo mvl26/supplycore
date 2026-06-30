@@ -39,7 +39,8 @@ export const useAuthStore = defineStore('auth', {
           email: sess,
           user_image: info?.user_image,
           is_guest: false,
-          roles: window.sc_session_user?.roles || [],
+          // Web: roles từ shell global. Native (không có global) → roles từ getUserInfo.
+          roles: window.sc_session_user?.roles || info?.roles || [],
         }
         await useAccessStore().load(true)
       }
