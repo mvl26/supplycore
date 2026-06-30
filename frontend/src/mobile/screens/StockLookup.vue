@@ -333,14 +333,15 @@ async function onPullRefresh() {
 
 async function onScan() {
   tapLight()
-  const code = await scan()
-  if (!code) {
+  try {
+    const code = await scan()
+    if (!code) return            // người dùng bấm Huỷ — không báo lỗi
+    q.value = code
+    await doSearch(code)
+  } catch (e) {
     notifyError()
-    toast.warning('Không quét được mã. Kiểm tra quyền camera hoặc dùng trên thiết bị thật.')
-    return
+    toast.error(e.message || 'Không mở được camera quét mã.')
   }
-  q.value = code
-  await doSearch(code)
 }
 </script>
 

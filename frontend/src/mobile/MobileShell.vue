@@ -23,6 +23,9 @@
         <span class="m-tab__lbl">{{ t.label }}</span>
       </router-link>
     </nav>
+
+    <!-- Overlay camera quét mã (hiện khi đang quét; teleport ra body) -->
+    <ScanOverlay />
   </div>
 </template>
 
@@ -30,6 +33,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '../components/Icon.vue'
+import ScanOverlay from './ui/ScanOverlay.vue'
 import { useNetwork } from './useNetwork'
 import { tapLight } from './native'
 import { clearToken } from '../platform'

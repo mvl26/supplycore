@@ -122,5 +122,10 @@
 .m-net { display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; font-weight:600;
   background: var(--m-warn-bg); color: var(--m-warn); padding: 8px; }
 
+/* ---- scanner: làm trong suốt WebView để lộ camera native phía sau ---- */
+html.sc-scanning, html.sc-scanning body, html.sc-scanning #app,
+html.sc-scanning .m-shell, html.sc-scanning .m-app { background: transparent !important; }
+html.sc-scanning #app > * { visibility: hidden !important; }   /* ẩn app; overlay teleport ra body nên vẫn hiện */
+
 .m-muted { color: var(--m-ink-3); font-size:13px; text-align:center; }
 .m-sronly { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }

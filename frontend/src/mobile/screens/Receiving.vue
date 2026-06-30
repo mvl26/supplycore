@@ -233,11 +233,12 @@ function backToList() {
 
 async function scanBatch(it) {
   tapLight()
-  const code = await scan()
-  if (code) {
-    it.supplier_batch_no = code
-  } else {
-    toast.warning('Không quét được mã. Kiểm tra quyền camera hoặc dùng trên thiết bị thật.')
+  try {
+    const code = await scan()
+    if (code) it.supplier_batch_no = code   // null = huỷ, im lặng
+  } catch (e) {
+    notifyError()
+    toast.error(e.message || 'Không mở được camera quét mã.')
   }
 }
 

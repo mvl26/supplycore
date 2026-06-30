@@ -1,27 +1,9 @@
 // frontend/src/mobile/useScanner.js
-// Barcode scanner helper cho Capacitor native.
-// Trên web (isNative() = false) → scan() luôn trả null, an toàn.
-// Chỉ dynamic-import plugin khi thật sự chạy native để tránh lỗi build web.
-
-import { isNative } from '../platform'
+// Helper quét mã — uỷ quyền cho scanner singleton (startScan + overlay).
+// Trên web (isNative()=false) scan() trả null an toàn. Giữ API cũ { scan }.
+import { useScannerStore } from './scanner'
 
 export function useScanner() {
-  /**
-   * Quét một mã vạch / QR.
-   * @returns {Promise<string|null>} rawValue của barcode đầu tiên, hoặc null.
-   */
-  async function scan() {
-    if (!isNative()) return null
-
-    // Dynamic import — chỉ resolve khi Capacitor native; tree-shaken khỏi web bundle.
-    const { BarcodeScanner } = await import(/* @vite-ignore */ '@capacitor-mlkit/barcode-scanning')
-
-    const perm = await BarcodeScanner.requestPermissions()
-    if (perm.camera !== 'granted' && perm.camera !== 'limited') return null
-
-    const { barcodes } = await BarcodeScanner.scan()
-    return barcodes?.[0]?.rawValue || null
-  }
-
-  return { scan }
+  const { runScan } = useScannerStore()
+  return { scan: runScan }
 }
