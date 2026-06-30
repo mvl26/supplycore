@@ -179,7 +179,6 @@ class FrameworkContract(Document):
         if self.approval_stage != "Manager Review":
             frappe.throw(_("FC chưa ở stage Manager Review (hiện: {0})").format(self.approval_stage),
                           title="SC-E-FC-STAGE")
-        _validate_approval_comment(comment, "Manager")
         threshold = _get_executive_threshold()
         next_stage = "Executive Review" if flt(self.total_value) >= threshold else "Approved"
         self.db_set({
@@ -197,7 +196,6 @@ class FrameworkContract(Document):
         if self.approval_stage != "Executive Review":
             frappe.throw(_("FC chưa ở stage Executive Review (hiện: {0})").format(self.approval_stage),
                           title="SC-E-FC-STAGE")
-        _validate_approval_comment(comment, "Executive")
         self.db_set({
             "approval_stage": "Approved",
             "executive_approved_by": frappe.session.user,
@@ -519,17 +517,3 @@ def _get_executive_threshold() -> float:
         return DEFAULT_FC_EXECUTIVE_THRESHOLD
 
 
-# QAv3-BUG-M1-07: Comment duyệt HĐ "d" (1 ký tự) không phù hợp tiêu chuẩn
-# audit. Bắt buộc tối thiểu 10 ký tự không phải khoảng trắng.
-MIN_APPROVAL_COMMENT_LEN = 10
-
-
-def _validate_approval_comment(comment, level: str):
-    """Throw nếu comment < MIN_APPROVAL_COMMENT_LEN ký tự."""
-    txt = (comment or "").strip()
-    if len(txt) < MIN_APPROVAL_COMMENT_LEN:
-        frappe.throw(_(
-            "SC-E026 APPROVAL_COMMENT_TOO_SHORT: Comment duyệt {0} phải tối "
-            "thiểu {1} ký tự (hiện {2}). Ghi rõ lý do/cơ sở duyệt để audit."
-        ).format(level, MIN_APPROVAL_COMMENT_LEN, len(txt)),
-            title="SC-E026 APPROVAL_COMMENT_TOO_SHORT")
