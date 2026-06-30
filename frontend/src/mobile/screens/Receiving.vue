@@ -197,14 +197,15 @@
           </li>
         </ul>
 
-        <!-- Nút xác nhận -->
+        <!-- Nút xác nhận — chặn khi offline (hành động posts tồn kho) -->
         <button
           class="m-btn m-btn--ok"
-          :disabled="saving"
+          :disabled="saving || !online"
           @click="confirm"
         >
           <Icon name="check-circle" :size="18" />
           <span v-if="saving">Đang xử lý...</span>
+          <span v-else-if="!online">Mất kết nối — chờ mạng</span>
           <span v-else>Xác nhận nhận hàng</span>
         </button>
       </template>
@@ -224,6 +225,7 @@ import MEmpty from '../ui/MEmpty.vue'
 import MErrorState from '../ui/MErrorState.vue'
 import MPullRefresh from '../ui/MPullRefresh.vue'
 import { tapLight, notifySuccess, notifyError } from '../native'
+import { useNetwork } from '../useNetwork'
 import { getList, getDoc, updateDoc, submitDoc } from '../../api'
 import { useScanner } from '../useScanner'
 import { useScannerStore } from '../scanner'
@@ -240,6 +242,7 @@ const saving    = ref(false)
 const loadError = ref(null)
 
 const { scan, scanning } = useScanner()
+const { online } = useNetwork()
 const toast    = useToastStore()
 
 // Chốt thứ tự request danh sách (latest-wins)
