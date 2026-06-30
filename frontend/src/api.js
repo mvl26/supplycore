@@ -218,8 +218,11 @@ export async function getList(doctype, params = {}) {
 }
 
 export async function getDoc(doctype, name) {
-  const data = await request(`/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`)
-  return data.data
+  // POST RPC thay vì GET /api/resource/<doctype>/<name>: doctype "SC ..." có DẤU
+  // CÁCH → encode thành %20; trên native, CapacitorHttp double-encode %20→%2520
+  // → server 500 ("lỗi tải phiếu"). Đưa doctype/name vào BODY (URL không dấu
+  // cách) né hẳn lỗi mã hoá. Backend get_doc trả as_dict() (giống .data cũ).
+  return call('supplycore.api.frontend.get_doc', { doctype, name })
 }
 
 export async function createDoc(doctype, fields) {
@@ -230,10 +233,9 @@ export async function createDoc(doctype, fields) {
 }
 
 export async function updateDoc(doctype, name, fields) {
-  const data = await request(`/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`, {
-    method: 'PUT', body: JSON.stringify(fields),
-  })
-  return data.data
+  // POST RPC (như getDoc) để né double-encode %20 của doctype có dấu cách trên
+  // native. save_doc set field + child table (vd items) rồi save (Draft).
+  return call('supplycore.api.frontend.save_doc', { doctype, name, fields })
 }
 
 export async function deleteDoc(doctype, name) {
