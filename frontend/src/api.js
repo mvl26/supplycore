@@ -284,11 +284,6 @@ export async function submitDoc(doctype, name) {
   return call('supplycore.api.frontend.submit_doc', { doctype, name })
 }
 
-// Lưu fields + submit ATOMIC trong 1 request (mobile Tiếp nhận). Submit lỗi →
-// rollback cả save (không để phiếu 'đã sửa nhưng chưa submit').
-export async function saveAndSubmit(doctype, name, fields) {
-  return call('supplycore.api.frontend.save_and_submit', { doctype, name, fields })
-}
 
 export async function cancelDoc(doctype, name) {
   return call('supplycore.api.frontend.cancel_doc', { doctype, name })

@@ -38,6 +38,7 @@ import { useNetwork } from './useNetwork'
 import { tapLight } from './native'
 import { clearToken } from '../platform'
 import { useScannerStore } from './scanner'
+import { handleBack } from './backHandler'
 import { useToastStore } from '../stores/toast'
 
 const router = useRouter()
@@ -80,6 +81,9 @@ onMounted(async () => {
         cancel()
         return
       }
+      // Màn đang mở chi tiết (state cục bộ) → đóng chi tiết, KHÔNG thoát app
+      // (giữ dữ liệu đang nhập ở Tiếp nhận).
+      if (handleBack()) return
       if (_TAB_ROOTS.includes(router.currentRoute.value.path)) {
         try { App.exitApp() } catch (e) {}
       } else {

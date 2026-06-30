@@ -214,7 +214,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { pushBack, popBack } from '../backHandler'
 import Icon from '../../components/Icon.vue'
 import MTopBar from '../ui/MTopBar.vue'
 import MBadge from '../ui/MBadge.vue'
@@ -393,10 +394,17 @@ async function confirm() {
 
 onMounted(load)
 
-// Huỷ scanner khi rời màn: tránh camera bật ngầm + class sc-scanning treo
-// (mobile.css dòng 128: .sc-scanning #app { visibility: hidden } → màn trống/đen)
+// Nút Back cứng Android: khi đang xem chi tiết phiếu → đóng chi tiết (giữ dữ
+// liệu đang nhập) thay vì thoát app. Đăng ký handler khi current mở.
+watch(current, (v) => {
+  if (v) pushBack(backToList)
+  else popBack(backToList)
+})
+
+// Huỷ scanner + gỡ back handler khi rời màn.
 onUnmounted(() => {
   useScannerStore().cancel()
+  popBack(backToList)
 })
 </script>
 

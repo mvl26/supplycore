@@ -41,8 +41,9 @@
  *   → doc vẫn nằm trong filter, sẽ xuất hiện lại sau khi reload (chờ Executive duyệt).
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { getList, getDoc } from '../../api'
+import { pushBack, popBack } from '../backHandler'
 import { useToastStore } from '../../stores/toast'
 import ActionPanel from '../../components/ActionPanel.vue'
 import Icon from '../../components/Icon.vue'
@@ -181,6 +182,14 @@ async function onAfter() {
   activeDoc.value = null
   await loadList()
 }
+
+// Nút Back cứng Android: đang xem chi tiết phiếu → quay lại danh sách thay vì
+// thoát app. Đăng ký handler khi activeDoc mở.
+watch(activeDoc, (v) => {
+  if (v) pushBack(back)
+  else popBack(back)
+})
+onUnmounted(() => popBack(back))
 
 // Init
 loadList()
