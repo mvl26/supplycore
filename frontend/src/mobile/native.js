@@ -16,10 +16,20 @@ export async function initNative() {
     await Keyboard.setResizeMode({ mode: 'native' })
     await Keyboard.setScroll({ isDisabled: false })
   } catch (e) { /* optional */ }
+  // SplashScreen: đường dự phòng timeout 3s đề phòng plugin lỗi khi launchAutoHide:false
+  // Nếu hide() thành công → clearTimeout huỷ dự phòng; nếu lỗi → dự phòng tự gọi lại.
+  const _hideSplash = async () => {
+    try {
+      const { SplashScreen } = await import('@capacitor/splash-screen')
+      await SplashScreen.hide()
+    } catch (e) { /* optional */ }
+  }
+  const _splashFallback = setTimeout(_hideSplash, 3000)
   try {
     const { SplashScreen } = await import('@capacitor/splash-screen')
     await SplashScreen.hide()
-  } catch (e) { /* optional */ }
+    clearTimeout(_splashFallback)
+  } catch (e) { /* dự phòng sẽ tự chạy sau 3s */ }
 }
 
 // ---- Haptics: phản hồi rung tinh tế. No-op nếu không native. ----

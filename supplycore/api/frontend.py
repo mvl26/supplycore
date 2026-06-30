@@ -641,6 +641,34 @@ def save_doc(doctype, name, fields):
 
 
 @frappe.whitelist()
+def save_and_submit(doctype, name, fields=None):
+    """Lưu fields + submit TRONG CÙNG 1 request (atomic).
+
+    Dùng cho mobile Tiếp nhận: nhập SL/hạn dùng rồi xác nhận. Nếu submit lỗi
+    (QC/validate/expiry...) thì cả phần save cũng rollback (Frappe bọc mỗi
+    request trong 1 transaction) → không để phiếu ở trạng thái 'đã sửa nhưng
+    chưa submit' nửa vời.
+    """
+    import json
+    if isinstance(fields, str):
+        fields = json.loads(fields)
+    if not frappe.has_permission(doctype, "write", doc=name):
+        frappe.throw(_("Không có quyền sửa {0} {1}").format(doctype, name),
+                      frappe.PermissionError)
+    if not frappe.has_permission(doctype, "submit", doc=name):
+        frappe.throw(_("Không có quyền submit {0} {1}").format(doctype, name),
+                      frappe.PermissionError)
+    doc = frappe.get_doc(doctype, name)
+    for k, v in (fields or {}).items():
+        if k not in ("name", "doctype", "owner", "creation", "modified", "modified_by",
+                     "docstatus", "idx", "parent", "parentfield", "parenttype"):
+            doc.set(k, v)
+    doc.save()
+    doc.submit()
+    return doc.as_dict()
+
+
+@frappe.whitelist()
 def get_audit_trail(
     doctype: str = "",
     user: str = "",

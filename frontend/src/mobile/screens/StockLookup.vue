@@ -15,7 +15,7 @@
 
      Fields trả về từ stock_balance:
        item, item_name, warehouse, batch, qty, value,
-       expiry_date (FEFO asc), qc_status, blocked, available
+       expiry_date (FEFO asc), qc_status, blocked, available (boolean: Accepted+không khoá)
 -->
 <template>
   <MPullRefresh :refreshing="refreshing" @refresh="onPullRefresh">
@@ -30,6 +30,7 @@
             v-model="q"
             class="sl-search-input"
             placeholder="Tên hoặc mã vật tư / lô"
+            aria-label="Tìm vật tư hoặc lô"
             type="search"
             autocomplete="off"
             inputmode="search"
@@ -38,7 +39,7 @@
         </div>
         <button
           class="sl-icon-btn"
-          :disabled="loading"
+          :disabled="loading || scanning"
           aria-label="Quét mã"
           @click="onScan"
         >
@@ -48,6 +49,14 @@
 
       <!-- Skeleton khi đang tải -->
       <MSkeleton v-if="loading" :count="5" />
+
+      <!-- Không có quyền tra cứu SC Item -->
+      <MEmpty
+        v-else-if="noPermission"
+        icon="lock"
+        title="Bạn không có quyền tra cứu"
+        sub="Hãy liên hệ quản trị viên để được cấp quyền đọc vật tư."
+      />
 
       <!-- Lỗi -->
       <MErrorState
@@ -94,49 +103,57 @@
           title="Không có tồn kho"
           sub="Vật tư chưa có số lượng trong kho"
         />
-        <ul v-else class="m-list">
-          <li
-            v-for="(r, i) in stockRows"
-            :key="i"
-            class="m-card m-rise sl-stock-card"
-            :class="{
-              'sl-card--expired':  isExpired(r.expiry_date),
-              'sl-card--expiring': isExpiringSoon(r.expiry_date) && !isExpired(r.expiry_date),
-            }"
-            :style="{ animationDelay: `${i * 40}ms` }"
-          >
-            <div class="m-card__title">
-              {{ r.item_name || r.item }}
-              <span v-if="r.item_name" class="sl-code-inline">{{ r.item }}</span>
-            </div>
-            <div class="m-card__row">
-              <span>Kho</span>
-              <b>{{ r.warehouse }}</b>
-            </div>
-            <div class="m-card__row">
-              <span>Lô</span>
-              <b class="sl-mono">{{ r.batch || '—' }}</b>
-            </div>
-            <div class="m-card__row">
-              <span>Tồn</span>
-              <b class="sl-qty">{{ fmtQty(r.qty) }}</b>
-            </div>
-            <div class="m-card__row">
-              <span>HSD</span>
-              <b :class="{
-                'sl-text-danger': isExpired(r.expiry_date),
-                'sl-text-warn':   isExpiringSoon(r.expiry_date) && !isExpired(r.expiry_date),
-              }">{{ r.expiry_date ? fmtDate(r.expiry_date) : '—' }}</b>
-            </div>
-            <div class="m-card__row" style="margin-top:4px">
-              <span>KCS</span>
-              <span class="sl-badges">
-                <MBadge :status="r.qc_status" />
-                <MBadge v-if="r.blocked" status="Rejected" label="Khoá" />
-              </span>
-            </div>
-          </li>
-        </ul>
+        <template v-else>
+          <!-- Tóm tắt khả dụng: chỉ hiện khi có lô không khả dụng -->
+          <div v-if="availQty < totalQty" class="sl-avail-summary">
+            Khả dụng: <strong>{{ fmtQty(availQty) }}</strong>
+            &nbsp;/&nbsp;Tổng: {{ fmtQty(totalQty) }}
+          </div>
+          <ul class="m-list">
+            <li
+              v-for="(r, i) in stockRows"
+              :key="i"
+              class="m-card m-rise sl-stock-card"
+              :class="{
+                'sl-card--expired':           isExpired(r.expiry_date),
+                'sl-card--expiring-critical': isExpiringSoonCritical(r.expiry_date) && !isExpired(r.expiry_date),
+                'sl-card--expiring':          isExpiringSoon(r.expiry_date) && !isExpiringSoonCritical(r.expiry_date) && !isExpired(r.expiry_date),
+              }"
+              :style="{ animationDelay: `${i * 40}ms` }"
+            >
+              <div class="m-card__title">
+                {{ r.item_name || r.item }}
+                <span v-if="r.item_name" class="sl-code-inline">{{ r.item }}</span>
+              </div>
+              <div class="m-card__row">
+                <span>Kho</span>
+                <b>{{ r.warehouse }}</b>
+              </div>
+              <div class="m-card__row">
+                <span>Lô</span>
+                <b class="sl-mono">{{ r.batch || '—' }}</b>
+              </div>
+              <div class="m-card__row">
+                <span>Tồn</span>
+                <b class="sl-qty">{{ fmtQty(r.qty) }}</b>
+              </div>
+              <div class="m-card__row">
+                <span>HSD</span>
+                <b :class="{
+                  'sl-text-danger': isExpired(r.expiry_date) || isExpiringSoonCritical(r.expiry_date),
+                  'sl-text-warn':   isExpiringSoon(r.expiry_date) && !isExpiringSoonCritical(r.expiry_date) && !isExpired(r.expiry_date),
+                }">{{ r.expiry_date ? fmtDate(r.expiry_date) : '—' }}</b>
+              </div>
+              <div class="m-card__row" style="margin-top:4px">
+                <span>KCS</span>
+                <span class="sl-badges">
+                  <MBadge :status="r.qc_status" domain="qc" />
+                  <MBadge v-if="r.blocked" status="Rejected" label="Khoá" />
+                </span>
+              </div>
+            </li>
+          </ul>
+        </template>
       </template>
 
       <!-- Màn hình khởi đầu -->
@@ -151,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Icon from '../../components/Icon.vue'
 import MTopBar from '../ui/MTopBar.vue'
 import MBadge from '../ui/MBadge.vue'
@@ -165,20 +182,32 @@ import { useToastStore } from '../../stores/toast'
 import { tapLight, notifyError } from '../native'
 
 const toast = useToastStore()
-const { scan } = useScanner()
+const { scan, scanning } = useScanner()
 
 const q            = ref('')
 const loading      = ref(false)
 const refreshing   = ref(false)
-const searched     = ref(false)
 // mode: 'idle' | 'items' | 'stock' | 'error'
 const mode         = ref('idle')
 const items        = ref([])          // kết quả getList SC Item
 const stockRows    = ref([])          // kết quả stock_balance
-const selectedItem = ref(null)        // { name, item_name }
+const selectedItem = ref(null)        // { name, item_name[, _isBatch: true] }
 const errorTitle   = ref('')
 const errorMsg     = ref('')
-const lastQuery    = ref('')          // để pull-to-refresh chạy lại
+const lastQuery    = ref('')          // để pull-to-refresh chạy lại khi ở mode items/error
+const noPermission = ref(false)       // getList SC Item trả 403
+
+// Token tăng dần — chỉ áp kết quả của lần gọi mới nhất, bỏ qua kết quả cũ (race condition)
+let reqId = 0
+
+// ─── Computed tóm tắt tồn khả dụng ──────────────────────────────────────────
+
+const totalQty = computed(() =>
+  stockRows.value.reduce((s, r) => s + Number(r.qty || 0), 0)
+)
+const availQty = computed(() =>
+  stockRows.value.filter(r => r.available).reduce((s, r) => s + Number(r.qty || 0), 0)
+)
 
 // ─── Helpers hiển thị ────────────────────────────────────────────────────────
 
@@ -194,24 +223,55 @@ function fmtDate(d) {
   return `${day}/${m}/${y}`
 }
 
-function isExpired(d)      { return d && new Date(d) < new Date() }
+// Parse YYYY-MM-DD theo múi giờ địa phương — tránh new Date('YYYY-MM-DD') parse UTC
+// và lệch ngày biên tại GMT+7 (trước 07:00 sáng ngày hết hạn bị tô đỏ nhầm)
+function parseLocalDate(d) {
+  if (!d) return null
+  const [y, m, day] = String(d).split('-').map(Number)
+  return new Date(y, m - 1, day)
+}
+
+function todayMidnight() {
+  const t = new Date()
+  t.setHours(0, 0, 0, 0)
+  return t
+}
+
+function isExpired(d) {
+  if (!d) return false
+  return parseLocalDate(d) < todayMidnight()
+}
+
+// Cảnh báo gấp: hết hạn trong 30 ngày (ngưỡng nghiệp vụ mức cao)
+function isExpiringSoonCritical(d) {
+  if (!d) return false
+  const ms = parseLocalDate(d) - todayMidnight()
+  return ms >= 0 && ms <= 30 * 86400000
+}
+
+// Sắp hết hạn: trong 90 ngày (ngưỡng nghiệp vụ mức cảnh báo, bao gồm ≤30)
 function isExpiringSoon(d) {
   if (!d) return false
-  const days = (new Date(d) - new Date()) / 86400000
-  return days >= 0 && days <= 90
+  const ms = parseLocalDate(d) - todayMidnight()
+  return ms >= 0 && ms <= 90 * 86400000
 }
 
 // ─── Core search logic ────────────────────────────────────────────────────────
 
 async function doSearch(text, { showLoading = true } = {}) {
+  // Chặn tái nhập: Enter nhiều lần nhanh khi đang hiện skeleton
+  if (showLoading && loading.value) return
+
+  const myId = ++reqId   // token của lần gọi này; nếu không khớp khi await xong thì bỏ kết quả
+
   if (showLoading) loading.value = true
-  searched.value = true
   mode.value = 'idle'
   items.value = []
   stockRows.value = []
   selectedItem.value = null
   errorTitle.value = ''
   errorMsg.value = ''
+  noPermission.value = false
   lastQuery.value = text
 
   try {
@@ -224,26 +284,54 @@ async function doSearch(text, { showLoading = true } = {}) {
       ],
       limit: 20,
     })
+    if (myId !== reqId) return   // kết quả cũ bị thay thế bởi lần gọi mới hơn
 
     if (found && found.length > 0) {
       if (found.length === 1) {
         // Tự động chọn luôn nếu chỉ có 1 kết quả
-        await loadStock(found[0])
+        selectedItem.value = found[0]
+        const rows = await call('supplycore.api.frontend.stock_balance', {
+          item: found[0].name,
+          warehouse: null,
+          batch: null,
+        })
+        if (myId !== reqId) return
+        stockRows.value = rows || []
+        mode.value = 'stock'
       } else {
         items.value = found
         mode.value = 'items'
       }
     } else {
       // Không tìm được vật tư → thử tìm theo mã lô (barcode/batch)
-      await loadStockByBatch(text)
+      const rows = await call('supplycore.api.frontend.stock_balance', {
+        item: null,
+        warehouse: null,
+        batch: text,
+      })
+      if (myId !== reqId) return
+      if (rows && rows.length > 0) {
+        selectedItem.value = { name: text, item_name: `Lô: ${text}`, _isBatch: true }
+        stockRows.value = rows
+        mode.value = 'stock'
+      } else {
+        items.value = []
+        mode.value = 'items'   // hiện "Không tìm thấy"
+      }
     }
   } catch (e) {
-    errorTitle.value = 'Lỗi tìm kiếm'
-    errorMsg.value = e.message || ''
-    mode.value = 'error'
-    toast.error(`Lỗi tìm kiếm: ${e.message}`)
+    if (myId !== reqId) return
+    // 403: thiếu quyền đọc SC Item — hiện thông báo nhẹ, không hiện retry vô ích
+    if (e.status === 403) {
+      noPermission.value = true
+    } else {
+      errorTitle.value = 'Lỗi tìm kiếm'
+      errorMsg.value = e.message || ''
+      mode.value = 'error'
+      toast.error(`Lỗi tìm kiếm: ${e.message}`)
+    }
   } finally {
-    if (showLoading) loading.value = false
+    if (showLoading && myId === reqId) loading.value = false
   }
 }
 
@@ -251,7 +339,7 @@ async function doSearch(text, { showLoading = true } = {}) {
 
 function onSearch() {
   const text = q.value.trim()
-  if (!text) return
+  if (!text || loading.value) return
   tapLight()
   doSearch(text)
 }
@@ -271,6 +359,7 @@ async function onSelectItem(item) {
   }
 }
 
+// Tải tồn kho theo vật tư — dùng cho onSelectItem và onPullRefresh (không concurrent với doSearch)
 async function loadStock(item) {
   selectedItem.value = item
   const rows = await call('supplycore.api.frontend.stock_balance', {
@@ -280,23 +369,6 @@ async function loadStock(item) {
   })
   stockRows.value = rows || []
   mode.value = 'stock'
-}
-
-async function loadStockByBatch(batchCode) {
-  const rows = await call('supplycore.api.frontend.stock_balance', {
-    item: null,
-    warehouse: null,
-    batch: batchCode,
-  })
-  if (rows && rows.length > 0) {
-    selectedItem.value = { name: batchCode, item_name: `Lô: ${batchCode}` }
-    stockRows.value = rows
-    mode.value = 'stock'
-  } else {
-    items.value = []
-    mode.value = 'items'   // hiện "Không tìm thấy"
-    searched.value = true
-  }
 }
 
 function onBack() {
@@ -319,11 +391,27 @@ function onRetry() {
 // ─── Pull-to-refresh ──────────────────────────────────────────────────────────
 
 async function onPullRefresh() {
-  const text = lastQuery.value || q.value.trim()
-  if (!text) { refreshing.value = false; return }
   refreshing.value = true
   try {
-    await doSearch(text, { showLoading: false })
+    if (mode.value === 'stock' && selectedItem.value) {
+      // Đang xem tồn kho → làm mới đúng view, không doSearch lại (tránh nhảy về items list)
+      const s = selectedItem.value
+      if (s._isBatch) {
+        // Lô được tìm trực tiếp qua mã lô
+        const rows = await call('supplycore.api.frontend.stock_balance', {
+          item: null, warehouse: null, batch: s.name,
+        })
+        stockRows.value = rows || []
+      } else {
+        await loadStock(s)
+      }
+    } else {
+      const text = lastQuery.value || q.value.trim()
+      if (!text) return
+      await doSearch(text, { showLoading: false })
+    }
+  } catch (e) {
+    toast.error(`Lỗi làm mới: ${e.message}`)
   } finally {
     refreshing.value = false
   }
@@ -435,14 +523,27 @@ async function onScan() {
   white-space: nowrap;
 }
 
+/* ── Tóm tắt khả dụng ── */
+.sl-avail-summary {
+  font-size: 13px;
+  color: var(--m-ink-2);
+  padding: 6px 2px 2px;
+}
+
+.sl-avail-summary strong {
+  color: var(--m-ok);
+  font-weight: 650;
+}
+
 /* ── Thẻ tồn kho / lô ── */
 .sl-stock-card {
   border-left: 3px solid transparent;
   transition: border-left-color .15s;
 }
 
-.sl-card--expired  { border-left-color: var(--m-crit); background: var(--m-crit-bg); }
-.sl-card--expiring { border-left-color: var(--m-warn); background: var(--m-warn-bg); }
+.sl-card--expired           { border-left-color: var(--m-crit); background: var(--m-crit-bg); }
+.sl-card--expiring-critical { border-left-color: var(--m-crit); background: var(--m-warn-bg); }
+.sl-card--expiring          { border-left-color: var(--m-warn); background: var(--m-warn-bg); }
 
 .sl-code-inline {
   font-family: 'JetBrains Mono', monospace;

@@ -12,6 +12,13 @@ const getCsrf = () => {
 let _csrf = getCsrf()
 export const setCsrf = (v) => { _csrf = v; if (typeof window !== 'undefined') window.sc_csrf = v }
 
+// Timeout cho native fetch (CapacitorHttp có thể bỏ qua AbortSignal → dùng
+// Promise.race đáng tin hơn). Chỉ áp trên native để không phá export web lớn.
+const _TIMEOUT_MS = 25_000
+const _timeout = (ms) => new Promise((_, reject) =>
+  setTimeout(() => reject(new Error('Hết thời gian kết nối (network timeout)')), ms)
+)
+
 // Native: prefix base URL đã cấu hình. Web: giữ path tương đối (same-origin).
 export async function resolveUrl(path) {
   if (!isNative()) return path
@@ -37,14 +44,21 @@ async function request(path, options = {}) {
   }
   if (!isForm) headers['Content-Type'] = 'application/json'
   const url = await resolveUrl(path)
-  const res = await fetch(url, {
+  const fetchPromise = fetch(url, {
     // Native dùng token (không cookie); web giữ 'include' để gửi session cookie.
     credentials: isNative() ? 'omit' : 'include',
     ...options,
     headers,
   })
-  let body = null
-  try { body = await res.json() } catch (e) { /* ignore */ }
+  // Timeout chỉ trên native: CapacitorHttp có thể bỏ qua AbortSignal → Promise.race.
+  // Web không cần timeout (export lớn có thể chạy >25s, đừng phá).
+  const res = isNative()
+    ? await Promise.race([fetchPromise, _timeout(_TIMEOUT_MS)])
+    : await fetchPromise
+  // Khởi tạo {} để tránh null crash khi body rỗng/non-JSON (204, HTML 200, v.v.)
+  // hoặc khi JSON.parse trả null (body là literal "null").
+  let body = {}
+  try { body = (await res.json()) ?? {} } catch (e) { /* ignore */ }
   // Native: CHỈ 401 (token hết hạn/sai) → xoá token + về màn đăng nhập.
   // KHÔNG xử lý 403 ở đây: 403 = đã đăng nhập nhưng thiếu quyền đọc 1 doctype
   // (vd Storekeeper không đọc được HĐ khung) — phải để màn hình tự xử lý, không
@@ -234,6 +248,11 @@ export async function getDoc(doctype, name) {
   return call('supplycore.api.frontend.get_doc', { doctype, name })
 }
 
+// CẢNH BÁO NATIVE (latent): doctype có dấu cách ('SC ...') trong URL path sẽ
+// bị CapacitorHttp double-encode (%20→%2520) → server 500. Hiện không gọi từ
+// màn native (4 screen dùng getDoc/getList/updateDoc/submitDoc). Nếu sau này
+// cần native, phải chuyển sang backend RPC supplycore.api.frontend.insert_doc
+// với doctype đưa vào body (không URL).
 export async function createDoc(doctype, fields) {
   const data = await request(`/api/resource/${encodeURIComponent(doctype)}`, {
     method: 'POST', body: JSON.stringify(fields),
@@ -247,6 +266,9 @@ export async function updateDoc(doctype, name, fields) {
   return call('supplycore.api.frontend.save_doc', { doctype, name, fields })
 }
 
+// CẢNH BÁO NATIVE (latent): cả doctype và name nằm trong URL path; doctype 'SC ...'
+// sẽ double-encode qua CapacitorHttp → server 500. Hiện không gọi từ màn native.
+// Nếu cần native: chuyển sang supplycore.api.frontend.delete_doc qua call() (body).
 export async function deleteDoc(doctype, name) {
   await request(`/api/resource/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`, {
     method: 'DELETE',
@@ -262,6 +284,12 @@ export async function submitDoc(doctype, name) {
   return call('supplycore.api.frontend.submit_doc', { doctype, name })
 }
 
+// Lưu fields + submit ATOMIC trong 1 request (mobile Tiếp nhận). Submit lỗi →
+// rollback cả save (không để phiếu 'đã sửa nhưng chưa submit').
+export async function saveAndSubmit(doctype, name, fields) {
+  return call('supplycore.api.frontend.save_and_submit', { doctype, name, fields })
+}
+
 export async function cancelDoc(doctype, name) {
   return call('supplycore.api.frontend.cancel_doc', { doctype, name })
 }
@@ -271,35 +299,28 @@ export async function runDocMethod(doctype, name, method, args = {}) {
   // dt/dn/method đưa vào BODY (KHÔNG query string): doctype "SC ..." có dấu cách
   // → query bị CapacitorHttp double-encode %20→%2520 trên native → server
   // ImportError 'sc%20purchase%20order' → nút Duyệt hỏng. Body né hẳn (đã verify).
+  // Dùng lại request() để có chung: timeout native, 401-handling, null-safe body.
   const payload = { method, dt: doctype, dn: name }
   if (Object.keys(args).length) payload.args = JSON.stringify(args)
-  const res = await fetch(await resolveUrl('/api/method/run_doc_method'), {
+  return request('/api/method/run_doc_method', {
     method: 'POST',
-    credentials: isNative() ? 'omit' : 'include',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'X-Frappe-CSRF-Token': isNative() ? '' : (_csrf || getCsrf() || ''),
-      ...(await authHeaders()),
-    },
     body: JSON.stringify(payload),
   })
-  const body = await res.json().catch(() => ({}))
-  if ((res.status === 401) && isNative()) {
-    try { await clearToken() } catch (e) {}
-    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('sc:unauth'))
-  }
-  if (!res.ok) {
-    const msg = parseFrappeError(body) || `HTTP ${res.status}`
-    throw new Error(msg)
-  }
-  return body
 }
 
 // Get DocType meta (fields, options)
 export async function getMeta(doctype) {
   return call('frappe.client.get_meta', { doctype }).catch(async () => {
-    // Frappe doesn't have public get_meta - fallback to private
+    // Fallback: frappe.desk.form.load.getdoctype
+    // Native: gửi qua POST body (doctype trong URL query → double-encode %20→%2520).
+    // Web: dùng GET query string nguyên bản (an toàn, đã chạy ổn).
+    if (isNative()) {
+      const r = await request('/api/method/frappe.desk.form.load.getdoctype', {
+        method: 'POST',
+        body: JSON.stringify({ doctype }),
+      })
+      return r.docs?.[0] || null
+    }
     const r = await request(`/api/method/frappe.desk.form.load.getdoctype?doctype=${encodeURIComponent(doctype)}`)
     return r.docs?.[0] || null
   })

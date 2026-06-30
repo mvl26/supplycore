@@ -10,14 +10,15 @@
   --m-tint: #EAF2FB;          /* nền nhấn nhạt */
   --m-ink: #0F172A;           /* chữ chính */
   --m-ink-2: #475569;         /* chữ phụ */
-  --m-ink-3: #94A3B8;         /* mờ */
+  --m-ink-3: #94A3B8;         /* icon trang trí / disabled — KHÔNG dùng làm body text */
   --m-line: #E7ECF3;          /* viền */
   --m-bg: #F4F7FB;            /* nền trang */
   --m-card: #FFFFFF;
-  --m-ok: #16A34A; --m-ok-bg:#E9F8EF;
+  /* --m-ok/#166534 đạt WCAG AA (≥4.5:1) trên --m-ok-bg; --m-info/#1F5C92 tương tự */
+  --m-ok: #166534; --m-ok-bg:#E9F8EF;
   --m-warn:#B45309; --m-warn-bg:#FEF4E6;
   --m-crit:#DC2626; --m-crit-bg:#FDECEC;
-  --m-info:#2E75B6; --m-info-bg:#EAF2FB;
+  --m-info:#1F5C92; --m-info-bg:#EAF2FB;
   --m-r: 14px;                /* bo góc card */
   --m-r-sm: 10px;
   --m-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 16px rgba(16,24,40,.06);
@@ -40,7 +41,12 @@
   background: linear-gradient(135deg, var(--m-navy) 0%, var(--m-royal) 100%);
   color: #fff;
 }
-.m-topbar__title { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+/* m-topbar__info: khối trái co lại khi có slot right; min-width:0 bắt buộc để ellipsis hoạt động */
+.m-topbar__info { flex: 1; min-width: 0; }
+/* m-topbar__right: không co (flex:none) → bảo vệ icon/nút bên phải */
+.m-topbar__right { flex: none; }
+/* margin:0 reset h1 user-agent; white-space/overflow/text-overflow xử lý tiêu đề dài */
+.m-topbar__title { font-size: 20px; font-weight: 700; letter-spacing: -.01em; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .m-topbar__sub { font-size: 12px; opacity: .85; margin-top: 2px; }
 .m-topbar__row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
@@ -78,7 +84,8 @@
 .m-btn:active { transform: scale(.98); }
 .m-btn:disabled { opacity:.5; }
 .m-btn--ok { background: var(--m-ok); } .m-btn--ghost { background:#fff; color:var(--m-navy); border:1px solid var(--m-line); }
-.m-btn--sm { width:auto; padding:9px 16px; font-size:14px; border-radius:10px; }
+/* min-height:44px đảm bảo tap target ≥44px (WCAG 2.5.5) dù font-size nhỏ hơn */
+.m-btn--sm { width:auto; padding:10px 16px; font-size:14px; border-radius:10px; min-height:44px; }
 .m-field { display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--m-ink-2); }
 .m-input { width:100%; border:1px solid var(--m-line); border-radius:12px; padding:13px 14px; font-size:16px; background:#fff; color:var(--m-ink);
   transition: border-color .12s, box-shadow .12s; }
@@ -87,8 +94,11 @@
 /* ---- Chips (segmented) ---- */
 .m-chips { display:flex; gap:8px; overflow-x:auto; padding: 2px; -ms-overflow-style:none; scrollbar-width:none; }
 .m-chips::-webkit-scrollbar{display:none}
-.m-chip { white-space:nowrap; border:1px solid var(--m-line); background:#fff; color:var(--m-ink-2);
-  border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600; transition: all .12s; }
+/* display:inline-flex + align-items:center: text căn giữa khi min-height làm tăng chiều cao */
+.m-chip { display:inline-flex; align-items:center; justify-content:center;
+  white-space:nowrap; border:1px solid var(--m-line); background:#fff; color:var(--m-ink-2);
+  border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600;
+  min-height:44px; transition: all .12s; }
 .m-chip--on { background: var(--m-navy); color:#fff; border-color: var(--m-navy); }
 
 /* ---- Skeleton ---- */
@@ -103,8 +113,11 @@
 /* ---- Empty / error states ---- */
 .m-state { display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding: 44px 24px; color: var(--m-ink-3); }
 .m-state__icon { width:56px; height:56px; border-radius:50%; display:grid; place-items:center; background: var(--m-tint); color: var(--m-royal); }
+/* modifier màu critical cho icon vùng lỗi — thay thế inline style trong MErrorState */
+.m-state__icon--crit { background: var(--m-crit-bg); color: var(--m-crit); }
 .m-state__title { font-weight:650; color: var(--m-ink-2); font-size:15px; }
-.m-state__sub { font-size:13px; color: var(--m-ink-3); max-width: 240px; }
+/* --m-ink-2 (~7:1 WCAG AA) thay --m-ink-3 (~2.8:1) cho chữ mô tả thật */
+.m-state__sub { font-size:13px; color: var(--m-ink-2); max-width: 240px; }
 
 /* ---- list enter animation ---- */
 .m-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
@@ -127,5 +140,16 @@ html.sc-scanning, html.sc-scanning body, html.sc-scanning #app,
 html.sc-scanning .m-shell, html.sc-scanning .m-app { background: transparent !important; }
 html.sc-scanning #app > * { visibility: hidden !important; }   /* ẩn app; overlay teleport ra body nên vẫn hiện */
 
-.m-muted { color: var(--m-ink-3); font-size:13px; text-align:center; }
+/* --m-ink-2 cho .m-muted: đảm bảo WCAG AA ở chữ thường (~7:1 so với nền trắng) */
+.m-muted { color: var(--m-ink-2); font-size:13px; text-align:center; }
 .m-sronly { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* ---- prefers-reduced-motion: tắt animation liên tục (WCAG 2.3.3) ---- */
+@media (prefers-reduced-motion: reduce) {
+  /* Skeleton: dùng nền tĩnh thay shimmer chạy vô tận */
+  .m-sk::after { animation: none; opacity: 0; }
+  /* PTR spinner: dừng quay — offset vẫn báo đang tải */
+  .m-ptr__spin { animation: none; }
+  /* List enter: hiện ngay, không trượt lên */
+  .m-rise { animation: none; opacity: 1; transform: none; }
+}

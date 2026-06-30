@@ -30,16 +30,20 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import Icon from '../components/Icon.vue'
 import ScanOverlay from './ui/ScanOverlay.vue'
 import { useNetwork } from './useNetwork'
 import { tapLight } from './native'
 import { clearToken } from '../platform'
+import { useScannerStore } from './scanner'
+import { useToastStore } from '../stores/toast'
 
 const router = useRouter()
+const route = useRoute()
 const { online } = useNetwork()
+const toast = useToastStore()
 
 const tabs = [
   { to: '/m/lookup',    icon: 'layers',          label: 'Tra cứu'   },
@@ -48,10 +52,49 @@ const tabs = [
   { to: '/m/dashboard', icon: 'bar-chart',       label: 'Bảng tin'  },
 ]
 
-// Hết phiên (api.js bắn 'sc:unauth' khi 401/403) → về màn đăng nhập.
-async function onUnauth() { try { await clearToken() } catch (e) {} ; router.replace('/m/setup') }
+// Hết phiên (api.js bắn 'sc:unauth' khi 401) → toast nhẹ rồi về màn đăng nhập.
+async function onUnauth() {
+  try { await clearToken() } catch (e) {}
+  toast.warning('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
+  router.replace('/m/setup')
+}
 onMounted(() => window.addEventListener('sc:unauth', onUnauth))
 onUnmounted(() => window.removeEventListener('sc:unauth', onUnauth))
+
+// Huỷ quét khi đổi route — tránh sc-scanning kẹt khi screen unmount giữa lúc quét.
+watch(() => route.fullPath, () => {
+  const { scanning, cancel } = useScannerStore()
+  if (scanning.value) cancel()
+})
+
+// Nút Back cứng Android — xử lý: đang quét → huỷ scan; có history → router.back(); ở tab gốc → exitApp.
+const _TAB_ROOTS = ['/m', '/m/lookup', '/m/approve', '/m/receiving', '/m/dashboard']
+let _backHandle = null
+
+onMounted(async () => {
+  try {
+    const { App } = await import('@capacitor/app')
+    _backHandle = await App.addListener('backButton', async () => {
+      const { scanning, cancel } = useScannerStore()
+      if (scanning.value) {
+        cancel()
+        return
+      }
+      if (_TAB_ROOTS.includes(router.currentRoute.value.path)) {
+        try { App.exitApp() } catch (e) {}
+      } else {
+        router.back()
+      }
+    })
+  } catch (e) { /* web không có @capacitor/app — bỏ qua */ }
+})
+
+onUnmounted(async () => {
+  if (_backHandle) {
+    try { await _backHandle.remove() } catch (e) {}
+    _backHandle = null
+  }
+})
 </script>
 
 <style scoped>

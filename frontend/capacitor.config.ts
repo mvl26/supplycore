@@ -6,7 +6,11 @@ const config: CapacitorConfig = {
   appName: 'SupplyCore',
   // webDir trỏ tới native bundle do `npm run build:native` (CAP_BUILD=1) sinh ra dist/
   webDir: 'dist',
-  server: { androidScheme: 'https' },
+  server: {
+    androidScheme: 'https',
+    cleartext: true,          // cho phép http:// on-prem LAN (Android 9+)
+  },
+  android: { allowMixedContent: true },
   plugins: {
     CapacitorHttp: { enabled: true }, // bỏ qua CORS browser cho request native
     SplashScreen: {

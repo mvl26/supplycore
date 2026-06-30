@@ -38,11 +38,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { notifyError, tapMedium } from './native'
 import Icon from '../components/Icon.vue'
+import { getServerUrl } from '../platform'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -50,6 +51,14 @@ const serverUrl = ref('')
 const usr = ref('')
 const pwd = ref('')
 const valid = computed(() => /^https?:\/\/.+/.test(serverUrl.value) && usr.value && pwd.value)
+
+// Nạp lại địa chỉ máy chủ đã lưu → người dùng không cần gõ lại sau mỗi lần đăng xuất.
+onMounted(async () => {
+  try {
+    const saved = await getServerUrl()
+    if (saved) serverUrl.value = saved
+  } catch (e) { /* bỏ qua khi chạy trên web */ }
+})
 
 async function submit() {
   if (!valid.value || auth.loginLoading) return

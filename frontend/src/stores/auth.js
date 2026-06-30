@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { login as apiLogin, logout as apiLogout, getSession, getUserInfo, mobileLoginApi } from '../api'
-import { setServerUrl, setToken, clearToken } from '../platform'
+import { isNative, setServerUrl, setToken, clearToken, getToken } from '../platform'
 import { useAccessStore } from './access'
 
 export const useAuthStore = defineStore('auth', {
@@ -29,6 +29,11 @@ export const useAuthStore = defineStore('auth', {
       if (this.booted) return
       const sess = await getSession()
       if (sess === 'Guest') {
+        // Native: phân biệt 401 thật (token bị xoá bởi api.js) với lỗi mạng
+        // tạm thời (token vẫn còn trong Preferences). Khi mạng chập → getSession
+        // catch mọi lỗi và trả 'Guest', nhưng token chưa bị xoá. Không hạ user
+        // xuống Guest; không đặt booted=true để boot() có thể thử lại lần sau.
+        if (isNative() && (await getToken())) return
         this.user = { name: 'Guest', is_guest: true, roles: [] }
         useAccessStore().reset()
       } else {

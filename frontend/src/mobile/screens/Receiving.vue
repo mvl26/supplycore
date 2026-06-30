@@ -4,22 +4,23 @@
      LUỒNG:
        1. Danh sách phiếu SC Purchase Receipt ở trạng thái Draft (docstatus=0)
        2. Chọn phiếu → form chi tiết: danh sách vật tư (items[]), nhập SL nhận (qty),
+          nhập Hạn dùng (expiry_date, bắt buộc), Ngày sản xuất (manufacturing_date, tuỳ chọn),
           quét lô NCC (supplier_batch_no)
-       3. Xác nhận: updateDoc (ghi qty + supplier_batch_no) → submitDoc (đăng tải tồn kho)
+       3. Xác nhận: validate client-side → updateDoc (ghi qty + expiry_date + ...) → submitDoc
 
      Field schema (SC Purchase Receipt Item):
        item, item_name, qty (SL nhận), po_qty (SL đặt hàng - tham chiếu),
        uom, rate, warehouse, supplier_batch_no, batch_no, manufacturing_date, expiry_date
 -->
 <template>
-  <MPullRefresh :refreshing="loading" @refresh="load">
+  <MPullRefresh :refreshing="current ? opening : loading" @refresh="onRefresh">
     <MTopBar title="Tiếp nhận" sub="Phiếu nhập chờ xử lý" />
 
     <div class="m-page">
 
       <!-- ── DANH SÁCH PHIẾU NHẬP CHỜ ── -->
       <template v-if="!current">
-        <!-- Đang tải -->
+        <!-- Đang tải danh sách -->
         <MSkeleton v-if="loading" :count="4" />
 
         <!-- Lỗi tải -->
@@ -37,32 +38,38 @@
           sub="Tất cả phiếu đã được xử lý"
         />
 
-        <!-- Danh sách -->
-        <ul v-else class="m-list">
-          <li
-            v-for="r in rows"
-            :key="r.name"
-            class="m-card m-card--tap m-rise"
-            @click="open(r.name)"
-          >
-            <div class="rc-card-header">
-              <span class="m-card__title">{{ r.name }}</span>
-              <Icon name="chevron-right" :size="16" class="m-card__chev" />
-            </div>
-            <div class="m-card__row">
-              <span>NCC</span>
-              <b>{{ r.supplier_name || r.supplier || '—' }}</b>
-            </div>
-            <div class="m-card__row">
-              <span>Kho nhập</span>
-              <b>{{ r.to_warehouse || '—' }}</b>
-            </div>
-            <div class="m-card__row">
-              <span>Ngày</span>
-              <b>{{ fmtDate(r.posting_date) }}</b>
-            </div>
-          </li>
-        </ul>
+        <!-- Danh sách — giữ hiển thị khi đang mở phiếu (opening=true) -->
+        <template v-else>
+          <!-- Banner nhỏ khi đang tải chi tiết phiếu: không ẩn list -->
+          <div v-if="opening" class="rc-opening-bar">
+            <span class="rc-opening-dot"></span>Đang tải phiếu...
+          </div>
+          <ul class="m-list">
+            <li
+              v-for="r in rows"
+              :key="r.name"
+              class="m-card m-card--tap m-rise"
+              @click="open(r.name)"
+            >
+              <div class="rc-card-header">
+                <span class="m-card__title">{{ r.name }}</span>
+                <Icon name="chevron-right" :size="16" class="m-card__chev" />
+              </div>
+              <div class="m-card__row">
+                <span>NCC</span>
+                <b>{{ r.supplier_name || r.supplier || '—' }}</b>
+              </div>
+              <div class="m-card__row">
+                <span>Kho nhập</span>
+                <b>{{ r.to_warehouse || '—' }}</b>
+              </div>
+              <div class="m-card__row">
+                <span>Ngày</span>
+                <b>{{ fmtDate(r.posting_date) }}</b>
+              </div>
+            </li>
+          </ul>
+        </template>
       </template>
 
       <!-- ── CHI TIẾT PHIẾU NHẬP ── -->
@@ -92,6 +99,10 @@
           <div v-if="current.qc_required" class="m-card__row">
             <span>QC</span>
             <MBadge status="Pending" label="Yêu cầu KCS" />
+          </div>
+          <div v-if="current.is_return" class="m-card__row">
+            <span>Loại</span>
+            <MBadge status="Warning" label="Hàng trả NCC" />
           </div>
         </div>
 
@@ -129,9 +140,39 @@
               />
             </label>
 
+            <!-- Hạn dùng — bắt buộc với dòng qty > 0, trừ hàng trả -->
+            <label class="m-field">
+              <span>
+                Hạn dùng
+                <span v-if="!current.is_return" class="rc-required">*</span>
+                <span
+                  v-if="Number(it.qty) > 0 && !it.expiry_date && !current.is_return"
+                  class="rc-inline-error"
+                >
+                  — bắt buộc
+                </span>
+              </span>
+              <input
+                v-model="it.expiry_date"
+                type="date"
+                class="m-input"
+                :class="{ 'rc-input-error': Number(it.qty) > 0 && !it.expiry_date && !current.is_return }"
+              />
+            </label>
+
+            <!-- Ngày sản xuất — tuỳ chọn -->
+            <label class="m-field">
+              <span>Ngày sản xuất</span>
+              <input
+                v-model="it.manufacturing_date"
+                type="date"
+                class="m-input"
+              />
+            </label>
+
             <!-- Quét lô NCC → supplier_batch_no -->
             <div class="rc-scan-row">
-              <button class="m-btn m-btn--ghost m-btn--sm rc-scan-btn" @click="scanBatch(it)">
+              <button class="m-btn m-btn--ghost m-btn--sm rc-scan-btn" :disabled="scanning" @click="scanBatch(it)">
                 <Icon name="scan" :size="16" /> Quét lô NCC
               </button>
               <span v-if="it.supplier_batch_no" class="m-badge m-badge--info rc-batch-val">
@@ -158,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Icon from '../../components/Icon.vue'
 import MTopBar from '../ui/MTopBar.vue'
 import MBadge from '../ui/MBadge.vue'
@@ -169,45 +210,68 @@ import MPullRefresh from '../ui/MPullRefresh.vue'
 import { tapLight, notifySuccess, notifyError } from '../native'
 import { getList, getDoc, updateDoc, submitDoc } from '../../api'
 import { useScanner } from '../useScanner'
+import { useScannerStore } from '../scanner'
 import { useToastStore } from '../../stores/toast'
+import { fmtDate } from '../../utils'
 
 const DT = 'SC Purchase Receipt'
 
 const rows      = ref([])
 const current   = ref(null)
-const loading   = ref(false)
+const loading   = ref(false)   // tải/làm mới danh sách
+const opening   = ref(false)   // mở chi tiết phiếu (riêng — không ẩn list)
 const saving    = ref(false)
 const loadError = ref(null)
 
-const { scan } = useScanner()
+const { scan, scanning } = useScanner()
 const toast    = useToastStore()
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Chốt thứ tự request danh sách (latest-wins)
+let loadSeq = 0
 
-function fmtDate(d) {
-  if (!d) return '—'
-  const parts = String(d).split('-')
-  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
-  return d
+// Theo dõi tên phiếu đang mở: bỏ kết quả cũ nếu người dùng đổi phiếu
+let openingName = null
+
+// ─── Pull-to-refresh ──────────────────────────────────────────────────────────
+
+async function onRefresh() {
+  if (current.value) {
+    // Đang ở detail: làm mới chính phiếu đang xem, không tải lại list
+    opening.value = true
+    try {
+      const doc = await getDoc(DT, current.value.name)
+      current.value = doc
+    } catch (e) {
+      toast.error(`Lỗi làm mới: ${e.message}`)
+    } finally {
+      opening.value = false
+    }
+    return
+  }
+  await load()
 }
 
 // ─── Tải danh sách phiếu Draft ───────────────────────────────────────────────
 
 async function load() {
+  const tok = ++loadSeq
   loading.value = true
   loadError.value = null
   try {
-    rows.value = await getList(DT, {
+    const result = await getList(DT, {
       filters: [['docstatus', '=', 0]],
       fields: ['name', 'supplier', 'supplier_name', 'to_warehouse', 'posting_date'],
       order_by: 'creation desc',
       limit: 50,
     })
+    if (tok !== loadSeq) return   // bị request mới hơn thay thế
+    rows.value = result
   } catch (e) {
+    if (tok !== loadSeq) return
     loadError.value = e.message
     toast.error(`Lỗi tải danh sách: ${e.message}`)
   } finally {
-    loading.value = false
+    if (tok === loadSeq) loading.value = false
   }
 }
 
@@ -215,18 +279,23 @@ async function load() {
 
 async function open(name) {
   tapLight()
-  loading.value = true
+  // Đặt cờ trước khi await để không ẩn danh sách (không dùng loading)
+  opening.value = true
+  openingName = name
   try {
-    current.value = await getDoc(DT, name)
+    const doc = await getDoc(DT, name)
+    if (openingName !== name) return   // người dùng đã bấm phiếu khác
+    current.value = doc
   } catch (e) {
-    toast.error(`Lỗi tải phiếu: ${e.message}`)
+    if (openingName === name) toast.error(`Lỗi tải phiếu: ${e.message}`)
   } finally {
-    loading.value = false
+    if (openingName === name) opening.value = false
   }
 }
 
 function backToList() {
   current.value = null
+  openingName = null
 }
 
 // ─── Quét lô NCC → ghi vào supplier_batch_no ─────────────────────────────────
@@ -242,17 +311,44 @@ async function scanBatch(it) {
   }
 }
 
-// ─── Xác nhận nhận hàng: update → submit ──────────────────────────────────────
+// ─── Xác nhận nhận hàng: validate → update → submit ──────────────────────────
 
 async function confirm() {
   if (saving.value) return
-  if (current.value.items && current.value.items.every(it => !Number(it.qty))) {
+
+  const items = current.value.items || []
+  const isReturn = !!current.value.is_return
+
+  // Chuẩn hoá qty: '' hoặc NaN → 0
+  items.forEach(it => {
+    const n = Number(it.qty)
+    it.qty = isNaN(n) ? 0 : n
+  })
+
+  // Kiểm tra ít nhất một dòng có qty > 0
+  if (items.every(it => it.qty <= 0)) {
     toast.warning('Vui lòng nhập số lượng nhận cho ít nhất một dòng.')
     return
   }
+
+  // Validate expiry_date — bắt buộc với mọi dòng qty > 0, không phải hàng trả
+  if (!isReturn) {
+    const missingExpiry = items
+      .filter(it => it.qty > 0 && !it.expiry_date)
+      .map(it => it.item_name || it.item)
+    if (missingExpiry.length) {
+      toast.warning(
+        `Thiếu Hạn dùng cho ${missingExpiry.length > 1 ? 'các dòng' : 'dòng'}: ${missingExpiry.join(', ')}`
+      )
+      return
+    }
+  }
+
   saving.value = true
   try {
-    // Ghi toàn bộ mảng items (giữ tất cả field, chỉ qty + supplier_batch_no được chỉnh)
+    // Ghi items (qty + expiry_date + supplier_batch_no + manufacturing_date) rồi
+    // submit. Dùng 2 method đã deploy (save_doc + submit_doc) để không phụ thuộc
+    // backend reload. (save_and_submit atomic có sẵn ở backend cho tương lai.)
     await updateDoc(DT, current.value.name, { items: current.value.items })
     await submitDoc(DT, current.value.name)
     notifySuccess()
@@ -268,7 +364,15 @@ async function confirm() {
   }
 }
 
+// ─── Vòng đời ─────────────────────────────────────────────────────────────────
+
 onMounted(load)
+
+// Huỷ scanner khi rời màn: tránh camera bật ngầm + class sc-scanning treo
+// (mobile.css dòng 128: .sc-scanning #app { visibility: hidden } → màn trống/đen)
+onUnmounted(() => {
+  useScannerStore().cancel()
+})
 </script>
 
 <style scoped>
@@ -315,7 +419,7 @@ onMounted(load)
   margin-left: 4px;
 }
 
-/* ── Input SL nhận — fontsizen lớn cho dễ gõ mobile ── */
+/* ── Input SL nhận — fontsize lớn cho dễ gõ mobile ── */
 .rc-input-qty {
   font-size: 20px;
   font-weight: 650;
@@ -340,4 +444,50 @@ onMounted(load)
 
 /* ── Mono (PO ref) ── */
 .rc-mono { font-family: monospace; }
+
+/* ── Dấu * bắt buộc ── */
+.rc-required {
+  color: var(--m-danger, #dc2626);
+  margin-left: 2px;
+}
+
+/* ── Cảnh báo inline thiếu hạn dùng ── */
+.rc-inline-error {
+  color: var(--m-danger, #dc2626);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* ── Input viền đỏ khi lỗi ── */
+.rc-input-error {
+  border-color: var(--m-danger, #dc2626) !important;
+}
+
+/* ── Banner đang mở phiếu (hiển thị ở đỉnh list, không ẩn list) ── */
+.rc-opening-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--m-ink-2);
+  background: var(--m-surface-2, #f3f4f6);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+/* ── Chấm nhảy animation (thay spinner icon) ── */
+.rc-opening-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--m-royal, #2E75B6);
+  animation: rc-dot-pulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes rc-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .4; transform: scale(.7); }
+}
 </style>

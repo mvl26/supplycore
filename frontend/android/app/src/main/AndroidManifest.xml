@@ -7,6 +7,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
 
         <activity
@@ -40,4 +41,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Quét barcode tra cứu/tiếp nhận (@capacitor-mlkit/barcode-scanning) -->
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- required=false: máy không camera (máy quét chuyên dụng/emulator) vẫn cài được -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 </manifest>

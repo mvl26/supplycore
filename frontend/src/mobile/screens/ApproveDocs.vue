@@ -97,8 +97,21 @@ const noPermission  = ref(false)   // user thiếu quyền đọc loại phiếu
 const activeDoc     = ref(null)
 const detailLoading = ref(false)
 
+// Token tăng dần — vô hiệu hoá kết quả getDoc đã bị người dùng rời bỏ
+// (back() hoặc selectDoctype() tăng token; openDoc dùng token tại thời điểm gọi)
+let openDocSeq = 0
+
 // ── Computed ─────────────────────────────────────────────────────────────────
 const activeConfig = computed(() => DOCTYPE_CONFIG[activeDoctype.value])
+
+// Trả về nhãn tường minh cho badge nếu cần ghi đè MAP mặc định.
+// SC Material Request: Pending → 'Chờ duyệt' (không phải 'Chờ QC' theo MAP của MBadge).
+function badgeLabelFor(statusOrStage) {
+  if (activeDoctype.value === 'SC Material Request' && statusOrStage === 'Pending') {
+    return 'Chờ duyệt'
+  }
+  return undefined   // để MBadge tự tra MAP
+}
 
 // ── Methods ──────────────────────────────────────────────────────────────────
 async function loadList() {
@@ -131,6 +144,7 @@ async function loadList() {
 function selectDoctype(dt) {
   if (dt === activeDoctype.value && !activeDoc.value) return
   tapLight()
+  ++openDocSeq           // vô hiệu hoá getDoc đang bay (nếu có)
   activeDoctype.value = dt
   activeDoc.value = null
   loadList()
@@ -138,25 +152,32 @@ function selectDoctype(dt) {
 
 async function openDoc(name) {
   tapLight()
+  const tok = ++openDocSeq   // token của lần mở này
   detailLoading.value = true
-  activeDoc.value = { name }   // placeholder so detail view renders immediately
+  activeDoc.value = { name }  // placeholder — hiện detail ngay, skeleton che ActionPanel
   try {
-    activeDoc.value = await getDoc(activeDoctype.value, name)
+    const doc = await getDoc(activeDoctype.value, name)
+    // Hủy nếu user đã bấm Quay lại hoặc chuyển doctype trong lúc tải
+    if (tok !== openDocSeq || !activeDoc.value || activeDoc.value.name !== name) return
+    activeDoc.value = doc
   } catch (e) {
+    if (tok !== openDocSeq) return
     toast.error(e.message ?? 'Lỗi tải chi tiết')
     activeDoc.value = null
   } finally {
-    detailLoading.value = false
+    if (tok === openDocSeq) detailLoading.value = false
   }
 }
 
 function back() {
+  ++openDocSeq           // vô hiệu hoá getDoc đang bay
   activeDoc.value = null
 }
 
 async function onAfter() {
   // Phiếu vừa được duyệt/từ chối → trở về danh sách và reload
   notifySuccess()
+  ++openDocSeq
   activeDoc.value = null
   await loadList()
 }
@@ -172,12 +193,13 @@ loadList()
 
     <div class="m-page">
 
-      <!-- Chip selector doctype -->
+      <!-- Chip selector doctype — disable khi đang tải chi tiết để tránh race -->
       <div class="m-chips">
         <button
           v-for="dt in doctypeKeys"
           :key="dt"
           :class="['m-chip', dt === activeDoctype ? 'm-chip--on' : '']"
+          :disabled="detailLoading"
           @click="selectDoctype(dt)"
         >
           {{ DOCTYPE_CONFIG[dt].label }}
@@ -223,7 +245,10 @@ loadList()
               <b>{{ r.department }}</b>
             </div>
             <div class="m-card__row" style="margin-top:4px">
-              <MBadge :status="r.approval_stage || r.status" />
+              <MBadge
+                :status="r.approval_stage || r.status"
+                :label="badgeLabelFor(r.approval_stage || r.status)"
+              />
               <Icon name="chevron-right" :size="16" class="m-card__chev" />
             </div>
           </li>
@@ -265,7 +290,10 @@ loadList()
           </div>
           <div v-if="activeDoc.approval_stage || activeDoc.status" class="m-card__row" style="margin-top:4px">
             <span>Trạng thái</span>
-            <MBadge :status="activeDoc.approval_stage || activeDoc.status" />
+            <MBadge
+              :status="activeDoc.approval_stage || activeDoc.status"
+              :label="badgeLabelFor(activeDoc.approval_stage || activeDoc.status)"
+            />
           </div>
         </div>
 
