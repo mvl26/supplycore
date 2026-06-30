@@ -9,7 +9,7 @@ vi.mock('@capacitor/haptics', () => ({ Haptics:{impact:vi.fn(),notification:vi.f
 vi.mock('@capacitor/network', () => ({ Network:{ getStatus: async()=>({connected:true}), addListener: async()=>({remove:vi.fn()}) } }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ replace: vi.fn(), push: vi.fn() }), useRoute: () => ({ params:{}, query:{}, meta:{} }) }))
 
-const PR_DOC = { name:'SC-PR-1', doctype:'SC Purchase Receipt', docstatus:0, is_return:0, supplier:'NCC', to_warehouse:'Kho', items:[{item:'X',item_name:'VT X',qty:0,po_qty:10,supplier_batch_no:'',expiry_date:'',manufacturing_date:''}] }
+const PR_DOC = { name:'SC-PR-1', doctype:'SC Purchase Receipt', docstatus:0, is_return:0, purchase_order:'SC-PO-X', supplier:'NCC', to_warehouse:'Kho', items:[{item:'X',item_name:'VT X',qty:0,po_qty:10,supplier_batch_no:'',expiry_date:'',manufacturing_date:''}] }
 const calls = { update:null, submit:null }
 vi.mock('../src/api.js', () => ({
   call: vi.fn(async () => ({})),

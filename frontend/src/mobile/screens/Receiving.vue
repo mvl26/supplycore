@@ -104,6 +104,21 @@
             <span>Loại</span>
             <MBadge status="Warning" label="Hàng trả NCC" />
           </div>
+
+          <!-- Phiếu KHÔNG có PO → backend bắt buộc 'Lý do không có PO' trước submit -->
+          <label v-if="!current.purchase_order && !current.is_return" class="m-field" style="margin-top:8px">
+            <span>
+              Lý do không có PO <span class="rc-required">*</span>
+              <span v-if="!String(current.no_po_reason || '').trim()" class="rc-inline-error">— bắt buộc</span>
+            </span>
+            <textarea
+              v-model="current.no_po_reason"
+              rows="2"
+              class="m-input"
+              :class="{ 'rc-input-error': !String(current.no_po_reason || '').trim() }"
+              placeholder="VD: mua khẩn cấp / hàng mẫu thử…"
+            ></textarea>
+          </label>
         </div>
 
         <!-- Không có vật tư -->
@@ -344,12 +359,22 @@ async function confirm() {
     }
   }
 
+  // Phiếu không có PO → backend bắt buộc no_po_reason trước submit
+  if (!current.value.purchase_order && !isReturn
+      && !String(current.value.no_po_reason || '').trim()) {
+    toast.warning("Phiếu không có PO — vui lòng nhập 'Lý do không có PO'.")
+    return
+  }
+
   saving.value = true
   try {
-    // Ghi items (qty + expiry_date + supplier_batch_no + manufacturing_date) rồi
-    // submit. Dùng 2 method đã deploy (save_doc + submit_doc) để không phụ thuộc
-    // backend reload. (save_and_submit atomic có sẵn ở backend cho tương lai.)
-    await updateDoc(DT, current.value.name, { items: current.value.items })
+    // Ghi items (qty + expiry_date + supplier_batch_no + manufacturing_date)
+    // + no_po_reason (nếu phiếu không có PO) rồi submit. Dùng save_doc + submit_doc
+    // (đã deploy) để không phụ thuộc backend reload.
+    await updateDoc(DT, current.value.name, {
+      items: current.value.items,
+      no_po_reason: current.value.no_po_reason || '',
+    })
     await submitDoc(DT, current.value.name)
     notifySuccess()
     toast.success('Đã xác nhận nhận hàng và cập nhật tồn kho.')
