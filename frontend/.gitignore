@@ -2,3 +2,11 @@ dist/
 android/app/build/
 android/.gradle/
 android/local.properties
+
+# iOS (Capacitor) — build artifacts, cần build trên Mac
+ios/App/Pods/
+ios/App/App/public/
+ios/App/build/
+ios/App/output/
+ios/App/DerivedData/
+*.xcuserstate
