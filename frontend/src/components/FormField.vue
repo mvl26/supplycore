@@ -4,6 +4,7 @@ import LinkAutocomplete from './LinkAutocomplete.vue'
 import Icon from './Icon.vue'
 import { call } from '../api'
 import { QUICK_CREATE } from '../schemas'
+import { fmtNumber } from '../utils'
 
 // CR-03: bật "+ Tạo mới" cho mọi Link field có linkTo nằm trong registry
 // quick-create (hoặc field tự khai báo canCreateNew).
@@ -93,6 +94,24 @@ function update(v) {
 
 const isReadonly = () => props.readonly || !!props.field.readonly
 const inputClass = props.size === 'sm' ? 'sc-input py-1.5 text-sm' : 'sc-input'
+
+// Currency (VND, precision 0) → hiển thị dấu '.' ngăn hàng nghìn cho dễ đọc.
+// Nhập = text + inputmode numeric; chỉ giữ chữ số, parse về số nguyên.
+const currencyDisplay = computed(() => {
+  const v = props.modelValue
+  if (v === '' || v == null) return ''
+  const n = Number(v)
+  return isNaN(n) ? '' : fmtNumber(n)
+})
+function onCurrencyInput(e) {
+  if (isReadonly()) return
+  const digits = String(e.target.value).replace(/\D/g, '')
+  if (digits === '') { e.target.value = ''; emit('update:modelValue', null); return }
+  const n = Number(digits)
+  // Buộc đồng bộ DOM ngay cả khi n === modelValue (tránh kẹt '00' / ký tự lạ).
+  e.target.value = fmtNumber(n)
+  emit('update:modelValue', n)
+}
 
 // Attach upload state
 const uploading = ref(false)
@@ -235,8 +254,14 @@ function removeAttachAt(idx) {
       :value="modelValue ?? ''" :required="field.required" step="1" :readonly="isReadonly()"
       @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
 
+    <!-- Currency (VND) → text + phân tách hàng nghìn '.' cho dễ đọc -->
+    <input v-else-if="field.type === 'Currency'" type="text" inputmode="numeric"
+      :value="currencyDisplay" :required="field.required" :readonly="isReadonly()"
+      placeholder="0"
+      @input="onCurrencyInput" :class="[inputClass, 'text-right font-mono', isReadonly() && 'bg-gray-50']" />
+
     <!-- Number-like -->
-    <input v-else-if="['Int','Float','Currency','Percent'].includes(field.type)" type="number"
+    <input v-else-if="['Int','Float','Percent'].includes(field.type)" type="number"
       :step="field.type === 'Int' ? '1' : '0.01'"
       :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"
       @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
