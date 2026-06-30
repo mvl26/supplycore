@@ -134,7 +134,7 @@ async function loadAlerts() {
   alertsError.value = false
   try {
     const rows = await getList('SC Alert', {
-      fields: ['name', 'alert_date', 'alert_type', 'severity', 'title', 'message'],
+      fields: ['name', 'alert_date', 'severity', 'title', 'message'],
       filters: [['resolved', '=', 0]],
       order_by: 'alert_date desc',
       limit: 50,
