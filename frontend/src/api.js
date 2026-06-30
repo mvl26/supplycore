@@ -45,8 +45,11 @@ async function request(path, options = {}) {
   })
   let body = null
   try { body = await res.json() } catch (e) { /* ignore */ }
-  // Native: token hết hạn/sai (401/403) → xoá token + báo app về màn đăng nhập.
-  if ((res.status === 401 || res.status === 403) && isNative()) {
+  // Native: CHỈ 401 (token hết hạn/sai) → xoá token + về màn đăng nhập.
+  // KHÔNG xử lý 403 ở đây: 403 = đã đăng nhập nhưng thiếu quyền đọc 1 doctype
+  // (vd Storekeeper không đọc được HĐ khung) — phải để màn hình tự xử lý, không
+  // được đá user ra đăng nhập.
+  if (res.status === 401 && isNative()) {
     try { await clearToken() } catch (e) {}
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('sc:unauth'))
   }

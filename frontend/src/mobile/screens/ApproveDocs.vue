@@ -91,6 +91,7 @@ const activeDoctype = ref(doctypeKeys[0])
 const rows          = ref([])
 const loading       = ref(false)
 const hasError      = ref(false)
+const noPermission  = ref(false)   // user thiếu quyền đọc loại phiếu đang chọn (403)
 
 // Detail view
 const activeDoc     = ref(null)
@@ -103,6 +104,7 @@ const activeConfig = computed(() => DOCTYPE_CONFIG[activeDoctype.value])
 async function loadList() {
   loading.value = true
   hasError.value = false
+  noPermission.value = false
   rows.value = []
   try {
     const cfg = activeConfig.value
@@ -113,8 +115,14 @@ async function loadList() {
       limit: 50,
     })
   } catch (e) {
-    hasError.value = true
-    toast.error(e.message ?? 'Lỗi tải danh sách')
+    // 403 = không có quyền đọc loại phiếu này (vd Storekeeper ↔ HĐ khung) →
+    // hiện thông báo nhẹ nhàng, KHÔNG báo lỗi đỏ, KHÔNG retry vô ích.
+    if (e.status === 403) {
+      noPermission.value = true
+    } else {
+      hasError.value = true
+      toast.error(e.message ?? 'Lỗi tải danh sách')
+    }
   } finally {
     loading.value = false
   }
@@ -181,6 +189,14 @@ loadList()
 
         <!-- Loading skeleton -->
         <MSkeleton v-if="loading" :count="4" />
+
+        <!-- Không có quyền đọc loại phiếu này -->
+        <MEmpty
+          v-else-if="noPermission"
+          icon="lock"
+          title="Bạn không có quyền duyệt loại phiếu này"
+          sub="Hãy chọn loại phiếu khác hoặc liên hệ quản trị viên."
+        />
 
         <!-- Error state -->
         <MErrorState v-else-if="hasError" @retry="loadList" />
