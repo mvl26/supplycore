@@ -97,6 +97,12 @@ MAPPINGS: dict[tuple[str, str], dict] = {
             },
             "qty_logic": lambda r: flt(r.get("qty")),
             "qty_target": "qty",
+            # F01: kho đích dòng PO kế thừa 'Kho nhận' (header) của MR khi dòng MR
+            # không có kho riêng — vẫn editable ở form PO.
+            "row_enrich": lambda row, src: {
+                "warehouse": row.get("warehouse") or src.get("warehouse"),
+                "schedule_date": row.get("schedule_date") or src.get("schedule_date"),
+            },
         },
     },
 
@@ -372,8 +378,9 @@ def list_candidates(source_doctype: str, target_doctype: str,
     if source_doctype == "Framework Contract":
         filters["status"] = "Active"
     elif source_doctype == "SC Material Request":
-        # Chỉ MR mua hàng, chưa hoàn tất
+        # Chỉ MR mua hàng ĐÃ DUYỆT và CHƯA đặt đủ (F05: ẩn MR đã 'Ordered').
         filters["request_type"] = "Purchase"
+        filters["status"] = "Approved"
     elif source_doctype == "SC Purchase Order":
         # PO đã gửi NCC nhưng chưa nhận hết
         filters["status"] = ["in", ["Sent to Supplier", "Partially Received", "Approved"]]
@@ -390,10 +397,11 @@ def list_candidates(source_doctype: str, target_doctype: str,
     # Fields cho display
     base_fields = ["name", "modified"]
     extra = {
-        "Framework Contract": ["contract_number", "supplier", "valid_to", "remaining_value"],
+        # F02: kèm supplier_name để panel nguồn hiện Tên NCC (mã phụ)
+        "Framework Contract": ["contract_number", "supplier", "supplier_name", "valid_to", "remaining_value"],
         "SC Material Request": ["transaction_date", "schedule_date", "warehouse"],
-        "SC Purchase Order": ["transaction_date", "supplier", "grand_total", "status"],
-        "SC Purchase Receipt": ["posting_date", "supplier", "to_warehouse"],
+        "SC Purchase Order": ["transaction_date", "supplier", "supplier_name", "grand_total", "status"],
+        "SC Purchase Receipt": ["posting_date", "supplier", "supplier_name", "to_warehouse"],
         "SC Transfer Request": ["request_date", "from_warehouse", "to_warehouse"],
         "SC Dispensing Request": ["request_date", "department", "from_warehouse"],
         "SC Inventory Count Sheet": ["posting_date", "warehouse", "count_type"],

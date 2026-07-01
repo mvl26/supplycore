@@ -40,7 +40,8 @@
   "has_over_receipt",
   "over_receipt_acknowledged",
   "amended_from",
-  "remarks"
+  "remarks",
+  "attachments"
  ],
  "fields": [
   {
@@ -275,6 +276,12 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Ghi chú"
+  },
+  {
+   "fieldname": "attachments",
+   "fieldtype": "Long Text",
+   "label": "Tài liệu đính kèm (nhiều tệp)",
+   "description": "JSON [{url,name}] — quản lý qua form SPA"
   }
  ],
  "permissions": [

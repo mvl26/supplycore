@@ -289,10 +289,13 @@ def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
         SELECT sle.item, i.item_name, sle.warehouse, sle.batch,
                COALESCE(SUM(sle.qty_change), 0) AS qty,
                COALESCE(SUM(sle.qty_change * sle.valuation_rate), 0) AS value,
-               b.expiry_date, b.qc_status, b.blocked
+               b.expiry_date, b.qc_status, b.blocked,
+               MIN(CASE WHEN sle.qty_change > 0 THEN sle.posting_date END) AS received_date,
+               b.supplier, sup.supplier_name
         FROM `tabSC Stock Ledger Entry` sle
         LEFT JOIN `tabSC Item` i ON i.name = sle.item
         LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
+        LEFT JOIN `tabSC Supplier` sup ON sup.name = b.supplier
         WHERE {' AND '.join(conds)}
         GROUP BY sle.item, sle.warehouse, sle.batch
         HAVING qty > 0

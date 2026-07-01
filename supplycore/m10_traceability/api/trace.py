@@ -29,8 +29,8 @@ def get_batch_trace(batch_no: str) -> dict:
 
     # Origin: PR → PO → QI
     pr_data = frappe.db.sql("""
-        SELECT pri.parent AS pr, pr.posting_date, pr.supplier,
-               pr.purchase_order, pr.qc_status
+        SELECT pri.parent AS pr, pr.posting_date, pr.supplier, pr.supplier_name,
+               pr.purchase_order, pr.qc_status, pr.owner AS pr_owner, pr.creation AS pr_created
         FROM `tabSC Purchase Receipt Item` pri
         JOIN `tabSC Purchase Receipt` pr ON pr.name = pri.parent
         WHERE pri.batch_no = %s AND pr.docstatus = 1 AND pr.is_return = 0
@@ -41,17 +41,30 @@ def get_batch_trace(batch_no: str) -> dict:
         p = pr_data[0]
         qi = frappe.db.get_value("SC Quality Inspection",
             {"purchase_receipt": p["pr"], "batch": batch_no},
-            ["name", "overall_status", "inspection_date"], as_dict=True)
+            ["name", "overall_status", "inspection_date", "inspected_by"], as_dict=True)
+        # F09: bổ sung mắt xích HĐK → YCMH + người thực hiện từng bước
+        po = None
+        if p["purchase_order"]:
+            po = frappe.db.get_value("SC Purchase Order", p["purchase_order"],
+                ["framework_contract", "material_request", "owner", "transaction_date"], as_dict=True)
         origin = {
             "purchase_receipt": p["pr"],
             "received_date": str(p["posting_date"]),
             "supplier": p["supplier"],
+            "supplier_name": p.get("supplier_name"),
             "purchase_order": p["purchase_order"],
+            "framework_contract": po.get("framework_contract") if po else None,
+            "material_request": po.get("material_request") if po else None,
+            "po_date": (str(po.get("transaction_date")) if po and po.get("transaction_date") else None),
             "pr_qc_status": p["qc_status"],
             "qc_inspection": qi.get("name") if qi else None,
             "qc_result": qi.get("overall_status") if qi else None,
             "qc_date": (str(qi.get("inspection_date"))
                          if qi and qi.get("inspection_date") else None),
+            # Actor từng mắt xích
+            "pr_by": p.get("pr_owner"),
+            "po_by": po.get("owner") if po else None,
+            "qc_by": qi.get("inspected_by") if qi else None,
         }
 
     # Movements: tất cả SLE

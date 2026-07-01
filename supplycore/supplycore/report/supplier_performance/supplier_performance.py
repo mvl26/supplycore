@@ -111,7 +111,7 @@ def _build_row(s: dict, cutoff: str, to_date: str) -> dict:
           COUNT(*) AS total
         FROM `tabSC Quality Inspection` qi
         JOIN `tabSC Purchase Receipt` pr ON pr.name = qi.purchase_receipt
-        WHERE pr.supplier = %s AND qi.docstatus = 1
+        WHERE pr.supplier = %s AND qi.overall_status IN ('Accepted', 'Rejected', 'Conditional')
           AND qi.inspection_date BETWEEN %s AND %s
     """, (sup, cutoff, to_date), as_dict=True)[0]
     qc_pass_pct = (round(flt(qc.pass_) / flt(qc.total) * 100, 2)

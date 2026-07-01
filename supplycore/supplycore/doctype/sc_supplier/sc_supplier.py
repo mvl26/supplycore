@@ -143,14 +143,15 @@ def get_scorecard(supplier: str) -> dict:
         if on_time and on_time[0].total else None
     )
 
-    # QC pass rate: QI Accepted / total submitted QI cho NCC
+    # QC pass rate: QI Accepted / total QI đã KẾT LUẬN cho NCC
+    # (QC non-submittable — lọc theo overall_status đã kết luận thay docstatus)
     qc_rows = frappe.db.sql("""
         SELECT
           SUM(CASE WHEN qi.overall_status = 'Accepted' THEN 1 ELSE 0 END) AS pass_,
           COUNT(*) AS total
         FROM `tabSC Quality Inspection` qi
         JOIN `tabSC Purchase Receipt` pr ON pr.name = qi.purchase_receipt
-        WHERE pr.supplier = %s AND qi.docstatus = 1
+        WHERE pr.supplier = %s AND qi.overall_status IN ('Accepted', 'Rejected', 'Conditional')
           AND qi.inspection_date >= %s
     """, (supplier, cutoff), as_dict=True)
     qc_pass_pct = (

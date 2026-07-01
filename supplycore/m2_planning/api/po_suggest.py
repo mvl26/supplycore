@@ -66,13 +66,39 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
             match = _find_best_fc_for_item(row.item, flt(row.qty), fc_qty_cache)
             reason_if_none = _("Không có HĐK Active phù hợp với vật tư + số lượng còn lại")
         if not match:
+            # F06: nới khâu tạo PO cho khớp khâu duyệt MR — vật tư không có HĐK
+            # phù hợp nhưng có NCC mặc định thì vẫn tạo PO (không-HĐK).
+            default_sup = frappe.db.get_value("SC Item", row.item, "default_supplier")
+            if default_sup:
+                rate = flt(row.estimated_unit_cost)
+                amount = flt(row.qty) * rate
+                key = (default_sup, None)
+                g = groups.setdefault(key, {
+                    "supplier": default_sup,
+                    "framework_contract": None,
+                    "items": [],
+                    "subtotal": 0,
+                })
+                g["items"].append({
+                    "mr_item": row.name,
+                    "row_idx": row.idx,
+                    "item": row.item,
+                    "qty": flt(row.qty),
+                    "uom": row.uom,
+                    "rate": rate,
+                    "amount": amount,
+                    "warehouse": mr.warehouse or "",
+                    "schedule_date": row.schedule_date or mr.schedule_date,
+                })
+                g["subtotal"] += amount
+                continue
             unmatched.append({
                 "mr_item": row.name,
                 "row_idx": row.idx,
                 "item": row.item,
                 "qty": flt(row.qty),
                 "uom": row.uom,
-                "reason": reason_if_none,
+                "reason": reason_if_none + _(" (và vật tư chưa có NCC mặc định để tạo PO không-HĐK)"),
             })
             continue
         # Cập nhật cache: trừ qty đã claim
@@ -103,6 +129,8 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
     # Validate ΣPO theo FC.remaining_value
     fc_subtotals = {}
     for (sup, fc), g in groups.items():
+        if not fc:
+            continue  # F06: group không-HĐK không kiểm remaining_value FC
         fc_subtotals[fc] = fc_subtotals.get(fc, 0) + g["subtotal"]
     for fc, total in fc_subtotals.items():
         rem = flt(frappe.db.get_value("Framework Contract", fc, "remaining_value"))
