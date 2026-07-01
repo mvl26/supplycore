@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checklist sửa lỗi SupplyCore — 30/06/2026</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#1c2733;background:#eef2f6;line-height:1.5}
+.wrap{max-width:1000px;margin:0 auto;background:#fff;box-shadow:0 0 14px rgba(0,0,0,.08)}
+header{background:#0B2E59;color:#fff;padding:22px 30px}header h1{margin:4px 0;font-size:21px}header .meta{font-size:12.5px;color:#cfe0f2}
+.content{padding:22px 30px}p{font-size:13.5px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+th{background:#0B2E59;color:#fff;text-align:left;padding:8px 9px;font-size:12px}
+td{padding:8px 9px;border-bottom:1px solid #e3e9ef;vertical-align:top}tr:nth-child(even) td{background:#f5f8fb}
+.id{font-weight:bold;color:#0B2E59;white-space:nowrap}
+.sev{display:inline-block;padding:1px 8px;border-radius:10px;color:#fff;font-size:11px;font-weight:bold;white-space:nowrap}
+.c{background:#c0392b}.t{background:#d68910}.l{background:#1e8449}
+.chk{text-align:center;white-space:nowrap}input[type=checkbox]{width:17px;height:17px}
+.note{background:#eaf1fb;border-left:4px solid #0B2E59;padding:9px 12px;border-radius:4px;font-size:13px;margin:12px 0}
+h2{color:#0B2E59;font-size:16px;border-left:5px solid #0B2E59;padding-left:9px;margin-top:24px}
+footer{padding:14px 30px;background:#0B2E59;color:#9fc0e8;font-size:12px}
+@media print{body{background:#fff}.wrap{box-shadow:none}}
+</style></head><body><div class="wrap">
+<header><h1>Checklist sửa lỗi — SupplyCore (Cung ứng Bệnh viện)</h1>
+<div class="meta">Phiên bản v0.2.0 · Ngày kiểm thử: 30/06/2026 · 14 hạng mục · Nguồn: Báo cáo kiểm thử SupplyCore 30/06/2026</div></header>
+<div class="content">
+<div class="note"><b>Cách dùng:</b> DEV/AI tick cột <b>“DEV đã sửa”</b> sau khi xử lý; BA/QA tick cột <b>“Đã xác nhận”</b> sau khi kiểm thử lại đạt. Mỗi dòng = 1 lỗi (ID khớp báo cáo chi tiết). Mức độ: <span class="sev c">Cao</span> <span class="sev t">TB</span> <span class="sev l">Thấp</span>.</div>
+
+<h2>Đợt 1 — Chặn rủi ro nghiệp vụ (làm trước go-live)</h2>
+<table><thead><tr><th>ID</th><th>Nội dung cần sửa</th><th>Mức độ</th><th class="chk">DEV đã sửa</th><th class="chk">Đã xác nhận</th></tr></thead><tbody>
+<tr><td class="id">F05</td><td>YCMH (và HĐ Khung) đã đặt mua đủ 100% SL phải bị khoá/ẩn khỏi danh sách chọn khi tạo PO. Kiểm soát theo <b>số lượng còn lại</b>, chặn PO vượt SL.</td><td><span class="sev c">Cao</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F06</td><td>Tạo PO từ YCMH luôn fetch đúng <b>NCC + HĐ Khung</b> (sửa lỗi trống ngẫu nhiên); thêm validate bắt buộc có NCC.</td><td><span class="sev c">Cao</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F12</td><td>QC: bổ sung ô chọn <b>Bộ tiêu chuẩn (QC Checklist Template)</b> + seed dữ liệu nền theo vật tư để duyệt được QC (hết lỗi SC-E033).</td><td><span class="sev c">Cao</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F10</td><td>QC: ràng buộc <b>Hành động theo Kết quả tổng</b> (chặn tổ hợp vô lý Đạt+Trả lại / Không đạt+Chấp nhận); bỏ khối/bảng trùng lặp; thêm liên kết NCC/HĐ Khung/YCMH/PO.</td><td><span class="sev c">Cao</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+</tbody></table>
+
+<h2>Đợt 2 — Hợp lý hoá quy trình & giảm thao tác</h2>
+<table><thead><tr><th>ID</th><th>Nội dung cần sửa</th><th>Mức độ</th><th class="chk">DEV đã sửa</th><th class="chk">Đã xác nhận</th></tr></thead><tbody>
+<tr><td class="id">F01</td><td>Tạo PO từ YCMH: <b>Kho đích mặc định = kho đích YCMH</b> (vẫn cho sửa), không bắt chọn lại từng dòng.</td><td><span class="sev t">TB</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F04</td><td>YCMH: <b>Ngày cần từng dòng mặc định = ngày cần của đơn</b> nếu chưa nhập; thêm nút “Áp dụng cho tất cả dòng”.</td><td><span class="sev c">Cao</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F07</td><td>Cho phép <b>Xoá/Huỷ PO ở trạng thái Nháp</b> (chưa duyệt), có xác nhận + ghi log.</td><td><span class="sev t">TB</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F08</td><td>Bảng danh sách PO bổ sung cột <b>Tên NCC, HĐ Khung, YCMH (MR)</b> để thấy rõ luồng NCC→HĐ Khung→YCMH→PO→Nhập kho.</td><td><span class="sev t">TB</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F13</td><td>Thống nhất <b>hiển thị Tên NCC/HĐ Khung/YCMH/PO làm chính</b> (mã phụ) ở mọi dropdown, bảng, khối read-only.</td><td><span class="sev t">TB</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+</tbody></table>
+
+<h2>Đợt 3 — Trải nghiệm & dữ liệu truy xuất</h2>
+<table><thead><tr><th>ID</th><th>Nội dung cần sửa</th><th>Mức độ</th><th class="chk">DEV đã sửa</th><th class="chk">Đã xác nhận</th></tr></thead><tbody>
+<tr><td class="id">F03</td><td><b>Việt hoá triệt để</b>: Frame Contract→Hợp đồng Khung, Purchase→Mua, Ordered→Đã đặt mua, Pending→Chờ xử lý, pr item ref / inspected by / action taken / SPECIFICATION / IS CRITICAL…</td><td><span class="sev t">TB</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F02</td><td>Tạo YCMH từ HĐ Khung: hiển thị <b>tên NCC</b> thay vì mã.</td><td><span class="sev t">TB</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F09</td><td>Tồn kho thêm cột <b>Ngày nhập kho + Tên NCC</b>; Chi tiết Lô bỏ khối trùng, thêm <b>lịch sử hình thành</b> (HĐ Khung–YCMH–PO–Phiếu nhập–QC + người thực hiện).</td><td><span class="sev c">Cao</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F11</td><td>Thêm mục <b>Tệp đính kèm (nhiều tệp)</b> cho Hợp đồng, PO, Phiếu nhập, QC.</td><td><span class="sev t">TB</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+<tr><td class="id">F14</td><td><b>Rút gọn mã chứng từ</b>: bỏ “SC”, 2026→26, bỏ gạch ở dạng Chữ-Số. VD SC-MR-2026-00138 → 26MR00138.</td><td><span class="sev l">Thấp</span></td><td class="chk"><input type="checkbox"></td><td class="chk"><input type="checkbox"></td></tr>
+</tbody></table>
+
+<div class="note"><b>Quy ước xác nhận hoàn tất:</b> mỗi dòng chỉ được coi là DONE khi <b>cả hai</b> ô được tick. DEV/AI vui lòng ghi commit/PR tương ứng vào cột “Nội dung” khi sửa xong để QA truy vết.</div>
+</div>
+<footer>Checklist sửa lỗi SupplyCore · 30/06/2026 · Đi kèm Báo cáo kiểm thử chi tiết (BaoCao_KiemThu_SupplyCore_30062026.html)</footer>
+</div></body></html>
