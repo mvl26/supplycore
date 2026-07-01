@@ -6,9 +6,19 @@ from frappe.model.document import Document
 from frappe.utils import now
 
 
+# Kết quả "đã kết luận" — áp hiệu lực KCS (block lô / rollup PR / Return PR).
+# On Hold & Pending KHÔNG nằm đây (chỉ lưu, chưa áp).
+FINALIZED_STATUSES = ("Accepted", "Rejected", "Conditional")
+
+
 class SCQualityInspection(Document):
 
     def validate(self):
+        # Bỏ bước "Gửi duyệt" (submit) — phiếu QC chỉ Lưu là áp kết quả. Vì không
+        # còn immutability của submit, khoá phiếu sau khi đã kết luận (mirror
+        # FrameworkContract._guard_locked_after_approval) để không thể sửa kết quả
+        # đã áp → tránh lô kẹt 'blocked' + Return PR mồ côi.
+        self._guard_locked_after_finalize()
         # L20/T06: QC KHÔNG được sửa dữ liệu phiếu nhập. Khoá UI (read_only) chỉ
         # là gợi ý client; ở đây ép lại item/lô/SL nhận theo đúng dòng phiếu nhập
         # gốc (pr_item_ref) — defense-in-depth, dù POST thẳng cũng snap về nguồn.
@@ -31,6 +41,36 @@ class SCQualityInspection(Document):
                 elif all(s == "Accepted" for s in statuses) and len(statuses) == len(self.readings):
                     self.overall_status = "Accepted"
 
+        # Khi đã kết luận (terminal) → ràng buộc đầy đủ như before_submit cũ
+        if self.overall_status in FINALIZED_STATUSES:
+            self._validate_finalize()
+
+    def _guard_locked_after_finalize(self):
+        """Khoá sửa khi QC đã kết luận (overall_status terminal đã lưu).
+
+        Bypass: is_new() (đang tạo) hoặc flags.allow_edit_after_finalize (code nội bộ).
+        """
+        if self.is_new():
+            return
+        stored = frappe.db.get_value("SC Quality Inspection", self.name, "overall_status")
+        if stored in FINALIZED_STATUSES and not self.flags.get("allow_edit_after_finalize"):
+            frappe.throw(_(
+                "SC-E034 QC_LOCKED: Phiếu QC đã kết luận ({0}) — không cho sửa. "
+                "Kết quả KCS đã được áp vào lô/phiếu nhập."
+            ).format(stored), title="SC-E034 QC_LOCKED")
+
+    def _validate_finalize(self):
+        """Ràng buộc khi kết luận QC (trước đây ở before_submit)."""
+        # L19: người KẾT LUẬN QC chính là 'người kiểm' — ghi đè theo tài khoản
+        # đang lưu, không cho gán hộ người khác (field cũng read-only ở UI).
+        if frappe.session.user not in (None, "Guest"):
+            self.inspected_by = frappe.session.user
+        # Đã bỏ QC Checklist Template: KCS điền trực tiếp ≥1 tiêu chí có kết quả.
+        if not self.readings or sum(1 for r in self.readings if r.status) == 0:
+            frappe.throw(_(
+                "SC-E-QI-READINGS: Phải nhập kết quả cho ít nhất 1 tiêu chí trước khi kết luận QC"))
+        self._validate_result_action()
+
     def _sync_from_receipt(self):
         """L20/T06: ép item / lô / SL nhận theo dòng phiếu nhập gốc (read-only thật
         ở backend). Bỏ qua nếu là phiếu QC tạo tay không gắn dòng PR."""
@@ -45,22 +85,14 @@ class SCQualityInspection(Document):
         if pri.batch_no:
             self.batch = pri.batch_no
         self.received_qty = pri.qty
-
-    def before_submit(self):
-        # L19: người KẾT LUẬN QC chính là 'người kiểm' — ghi đè theo tài khoản
-        # đang submit, không cho gán hộ người khác (field cũng read-only ở UI).
-        if frappe.session.user not in (None, "Guest"):
-            self.inspected_by = frappe.session.user
-        if self.equipment_unavailable:
-            return  # On Hold submit OK
-        # Đã bỏ QC Checklist Template (SC-E033 không còn áp dụng): KCS điền trực tiếp
-        # các dòng tiêu chí (mặc định 5 dòng mẫu). Chỉ cần ≥1 tiêu chí có kết quả.
-        if not self.readings:
-            frappe.throw(_("SC-E-QI-READINGS: Phải nhập kết quả cho ít nhất 1 tiêu chí trước khi submit"))
-        set_count = sum(1 for r in self.readings if r.status)
-        if set_count == 0:
-            frappe.throw(_("SC-E-QI-READINGS: Phải nhập kết quả cho ít nhất 1 tiêu chí trước khi submit"))
-        self._validate_result_action()
+        # F10: gắn mắt xích truy xuất PO/HĐK/YCMH (read-only) từ phiếu nhập
+        po = frappe.db.get_value("SC Purchase Receipt", self.purchase_receipt, "purchase_order")
+        if po:
+            self.purchase_order = po
+            fc, mr = frappe.db.get_value(
+                "SC Purchase Order", po, ["framework_contract", "material_request"]) or (None, None)
+            self.framework_contract = fc
+            self.material_request = mr
 
     def _validate_result_action(self):
         """L17: chặn cặp Kết quả ↔ Hành động mâu thuẫn.
@@ -83,11 +115,16 @@ class SCQualityInspection(Document):
                 "Không đạt → chỉ Trả NCC / Yêu cầu thay thế."
             ).format(self.overall_status, action), title="SC-E032 QC_RESULT_ACTION_CONFLICT")
 
-    def on_submit(self):
-        # UC-10: On Hold → skip mọi rollup
-        if self.overall_status == "On Hold":
+    def on_update(self):
+        # "Gửi duyệt" đã bỏ — Lưu phiếu QC là áp kết quả KCS (thay cho on_submit cũ).
+        # Chỉ áp khi ĐÃ kết luận (terminal); Pending/On Hold chỉ lưu, chưa áp.
+        # Doc bị khoá sau khi terminal (_guard_locked_after_finalize) nên thực tế
+        # _apply_qc_result chạy đúng 1 lần — ở lần lưu kết luận.
+        if self.overall_status not in FINALIZED_STATUSES:
             return
+        self._apply_qc_result()
 
+    def _apply_qc_result(self):
         # Update SC Batch.qc_status
         if self.batch:
             new_qc = "Accepted" if self.overall_status == "Accepted" else (
@@ -114,20 +151,20 @@ class SCQualityInspection(Document):
         pr = frappe.get_doc("SC Purchase Receipt", self.purchase_receipt)
         qis = frappe.get_all("SC Quality Inspection",
                               filters={"purchase_receipt": pr.name},
-                              fields=["name", "overall_status", "docstatus"])
-        # On Hold không tính vào rollup
-        submitted = [q for q in qis if q.docstatus == 1 and q.overall_status != "On Hold"]
+                              fields=["name", "overall_status"])
+        # Chỉ tính QC đã KẾT LUẬN (Pending/On Hold không vào rollup)
+        finalized = [q for q in qis if q.overall_status in FINALIZED_STATUSES]
         expected = len(pr.items)
-        if len(submitted) < expected:
+        if len(finalized) < expected:
             new_status = "Pending"
-        elif all(q.overall_status == "Accepted" for q in submitted):
+        elif all(q.overall_status == "Accepted" for q in finalized):
             new_status = "Pass"
-        elif all(q.overall_status == "Rejected" for q in submitted):
+        elif all(q.overall_status == "Rejected" for q in finalized):
             new_status = "Fail"
         else:
             new_status = "Partial Pass"
         frappe.db.set_value("SC Purchase Receipt", pr.name, "qc_status", new_status)
-        if new_status == "Pass":
+        if new_status == "Pass" and not pr.officially_received_at:
             frappe.db.set_value("SC Purchase Receipt", pr.name,
                                  "officially_received_at", now())
 

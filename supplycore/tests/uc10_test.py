@@ -64,6 +64,7 @@ def _make_pr_with_qi(item_code: str, supplier: str, qty: float = 10) -> "frappe.
     pr.append("items", {
         "item": item_code, "qty": qty, "uom": _get_uom(),
         "rate": 5_000, "warehouse": _pick_warehouse(),
+        "supplier_batch_no": "LOT-UC10-TEST",
         "expiry_date": add_days(today(), 365),
         "manufacturing_date": today(),
     })
@@ -118,8 +119,7 @@ def test_qi_all_accepted_sets_pr_pass():
         return {"pass": False, "msg": "X no QI"}
     for r in qi.readings:
         r.status = "Accepted"
-    qi.save()
-    qi.submit()
+    qi.save()  # Lưu = áp kết quả (đã bỏ submit)
     qi.reload()
     pr.reload()
     ok = (qi.overall_status == "Accepted"
@@ -149,8 +149,7 @@ def test_qi_any_rejected_sets_pr_fail():
         for r in qi.readings[1:]:
             r.status = "Accepted"
     qi.failure_reason = "Bao bì hỏng"
-    qi.save()
-    qi.submit()
+    qi.save()  # Lưu = áp kết quả (đã bỏ submit)
     qi.reload()
     pr.reload()
     batch_blocked = 0
@@ -178,8 +177,7 @@ def test_qi_equipment_unavailable_onhold():
         return {"pass": False, "msg": "X no QI"}
     qi.equipment_unavailable = 1
     qi.equipment_note = "Máy đo đường kính bị hỏng, chờ sửa"
-    qi.save()
-    qi.submit()
+    qi.save()  # Lưu = áp kết quả (đã bỏ submit)
     qi.reload()
     pr.reload()
     ok = (qi.overall_status == "On Hold"
@@ -213,21 +211,21 @@ def test_qi_equipment_unavailable_requires_note():
 
 
 def test_qi_empty_readings_blocks_submit():
-    """Submit không có reading nào set → SC-E-QI-READINGS."""
+    """Kết luận (Accepted) mà không có reading nào set → SC-E-QI-READINGS khi LƯU."""
     sup = _pick_supplier_with_email()
     item = _make_item("EMPTYR")
     pr, qi = _make_pr_with_qi(item.name, sup)
     if not qi:
         frappe.db.rollback()
         return {"pass": False, "msg": "X no QI"}
-    # Clear all readings status
+    # Clear all readings status → cố kết luận Accepted mà không có tiêu chí nào
     for r in qi.readings:
         r.status = None
-    qi.save()
+    qi.overall_status = "Accepted"
     try:
-        qi.submit()
+        qi.save()
         frappe.db.rollback()
-        return {"pass": False, "msg": "X submit không bị block"}
+        return {"pass": False, "msg": "X lưu kết luận không bị block khi thiếu reading"}
     except frappe.ValidationError as e:
         msg = str(e)
         frappe.db.rollback()
@@ -250,8 +248,7 @@ def test_qi_conditional_accept_batch_conditional():
     for r in qi.readings:
         r.status = "Accepted"
     qi.action_taken = "Conditional Accept"
-    qi.save()
-    qi.submit()
+    qi.save()  # Lưu = áp kết quả (đã bỏ submit)
     batch_status = frappe.db.get_value("SC Batch", qi.batch, "qc_status")
     frappe.db.rollback()
     if batch_status == "Conditional":
@@ -270,17 +267,44 @@ def test_qi_request_replacement_blocks_batch():
     if not qi.batch:
         frappe.db.rollback()
         return {"pass": False, "msg": "X QI không có batch"}
-    for r in qi.readings:
-        r.status = "Accepted"  # all OK nhưng action vẫn Replace
+    # Không đạt + Request Replacement (nhất quán với rule SC-E032) → block lô
+    qi.readings[0].status = "Rejected"
+    for r in qi.readings[1:]:
+        r.status = "Accepted"
     qi.action_taken = "Request Replacement"
     qi.failure_reason = "Yêu cầu đổi lô khác chất lượng tốt hơn"
-    qi.save()
-    qi.submit()
+    qi.save()  # Lưu = áp kết quả (đã bỏ submit)
     blocked = frappe.db.get_value("SC Batch", qi.batch, "blocked")
     frappe.db.rollback()
     if blocked == 1:
         return {"pass": True, "msg": "OK batch.blocked=1 với reason Request Replacement"}
     return {"pass": False, "msg": f"X batch.blocked={blocked}"}
+
+
+def test_qi_locked_after_finalize():
+    """QC đã kết luận → sửa lại bị chặn SC-E034 (thay cho immutability của submit)."""
+    sup = _pick_supplier_with_email()
+    item = _make_item("LOCK")
+    pr, qi = _make_pr_with_qi(item.name, sup)
+    if not qi:
+        frappe.db.rollback()
+        return {"pass": False, "msg": "X no QI"}
+    for r in qi.readings:
+        r.status = "Accepted"
+    qi.save()  # kết luận Accepted (áp kết quả + khoá phiếu)
+    qi.reload()
+    # Cố sửa kết quả sau khi đã kết luận → phải bị chặn
+    qi.overall_status = "Rejected"
+    try:
+        qi.save()
+        frappe.db.rollback()
+        return {"pass": False, "msg": "X sửa QC đã kết luận không bị chặn"}
+    except frappe.ValidationError as e:
+        msg = str(e)
+        frappe.db.rollback()
+        if "SC-E034" in msg or "QC_LOCKED" in msg:
+            return {"pass": True, "msg": f"OK locked: {msg[:100]}"}
+        return {"pass": False, "msg": f"Wrong error: {msg[:120]}"}
 
 
 def test_fefo_skips_pending_qc_batch():
@@ -391,6 +415,7 @@ def run():
         test_qi_empty_readings_blocks_submit,
         test_qi_conditional_accept_batch_conditional,
         test_qi_request_replacement_blocks_batch,
+        test_qi_locked_after_finalize,
         test_fefo_skips_pending_qc_batch,
         test_fefo_includes_accepted_batch,
         test_fefo_includes_conditional_batch,

@@ -66,8 +66,7 @@ def run():
             r.status = "Accepted"
         qi.overall_status = "Accepted"
         qi.action_taken = "Accept"
-        qi.save(ignore_permissions=True)
-        qi.submit()
+        qi.save(ignore_permissions=True)  # Lưu = áp kết quả (đã bỏ submit)
         pr.reload()
         results.append({"step": "QI Accepted", "qi": qi.name, "pr_qc_status": pr.qc_status})
         # Verify Batch.qc_status update

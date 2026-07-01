@@ -241,8 +241,7 @@ def _process_one_fc(fc, idx, patients, result):
             qi.qty_accepted = flt(qi.received_qty)
             qi.qty_rejected = 0
             qi.flags.ignore_permissions = True
-            qi.save()
-            qi.submit()
+            qi.save()  # Lưu = áp kết quả (đã bỏ submit)
             result["qis_submitted"] += 1
         except Exception as e:
             result["errors"].append({

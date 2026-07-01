@@ -4,7 +4,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "autoname": "format:SC-QI-{YYYY}-{#####}",
- "is_submittable": 1,
+ "is_submittable": 0,
  "track_changes": 1,
  "field_order": [
   "section_main",
@@ -15,6 +15,7 @@
   "item",
   "item_name",
   "supplier",
+  "supplier_name",
   "batch",
   "received_qty",
   "section_inspector",
@@ -31,7 +32,11 @@
   "section_meta",
   "failure_reason",
   "remarks",
-  "amended_from"
+  "amended_from",
+  "attachments",
+  "purchase_order",
+  "framework_contract",
+  "material_request"
  ],
  "fields": [
   {
@@ -93,6 +98,13 @@
    "read_only": 1,
    "in_list_view": 1,
    "in_standard_filter": 1
+  },
+  {
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "fetch_from": "purchase_receipt.supplier_name",
+   "label": "Tên NCC",
+   "read_only": 1
   },
   {
    "fieldname": "batch",
@@ -202,6 +214,33 @@
    "label": "Amended From",
    "no_copy": 1,
    "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "attachments",
+   "fieldtype": "Long Text",
+   "label": "Tài liệu đính kèm (nhiều tệp)",
+   "description": "JSON [{url,name}] — quản lý qua form SPA"
+  },
+  {
+   "fieldname": "purchase_order",
+   "fieldtype": "Link",
+   "options": "SC Purchase Order",
+   "label": "Đơn mua",
+   "read_only": 1
+  },
+  {
+   "fieldname": "framework_contract",
+   "fieldtype": "Link",
+   "options": "Framework Contract",
+   "label": "HĐ khung",
+   "read_only": 1
+  },
+  {
+   "fieldname": "material_request",
+   "fieldtype": "Link",
+   "options": "SC Material Request",
+   "label": "Yêu cầu mua",
    "read_only": 1
   }
  ],

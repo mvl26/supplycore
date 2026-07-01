@@ -153,7 +153,7 @@ def run_all():
             qi.manual_inspection = 1
             qi.overall_status = "Accepted"
             qi.flags.ignore_permissions = True
-            qi.save(); qi.submit(); qi.reload()
+            qi.save(); qi.reload()  # Lưu = áp kết quả (đã bỏ submit)
             pr.reload()
             print(f"  ✓ QI {qi.name} submit, overall_status={qi.overall_status}")
             print(f"    PR.qc_status={pr.qc_status} (PR options: Pass/Fail/Partial Pass)")

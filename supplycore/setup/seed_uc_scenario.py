@@ -550,12 +550,7 @@ def _phase4_receiving(ctx):
                                 "value": "Đạt",
                             })
                         qi.flags.ignore_permissions = True
-                        qi.insert()
-                        try:
-                            qi.submit()
-                        except Exception as e:
-                            frappe.log_error(message=f"QI submit: {str(e)[:200]}",
-                                              title="seed_uc phase4 qi submit")
+                        qi.insert()  # Lưu = áp kết quả (đã bỏ submit)
                         qis.append(qi.name)
                     except Exception as e:
                         frappe.log_error(message=f"QI: {str(e)[:200]}",
