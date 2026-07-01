@@ -190,6 +190,12 @@ const qcLabel = (s) => ({
             <th @click="setSort('batch')" class="cursor-pointer select-none hover:bg-sc-bg">
               Lô <span class="text-xs text-sc-royal"><Icon :name="sortIcon('batch')" :size="12" /></span>
             </th>
+            <th @click="setSort('received_date')" class="cursor-pointer select-none hover:bg-sc-bg">
+              Ngày nhập <span class="text-xs text-sc-royal"><Icon :name="sortIcon('received_date')" :size="12" /></span>
+            </th>
+            <th @click="setSort('supplier_name')" class="cursor-pointer select-none hover:bg-sc-bg">
+              NCC <span class="text-xs text-sc-royal"><Icon :name="sortIcon('supplier_name')" :size="12" /></span>
+            </th>
             <th @click="setSort('qc_status')" class="cursor-pointer select-none hover:bg-sc-bg">
               KCS <span class="text-xs text-sc-royal"><Icon :name="sortIcon('qc_status')" :size="12" /></span>
             </th>
@@ -212,6 +218,8 @@ const qcLabel = (s) => ({
             <td>{{ r.item_name || '—' }}</td>
             <td>{{ r.warehouse }}</td>
             <td class="font-mono text-xs" @click="openBatch(r.batch)">{{ r.batch || '—' }}</td>
+            <td class="text-xs">{{ r.received_date ? fmtDate(r.received_date) : '—' }}</td>
+            <td>{{ r.supplier_name || '—' }}</td>
             <td>
               <span v-if="r.qc_status" :class="['sc-badge', r.qc_status === 'Accepted' ? 'sc-badge-success' : r.qc_status === 'Rejected' ? 'sc-badge-critical' : 'sc-badge-warning']">
                 {{ qcLabel(r.qc_status) }}

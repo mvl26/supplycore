@@ -31,6 +31,8 @@ function fmt(value, col) {
     const text = statusLabel(value, col.key) || '—'
     return { __html: `<span class="sc-badge ${cls}">${text}</span>` }
   }
+  // Cột enum dạng chữ (không badge) → Việt hoá giá trị
+  if (col.translate && value !== '') return statusLabel(value, col.key)
   return value
 }
 

@@ -61,8 +61,9 @@ export const STATUS_LABEL = {
   // Stock Entry types
   'Material Receipt': 'Nhập kho', 'Material Issue': 'Xuất kho',
   'Material Transfer': 'Chuyển kho', Manufacture: 'Sản xuất', Repack: 'Đóng gói lại',
-  // MR request types
+  // MR request types + MR status
   Purchase: 'Mua', 'Material Transfer Request': 'Yêu cầu chuyển kho',
+  Ordered: 'Đã đặt mua', Partial: 'Một phần',
   // Alert action results
   Open: 'Đang mở', Acknowledged: 'Đã ghi nhận', 'Acted Upon': 'Đã xử lý',
   Dismissed: 'Bỏ qua', Escalated: 'Đã đẩy lên',
@@ -100,7 +101,7 @@ export const STATUS_LABEL = {
 export const SUBMITTABLE_DOCTYPES = new Set([
   'Framework Contract', 'Release Order', 'Procurement Plan',
   'SC Material Request', 'SC Purchase Order', 'SC Purchase Receipt',
-  'SC Quality Inspection', 'SC Stock Entry',
+  'SC Stock Entry',
   'SC Transfer Request', 'SC Dispensing Request', 'SC Patient Dispensing',
   'SC Inventory Count Sheet', 'SC Stock Reconciliation',
   'SC Recall Notice', 'SC Investigation Report',
@@ -300,7 +301,7 @@ export const DT = {
     listColumns: [
       { key: 'name', label: 'Mã MR', mono: true },
       { key: 'transaction_date', label: 'Ngày', type: 'date' },
-      { key: 'request_type', label: 'Loại' },
+      { key: 'request_type', label: 'Loại', translate: true },
       { key: 'warehouse', label: 'Kho' },
       { key: 'schedule_date', label: 'Ngày cần', type: 'date' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
@@ -312,12 +313,15 @@ export const DT = {
     listColumns: [
       { key: 'name', label: 'Mã PO', mono: true },
       { key: 'transaction_date', label: 'Ngày', type: 'date' },
-      { key: 'supplier', label: 'NCC' },
+      { key: 'supplier_name', label: 'NCC' },
+      { key: 'framework_contract', label: 'HĐ khung', mono: true },
+      { key: 'material_request', label: 'YCMH', mono: true },
       { key: 'schedule_date', label: 'Ngày giao', type: 'date' },
       { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'transaction_date', 'supplier', 'schedule_date', 'grand_total', 'status', 'docstatus'],
+    listFields: ['name', 'transaction_date', 'supplier', 'supplier_name', 'framework_contract',
+                  'material_request', 'schedule_date', 'grand_total', 'status', 'docstatus'],
     actions: ['submit', 'cancel', 'send_to_supplier'],
   },
 
@@ -327,12 +331,12 @@ export const DT = {
     listColumns: [
       { key: 'name', label: 'Mã PR', mono: true },
       { key: 'posting_date', label: 'Ngày', type: 'date' },
-      { key: 'supplier', label: 'NCC' },
+      { key: 'supplier_name', label: 'NCC' },
       { key: 'purchase_order', label: 'PO', mono: true },
       { key: 'is_return', label: 'Trả', type: 'check' },
       { key: 'qc_status', label: 'QC', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'posting_date', 'supplier', 'purchase_order', 'is_return', 'qc_status', 'docstatus'],
+    listFields: ['name', 'posting_date', 'supplier', 'supplier_name', 'purchase_order', 'is_return', 'qc_status', 'docstatus'],
     actions: ['submit', 'cancel', 'make_debit_note', 'make_credit_note'],
   },
   'SC Quality Inspection': {
@@ -342,10 +346,10 @@ export const DT = {
       { key: 'inspection_date', label: 'Ngày', type: 'date' },
       { key: 'purchase_receipt', label: 'PR', mono: true },
       { key: 'item', label: 'Vật tư' },
-      { key: 'supplier', label: 'NCC' },
+      { key: 'supplier_name', label: 'NCC' },
       { key: 'overall_status', label: 'Kết quả', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'inspection_date', 'purchase_receipt', 'item', 'supplier', 'overall_status', 'docstatus'],
+    listFields: ['name', 'inspection_date', 'purchase_receipt', 'item', 'supplier', 'supplier_name', 'overall_status', 'docstatus'],
   },
 
   // === M4 ===
@@ -367,7 +371,7 @@ export const DT = {
       { key: 'item', label: 'Vật tư' },
       { key: 'warehouse', label: 'Kho' },
       { key: 'batch', label: 'Lô', mono: true },
-      { key: 'qty_change', label: 'Δ Qty', type: 'int', align: 'right' },
+      { key: 'qty_change', label: 'Δ SL', type: 'int', align: 'right' },
       { key: 'balance_qty', label: 'Tồn', type: 'int', align: 'right' },
       { key: 'voucher_type', label: 'CT' },
       { key: 'voucher_no', label: 'Số CT', mono: true },
@@ -509,7 +513,7 @@ export const DT = {
       { key: 'name', label: 'SR', mono: true },
       { key: 'posting_date', label: 'Ngày', type: 'date' },
       { key: 'warehouse', label: 'Kho' },
-      { key: 'total_difference_qty', label: 'Δ Qty', type: 'int', align: 'right' },
+      { key: 'total_difference_qty', label: 'Δ SL', type: 'int', align: 'right' },
       { key: 'total_difference_value', label: 'Δ Giá trị', type: 'currency', align: 'right' },
       { key: 'requires_investigation', label: 'Điều tra', type: 'check' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
@@ -539,7 +543,7 @@ export const DT = {
       { key: 'investigation_date', label: 'Ngày', type: 'date' },
       { key: 'investigation_type', label: 'Loại' },
       { key: 'item', label: 'Vật tư' },
-      { key: 'variance_qty', label: 'Δ Qty', type: 'int', align: 'right' },
+      { key: 'variance_qty', label: 'Δ SL', type: 'int', align: 'right' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'investigation_date', 'investigation_type', 'item',

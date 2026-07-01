@@ -243,7 +243,7 @@ const missingLabel = {
     <!-- Section 2: Origin -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl"><Icon name="building-2" :size="18" /></span> Nguồn gốc (PR → PO → QI)
+        <span class="text-xl"><Icon name="building-2" :size="18" /></span> Nguồn gốc (HĐK → YCMH → PO → PR → QC)
       </h3>
       <div v-if="!trace.origin" class="text-sc-text-muted text-sm">
         <Icon name="alert-triangle" :size="14" /> Không tìm thấy PR gốc — có thể là lô nhập từ kho khác hoặc data import
@@ -256,7 +256,22 @@ const missingLabel = {
             {{ trace.origin.purchase_receipt }}
           </div>
           <div class="text-xs mt-1"><Icon name="calendar" :size="14" /> {{ fmtDate(trace.origin.received_date) }}</div>
-          <div class="text-xs"><Icon name="building" :size="14" /> {{ trace.origin.supplier }}</div>
+          <div class="text-xs"><Icon name="building" :size="14" /> {{ trace.origin.supplier_name || trace.origin.supplier || '—' }}</div>
+          <div v-if="trace.origin.pr_by" class="text-xs text-sc-text-muted"><Icon name="user" :size="13" /> {{ trace.origin.pr_by }}</div>
+        </div>
+        <div v-if="trace.origin.framework_contract" class="border-l-4 border-sc-navy pl-3">
+          <div class="text-xs text-sc-text-muted">HĐ khung</div>
+          <div class="cursor-pointer text-sc-royal hover:underline font-mono text-sm"
+            @click="goToDoc('Framework Contract', trace.origin.framework_contract)">
+            {{ trace.origin.framework_contract }}
+          </div>
+        </div>
+        <div v-if="trace.origin.material_request" class="border-l-4 border-purple-500 pl-3">
+          <div class="text-xs text-sc-text-muted">Yêu cầu mua (YCMH)</div>
+          <div class="cursor-pointer text-sc-royal hover:underline font-mono text-sm"
+            @click="goToDoc('SC Material Request', trace.origin.material_request)">
+            {{ trace.origin.material_request }}
+          </div>
         </div>
         <div v-if="trace.origin.purchase_order" class="border-l-4 border-amber-500 pl-3">
           <div class="text-xs text-sc-text-muted">Đơn mua (PO)</div>
@@ -264,6 +279,8 @@ const missingLabel = {
             @click="goToDoc('SC Purchase Order', trace.origin.purchase_order)">
             {{ trace.origin.purchase_order }}
           </div>
+          <div v-if="trace.origin.po_date" class="text-xs mt-1"><Icon name="calendar" :size="14" /> {{ fmtDate(trace.origin.po_date) }}</div>
+          <div v-if="trace.origin.po_by" class="text-xs text-sc-text-muted"><Icon name="user" :size="13" /> {{ trace.origin.po_by }}</div>
         </div>
         <div v-if="trace.origin.qc_inspection" class="border-l-4 border-green-500 pl-3">
           <div class="text-xs text-sc-text-muted">Phiếu KCS</div>
@@ -275,6 +292,7 @@ const missingLabel = {
           <span :class="['sc-badge', qcBadge(trace.origin.qc_result)]">
             {{ qcLabel(trace.origin.qc_result) }}
           </span>
+          <div v-if="trace.origin.qc_by" class="text-xs text-sc-text-muted mt-1"><Icon name="user" :size="13" /> {{ trace.origin.qc_by }}</div>
         </div>
       </div>
     </div>

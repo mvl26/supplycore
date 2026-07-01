@@ -64,8 +64,23 @@ function removeRow(idx) {
 
 function applyBulk(action) {
   if (!rows.value.length) return
-  const set = action.set || {}
-  const arr = rows.value.map(r => ({ ...r, ...set }))
+  const set = { ...(action.set || {}) }
+  // setFromParent: { childField: parentField } → lấy giá trị từ doc cha (header)
+  if (action.setFromParent) {
+    for (const [childField, parentField] of Object.entries(action.setFromParent)) {
+      const v = props.parentDoc?.[parentField]
+      if (v != null && v !== '') set[childField] = v
+    }
+  }
+  const arr = rows.value.map(r => {
+    if (!action.onlyEmpty) return { ...r, ...set }
+    // onlyEmpty: chỉ ghi vào ô đang trống, không đè giá trị user đã nhập
+    const patch = {}
+    for (const [k, v] of Object.entries(set)) {
+      if (r[k] == null || r[k] === '') patch[k] = v
+    }
+    return { ...r, ...patch }
+  })
   emit('update:modelValue', arr)
 }
 

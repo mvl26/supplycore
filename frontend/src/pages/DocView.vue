@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, call } from '../api'
+import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, deleteDoc, call } from '../api'
 import { DT } from '../modules'
 import { FORM_SCHEMAS, QUICK_CREATE } from '../schemas'
 import QuickCreateModal from '../components/QuickCreateModal.vue'
@@ -527,6 +527,20 @@ async function doCancel() {
   }
 }
 
+async function doDeleteDraft() {
+  if (!confirm('Xóa bản nháp này? Thao tác không thể hoàn tác.')) return
+  saving.value = true
+  try {
+    await deleteDoc(doctype.value, name.value)
+    toast.success('Đã xóa bản nháp')
+    backToList()
+  } catch (e) {
+    toast.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
 function backToList() {
   router.push(`/list/${encodeURIComponent(doctype.value)}`)
 }
@@ -607,6 +621,11 @@ function displayField(value, key) {
           </button>
           <span v-else-if="doc.docstatus === 0 && isSubmittable(doctype) && dirty"
             class="text-xs text-sc-text-muted self-center italic">Lưu để hiện nút Gửi duyệt</span>
+          <button v-if="doc.docstatus === 0" @click="doDeleteDraft" :disabled="saving"
+            class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium text-sm"
+            title="Xóa bản nháp chưa duyệt">
+            <Icon name="trash-2" :size="14" /> Xóa nháp
+          </button>
         </template>
         <template v-else>
           <!-- Đã duyệt 3-tier nhưng chưa Submit → cho Submit kích hoạt -->
@@ -615,7 +634,7 @@ function displayField(value, key) {
             <template v-if="saving">Đang gửi...</template>
             <template v-else><Icon name="upload" :size="14" /> Submit kích hoạt</template>
           </button>
-          <button v-if="doc.docstatus === 1" @click="doCancel"
+          <button v-if="doc.docstatus === 1 && isSubmittable(doctype)" @click="doCancel"
             :disabled="saving" class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium text-sm">
             Hủy
           </button>
@@ -654,8 +673,8 @@ function displayField(value, key) {
       class="sc-card border-l-4 border-sc-success bg-green-50 px-4 py-3 mb-4 text-sm">
       <div class="font-semibold text-sc-navy"><Icon name="lock" :size="16" /> Hợp đồng đã được duyệt — đã khoá sửa</div>
       <div class="text-sc-text-muted mt-1">
-        HĐ đã qua đủ 3-tier (Kế toán → Quản lý → Lãnh đạo). Bấm <b>Submit</b> để kích hoạt,
-        hoặc <b>Reject</b> để gửi lại Kế toán điều chỉnh.
+        HĐ đã qua đủ 3-tier (Kế toán → Quản lý → Lãnh đạo). Bấm <b>Submit kích hoạt</b> để kích hoạt,
+        hoặc <b>Từ chối</b> để gửi lại Kế toán điều chỉnh.
       </div>
     </div>
 

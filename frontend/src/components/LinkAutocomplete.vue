@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { getList, call } from '../api'
+import { doctypeLabel } from '../i18n'
 
 const props = defineProps({
   modelValue: String,
@@ -206,7 +207,7 @@ const hasName = (r) => {
 
 <template>
   <div class="relative">
-    <input ref="inputEl" :value="search" :placeholder="placeholder || `— Chọn ${linkTo} —`"
+    <input ref="inputEl" :value="search" :placeholder="placeholder || `— Chọn ${doctypeLabel(linkTo)} —`"
       :readonly="readonly" :required="required"
       @input="onInput" @focus="onFocus" @blur="onBlur"
       class="sc-input pr-8"

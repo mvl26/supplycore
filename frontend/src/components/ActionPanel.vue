@@ -227,9 +227,9 @@ const btnClass = {
             <thead class="bg-sc-bg sticky top-0">
               <tr>
                 <th class="p-1 text-left">Thời gian</th>
-                <th class="p-1 text-left">User</th>
-                <th class="p-1 text-left">Action</th>
-                <th class="p-1 text-left">Doc</th>
+                <th class="p-1 text-left">Người dùng</th>
+                <th class="p-1 text-left">Thao tác</th>
+                <th class="p-1 text-left">Chứng từ</th>
               </tr>
             </thead>
             <tbody>

@@ -85,8 +85,8 @@ export const DETAIL_CONFIGS = {
         { label: 'Giao hàng', value: (d) => d.delivery_terms, pre: true },
         { label: 'HĐ khung', value: (d) => d.framework_contract,
           link: (d) => d.framework_contract ? `/doc/Framework Contract/${d.framework_contract}` : null },
-        { label: 'Release Order', value: (d) => d.release_order },
-        { label: 'Material Request', value: (d) => d.material_request,
+        { label: 'Lệnh xuất', value: (d) => d.release_order },
+        { label: 'Yêu cầu mua', value: (d) => d.material_request,
           link: (d) => d.material_request ? `/doc/SC Material Request/${d.material_request}` : null },
         { label: 'Lệch giá', value: (d) => d.has_price_variance ? 'Có — kiểm tra dòng có cảnh báo' : '—' },
       ]},
@@ -106,7 +106,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên vật tư', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL đặt', accessor: 'qty', align: 'right', fmt: 'number' },
         { label: 'Đã nhận', accessor: 'received_qty', align: 'right', fmt: 'number' },
         { label: 'Đơn giá', accessor: 'rate', align: 'right', fmt: 'money' },
@@ -140,7 +140,7 @@ export const DETAIL_CONFIGS = {
       { icon: 'wallet', label: 'Tổng giá trị', value: (d) => d.total_value, fmt: 'moneyShort' },
       { icon: 'boxes', label: 'Tổng SL', value: (d) => d.total_qty, fmt: 'number' },
       { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
-      { icon: 'alert-triangle', label: 'Over-receipt',
+      { icon: 'alert-triangle', label: 'Nhận vượt',
         value: (d) => d.has_over_receipt ? 'Có' : '—',
         sublabel: (d) => d.has_over_receipt
           ? (d.over_receipt_acknowledged ? 'Manager đã xác nhận' : 'Chưa xác nhận')
@@ -159,7 +159,7 @@ export const DETAIL_CONFIGS = {
         { label: 'Trả phiếu', value: (d) => d.return_against },
         { label: 'Lý do trả', value: (d) => d.return_reason, pre: true },
         { label: 'Trạng thái', value: (d) => d.return_status },
-        { label: 'Debit Note', value: (d) => d.debit_note,
+        { label: 'Giấy báo nợ', value: (d) => d.debit_note,
           link: (d) => d.debit_note ? `/doc/SC Purchase Invoice/${d.debit_note}` : null },
         { label: 'PR đổi hàng', value: (d) => d.replacement_pr,
           link: (d) => d.replacement_pr ? `/doc/SC Purchase Receipt/${d.replacement_pr}` : null },
@@ -172,7 +172,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên vật tư', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL', accessor: 'qty', align: 'right', fmt: 'number' },
         { label: 'Lô', accessor: 'batch_no', mono: true },
         { label: 'HSD', accessor: 'expiry_date', fmt: 'date', align: 'center' },
@@ -217,7 +217,7 @@ export const DETAIL_CONFIGS = {
         } },
       { icon: 'hourglass', label: 'Còn phải trả', value: (d) => d.outstanding_amount, fmt: 'moneyShort',
         accent: (d) => Number(d.outstanding_amount) > 0 ? 'amber' : 'emerald' },
-      { icon: 'scale', label: '3-way match',
+      { icon: 'scale', label: 'Đối chiếu 3 chiều',
         value: (d) => d.three_way_match_status || '—',
         sublabel: (d) => d.match_variance_amount ? `Lệch ${fmtVND(d.match_variance_amount)}` : null,
         accent: (d) => d.three_way_match_status === 'Mismatch' ? 'critical' :
@@ -225,9 +225,9 @@ export const DETAIL_CONFIGS = {
     ],
     sections: [
       { title: 'Tham chiếu', icon: 'link', fields: [
-        { label: 'Purchase Order', value: (d) => d.purchase_order,
+        { label: 'Đơn mua', value: (d) => d.purchase_order,
           link: (d) => d.purchase_order ? `/doc/SC Purchase Order/${d.purchase_order}` : null },
-        { label: 'Purchase Receipt', value: (d) => d.purchase_receipt,
+        { label: 'Phiếu nhập', value: (d) => d.purchase_receipt,
           link: (d) => d.purchase_receipt ? `/doc/SC Purchase Receipt/${d.purchase_receipt}` : null },
         { label: 'Loại', value: (d) => d.is_debit_note ? 'Debit Note' : d.is_credit_note ? 'Credit Note' : 'HĐ thường' },
         { label: 'Giải trình lệch', value: (d) => d.mismatch_explanation, pre: true },
@@ -246,7 +246,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL', accessor: 'qty', align: 'right', fmt: 'number' },
         { label: 'Đơn giá', accessor: 'rate', align: 'right', fmt: 'money' },
         { label: 'Thành tiền', accessor: 'amount', align: 'right', fmt: 'money', anchor: 'navy' },
@@ -293,7 +293,7 @@ export const DETAIL_CONFIGS = {
         } },
         { label: 'Khoa yêu cầu', value: (d) => d.department || '—' },
         { label: 'Kho đích', value: (d) => d.warehouse },
-        { label: 'Procurement Plan', value: (d) => d.procurement_plan,
+        { label: 'Kế hoạch mua sắm', value: (d) => d.procurement_plan,
           link: (d) => d.procurement_plan ? `/doc/Procurement Plan/${d.procurement_plan}` : null },
         { label: 'Lý do', value: (d) => d.reason, pre: true },
         { label: 'Lý do từ chối', value: (d) => d.rejection_reason, pre: true },
@@ -305,7 +305,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL YC', accessor: 'qty', align: 'right', fmt: 'number' },
         { label: 'HĐ khung', accessor: 'framework_contract', mono: true },
         { label: 'Đơn giá ƯT', accessor: 'estimated_unit_cost', align: 'right', fmt: 'money' },
@@ -341,7 +341,7 @@ export const DETAIL_CONFIGS = {
       { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
       { icon: 'boxes', label: 'Tổng SL', value: (d) => d.total_qty, fmt: 'number' },
       { icon: 'wallet', label: 'Tổng giá trị', value: (d) => d.total_value, fmt: 'moneyShort' },
-      { icon: 'shield-alert', label: 'FEFO Override',
+      { icon: 'shield-alert', label: 'Bỏ qua FEFO',
         value: (d) => (d.items || []).filter(r => r.fefo_override).length,
         fmt: 'number',
         sublabel: (d) => (d.items || []).filter(r => r.fefo_override).length ? 'Có dòng override' : null,
@@ -353,7 +353,7 @@ export const DETAIL_CONFIGS = {
         { label: 'Kho nguồn', value: (d) => d.from_warehouse || '—' },
         { label: 'Kho đích', value: (d) => d.to_warehouse || '—' },
         { label: 'Mục đích', value: (d) => d.purpose },
-        { label: 'PDA Session', value: (d) => d.pda_session_id },
+        { label: 'Phiên PDA', value: (d) => d.pda_session_id },
       ]},
     ],
     items: {
@@ -363,7 +363,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL', accessor: 'qty', align: 'right', fmt: 'number' },
         { label: 'Lô', accessor: 'batch', mono: true },
         { label: 'Đơn giá', accessor: 'valuation_rate', align: 'right', fmt: 'money' },
@@ -415,12 +415,12 @@ export const DETAIL_CONFIGS = {
         accent: (d) => d.requires_manager_approval ? 'amber' : 'default' },
     ],
     sections: [
-      { title: 'Routing', icon: 'route', fields: [
+      { title: 'Định tuyến kho', icon: 'route', fields: [
         { label: 'Loại', value: (d) => d.transfer_type },
         { label: 'Kho nguồn', value: (d) => d.from_warehouse },
         { label: 'Kho đích', value: (d) => d.to_warehouse },
         { label: 'Khoa', value: (d) => d.requested_for_department },
-        { label: 'Stock Entry', value: (d) => d.stock_entry,
+        { label: 'Phiếu kho', value: (d) => d.stock_entry,
           link: (d) => d.stock_entry ? `/doc/SC Stock Entry/${d.stock_entry}` : null },
       ]},
     ],
@@ -435,7 +435,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL YC', accessor: 'requested_qty', align: 'right', fmt: 'number' },
         { label: 'Duyệt', accessor: 'approved_qty', align: 'right', fmt: 'number' },
         { label: 'Đã chuyển', accessor: 'transferred_qty', align: 'right', fmt: 'number', anchor: 'navy' },
@@ -486,10 +486,10 @@ export const DETAIL_CONFIGS = {
         { label: 'Người YC', value: (d) => d.requested_by },
         { label: 'Lý do', value: (d) => d.reason, pre: true },
       ]},
-      { title: 'Downstream', icon: 'arrow-right', fields: [
-        { label: 'Stock Entry', value: (d) => d.stock_entry,
+      { title: 'Sử dụng sau nhập', icon: 'arrow-right', fields: [
+        { label: 'Phiếu kho', value: (d) => d.stock_entry,
           link: (d) => d.stock_entry ? `/doc/SC Stock Entry/${d.stock_entry}` : null },
-        { label: 'Patient Dispensing', value: (d) => d.patient_dispensing,
+        { label: 'Cấp phát BN', value: (d) => d.patient_dispensing,
           link: (d) => d.patient_dispensing ? `/doc/SC Patient Dispensing/${d.patient_dispensing}` : null },
       ]},
     ],
@@ -500,7 +500,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL YC', accessor: 'requested_qty', align: 'right', fmt: 'number' },
         { label: 'Duyệt', accessor: 'approved_qty', align: 'right', fmt: 'number' },
         { label: 'Đã cấp', accessor: 'issued_qty', align: 'right', fmt: 'number', anchor: 'navy' },
@@ -550,7 +550,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Nguồn cấp phát', icon: 'arrow-right', fields: [
         { label: 'DR liên quan', value: (d) => d.dispensing_request,
           link: (d) => d.dispensing_request ? `/doc/SC Dispensing Request/${d.dispensing_request}` : null },
-        { label: 'Stock Entry', value: (d) => d.stock_entry,
+        { label: 'Phiếu kho', value: (d) => d.stock_entry,
           link: (d) => d.stock_entry ? `/doc/SC Stock Entry/${d.stock_entry}` : null },
       ]},
     ],
@@ -561,7 +561,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'SL', accessor: 'qty', align: 'right', fmt: 'number' },
         { label: 'Lô', accessor: 'batch', mono: true },
         { label: 'Đơn giá', accessor: 'unit_cost', align: 'right', fmt: 'money' },
@@ -590,8 +590,8 @@ export const DETAIL_CONFIGS = {
       if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
       const sevMap = {
         'Class I': { label: 'Class I — nguy cấp', cls: 'sc-badge-critical', icon: 'alert-octagon' },
-        'Class II': { label: 'Class II', cls: 'sc-badge-warning', icon: 'alert-triangle' },
-        'Class III': { label: 'Class III', cls: 'sc-badge-info', icon: 'info' },
+        'Class II': { label: 'Mức II', cls: 'sc-badge-warning', icon: 'alert-triangle' },
+        'Class III': { label: 'Mức III', cls: 'sc-badge-info', icon: 'info' },
       }
       if (sevMap[sev]) return sevMap[sev]
       return statusByField(d, {
@@ -670,13 +670,13 @@ export const DETAIL_CONFIGS = {
       })
     },
     tiles: [
-      { icon: 'trending-down', label: 'Δ qty', value: (d) => d.variance_qty, fmt: 'number',
+      { icon: 'trending-down', label: 'Δ SL', value: (d) => d.variance_qty, fmt: 'number',
         accent: (d) => Number(d.variance_qty) < 0 ? 'critical' :
                        Number(d.variance_qty) > 0 ? 'amber' : 'default' },
       { icon: 'wallet', label: 'Δ giá trị', value: (d) => d.variance_value, fmt: 'moneyShort' },
       { icon: 'alert-triangle', label: 'Bất thường', value: (d) => d.anomalies_detected, fmt: 'number',
         accent: (d) => Number(d.anomalies_detected) > 0 ? 'critical' : 'default' },
-      { icon: 'list', label: 'Findings', value: (d) => (d.findings || []).length, fmt: 'number' },
+      { icon: 'list', label: 'Phát hiện', value: (d) => (d.findings || []).length, fmt: 'number' },
     ],
     sections: [
       { title: 'Scope điều tra', icon: 'scan-search', fields: [
@@ -687,7 +687,7 @@ export const DETAIL_CONFIGS = {
         { label: 'Lô', value: (d) => d.batch },
         { label: 'Từ ngày', value: (d) => d.period_start ? fmtDate(d.period_start) : '—' },
         { label: 'Đến ngày', value: (d) => d.period_end ? fmtDate(d.period_end) : '—' },
-        { label: 'Filter user', value: (d) => d.filter_user },
+        { label: 'Lọc người dùng', value: (d) => d.filter_user },
         { label: 'Mô tả', value: (d) => d.description, pre: true },
       ]},
       { title: 'Kết luận & khắc phục', icon: 'gavel', fields: [
@@ -709,7 +709,7 @@ export const DETAIL_CONFIGS = {
         { label: 'Chứng từ', accessor: 'voucher_no', mono: true, anchor: 'navy' },
         { label: 'Ngày', accessor: 'voucher_date', fmt: 'date', align: 'center' },
         { label: 'Người nghi vấn', accessor: 'user_suspected', mono: true },
-        { label: 'Δ qty', accessor: 'qty_change', align: 'right', fmt: 'number' },
+        { label: 'Δ SL', accessor: 'qty_change', align: 'right', fmt: 'number' },
         { label: 'Hành động', accessor: 'action_taken' },
       ],
     },
@@ -744,7 +744,7 @@ export const DETAIL_CONFIGS = {
           return t > 0 ? `${((Number(d.mismatched_items || 0) / t) * 100).toFixed(1)}% items` : null
         },
         accent: (d) => Number(d.mismatched_items) > 0 ? 'amber' : 'emerald' },
-      { icon: 'trending-down', label: 'Δ qty', value: (d) => d.total_variance_qty, fmt: 'number',
+      { icon: 'trending-down', label: 'Δ SL', value: (d) => d.total_variance_qty, fmt: 'number',
         accent: (d) => Number(d.total_variance_qty) < 0 ? 'critical' :
                        Number(d.total_variance_qty) > 0 ? 'amber' : 'default' },
       { icon: 'wallet', label: 'Δ giá trị', value: (d) => d.total_variance_value, fmt: 'moneyShort' },
@@ -754,7 +754,7 @@ export const DETAIL_CONFIGS = {
         { label: 'Kho', value: (d) => d.warehouse },
         { label: 'Phạm vi', value: (d) => d.count_scope },
         { label: 'Nhóm vật tư', value: (d) => d.item_group },
-        { label: 'Zone bin', value: (d) => d.bin_zone },
+        { label: 'Vị trí khu', value: (d) => d.bin_zone },
         { label: 'Ngưỡng đếm lại', value: (d) => d.recount_threshold_pct ? `${d.recount_threshold_pct}%` : '—' },
       ]},
       { title: 'Quá trình & điều chỉnh', icon: 'shield-check', fields: [
@@ -772,7 +772,7 @@ export const DETAIL_CONFIGS = {
       columns: [
         { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
         { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'ĐVT', accessor: 'uom', align: 'center', anchor: 'muted' },
         { label: 'Lô', accessor: 'batch', mono: true },
         { label: 'Bin', accessor: 'bin_location', mono: true },
         { label: 'Hệ thống', accessor: 'system_qty', align: 'right', fmt: 'number' },

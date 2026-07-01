@@ -281,7 +281,7 @@ onMounted(loadSuggestions)
       <span class="text-amber-700"><Icon name="alert-triangle" :size="18" /></span>
       <div class="text-sm text-amber-900 flex-1">
         <strong>Kỳ chưa khóa sổ</strong>
-        — vẫn còn chứng từ <em>Draft</em> trong kỳ. Số liệu có thể thay đổi:
+        — vẫn còn chứng từ <em>Nháp</em> trong kỳ. Số liệu có thể thay đổi:
         <span v-if="data.pending_drafts">
           PI nháp = <strong>{{ data.pending_drafts.purchase_invoice || 0 }}</strong>,
           PE nháp = <strong>{{ data.pending_drafts.payment_entry || 0 }}</strong>,

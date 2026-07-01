@@ -4,6 +4,19 @@ import { fetchUpstream } from '../api'
 import { useToastStore } from '../stores/toast'
 import Icon from './Icon.vue'
 import { fmtDate } from '../utils'
+import { fieldLabel, doctypeLabel } from '../i18n'
+
+// Hiển thị giá trị: gộp Tên NCC (mã) khi có supplier_name (F02/F13)
+function candDisplay(c, k) {
+  if (k === 'supplier_name' && c.supplier) return `${c.supplier_name} (${c.supplier})`
+  return formatVal(c[k], k)
+}
+// Ẩn key thô 'supplier' khi đã có supplier_name (đã gộp vào Tên NCC)
+function candKeys(c) {
+  return Object.keys(c).filter(k =>
+    !['name', 'modified'].includes(k) &&
+    !(k === 'supplier' && c.supplier_name))
+}
 
 const props = defineProps({
   targetDoctype: { type: String, required: true },
@@ -66,10 +79,10 @@ async function applyFetch(srcName) {
     const nItems = (data.items || []).length
     const nHdr = Object.keys(data.header || {}).length
     emit('merge', data)
-    toast.success(`Đã lấy ${nItems} dòng + ${nHdr} field từ ${data.source.label} ${data.source.name}`)
+    toast.success(`Đã lấy ${nItems} dòng + ${nHdr} trường từ ${doctypeLabel(data.source.doctype)} ${data.source.name}`)
     open.value = false
   } catch (e) {
-    toast.error(`Fetch lỗi: ${e.message}`)
+    toast.error(`Lấy dữ liệu lỗi: ${e.message}`)
   } finally {
     fetching.value = false
   }
@@ -92,7 +105,7 @@ function formatVal(v, key) {
     <!-- Trigger button -->
     <button v-if="!open" @click="open = true" type="button"
       class="sc-btn-secondary text-sm flex items-center gap-2">
-      <Icon name="download" :size="15" /> Lấy từ {{ sources.map(s => s.label).join(' / ') }}
+      <Icon name="download" :size="15" /> Lấy từ {{ sources.map(s => doctypeLabel(s.source_doctype)).join(' / ') }}
     </button>
 
     <!-- Inline picker -->
@@ -114,7 +127,7 @@ function formatVal(v, key) {
               selectedSource === s.source_doctype
                 ? 'bg-sc-royal text-white border-sc-royal'
                 : 'bg-white border-sc-border text-sc-text hover:bg-sc-bg']">
-            {{ s.label }}
+            {{ doctypeLabel(s.source_doctype) }}
           </button>
         </div>
         <p v-if="activeSource" class="text-xs text-sc-text-muted italic flex items-center gap-1">
@@ -123,7 +136,7 @@ function formatVal(v, key) {
 
         <!-- Search -->
         <input v-model="search" type="text"
-          :placeholder="`Tìm ${activeSource?.label || ''}...`"
+          :placeholder="`Tìm ${activeSource ? doctypeLabel(activeSource.source_doctype) : ''}...`"
           class="sc-input w-full text-sm" />
 
         <!-- Candidates -->
@@ -138,9 +151,9 @@ function formatVal(v, key) {
             class="w-full text-left px-3 py-2 hover:bg-sc-royal/10 border-b border-sc-border last:border-b-0 transition disabled:opacity-50">
             <div class="font-mono text-xs text-sc-royal font-semibold">{{ c.name }}</div>
             <div class="text-xs text-sc-text-muted flex flex-wrap gap-x-3 mt-0.5">
-              <span v-for="k in Object.keys(c).filter(k => !['name','modified'].includes(k))" :key="k">
-                <span class="text-sc-text-muted">{{ k }}:</span>
-                <b class="text-sc-text ml-0.5">{{ formatVal(c[k], k) }}</b>
+              <span v-for="k in candKeys(c)" :key="k">
+                <span class="text-sc-text-muted">{{ fieldLabel(k) }}:</span>
+                <b class="text-sc-text ml-0.5">{{ candDisplay(c, k) }}</b>
               </span>
             </div>
           </button>

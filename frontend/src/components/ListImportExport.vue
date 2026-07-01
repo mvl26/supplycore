@@ -378,7 +378,7 @@ const actionLabel = (a) => ({
               <tr>
                 <th class="px-2 py-1 text-left">Dòng</th>
                 <th class="px-2 py-1 text-left">Kết quả</th>
-                <th class="px-2 py-1 text-left">Name</th>
+                <th class="px-2 py-1 text-left">Mã</th>
                 <th class="px-2 py-1 text-left">Chi tiết</th>
               </tr>
             </thead>

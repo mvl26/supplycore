@@ -58,6 +58,15 @@ const FIELD_LABEL = {
   // QC
   qc_required: 'Cần KCS', qc_status: 'KCS', overall_status: 'Kết quả',
   manual_inspection: 'Kiểm thủ công',
+  pr_item_ref: 'Dòng phiếu nhập', inspected_by: 'Người kiểm',
+  action_taken: 'Hành động', equipment_unavailable: 'Thiếu thiết bị',
+  equipment_note: 'Ghi chú thiết bị', specification: 'Tiêu chí',
+  is_critical: 'Trọng yếu', failure_reason: 'Lý do không đạt',
+  checklist_template: 'Bộ tiêu chuẩn', reading_value: 'Kết quả đo',
+  // Planning / refs
+  estimated_unit_cost: 'Đơn giá ước tính', estimated_amount: 'Thành tiền ước tính',
+  framework_contract_ref: 'HĐ khung (tham chiếu)', procurement_plan: 'Kế hoạch mua sắm',
+  received_date: 'Ngày nhập kho',
   // Batch
   batch: 'Lô', batch_no: 'Mã lô', blocked: 'Khoá',
   // Patient / BHYT
@@ -107,4 +116,21 @@ export function fieldLabel(key) {
   if (key == null) return ''
   if (FIELD_LABEL[key]) return FIELD_LABEL[key]
   return key.replace(/_/g, ' ')
+}
+
+// Nhãn tiếng Việt cho DocType (dùng ở placeholder dropdown, tiêu đề…) — F03
+const DOCTYPE_LABEL = {
+  'SC Supplier': 'Nhà cung cấp', 'Framework Contract': 'Hợp đồng khung',
+  'SC Item': 'Vật tư', 'SC Item Group': 'Nhóm vật tư', 'SC UOM': 'Đơn vị tính',
+  'SC Warehouse': 'Kho', 'SC Batch': 'Lô', 'SC Department': 'Khoa phòng',
+  'SC Patient': 'Bệnh nhân', 'SC Material Request': 'Yêu cầu mua',
+  'SC Purchase Order': 'Đơn mua hàng', 'SC Purchase Receipt': 'Phiếu nhập',
+  'SC Quality Inspection': 'Phiếu KCS', 'SC Purchase Invoice': 'Hoá đơn mua',
+  'SC Payment Entry': 'Phiếu thanh toán', 'Procurement Plan': 'Kế hoạch mua sắm',
+  'Release Order': 'Lệnh xuất', 'SC GL Account': 'Tài khoản', 'User': 'Người dùng',
+}
+
+export function doctypeLabel(dt) {
+  if (!dt) return ''
+  return DOCTYPE_LABEL[dt] || dt.replace(/^SC /, '')
 }

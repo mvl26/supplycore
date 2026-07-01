@@ -282,7 +282,7 @@ export const FORM_SCHEMAS = {
       field: 'items', label: 'Danh mục vật tư',
       columns: [
         { name: 'item_code', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '25%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
           scope: { itemField: 'item_code' },
           fetchFrom: { source: 'item_code', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'contract_qty', label: 'SL HĐ', type: 'Float', required: true, width: '15%' },
@@ -313,9 +313,13 @@ export const FORM_SCHEMAS = {
     ],
     items: {
       field: 'items', label: 'Chi tiết',
+      bulkActions: [
+        { label: 'Áp dụng Ngày cần cho tất cả dòng', variant: 'primary',
+          setFromParent: { schedule_date: 'schedule_date' } },
+      ],
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'qty', label: 'SL', type: 'Float', required: true, width: '12%' },
@@ -342,12 +346,16 @@ export const FORM_SCHEMAS = {
           hint: 'Chọn HĐ khung sẽ tự điền & khoá NCC. Bấm "Đặt lại" để chọn HĐ khung khác' },
         { name: 'delivery_terms', label: 'Điều khoản giao', type: 'Small Text' },
       ]},
+      { title: 'Tài liệu đính kèm', fields: [
+        { name: 'attachments', label: 'Tệp đính kèm (1 hoặc nhiều)', type: 'AttachMultiple',
+          hint: 'Báo giá, HĐ scan, phê duyệt…' },
+      ]},
     ],
     items: {
       field: 'items', label: 'Chi tiết',
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '25%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'qty', label: 'SL', type: 'Float', required: true, width: '15%' },
@@ -372,12 +380,16 @@ export const FORM_SCHEMAS = {
         { name: 'return_reason', label: 'Lý do trả', type: 'Small Text', dependOn: 'is_return' },
         { name: 'qc_required', label: 'Yêu cầu QC', type: 'Check', default: 1 },
       ]},
+      { title: 'Tài liệu đính kèm', fields: [
+        { name: 'attachments', label: 'Tệp đính kèm (1 hoặc nhiều)', type: 'AttachMultiple',
+          hint: 'Phiếu xuất kho NCC, biên bản giao nhận…' },
+      ]},
     ],
     items: {
       field: 'items', label: 'Chi tiết',
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '20%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'qty', label: 'SL nhận', type: 'Float', required: true, width: '12%' },
@@ -410,6 +422,12 @@ export const FORM_SCHEMAS = {
           hint: 'Lấy từ phiếu nhập — QC chỉ kết luận Đạt/Không đạt' },
         { name: 'inspected_by', label: 'Người kiểm', type: 'Link', linkTo: 'User', readonly: true,
           hint: 'Tự ghi nhận theo người kết luận QC' },
+        { name: 'purchase_order', label: 'Đơn mua (PO)', type: 'Link', linkTo: 'SC Purchase Order', readonly: true,
+          hint: 'Truy xuất — tự gắn từ phiếu nhập' },
+        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract', readonly: true,
+          hint: 'Truy xuất — tự gắn từ PO' },
+        { name: 'material_request', label: 'Yêu cầu mua (YCMH)', type: 'Link', linkTo: 'SC Material Request', readonly: true,
+          hint: 'Truy xuất — tự gắn từ PO' },
       ]},
       { title: 'Kết quả', fields: [
         { name: 'manual_inspection', label: 'Kiểm thủ công', type: 'Check' },
@@ -431,6 +449,10 @@ export const FORM_SCHEMAS = {
             { value: 'Request Replacement', label: 'Yêu cầu đổi hàng' },
           ] },
         { name: 'remarks', label: 'Ghi chú KCS', type: 'Small Text' },
+      ]},
+      { title: 'Tài liệu đính kèm', fields: [
+        { name: 'attachments', label: 'Tệp đính kèm (1 hoặc nhiều)', type: 'AttachMultiple',
+          hint: 'HĐ scan, biên bản, phiếu xuất kho NCC…' },
       ]},
     ],
     items: {
@@ -519,7 +541,7 @@ export const FORM_SCHEMAS = {
       field: 'items', label: 'Chi tiết',
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '25%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'requested_qty', label: 'SL yêu cầu', type: 'Float', required: true, width: '15%' },
@@ -554,7 +576,7 @@ export const FORM_SCHEMAS = {
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%',
           scope: { warehouseField: 'from_warehouse', warehouseFromParent: true } },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'qty', label: 'SL', type: 'Float', required: true, width: '15%' },
@@ -592,7 +614,7 @@ export const FORM_SCHEMAS = {
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '32%',
           scope: { warehouseField: 'from_warehouse', warehouseFromParent: true } },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '15%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '15%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'requested_qty', label: 'SL YC', type: 'Float', required: true, width: '18%' },
@@ -646,12 +668,16 @@ export const FORM_SCHEMAS = {
         { name: 'purchase_receipt', label: 'PR tham chiếu', type: 'Link', linkTo: 'SC Purchase Receipt' },
         { name: 'supplier_invoice_no', label: 'Số HD NCC', type: 'Data' },
       ]},
+      { title: 'Tài liệu đính kèm', fields: [
+        { name: 'attachments', label: 'Tệp đính kèm (1 hoặc nhiều)', type: 'AttachMultiple',
+          hint: 'Hoá đơn scan, chứng từ thanh toán…' },
+      ]},
     ],
     items: {
       field: 'items', label: 'Chi tiết',
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '25%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'qty', label: 'SL', type: 'Float', required: true, width: '15%' },
@@ -765,7 +791,7 @@ export const FORM_SCHEMAS = {
       field: 'items', label: 'Items điều chỉnh',
       columns: [
         { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '20%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
+        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
         { name: 'batch', label: 'Lô', type: 'Link', linkTo: 'SC Batch', width: '15%',
@@ -859,7 +885,7 @@ export const FORM_SCHEMAS = {
             { value: 'System Error', label: 'Lỗi hệ thống' },
             { value: 'Other', label: 'Khác' },
           ], default: 'Discrepancy' },
-        { name: 'triggered_by', label: 'Trigger', type: 'Link', linkTo: 'User', readonly: true },
+        { name: 'triggered_by', label: 'Người kích hoạt', type: 'Link', linkTo: 'User', readonly: true },
         { name: 'status', label: 'Trạng thái', type: 'Data', readonly: true },
       ]},
       { title: 'Phạm vi (cần ≥1)', fields: [
@@ -884,7 +910,7 @@ export const FORM_SCHEMAS = {
         { name: 'variance_value', label: 'Chênh lệch giá trị (VND)', type: 'Currency', readonly: true },
       ]},
       { title: 'Phát hiện (sau chạy Anomalies/Audit Trail)', fields: [
-        { name: 'anomalies_detected', label: 'JSON anomalies', type: 'Long Text', readonly: true,
+        { name: 'anomalies_detected', label: 'Bất thường phát hiện', type: 'Long Text', readonly: true,
           hint: 'Tự điền bởi action "Phát hiện bất thường"' },
         { name: 'system_error_adjustment', label: 'SR điều chỉnh đã tạo', type: 'Link',
           linkTo: 'SC Stock Reconciliation', readonly: true },
@@ -950,7 +976,7 @@ export const FORM_SCHEMAS = {
       ]},
       { title: 'Kênh', fields: [
         { name: 'channel_email', label: 'Email', type: 'Check', default: 1 },
-        { name: 'channel_inapp', label: 'In-app', type: 'Check', default: 1 },
+        { name: 'channel_inapp', label: 'Trong ứng dụng', type: 'Check', default: 1 },
         { name: 'channel_sms', label: 'SMS', type: 'Check', default: 0 },
         { name: 'sms_phones', label: 'Số điện thoại SMS (phẩy)', type: 'Small Text', dependOn: 'channel_sms' },
       ]},
