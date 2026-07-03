@@ -1,0 +1,861 @@
+<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI Prototype — SupplyCore MVL</title><style>
+:root{
+  --paper:#F7F6F3; --panel:#FFFFFF; --ink:#1C1C1A; --sub:#6E6B64;
+  --line:#E4E1DA; --line2:#EEEBE4; --ai:#2B3A67; --ai-soft:#EEF1F7;
+  --ok:#3E6E4B; --ok-soft:#EAF1EC; --warn:#9A6B2E; --warn-soft:#F6EEE0;
+  --red:#8E3B3B; --red-soft:#F5E9E9; --accent:#B8823A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Helvetica Neue",Helvetica,-apple-system,"Segoe UI",Arial,sans-serif;
+  background:var(--paper);color:var(--ink);font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SFMono-Regular",Consolas,"Courier New",monospace}
+.appbar{height:58px;display:flex;align-items:center;gap:14px;padding:0 26px;background:var(--paper);
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.appbar .logo{width:26px;height:26px;border:1.5px solid var(--ink);border-radius:3px;position:relative}
+.appbar .logo::after{content:"";position:absolute;inset:5px;background:var(--ai)}
+.appbar .brand{font-weight:600;letter-spacing:.5px}
+.appbar .brand small{display:block;font-weight:400;font-size:10px;letter-spacing:2.5px;color:var(--sub);text-transform:uppercase}
+.appbar .spacer{flex:1}
+.appbar .tag{font-size:11px;letter-spacing:1px;color:var(--sub);text-transform:uppercase}
+.layout{display:flex;min-height:calc(100vh - 58px)}
+.sidebar{width:306px;background:var(--paper);border-right:1px solid var(--line);
+  height:calc(100vh - 58px);overflow-y:auto;position:sticky;top:58px;padding:10px 0 30px}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.nav-home{margin:8px 14px 6px;padding:12px 14px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
+  color:#fff;background:var(--ai);border-radius:7px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 2px 6px rgba(43,58,103,.22)}
+.nav-home:hover{background:#22305a}
+.nav-group{padding:18px 20px 8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sub)}
+.nav-group .m{color:var(--accent);font-weight:700;margin-right:6px}
+.nav-item{margin:6px 14px;padding:10px 12px;font-size:12.5px;color:var(--ink);cursor:pointer;display:flex;gap:9px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 2px rgba(28,28,26,.04);transition:.15s}
+.nav-item:hover{border-color:var(--ai);background:var(--ai-soft);transform:translateX(3px);box-shadow:0 2px 8px rgba(43,58,103,.12)}
+.nav-item.sel{background:var(--ai);border-color:var(--ai);color:#fff;box-shadow:0 3px 10px rgba(43,58,103,.28)}
+.nav-item .uc{font-size:9.5px;letter-spacing:.5px;color:var(--sub);border:1px solid var(--line);border-radius:5px;
+  padding:2px 7px;background:var(--paper);flex:none}
+.nav-item.sel .uc{color:#fff;border-color:rgba(255,255,255,.55);background:transparent}
+.nav-item .txt{line-height:1.35}
+.main{flex:1;height:calc(100vh - 58px);overflow-y:auto;padding:40px 56px 80px}
+.screen{display:none;max-width:960px;margin:0 auto;animation:fade .25s ease}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.crumb{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sub);margin-bottom:22px}
+.crumb b{color:var(--ai)}
+.eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+h1{font-size:27px;font-weight:600;letter-spacing:-.3px;margin-bottom:6px}
+.sub{color:var(--sub);margin-bottom:26px;max-width:640px}
+.uccode{display:inline-block;font-size:11px;letter-spacing:1px;color:var(--sub);border:1px solid var(--line);border-radius:20px;padding:2px 12px;margin-bottom:26px}
+.hr{height:1px;background:var(--line);margin:28px 0}
+.stepper{display:flex;align-items:center;gap:0;margin:6px 0 30px}
+.stepper .s{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:12px}
+.stepper .s .n{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;background:var(--panel)}
+.stepper .s.on .n{background:var(--ai);color:#fff;border-color:var(--ai)}
+.stepper .s.on{color:var(--ink);font-weight:600}
+.stepper .bar{flex:1;height:1px;background:var(--line);margin:0 14px;min-width:24px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:22px 24px;margin-bottom:20px}
+.panel h3{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sub);font-weight:600;margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;letter-spacing:.5px;color:var(--sub);margin-bottom:5px}
+.field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:4px;background:var(--paper);font-size:13px;color:var(--ink)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--ai);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--sub);font-weight:600;padding:9px 12px;border-bottom:1px solid var(--line)}
+td{padding:11px 12px;border-bottom:1px solid var(--line2)}
+tr:last-child td{border-bottom:none}
+.tag2{display:inline-block;font-size:10.5px;letter-spacing:.5px;padding:2px 10px;border-radius:20px}
+.t-ok{background:var(--ok-soft);color:var(--ok)}.t-warn{background:var(--warn-soft);color:var(--warn)}
+.t-red{background:var(--red-soft);color:var(--red)}.t-ai{background:var(--ai-soft);color:var(--ai)}
+.t-grey{background:#EFEDE8;color:var(--sub)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:4px;border:1px solid var(--ai);
+  background:var(--ai);color:#fff;font-size:12.5px;letter-spacing:.5px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#22305a}
+.btn.ghost{background:transparent;color:var(--ai)}
+.btn.ghost:hover{background:var(--ai-soft)}
+.actions{display:flex;gap:12px;margin-top:22px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;cursor:pointer;transition:.18s}
+.card:hover{border-color:var(--ai);transform:translateY(-2px)}
+.card .m{font-size:11px;letter-spacing:1.5px;color:var(--accent);font-weight:700}
+.card .t{font-size:15px;font-weight:600;margin:8px 0 4px}
+.card .n{font-size:11.5px;color:var(--sub)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px 20px}
+.kpi .l{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--sub)}
+.kpi .v{font-size:26px;font-weight:600;letter-spacing:-.5px;margin-top:6px}
+.kpi .d{font-size:11px;color:var(--ok);margin-top:2px}
+.bars{display:flex;align-items:flex-end;gap:12px;height:120px;padding-top:10px}
+.bars .b{flex:1;background:var(--ai-soft);border-top:2px solid var(--ai);position:relative}
+.bars .b span{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:10px;color:var(--sub)}
+.phone{width:330px;margin:0 auto;border:1px solid var(--line);border-radius:26px;background:var(--panel);
+  overflow:hidden;box-shadow:0 12px 40px rgba(28,28,26,.08)}
+.phone .status{height:26px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:2px;color:var(--sub);border-bottom:1px solid var(--line2)}
+.phone .phead{padding:16px 18px 12px;border-bottom:1px solid var(--line2)}
+.phone .phead .eyebrow{margin-bottom:4px}
+.phone .phead .t{font-size:16px;font-weight:600}
+.phone .pbody{padding:16px 18px}
+.scan{border:1.5px dashed var(--ai);border-radius:10px;padding:26px;text-align:center;color:var(--ai);margin:6px 0 14px}
+.scan .ico{font-size:26px}
+.track{display:flex;flex-direction:column;gap:0;margin:8px 0}
+.track .row{display:flex;gap:12px;align-items:flex-start;padding:2px 0}
+.track .dot{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;margin-top:2px}
+.track .dot.done{background:var(--ok)}.track .dot.now{background:var(--ai)}.track .dot.off{background:#D8D5CE}
+.track .line{width:1px;background:var(--line);height:20px;margin-left:9px}
+.track .lbl{font-size:12.5px}.track .lbl small{display:block;color:var(--sub);font-size:10.5px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--sub);margin-top:16px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.note{font-size:11.5px;color:var(--sub);border-left:2px solid var(--accent);padding:4px 0 4px 14px;margin-top:16px}
+</style></head><body>
+<div class="appbar"><div class="logo"></div><div class="brand">SupplyCore MVL<small>Prototype</small></div>
+<div class="spacer"></div><div class="tag">Hi-fi · v2 · 02/07/2026</div></div>
+<div class="layout"><nav class="sidebar"><div class="nav-home" onclick="go('home')">◫ Trang chủ</div><div class="nav-group"><span class="m">M1</span>Hợp đồng & Nhà cung cấp</div><div class="nav-item" id="navi-scr-uc-01" onclick="go('scr-uc-01')"><span class="uc mono">UC-01</span><span class="txt">Tìm kiếm & Đánh giá Nhà cung cấp</span></div><div class="nav-item" id="navi-scr-uc-02" onclick="go('scr-uc-02')"><span class="uc mono">UC-02</span><span class="txt">Tạo / Cập nhật Nhà cung cấp</span></div><div class="nav-item" id="navi-scr-uc-03" onclick="go('scr-uc-03')"><span class="uc mono">UC-03</span><span class="txt">Tạo & Quản lý Hợp đồng Khung Mua (FC)</span></div><div class="nav-item" id="navi-scr-uc-04" onclick="go('scr-uc-04')"><span class="uc mono">UC-04</span><span class="txt">Theo dõi & Gia hạn / Thanh lý Hợp đồng</span></div><div class="nav-item" id="navi-scr-uc-05" onclick="go('scr-uc-05')"><span class="uc mono">UC-05</span><span class="txt">Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</span></div><div class="nav-group"><span class="m">M2</span>Kế hoạch & Mua sắm</div><div class="nav-item" id="navi-scr-uc-06" onclick="go('scr-uc-06')"><span class="uc mono">UC-06</span><span class="txt">Lập Kế hoạch Mua hàng Định kỳ</span></div><div class="nav-item" id="navi-scr-uc-07" onclick="go('scr-uc-07')"><span class="uc mono">UC-07</span><span class="txt">Tạo Đề nghị Mua hàng (Material Request)</span></div><div class="nav-item" id="navi-scr-uc-08" onclick="go('scr-uc-08')"><span class="uc mono">UC-08</span><span class="txt">Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</span></div><div class="nav-group"><span class="m">M3</span>Tiếp nhận & QC</div><div class="nav-item" id="navi-scr-uc-09" onclick="go('scr-uc-09')"><span class="uc mono">UC-09</span><span class="txt">Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</span></div><div class="nav-item" id="navi-scr-uc-10" onclick="go('scr-uc-10')"><span class="uc mono">UC-10</span><span class="txt">Kiểm tra Chất lượng (QC) Hàng nhập</span></div><div class="nav-item" id="navi-scr-uc-11" onclick="go('scr-uc-11')"><span class="uc mono">UC-11</span><span class="txt">Xử lý hàng trả lại Nhà cung cấp</span></div><div class="nav-group"><span class="m">M4</span>WMS, PDA & Mã vạch</div><div class="nav-item" id="navi-scr-uc-12" onclick="go('scr-uc-12')"><span class="uc mono">UC-12</span><span class="txt">Quản lý Bin Location & Putaway Rules</span></div><div class="nav-item" id="navi-scr-uc-13" onclick="go('scr-uc-13')"><span class="uc mono">UC-13</span><span class="txt">Nhập / Xuất kho thủ công (Batch + Bin)</span></div><div class="nav-item" id="navi-scr-uc-14" onclick="go('scr-uc-14')"><span class="uc mono">UC-14</span><span class="txt">Tra cứu tồn kho theo vị trí</span></div><div class="nav-item" id="navi-scr-uc-15" onclick="go('scr-uc-15')"><span class="uc mono">UC-15</span><span class="txt">Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</span></div><div class="nav-item" id="navi-scr-uc-16" onclick="go('scr-uc-16')"><span class="uc mono">UC-16</span><span class="txt">Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</span></div><div class="nav-item" id="navi-scr-uc-17" onclick="go('scr-uc-17')"><span class="uc mono">UC-17</span><span class="txt">Quét mã vạch để tra cứu & thao tác</span></div><div class="nav-group"><span class="m">M5</span>Lô, Hạn dùng & FEFO</div><div class="nav-item" id="navi-scr-uc-18" onclick="go('scr-uc-18')"><span class="uc mono">UC-18</span><span class="txt">Quản lý Thông tin Lô hàng (Batch)</span></div><div class="nav-item" id="navi-scr-uc-19" onclick="go('scr-uc-19')"><span class="uc mono">UC-19</span><span class="txt">Xuất kho theo FEFO</span></div><div class="nav-item" id="navi-scr-uc-20" onclick="go('scr-uc-20')"><span class="uc mono">UC-20</span><span class="txt">Cảnh báo sắp hết hạn</span></div><div class="nav-group"><span class="m">M6</span>Luân chuyển Nội bộ</div><div class="nav-item" id="navi-scr-uc-21" onclick="go('scr-uc-21')"><span class="uc mono">UC-21</span><span class="txt">Chuyển kho nội bộ (Stock Transfer)</span></div><div class="nav-group"><span class="m">M7</span>Bán hàng & Bàn giao Khách hàng</div><div class="nav-item" id="navi-scr-uc-22" onclick="go('scr-uc-22')"><span class="uc mono">UC-22</span><span class="txt">Quản lý Khách hàng & Tài khoản đăng nhập</span></div><div class="nav-item" id="navi-scr-uc-23" onclick="go('scr-uc-23')"><span class="uc mono">UC-23</span><span class="txt">Tạo & Quản lý Hợp đồng Khung Bán hàng</span></div><div class="nav-item" id="navi-scr-uc-24" onclick="go('scr-uc-24')"><span class="uc mono">UC-24</span><span class="txt">Tiếp nhận & Duyệt Đơn đặt hàng của Khách</span></div><div class="nav-item" id="navi-scr-uc-25" onclick="go('scr-uc-25')"><span class="uc mono">UC-25</span><span class="txt">Xuất kho bán & Lập Phiếu Bàn giao</span></div><div class="nav-item" id="navi-scr-uc-26" onclick="go('scr-uc-26')"><span class="uc mono">UC-26</span><span class="txt">Bàn giao & Nghiệm thu tại Khách hàng</span></div><div class="nav-group"><span class="m">M8</span>Kế toán & Thanh toán</div><div class="nav-item" id="navi-scr-uc-27" onclick="go('scr-uc-27')"><span class="uc mono">UC-27</span><span class="txt">Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</span></div><div class="nav-item" id="navi-scr-uc-28" onclick="go('scr-uc-28')"><span class="uc mono">UC-28</span><span class="txt">Thanh toán Nhà cung cấp (Payment Entry)</span></div><div class="nav-item" id="navi-scr-uc-29" onclick="go('scr-uc-29')"><span class="uc mono">UC-29</span><span class="txt">Xuất Hóa đơn Bán cho Khách hàng</span></div><div class="nav-item" id="navi-scr-uc-30" onclick="go('scr-uc-30')"><span class="uc mono">UC-30</span><span class="txt">Ghi nhận Thu tiền từ Khách hàng</span></div><div class="nav-item" id="navi-scr-uc-31" onclick="go('scr-uc-31')"><span class="uc mono">UC-31</span><span class="txt">Báo cáo Tài chính Vật tư</span></div><div class="nav-group"><span class="m">M9</span>Kiểm kê & Đối soát</div><div class="nav-item" id="navi-scr-uc-32" onclick="go('scr-uc-32')"><span class="uc mono">UC-32</span><span class="txt">Lập kế hoạch & thực hiện kiểm kê</span></div><div class="nav-item" id="navi-scr-uc-33" onclick="go('scr-uc-33')"><span class="uc mono">UC-33</span><span class="txt">Đối soát kho & Biên bản (Stock Reconciliation)</span></div><div class="nav-group"><span class="m">M10</span>Truy xuất & Điều tra</div><div class="nav-item" id="navi-scr-uc-34" onclick="go('scr-uc-34')"><span class="uc mono">UC-34</span><span class="txt">Truy xuất nguồn gốc lô (Batch Trace)</span></div><div class="nav-item" id="navi-scr-uc-35" onclick="go('scr-uc-35')"><span class="uc mono">UC-35</span><span class="txt">Thu hồi Vật tư (Recall Management)</span></div><div class="nav-item" id="navi-scr-uc-36" onclick="go('scr-uc-36')"><span class="uc mono">UC-36</span><span class="txt">Điều tra Thất thoát Vật tư (Investigation)</span></div><div class="nav-group"><span class="m">M11</span>Dashboard & Cảnh báo</div><div class="nav-item" id="navi-scr-uc-37" onclick="go('scr-uc-37')"><span class="uc mono">UC-37</span><span class="txt">Dashboard Điều hành Tổng thể</span></div><div class="nav-item" id="navi-scr-uc-38" onclick="go('scr-uc-38')"><span class="uc mono">UC-38</span><span class="txt">Cấu hình & Quản lý Cảnh báo Tự động</span></div><div class="nav-item" id="navi-scr-uc-39" onclick="go('scr-uc-39')"><span class="uc mono">UC-39</span><span class="txt">Xem & Xử lý Cảnh báo Hành động</span></div><div class="nav-group"><span class="m">M12</span>Portal Khách hàng</div><div class="nav-item" id="navi-scr-uc-40" onclick="go('scr-uc-40')"><span class="uc mono">UC-40</span><span class="txt">Khách hàng Đăng nhập Portal</span></div><div class="nav-item" id="navi-scr-uc-41" onclick="go('scr-uc-41')"><span class="uc mono">UC-41</span><span class="txt">Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</span></div><div class="nav-item" id="navi-scr-uc-42" onclick="go('scr-uc-42')"><span class="uc mono">UC-42</span><span class="txt">Đặt hàng theo HĐ khung (Portal)</span></div><div class="nav-item" id="navi-scr-uc-43" onclick="go('scr-uc-43')"><span class="uc mono">UC-43</span><span class="txt">Theo dõi Đơn hàng & Lịch sử (Portal)</span></div></nav><main class="main"><section class="screen active" id="home">
+  <div class="eyebrow">SupplyCore MVL · UI Prototype</div>
+  <h1>Hệ thống Quản lý Chuỗi cung ứng</h1>
+  <p class="sub">Bản mẫu hi-fi 43 màn hình theo 12 phân hệ. Thiết kế theo nguyên tắc tối giản, ưu tiên nội dung và khoảng trắng. Chọn một phân hệ để bắt đầu.</p>
+  <div class="cards"><div class="card" onclick="go('scr-uc-01')"><div class="m">M1</div><div class="t">Hợp đồng & Nhà cung cấp</div><div class="n">5 màn hình · Phòng Thương Mại</div></div><div class="card" onclick="go('scr-uc-06')"><div class="m">M2</div><div class="t">Kế hoạch & Mua sắm</div><div class="n">3 màn hình · Phòng Thương Mại</div></div><div class="card" onclick="go('scr-uc-09')"><div class="m">M3</div><div class="t">Tiếp nhận & QC</div><div class="n">3 màn hình · Bộ phận Kho</div></div><div class="card" onclick="go('scr-uc-12')"><div class="m">M4</div><div class="t">WMS, PDA & Mã vạch</div><div class="n">6 màn hình · Bộ phận Kho</div></div><div class="card" onclick="go('scr-uc-18')"><div class="m">M5</div><div class="t">Lô, Hạn dùng & FEFO</div><div class="n">3 màn hình · Bộ phận Kho</div></div><div class="card" onclick="go('scr-uc-21')"><div class="m">M6</div><div class="t">Luân chuyển Nội bộ</div><div class="n">1 màn hình · Bộ phận Kho</div></div><div class="card" onclick="go('scr-uc-22')"><div class="m">M7</div><div class="t">Bán hàng & Bàn giao Khách hàng</div><div class="n">5 màn hình · Phòng Thương Mại + Kho</div></div><div class="card" onclick="go('scr-uc-27')"><div class="m">M8</div><div class="t">Kế toán & Thanh toán</div><div class="n">5 màn hình · Kế Toán</div></div><div class="card" onclick="go('scr-uc-32')"><div class="m">M9</div><div class="t">Kiểm kê & Đối soát</div><div class="n">2 màn hình · Bộ phận Kho</div></div><div class="card" onclick="go('scr-uc-34')"><div class="m">M10</div><div class="t">Truy xuất & Điều tra</div><div class="n">3 màn hình · Ban Giám đốc / Kiểm soát</div></div><div class="card" onclick="go('scr-uc-37')"><div class="m">M11</div><div class="t">Dashboard & Cảnh báo</div><div class="n">3 màn hình · Ban Giám đốc</div></div><div class="card" onclick="go('scr-uc-40')"><div class="m">M12</div><div class="t">Portal Khách hàng</div><div class="n">4 màn hình · Khách hàng</div></div></div>
+  <div class="legend"><span><i style="background:var(--ai)"></i> Điều hướng chính</span><span><i style="background:var(--ok)"></i> Trạng thái hoàn tất</span><span><i style="background:var(--warn)"></i> Chờ xử lý</span></div>
+</section><section class="screen" id="scr-uc-01">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M1 · Hợp đồng & Nhà cung cấp</b> &nbsp;/&nbsp; UC-01</div>
+  <div class="eyebrow">Hợp đồng & Nhà cung cấp</div>
+  <h1>Tìm kiếm & Đánh giá Nhà cung cấp</h1>
+  <span class="uccode mono">UC-01 · list</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Lọc</div><div class="bar"></div><div class="s on"><span class="n">2</span>Kết quả</div><div class="bar"></div><div class="s"><span class="n">3</span>Chi tiết</div></div>
+<div class="panel">
+<div class="grid"><div class="field"><label>Từ khóa</label><input placeholder="Tên / mã..."></div>
+<div class="field"><label>Trạng thái</label><select><option>Tất cả</option><option>Hoạt động</option></select></div></div>
+<table>
+<tr><th>Mã</th><th>Tên</th><th>Nhóm hàng</th><th>Đánh giá</th><th>Trạng thái</th></tr>
+<tr><td class="mono">NCC-001</td><td>B.Braun Việt Nam</td><td>Vật tư tiêu hao</td><td class="mono">4.6</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-002</td><td>Nipro VN</td><td>Bơm kim tiêm</td><td class="mono">4.4</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-003</td><td>Hitec Medical</td><td>Hóa chất</td><td class="mono">3.9</td><td><span class="tag2 t-grey">Vô hiệu</span></td></tr>
+</table></div>
+<div class="actions"><button class="btn">+ Tạo mới</button><button class="btn ghost">Xuất Excel</button></div>
+</section><section class="screen" id="scr-uc-02">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M1 · Hợp đồng & Nhà cung cấp</b> &nbsp;/&nbsp; UC-02</div>
+  <div class="eyebrow">Hợp đồng & Nhà cung cấp</div>
+  <h1>Tạo / Cập nhật Nhà cung cấp</h1>
+  <span class="uccode mono">UC-02 · master</span>
+  <div class="stepper"><div class="s on"><span class="n">1</span>Nhập</div><div class="bar"></div><div class="s"><span class="n">2</span>Kiểm tra</div><div class="bar"></div><div class="s"><span class="n">3</span>Kích hoạt</div></div>
+<div class="panel"><h3>Thông tin chung</h3>
+<div class="grid">
+<div class="field"><label>Mã khách hàng</label><input value="KH-0001"></div>
+<div class="field"><label>Mã số thuế</label><input value="0312345678"></div>
+<div class="field"><label>Tên công ty</label><input value="Bệnh viện Đa khoa An Sinh"></div>
+<div class="field"><label>Hạn mức công nợ</label><input value="500.000.000"></div>
+</div></div>
+<div class="panel"><h3>Tài khoản Portal (bắt buộc)</h3>
+<div class="grid"><div class="field"><label>Tài khoản đăng nhập</label><input value="ansinh@portal"></div>
+<div class="field"><label>Trạng thái</label><select><option>Hoạt động</option><option>Tạm ngưng</option></select></div></div>
+<div class="note">Khách bắt buộc có tài khoản Portal trước khi kích hoạt (BRU-CUS-001).</div></div>
+<div class="actions"><button class="btn">Lưu & kích hoạt</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-03">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M1 · Hợp đồng & Nhà cung cấp</b> &nbsp;/&nbsp; UC-03</div>
+  <div class="eyebrow">Hợp đồng & Nhà cung cấp</div>
+  <h1>Tạo & Quản lý Hợp đồng Khung Mua (FC)</h1>
+  <span class="uccode mono">UC-03 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-04">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M1 · Hợp đồng & Nhà cung cấp</b> &nbsp;/&nbsp; UC-04</div>
+  <div class="eyebrow">Hợp đồng & Nhà cung cấp</div>
+  <h1>Theo dõi & Gia hạn / Thanh lý Hợp đồng</h1>
+  <span class="uccode mono">UC-04 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-05">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M1 · Hợp đồng & Nhà cung cấp</b> &nbsp;/&nbsp; UC-05</div>
+  <div class="eyebrow">Hợp đồng & Nhà cung cấp</div>
+  <h1>Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</h1>
+  <span class="uccode mono">UC-05 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-06">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M2 · Kế hoạch & Mua sắm</b> &nbsp;/&nbsp; UC-06</div>
+  <div class="eyebrow">Kế hoạch & Mua sắm</div>
+  <h1>Lập Kế hoạch Mua hàng Định kỳ</h1>
+  <span class="uccode mono">UC-06 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-07">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M2 · Kế hoạch & Mua sắm</b> &nbsp;/&nbsp; UC-07</div>
+  <div class="eyebrow">Kế hoạch & Mua sắm</div>
+  <h1>Tạo Đề nghị Mua hàng (Material Request)</h1>
+  <span class="uccode mono">UC-07 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-08">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M2 · Kế hoạch & Mua sắm</b> &nbsp;/&nbsp; UC-08</div>
+  <div class="eyebrow">Kế hoạch & Mua sắm</div>
+  <h1>Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</h1>
+  <span class="uccode mono">UC-08 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-09">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M3 · Tiếp nhận & QC</b> &nbsp;/&nbsp; UC-09</div>
+  <div class="eyebrow">Tiếp nhận & QC</div>
+  <h1>Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</h1>
+  <span class="uccode mono">UC-09 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-10">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M3 · Tiếp nhận & QC</b> &nbsp;/&nbsp; UC-10</div>
+  <div class="eyebrow">Tiếp nhận & QC</div>
+  <h1>Kiểm tra Chất lượng (QC) Hàng nhập</h1>
+  <span class="uccode mono">UC-10 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-11">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M3 · Tiếp nhận & QC</b> &nbsp;/&nbsp; UC-11</div>
+  <div class="eyebrow">Tiếp nhận & QC</div>
+  <h1>Xử lý hàng trả lại Nhà cung cấp</h1>
+  <span class="uccode mono">UC-11 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-12">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M4 · WMS, PDA & Mã vạch</b> &nbsp;/&nbsp; UC-12</div>
+  <div class="eyebrow">WMS, PDA & Mã vạch</div>
+  <h1>Quản lý Bin Location & Putaway Rules</h1>
+  <span class="uccode mono">UC-12 · master</span>
+  <div class="stepper"><div class="s on"><span class="n">1</span>Nhập</div><div class="bar"></div><div class="s"><span class="n">2</span>Kiểm tra</div><div class="bar"></div><div class="s"><span class="n">3</span>Kích hoạt</div></div>
+<div class="panel"><h3>Thông tin chung</h3>
+<div class="grid">
+<div class="field"><label>Mã khách hàng</label><input value="KH-0001"></div>
+<div class="field"><label>Mã số thuế</label><input value="0312345678"></div>
+<div class="field"><label>Tên công ty</label><input value="Bệnh viện Đa khoa An Sinh"></div>
+<div class="field"><label>Hạn mức công nợ</label><input value="500.000.000"></div>
+</div></div>
+<div class="panel"><h3>Tài khoản Portal (bắt buộc)</h3>
+<div class="grid"><div class="field"><label>Tài khoản đăng nhập</label><input value="ansinh@portal"></div>
+<div class="field"><label>Trạng thái</label><select><option>Hoạt động</option><option>Tạm ngưng</option></select></div></div>
+<div class="note">Khách bắt buộc có tài khoản Portal trước khi kích hoạt (BRU-CUS-001).</div></div>
+<div class="actions"><button class="btn">Lưu & kích hoạt</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-13">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M4 · WMS, PDA & Mã vạch</b> &nbsp;/&nbsp; UC-13</div>
+  <div class="eyebrow">WMS, PDA & Mã vạch</div>
+  <h1>Nhập / Xuất kho thủ công (Batch + Bin)</h1>
+  <span class="uccode mono">UC-13 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-14">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M4 · WMS, PDA & Mã vạch</b> &nbsp;/&nbsp; UC-14</div>
+  <div class="eyebrow">WMS, PDA & Mã vạch</div>
+  <h1>Tra cứu tồn kho theo vị trí</h1>
+  <span class="uccode mono">UC-14 · list</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Lọc</div><div class="bar"></div><div class="s on"><span class="n">2</span>Kết quả</div><div class="bar"></div><div class="s"><span class="n">3</span>Chi tiết</div></div>
+<div class="panel">
+<div class="grid"><div class="field"><label>Từ khóa</label><input placeholder="Tên / mã..."></div>
+<div class="field"><label>Trạng thái</label><select><option>Tất cả</option><option>Hoạt động</option></select></div></div>
+<table>
+<tr><th>Mã</th><th>Tên</th><th>Nhóm hàng</th><th>Đánh giá</th><th>Trạng thái</th></tr>
+<tr><td class="mono">NCC-001</td><td>B.Braun Việt Nam</td><td>Vật tư tiêu hao</td><td class="mono">4.6</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-002</td><td>Nipro VN</td><td>Bơm kim tiêm</td><td class="mono">4.4</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-003</td><td>Hitec Medical</td><td>Hóa chất</td><td class="mono">3.9</td><td><span class="tag2 t-grey">Vô hiệu</span></td></tr>
+</table></div>
+<div class="actions"><button class="btn">+ Tạo mới</button><button class="btn ghost">Xuất Excel</button></div>
+</section><section class="screen" id="scr-uc-15">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M4 · WMS, PDA & Mã vạch</b> &nbsp;/&nbsp; UC-15</div>
+  <div class="eyebrow">WMS, PDA & Mã vạch</div>
+  <h1>Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</h1>
+  <span class="uccode mono">UC-15 · master</span>
+  <div class="stepper"><div class="s on"><span class="n">1</span>Nhập</div><div class="bar"></div><div class="s"><span class="n">2</span>Kiểm tra</div><div class="bar"></div><div class="s"><span class="n">3</span>Kích hoạt</div></div>
+<div class="panel"><h3>Thông tin chung</h3>
+<div class="grid">
+<div class="field"><label>Mã khách hàng</label><input value="KH-0001"></div>
+<div class="field"><label>Mã số thuế</label><input value="0312345678"></div>
+<div class="field"><label>Tên công ty</label><input value="Bệnh viện Đa khoa An Sinh"></div>
+<div class="field"><label>Hạn mức công nợ</label><input value="500.000.000"></div>
+</div></div>
+<div class="panel"><h3>Tài khoản Portal (bắt buộc)</h3>
+<div class="grid"><div class="field"><label>Tài khoản đăng nhập</label><input value="ansinh@portal"></div>
+<div class="field"><label>Trạng thái</label><select><option>Hoạt động</option><option>Tạm ngưng</option></select></div></div>
+<div class="note">Khách bắt buộc có tài khoản Portal trước khi kích hoạt (BRU-CUS-001).</div></div>
+<div class="actions"><button class="btn">Lưu & kích hoạt</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-16">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M4 · WMS, PDA & Mã vạch</b> &nbsp;/&nbsp; UC-16</div>
+  <div class="eyebrow">WMS, PDA & Mã vạch</div>
+  <h1>Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</h1>
+  <span class="uccode mono">UC-16 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-17">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M4 · WMS, PDA & Mã vạch</b> &nbsp;/&nbsp; UC-17</div>
+  <div class="eyebrow">WMS, PDA & Mã vạch</div>
+  <h1>Quét mã vạch để tra cứu & thao tác</h1>
+  <span class="uccode mono">UC-17 · pda</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Quét</div><div class="bar"></div><div class="s on"><span class="n">2</span>Phân giải</div><div class="bar"></div><div class="s"><span class="n">3</span>Thao tác</div></div>
+<div class="phone"><div class="status">PDA · KHO</div>
+<div class="phead"><div class="eyebrow">Quét mã vạch</div><div class="t">Tra cứu & thao tác</div></div>
+<div class="pbody">
+<div class="scan"><div class="ico">⧉</div>Đưa mã vào khung quét</div>
+<div class="panel" style="margin:0">
+<h3>Kết quả</h3>
+<b>Găng tay nitrile M</b> · <span class="mono">LOT-B7781</span><br>
+Tồn: <b>8.900</b> · Bin <span class="mono">A-01-03</span><br>HSD 03/2029 &nbsp;<span class="tag2 t-ok">Hoạt động</span>
+</div>
+<div class="actions"><button class="btn">Nhập</button><button class="btn ghost">Xuất</button><button class="btn ghost">Chuyển</button></div>
+</div></div>
+</section><section class="screen" id="scr-uc-18">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M5 · Lô, Hạn dùng & FEFO</b> &nbsp;/&nbsp; UC-18</div>
+  <div class="eyebrow">Lô, Hạn dùng & FEFO</div>
+  <h1>Quản lý Thông tin Lô hàng (Batch)</h1>
+  <span class="uccode mono">UC-18 · master</span>
+  <div class="stepper"><div class="s on"><span class="n">1</span>Nhập</div><div class="bar"></div><div class="s"><span class="n">2</span>Kiểm tra</div><div class="bar"></div><div class="s"><span class="n">3</span>Kích hoạt</div></div>
+<div class="panel"><h3>Thông tin chung</h3>
+<div class="grid">
+<div class="field"><label>Mã khách hàng</label><input value="KH-0001"></div>
+<div class="field"><label>Mã số thuế</label><input value="0312345678"></div>
+<div class="field"><label>Tên công ty</label><input value="Bệnh viện Đa khoa An Sinh"></div>
+<div class="field"><label>Hạn mức công nợ</label><input value="500.000.000"></div>
+</div></div>
+<div class="panel"><h3>Tài khoản Portal (bắt buộc)</h3>
+<div class="grid"><div class="field"><label>Tài khoản đăng nhập</label><input value="ansinh@portal"></div>
+<div class="field"><label>Trạng thái</label><select><option>Hoạt động</option><option>Tạm ngưng</option></select></div></div>
+<div class="note">Khách bắt buộc có tài khoản Portal trước khi kích hoạt (BRU-CUS-001).</div></div>
+<div class="actions"><button class="btn">Lưu & kích hoạt</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-19">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M5 · Lô, Hạn dùng & FEFO</b> &nbsp;/&nbsp; UC-19</div>
+  <div class="eyebrow">Lô, Hạn dùng & FEFO</div>
+  <h1>Xuất kho theo FEFO</h1>
+  <span class="uccode mono">UC-19 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-20">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M5 · Lô, Hạn dùng & FEFO</b> &nbsp;/&nbsp; UC-20</div>
+  <div class="eyebrow">Lô, Hạn dùng & FEFO</div>
+  <h1>Cảnh báo sắp hết hạn</h1>
+  <span class="uccode mono">UC-20 · dashboard</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Chọn kỳ</div><div class="bar"></div><div class="s on"><span class="n">2</span>Tổng hợp</div><div class="bar"></div><div class="s"><span class="n">3</span>Drill-down</div></div>
+<div class="kpis">
+<div class="kpi"><div class="l">Đơn / tháng</div><div class="v">142</div><div class="d">▲ 12% so kỳ trước</div></div>
+<div class="kpi"><div class="l">Giao đúng hạn</div><div class="v">98%</div><div class="d">▲ 2%</div></div>
+<div class="kpi"><div class="l">Doanh thu</div><div class="v mono">1,2 tỷ</div><div class="d">▲ 8%</div></div>
+<div class="kpi"><div class="l">Lô cận hạn</div><div class="v">3</div><div class="d" style="color:#9A6B2E">Cần xử lý</div></div>
+</div>
+<div class="panel"><h3>Doanh thu 6 tháng</h3>
+<div class="bars"><div class="b" style="height:52%"><span>T2</span></div><div class="b" style="height:64%"><span>T3</span></div><div class="b" style="height:58%"><span>T4</span></div><div class="b" style="height:76%"><span>T5</span></div><div class="b" style="height:70%"><span>T6</span></div><div class="b" style="height:92%"><span>T7</span></div></div>
+</div>
+</section><section class="screen" id="scr-uc-21">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M6 · Luân chuyển Nội bộ</b> &nbsp;/&nbsp; UC-21</div>
+  <div class="eyebrow">Luân chuyển Nội bộ</div>
+  <h1>Chuyển kho nội bộ (Stock Transfer)</h1>
+  <span class="uccode mono">UC-21 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-22">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M7 · Bán hàng & Bàn giao Khách hàng</b> &nbsp;/&nbsp; UC-22</div>
+  <div class="eyebrow">Bán hàng & Bàn giao Khách hàng</div>
+  <h1>Quản lý Khách hàng & Tài khoản đăng nhập</h1>
+  <span class="uccode mono">UC-22 · master</span>
+  <div class="stepper"><div class="s on"><span class="n">1</span>Nhập</div><div class="bar"></div><div class="s"><span class="n">2</span>Kiểm tra</div><div class="bar"></div><div class="s"><span class="n">3</span>Kích hoạt</div></div>
+<div class="panel"><h3>Thông tin chung</h3>
+<div class="grid">
+<div class="field"><label>Mã khách hàng</label><input value="KH-0001"></div>
+<div class="field"><label>Mã số thuế</label><input value="0312345678"></div>
+<div class="field"><label>Tên công ty</label><input value="Bệnh viện Đa khoa An Sinh"></div>
+<div class="field"><label>Hạn mức công nợ</label><input value="500.000.000"></div>
+</div></div>
+<div class="panel"><h3>Tài khoản Portal (bắt buộc)</h3>
+<div class="grid"><div class="field"><label>Tài khoản đăng nhập</label><input value="ansinh@portal"></div>
+<div class="field"><label>Trạng thái</label><select><option>Hoạt động</option><option>Tạm ngưng</option></select></div></div>
+<div class="note">Khách bắt buộc có tài khoản Portal trước khi kích hoạt (BRU-CUS-001).</div></div>
+<div class="actions"><button class="btn">Lưu & kích hoạt</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-23">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M7 · Bán hàng & Bàn giao Khách hàng</b> &nbsp;/&nbsp; UC-23</div>
+  <div class="eyebrow">Bán hàng & Bàn giao Khách hàng</div>
+  <h1>Tạo & Quản lý Hợp đồng Khung Bán hàng</h1>
+  <span class="uccode mono">UC-23 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-24">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M7 · Bán hàng & Bàn giao Khách hàng</b> &nbsp;/&nbsp; UC-24</div>
+  <div class="eyebrow">Bán hàng & Bàn giao Khách hàng</div>
+  <h1>Tiếp nhận & Duyệt Đơn đặt hàng của Khách</h1>
+  <span class="uccode mono">UC-24 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-25">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M7 · Bán hàng & Bàn giao Khách hàng</b> &nbsp;/&nbsp; UC-25</div>
+  <div class="eyebrow">Bán hàng & Bàn giao Khách hàng</div>
+  <h1>Xuất kho bán & Lập Phiếu Bàn giao</h1>
+  <span class="uccode mono">UC-25 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-26">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M7 · Bán hàng & Bàn giao Khách hàng</b> &nbsp;/&nbsp; UC-26</div>
+  <div class="eyebrow">Bán hàng & Bàn giao Khách hàng</div>
+  <h1>Bàn giao & Nghiệm thu tại Khách hàng</h1>
+  <span class="uccode mono">UC-26 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-27">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M8 · Kế toán & Thanh toán</b> &nbsp;/&nbsp; UC-27</div>
+  <div class="eyebrow">Kế toán & Thanh toán</div>
+  <h1>Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</h1>
+  <span class="uccode mono">UC-27 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-28">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M8 · Kế toán & Thanh toán</b> &nbsp;/&nbsp; UC-28</div>
+  <div class="eyebrow">Kế toán & Thanh toán</div>
+  <h1>Thanh toán Nhà cung cấp (Payment Entry)</h1>
+  <span class="uccode mono">UC-28 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-29">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M8 · Kế toán & Thanh toán</b> &nbsp;/&nbsp; UC-29</div>
+  <div class="eyebrow">Kế toán & Thanh toán</div>
+  <h1>Xuất Hóa đơn Bán cho Khách hàng</h1>
+  <span class="uccode mono">UC-29 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-30">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M8 · Kế toán & Thanh toán</b> &nbsp;/&nbsp; UC-30</div>
+  <div class="eyebrow">Kế toán & Thanh toán</div>
+  <h1>Ghi nhận Thu tiền từ Khách hàng</h1>
+  <span class="uccode mono">UC-30 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-31">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M8 · Kế toán & Thanh toán</b> &nbsp;/&nbsp; UC-31</div>
+  <div class="eyebrow">Kế toán & Thanh toán</div>
+  <h1>Báo cáo Tài chính Vật tư</h1>
+  <span class="uccode mono">UC-31 · dashboard</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Chọn kỳ</div><div class="bar"></div><div class="s on"><span class="n">2</span>Tổng hợp</div><div class="bar"></div><div class="s"><span class="n">3</span>Drill-down</div></div>
+<div class="kpis">
+<div class="kpi"><div class="l">Đơn / tháng</div><div class="v">142</div><div class="d">▲ 12% so kỳ trước</div></div>
+<div class="kpi"><div class="l">Giao đúng hạn</div><div class="v">98%</div><div class="d">▲ 2%</div></div>
+<div class="kpi"><div class="l">Doanh thu</div><div class="v mono">1,2 tỷ</div><div class="d">▲ 8%</div></div>
+<div class="kpi"><div class="l">Lô cận hạn</div><div class="v">3</div><div class="d" style="color:#9A6B2E">Cần xử lý</div></div>
+</div>
+<div class="panel"><h3>Doanh thu 6 tháng</h3>
+<div class="bars"><div class="b" style="height:52%"><span>T2</span></div><div class="b" style="height:64%"><span>T3</span></div><div class="b" style="height:58%"><span>T4</span></div><div class="b" style="height:76%"><span>T5</span></div><div class="b" style="height:70%"><span>T6</span></div><div class="b" style="height:92%"><span>T7</span></div></div>
+</div>
+</section><section class="screen" id="scr-uc-32">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M9 · Kiểm kê & Đối soát</b> &nbsp;/&nbsp; UC-32</div>
+  <div class="eyebrow">Kiểm kê & Đối soát</div>
+  <h1>Lập kế hoạch & thực hiện kiểm kê</h1>
+  <span class="uccode mono">UC-32 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-33">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M9 · Kiểm kê & Đối soát</b> &nbsp;/&nbsp; UC-33</div>
+  <div class="eyebrow">Kiểm kê & Đối soát</div>
+  <h1>Đối soát kho & Biên bản (Stock Reconciliation)</h1>
+  <span class="uccode mono">UC-33 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-34">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M10 · Truy xuất & Điều tra</b> &nbsp;/&nbsp; UC-34</div>
+  <div class="eyebrow">Truy xuất & Điều tra</div>
+  <h1>Truy xuất nguồn gốc lô (Batch Trace)</h1>
+  <span class="uccode mono">UC-34 · list</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Lọc</div><div class="bar"></div><div class="s on"><span class="n">2</span>Kết quả</div><div class="bar"></div><div class="s"><span class="n">3</span>Chi tiết</div></div>
+<div class="panel">
+<div class="grid"><div class="field"><label>Từ khóa</label><input placeholder="Tên / mã..."></div>
+<div class="field"><label>Trạng thái</label><select><option>Tất cả</option><option>Hoạt động</option></select></div></div>
+<table>
+<tr><th>Mã</th><th>Tên</th><th>Nhóm hàng</th><th>Đánh giá</th><th>Trạng thái</th></tr>
+<tr><td class="mono">NCC-001</td><td>B.Braun Việt Nam</td><td>Vật tư tiêu hao</td><td class="mono">4.6</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-002</td><td>Nipro VN</td><td>Bơm kim tiêm</td><td class="mono">4.4</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-003</td><td>Hitec Medical</td><td>Hóa chất</td><td class="mono">3.9</td><td><span class="tag2 t-grey">Vô hiệu</span></td></tr>
+</table></div>
+<div class="actions"><button class="btn">+ Tạo mới</button><button class="btn ghost">Xuất Excel</button></div>
+</section><section class="screen" id="scr-uc-35">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M10 · Truy xuất & Điều tra</b> &nbsp;/&nbsp; UC-35</div>
+  <div class="eyebrow">Truy xuất & Điều tra</div>
+  <h1>Thu hồi Vật tư (Recall Management)</h1>
+  <span class="uccode mono">UC-35 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-36">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M10 · Truy xuất & Điều tra</b> &nbsp;/&nbsp; UC-36</div>
+  <div class="eyebrow">Truy xuất & Điều tra</div>
+  <h1>Điều tra Thất thoát Vật tư (Investigation)</h1>
+  <span class="uccode mono">UC-36 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-37">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M11 · Dashboard & Cảnh báo</b> &nbsp;/&nbsp; UC-37</div>
+  <div class="eyebrow">Dashboard & Cảnh báo</div>
+  <h1>Dashboard Điều hành Tổng thể</h1>
+  <span class="uccode mono">UC-37 · dashboard</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Chọn kỳ</div><div class="bar"></div><div class="s on"><span class="n">2</span>Tổng hợp</div><div class="bar"></div><div class="s"><span class="n">3</span>Drill-down</div></div>
+<div class="kpis">
+<div class="kpi"><div class="l">Đơn / tháng</div><div class="v">142</div><div class="d">▲ 12% so kỳ trước</div></div>
+<div class="kpi"><div class="l">Giao đúng hạn</div><div class="v">98%</div><div class="d">▲ 2%</div></div>
+<div class="kpi"><div class="l">Doanh thu</div><div class="v mono">1,2 tỷ</div><div class="d">▲ 8%</div></div>
+<div class="kpi"><div class="l">Lô cận hạn</div><div class="v">3</div><div class="d" style="color:#9A6B2E">Cần xử lý</div></div>
+</div>
+<div class="panel"><h3>Doanh thu 6 tháng</h3>
+<div class="bars"><div class="b" style="height:52%"><span>T2</span></div><div class="b" style="height:64%"><span>T3</span></div><div class="b" style="height:58%"><span>T4</span></div><div class="b" style="height:76%"><span>T5</span></div><div class="b" style="height:70%"><span>T6</span></div><div class="b" style="height:92%"><span>T7</span></div></div>
+</div>
+</section><section class="screen" id="scr-uc-38">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M11 · Dashboard & Cảnh báo</b> &nbsp;/&nbsp; UC-38</div>
+  <div class="eyebrow">Dashboard & Cảnh báo</div>
+  <h1>Cấu hình & Quản lý Cảnh báo Tự động</h1>
+  <span class="uccode mono">UC-38 · master</span>
+  <div class="stepper"><div class="s on"><span class="n">1</span>Nhập</div><div class="bar"></div><div class="s"><span class="n">2</span>Kiểm tra</div><div class="bar"></div><div class="s"><span class="n">3</span>Kích hoạt</div></div>
+<div class="panel"><h3>Thông tin chung</h3>
+<div class="grid">
+<div class="field"><label>Mã khách hàng</label><input value="KH-0001"></div>
+<div class="field"><label>Mã số thuế</label><input value="0312345678"></div>
+<div class="field"><label>Tên công ty</label><input value="Bệnh viện Đa khoa An Sinh"></div>
+<div class="field"><label>Hạn mức công nợ</label><input value="500.000.000"></div>
+</div></div>
+<div class="panel"><h3>Tài khoản Portal (bắt buộc)</h3>
+<div class="grid"><div class="field"><label>Tài khoản đăng nhập</label><input value="ansinh@portal"></div>
+<div class="field"><label>Trạng thái</label><select><option>Hoạt động</option><option>Tạm ngưng</option></select></div></div>
+<div class="note">Khách bắt buộc có tài khoản Portal trước khi kích hoạt (BRU-CUS-001).</div></div>
+<div class="actions"><button class="btn">Lưu & kích hoạt</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-39">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M11 · Dashboard & Cảnh báo</b> &nbsp;/&nbsp; UC-39</div>
+  <div class="eyebrow">Dashboard & Cảnh báo</div>
+  <h1>Xem & Xử lý Cảnh báo Hành động</h1>
+  <span class="uccode mono">UC-39 · dashboard</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Chọn kỳ</div><div class="bar"></div><div class="s on"><span class="n">2</span>Tổng hợp</div><div class="bar"></div><div class="s"><span class="n">3</span>Drill-down</div></div>
+<div class="kpis">
+<div class="kpi"><div class="l">Đơn / tháng</div><div class="v">142</div><div class="d">▲ 12% so kỳ trước</div></div>
+<div class="kpi"><div class="l">Giao đúng hạn</div><div class="v">98%</div><div class="d">▲ 2%</div></div>
+<div class="kpi"><div class="l">Doanh thu</div><div class="v mono">1,2 tỷ</div><div class="d">▲ 8%</div></div>
+<div class="kpi"><div class="l">Lô cận hạn</div><div class="v">3</div><div class="d" style="color:#9A6B2E">Cần xử lý</div></div>
+</div>
+<div class="panel"><h3>Doanh thu 6 tháng</h3>
+<div class="bars"><div class="b" style="height:52%"><span>T2</span></div><div class="b" style="height:64%"><span>T3</span></div><div class="b" style="height:58%"><span>T4</span></div><div class="b" style="height:76%"><span>T5</span></div><div class="b" style="height:70%"><span>T6</span></div><div class="b" style="height:92%"><span>T7</span></div></div>
+</div>
+</section><section class="screen" id="scr-uc-40">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M12 · Portal Khách hàng</b> &nbsp;/&nbsp; UC-40</div>
+  <div class="eyebrow">Portal Khách hàng</div>
+  <h1>Khách hàng Đăng nhập Portal</h1>
+  <span class="uccode mono">UC-40 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Nháp</div><div class="bar"></div><div class="s on"><span class="n">2</span>Chờ duyệt</div><div class="bar"></div><div class="s"><span class="n">3</span>Đã duyệt</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="panel"><h3>Chứng từ</h3>
+<div class="grid"><div class="field"><label>Chứng từ nguồn</label><select><option>SO-20260702-001</option></select></div>
+<div class="field"><label>Ngày</label><input value="02/07/2026"></div></div></div>
+<div class="panel"><h3>Chi tiết dòng · gợi ý lô theo FEFO</h3>
+<table>
+<tr><th>Vật tư</th><th>Lô (FEFO)</th><th>HSD</th><th>SL</th></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">LOT-A1023</td><td>01/2028</td><td class="mono">120</td></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">LOT-B7781</td><td>03/2029</td><td class="mono">50</td></tr>
+</table>
+<div style="margin-top:14px">Trạng thái: <span class="tag2 t-warn">Chờ duyệt</span></div></div>
+<div class="actions"><button class="btn">Submit</button><button class="btn ghost">Lưu nháp</button></div>
+</section><section class="screen" id="scr-uc-41">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M12 · Portal Khách hàng</b> &nbsp;/&nbsp; UC-41</div>
+  <div class="eyebrow">Portal Khách hàng</div>
+  <h1>Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</h1>
+  <span class="uccode mono">UC-41 · list</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Lọc</div><div class="bar"></div><div class="s on"><span class="n">2</span>Kết quả</div><div class="bar"></div><div class="s"><span class="n">3</span>Chi tiết</div></div>
+<div class="panel">
+<div class="grid"><div class="field"><label>Từ khóa</label><input placeholder="Tên / mã..."></div>
+<div class="field"><label>Trạng thái</label><select><option>Tất cả</option><option>Hoạt động</option></select></div></div>
+<table>
+<tr><th>Mã</th><th>Tên</th><th>Nhóm hàng</th><th>Đánh giá</th><th>Trạng thái</th></tr>
+<tr><td class="mono">NCC-001</td><td>B.Braun Việt Nam</td><td>Vật tư tiêu hao</td><td class="mono">4.6</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-002</td><td>Nipro VN</td><td>Bơm kim tiêm</td><td class="mono">4.4</td><td><span class="tag2 t-ok">Hoạt động</span></td></tr>
+<tr><td class="mono">NCC-003</td><td>Hitec Medical</td><td>Hóa chất</td><td class="mono">3.9</td><td><span class="tag2 t-grey">Vô hiệu</span></td></tr>
+</table></div>
+<div class="actions"><button class="btn">+ Tạo mới</button><button class="btn ghost">Xuất Excel</button></div>
+</section><section class="screen" id="scr-uc-42">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M12 · Portal Khách hàng</b> &nbsp;/&nbsp; UC-42</div>
+  <div class="eyebrow">Portal Khách hàng</div>
+  <h1>Đặt hàng theo HĐ khung (Portal)</h1>
+  <span class="uccode mono">UC-42 · form</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Chọn HĐ</div><div class="bar"></div><div class="s on"><span class="n">2</span>Thêm hàng</div><div class="bar"></div><div class="s"><span class="n">3</span>Xác nhận</div></div>
+<div class="phone"><div class="status">PORTAL · ĐẶT HÀNG</div>
+<div class="phead"><div class="eyebrow">HĐ khung SFC-2026-001</div><div class="t">Giỏ hàng</div></div>
+<div class="pbody">
+<table>
+<tr><th>Vật tư</th><th>Đơn giá</th><th>SL</th></tr>
+<tr><td>Găng tay nitrile M</td><td class="mono">90.000</td><td class="mono">50</td></tr>
+<tr><td>Cồn 90° 500ml</td><td class="mono">18.500</td><td class="mono">120</td></tr>
+</table>
+<div class="note">Chỉ hiện mặt hàng thuộc HĐ khung còn hiệu lực; giá cố định theo HĐ.</div>
+<div class="actions"><button class="btn">Gửi đơn</button><button class="btn ghost">Lưu giỏ</button></div>
+</div></div>
+</section><section class="screen" id="scr-uc-43">
+  <div class="crumb">◫ Trang chủ &nbsp;/&nbsp; <b>M12 · Portal Khách hàng</b> &nbsp;/&nbsp; UC-43</div>
+  <div class="eyebrow">Portal Khách hàng</div>
+  <h1>Theo dõi Đơn hàng & Lịch sử (Portal)</h1>
+  <span class="uccode mono">UC-43 · dashboard</span>
+  <div class="stepper"><div class="s"><span class="n">1</span>Đặt</div><div class="bar"></div><div class="s"><span class="n">2</span>Duyệt</div><div class="bar"></div><div class="s on"><span class="n">3</span>Bàn giao</div><div class="bar"></div><div class="s"><span class="n">4</span>Hoàn tất</div></div>
+<div class="phone"><div class="status">PORTAL · MVL</div>
+<div class="phead"><div class="eyebrow">Đơn hàng</div><div class="t">SO-20260702-001</div></div>
+<div class="pbody">
+<div class="track">
+<div class="row"><div class="dot done">✓</div><div class="lbl">Đã đặt hàng<small>02/07 · 09:12</small></div></div>
+<div class="line"></div>
+<div class="row"><div class="dot done">✓</div><div class="lbl">Đã bàn giao – nghiệm thu<small>02/07 · 15:40</small></div></div>
+<div class="line"></div>
+<div class="row"><div class="dot now">3</div><div class="lbl">Đã cấp hóa đơn<small>Đang xử lý</small></div></div>
+<div class="line"></div>
+<div class="row"><div class="dot off">4</div><div class="lbl">Đã thu tiền<small>—</small></div></div>
+</div>
+<div class="note">Khách chỉ thấy đơn của chính mình (cô lập dữ liệu).</div>
+</div></div>
+</section></main></div><script>
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  var el=document.getElementById(id); if(el){el.classList.add('active');}
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('sel'));
+  var nv=document.getElementById('navi-'+id); if(nv) nv.classList.add('sel');
+  document.querySelector('.main').scrollTop=0;
+  if(history.replaceState) history.replaceState(null,'','#'+id);
+}
+window.addEventListener('DOMContentLoaded',function(){
+  var h=location.hash.replace('#',''); if(h&&document.getElementById(h)) go(h);
+});
+</script>
+</body></html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRU — Quy tắc Nghiệp vụ | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Quy tắc Nghiệp vụ</h1>
+  <div class="doc-meta">
+    <span>Mã: BRU-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Quy tắc Nghiệp vụ
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#danh-sach">1. Danh sách quy tắc</a></li>
+        <li><a href="#chi-tiet">2. Chi tiết từng quy tắc</a></li>
+        <li><a href="#ngoai-le">3. Ngoại lệ</a></li>
+    </ol>
+  </nav>
+
+<h2 id="danh-sach">1. Danh sách quy tắc nghiệp vụ (28)</h2><table>
+<thead><tr><th width="120">Mã</th><th width="110">Nhóm</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td><code>BRU-SUP-001</code></td><td>NCC</td><td>Mỗi nhà cung cấp có mã số thuế duy nhất trong hệ thống.</td></tr>
+<tr><td><code>BRU-SUP-002</code></td><td>NCC</td><td>NCC phải ở trạng thái Hoạt động mới được đưa vào hợp đồng khung.</td></tr>
+<tr><td><code>BRU-FC-001</code></td><td>Hợp đồng</td><td>Lệnh gọi hàng không vượt hạn mức còn lại của hợp đồng khung mua.</td></tr>
+<tr><td><code>BRU-FC-002</code></td><td>Hợp đồng</td><td>Hợp đồng hết hạn không được phát sinh lệnh gọi hàng mới.</td></tr>
+<tr><td><code>BRU-PO-001</code></td><td>Mua sắm</td><td>Số lượng nhập không vượt số lượng trên đơn mua (PO).</td></tr>
+<tr><td><code>BRU-PO-002</code></td><td>Mua sắm</td><td>PO phải được phê duyệt trước khi gửi NCC.</td></tr>
+<tr><td><code>BRU-GRN-001</code></td><td>Nhập kho</td><td>Hàng quản lý theo lô bắt buộc nhập số lô & hạn dùng.</td></tr>
+<tr><td><code>BRU-QC-001</code></td><td>QC</td><td>Hàng QC không đạt bị chặn nhập kho, chuyển quy trình trả hàng.</td></tr>
+<tr><td><code>BRU-QC-002</code></td><td>QC</td><td>Chỉ QC Officer/Manager được kết luận QC.</td></tr>
+<tr><td><code>BRU-INV-001</code></td><td>Tồn kho</td><td>Không cho phép tồn kho âm tại mọi thời điểm ghi sổ.</td></tr>
+<tr><td><code>BRU-FEFO-001</code></td><td>FEFO</td><td>Xuất kho ưu tiên lô hết hạn trước; ghi đè phải nêu lý do.</td></tr>
+<tr><td><code>BRU-EXP-001</code></td><td>Hạn dùng</td><td>Không xuất bán/chuyển lô đã hết hạn dùng.</td></tr>
+<tr><td><code>BRU-BIN-001</code></td><td>WMS</td><td>Mỗi lô lưu tại bin hợp lệ theo putaway rule.</td></tr>
+<tr><td><code>BRU-LBL-001</code></td><td>Mã vạch</td><td>Mẫu nhãn phải hợp lệ (khổ, dpi, loại mã) trước khi in.</td></tr>
+<tr><td><code>BRU-CUS-001</code></td><td>Khách hàng</td><td>Khách hàng bắt buộc có tài khoản Portal trước khi kích hoạt.</td></tr>
+<tr><td><code>BRU-CUS-002</code></td><td>Khách hàng</td><td>Mỗi tài khoản Portal chỉ gắn với đúng một khách hàng.</td></tr>
+<tr><td><code>BRU-SFC-001</code></td><td>HĐ bán</td><td>Khách chỉ đặt được mặt hàng thuộc HĐ khung bán còn hiệu lực.</td></tr>
+<tr><td><code>BRU-SFC-002</code></td><td>HĐ bán</td><td>Đơn giá bán lấy theo HĐ khung, không cho sửa tại đơn khách.</td></tr>
+<tr><td><code>BRU-SO-001</code></td><td>Bán hàng</td><td>Số lượng đặt trong kỳ không vượt hạn mức HĐ khung bán.</td></tr>
+<tr><td><code>BRU-SO-002</code></td><td>Bán hàng</td><td>Đơn khách phải được Thương mại duyệt trước khi xuất kho.</td></tr>
+<tr><td><code>BRU-DEL-001</code></td><td>Bàn giao</td><td>Chỉ xuất hóa đơn sau khi phiếu bàn giao đã nghiệm thu.</td></tr>
+<tr><td><code>BRU-AR-001</code></td><td>Công nợ</td><td>Cảnh báo khi công nợ phải thu vượt hạn mức tín dụng của khách.</td></tr>
+<tr><td><code>BRU-INVC-001</code></td><td>Kế toán</td><td>Giá & số lượng trên hóa đơn bán khớp phiếu bàn giao nghiệm thu.</td></tr>
+<tr><td><code>BRU-PAY-001</code></td><td>Kế toán</td><td>Không ghi nhận nghiệp vụ vào kỳ kế toán đã khóa.</td></tr>
+<tr><td><code>BRU-STK-001</code></td><td>Kiểm kê</td><td>Chênh lệch kiểm kê phải có biên bản & phê duyệt trước khi điều chỉnh.</td></tr>
+<tr><td><code>BRU-REC-001</code></td><td>Thu hồi</td><td>Thu hồi phải truy được toàn bộ lô đã bán ra theo khách hàng.</td></tr>
+<tr><td><code>BRU-SEC-001</code></td><td>Bảo mật</td><td>Role Portal bị chặn mọi route/API nội bộ (NCC, kho, giá mua).</td></tr>
+<tr><td><code>BRU-AUD-001</code></td><td>Audit</td><td>Mọi submit/cancel ghi audit trail, không xóa cứng chứng từ đã ghi sổ.</td></tr>
+</tbody>
+</table><h2 id="chi-tiet">2. Chi tiết từng quy tắc</h2><table>
+<thead><tr><th width="110">Mã</th><th width="100">Nhóm</th><th>Điều kiện / Nội dung</th><th>Hành động khi vi phạm</th><th>Xử lý hệ thống</th><th>Bắt buộc</th></tr></thead>
+<tbody>
+<tr><td><code>BRU-SUP-001</code></td><td>NCC</td><td>Mỗi nhà cung cấp có mã số thuế duy nhất trong hệ thống.</td><td>Trùng MST → chặn tạo mới.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-SUP-002</code></td><td>NCC</td><td>NCC phải ở trạng thái Hoạt động mới được đưa vào hợp đồng khung.</td><td>NCC vô hiệu → không chọn được.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-FC-001</code></td><td>Hợp đồng</td><td>Lệnh gọi hàng không vượt hạn mức còn lại của hợp đồng khung mua.</td><td>Vượt → chặn phát hành.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-FC-002</code></td><td>Hợp đồng</td><td>Hợp đồng hết hạn không được phát sinh lệnh gọi hàng mới.</td><td>Hết hạn → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-PO-001</code></td><td>Mua sắm</td><td>Số lượng nhập không vượt số lượng trên đơn mua (PO).</td><td>Vượt PO → chặn nhập.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-PO-002</code></td><td>Mua sắm</td><td>PO phải được phê duyệt trước khi gửi NCC.</td><td>Chưa duyệt → không gửi.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-GRN-001</code></td><td>Nhập kho</td><td>Hàng quản lý theo lô bắt buộc nhập số lô & hạn dùng.</td><td>Thiếu → chặn ghi sổ.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-QC-001</code></td><td>QC</td><td>Hàng QC không đạt bị chặn nhập kho, chuyển quy trình trả hàng.</td><td>Không đạt → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-QC-002</code></td><td>QC</td><td>Chỉ QC Officer/Manager được kết luận QC.</td><td>Vai trò khác → từ chối.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-INV-001</code></td><td>Tồn kho</td><td>Không cho phép tồn kho âm tại mọi thời điểm ghi sổ.</td><td>Âm tồn → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-FEFO-001</code></td><td>FEFO</td><td>Xuất kho ưu tiên lô hết hạn trước; ghi đè phải nêu lý do.</td><td>Sai FEFO → cảnh báo + log.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-EXP-001</code></td><td>Hạn dùng</td><td>Không xuất bán/chuyển lô đã hết hạn dùng.</td><td>Hết hạn → chặn xuất.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-BIN-001</code></td><td>WMS</td><td>Mỗi lô lưu tại bin hợp lệ theo putaway rule.</td><td>Bin sai loại → cảnh báo.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-LBL-001</code></td><td>Mã vạch</td><td>Mẫu nhãn phải hợp lệ (khổ, dpi, loại mã) trước khi in.</td><td>Không hợp lệ → chặn in.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-CUS-001</code></td><td>Khách hàng</td><td>Khách hàng bắt buộc có tài khoản Portal trước khi kích hoạt.</td><td>Thiếu tài khoản → chặn kích hoạt.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-CUS-002</code></td><td>Khách hàng</td><td>Mỗi tài khoản Portal chỉ gắn với đúng một khách hàng.</td><td>Gắn nhiều → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-SFC-001</code></td><td>HĐ bán</td><td>Khách chỉ đặt được mặt hàng thuộc HĐ khung bán còn hiệu lực.</td><td>Ngoài HĐ → ẩn/chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-SFC-002</code></td><td>HĐ bán</td><td>Đơn giá bán lấy theo HĐ khung, không cho sửa tại đơn khách.</td><td>Lệch giá → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-SO-001</code></td><td>Bán hàng</td><td>Số lượng đặt trong kỳ không vượt hạn mức HĐ khung bán.</td><td>Vượt hạn mức → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-SO-002</code></td><td>Bán hàng</td><td>Đơn khách phải được Thương mại duyệt trước khi xuất kho.</td><td>Chưa duyệt → không xuất.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-DEL-001</code></td><td>Bàn giao</td><td>Chỉ xuất hóa đơn sau khi phiếu bàn giao đã nghiệm thu.</td><td>Chưa nghiệm thu → chặn HĐ.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-AR-001</code></td><td>Công nợ</td><td>Cảnh báo khi công nợ phải thu vượt hạn mức tín dụng của khách.</td><td>Vượt → chờ duyệt cấp cao.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-INVC-001</code></td><td>Kế toán</td><td>Giá & số lượng trên hóa đơn bán khớp phiếu bàn giao nghiệm thu.</td><td>Sai lệch → chặn phát hành.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-PAY-001</code></td><td>Kế toán</td><td>Không ghi nhận nghiệp vụ vào kỳ kế toán đã khóa.</td><td>Kỳ đã chốt → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-STK-001</code></td><td>Kiểm kê</td><td>Chênh lệch kiểm kê phải có biên bản & phê duyệt trước khi điều chỉnh.</td><td>Thiếu duyệt → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-REC-001</code></td><td>Thu hồi</td><td>Thu hồi phải truy được toàn bộ lô đã bán ra theo khách hàng.</td><td>Không truy đủ → cảnh báo.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-SEC-001</code></td><td>Bảo mật</td><td>Role Portal bị chặn mọi route/API nội bộ (NCC, kho, giá mua).</td><td>Truy cập → 403.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+<tr><td><code>BRU-AUD-001</code></td><td>Audit</td><td>Mọi submit/cancel ghi audit trail, không xóa cứng chứng từ đã ghi sổ.</td><td>Vi phạm → chặn.</td><td>Chặn/cảnh báo + ghi log</td><td>Bắt buộc</td></tr>
+</tbody>
+</table><h2 id="ngoai-le">3. Ngoại lệ</h2><p>Ghi đè FEFO (BRU-FEFO-001) và duyệt vượt hạn mức công nợ (BRU-AR-001) được phép khi có phê duyệt cấp Quản lý và ghi log lý do. Mọi ngoại lệ đều lưu audit trail (BRU-AUD-001).</p>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: BRU | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TC — Test Case & UAT Scenarios | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Test Case & UAT Scenarios</h1>
+  <div class="doc-meta">
+    <span>Mã: TC-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Test Case & UAT Scenarios
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#overview">1. Tổng quan kiểm thử</a></li>
+        <li><a href="#test-cases">2. Danh sách Test Case</a></li>
+        <li><a href="#uat">3. UAT Scenarios</a></li>
+        <li><a href="#checklist">4. Checklist nghiệm thu</a></li>
+    </ol>
+  </nav>
+
+<h2 id="overview">1. Tổng quan kiểm thử</h2><p>Bộ kiểm thử gồm 86 test case (2/Use Case: 1 luồng chính + 1 ngoại lệ/kiểm biên), phủ 100% 43 Use Case.</p><h2 id="test-cases">2. Danh sách Test Case (86)</h2><table>
+<thead><tr><th width="90">Mã TC</th><th width="70">UC</th><th width="150">Kịch bản</th><th>Tiền điều kiện</th><th>Kết quả kỳ vọng</th></tr></thead>
+<tbody>
+<tr><td><code>TC-01-01</code></td><td><code>UC-01</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-01-02</code></td><td><code>UC-01</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-02-01</code></td><td><code>UC-02</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-02-02</code></td><td><code>UC-02</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-03-01</code></td><td><code>UC-03</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-03-02</code></td><td><code>UC-03</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-04-01</code></td><td><code>UC-04</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-04-02</code></td><td><code>UC-04</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-05-01</code></td><td><code>UC-05</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-05-02</code></td><td><code>UC-05</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-06-01</code></td><td><code>UC-06</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-06-02</code></td><td><code>UC-06</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-07-01</code></td><td><code>UC-07</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-07-02</code></td><td><code>UC-07</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-08-01</code></td><td><code>UC-08</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-08-02</code></td><td><code>UC-08</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-09-01</code></td><td><code>UC-09</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-09-02</code></td><td><code>UC-09</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-10-01</code></td><td><code>UC-10</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-10-02</code></td><td><code>UC-10</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-11-01</code></td><td><code>UC-11</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-11-02</code></td><td><code>UC-11</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-12-01</code></td><td><code>UC-12</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-12-02</code></td><td><code>UC-12</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-13-01</code></td><td><code>UC-13</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-13-02</code></td><td><code>UC-13</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-14-01</code></td><td><code>UC-14</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-14-02</code></td><td><code>UC-14</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-15-01</code></td><td><code>UC-15</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-15-02</code></td><td><code>UC-15</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-16-01</code></td><td><code>UC-16</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-16-02</code></td><td><code>UC-16</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-17-01</code></td><td><code>UC-17</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-17-02</code></td><td><code>UC-17</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-18-01</code></td><td><code>UC-18</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-18-02</code></td><td><code>UC-18</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-19-01</code></td><td><code>UC-19</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-19-02</code></td><td><code>UC-19</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-20-01</code></td><td><code>UC-20</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-20-02</code></td><td><code>UC-20</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-21-01</code></td><td><code>UC-21</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-21-02</code></td><td><code>UC-21</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-22-01</code></td><td><code>UC-22</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-22-02</code></td><td><code>UC-22</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-23-01</code></td><td><code>UC-23</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-23-02</code></td><td><code>UC-23</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-24-01</code></td><td><code>UC-24</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-24-02</code></td><td><code>UC-24</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-25-01</code></td><td><code>UC-25</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-25-02</code></td><td><code>UC-25</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-26-01</code></td><td><code>UC-26</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-26-02</code></td><td><code>UC-26</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-27-01</code></td><td><code>UC-27</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-27-02</code></td><td><code>UC-27</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-28-01</code></td><td><code>UC-28</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-28-02</code></td><td><code>UC-28</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-29-01</code></td><td><code>UC-29</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-29-02</code></td><td><code>UC-29</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-30-01</code></td><td><code>UC-30</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-30-02</code></td><td><code>UC-30</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-31-01</code></td><td><code>UC-31</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-31-02</code></td><td><code>UC-31</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-32-01</code></td><td><code>UC-32</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-32-02</code></td><td><code>UC-32</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-33-01</code></td><td><code>UC-33</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-33-02</code></td><td><code>UC-33</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-34-01</code></td><td><code>UC-34</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-34-02</code></td><td><code>UC-34</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-35-01</code></td><td><code>UC-35</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-35-02</code></td><td><code>UC-35</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-36-01</code></td><td><code>UC-36</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-36-02</code></td><td><code>UC-36</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-37-01</code></td><td><code>UC-37</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-37-02</code></td><td><code>UC-37</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-38-01</code></td><td><code>UC-38</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-38-02</code></td><td><code>UC-38</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-39-01</code></td><td><code>UC-39</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-39-02</code></td><td><code>UC-39</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-40-01</code></td><td><code>UC-40</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-40-02</code></td><td><code>UC-40</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-41-01</code></td><td><code>UC-41</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-41-02</code></td><td><code>UC-41</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-42-01</code></td><td><code>UC-42</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-42-02</code></td><td><code>UC-42</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+<tr><td><code>TC-43-01</code></td><td><code>UC-43</code></td><td>Luồng chính (happy path)</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Thành công & ghi sổ đúng</td></tr>
+<tr><td><code>TC-43-02</code></td><td><code>UC-43</code></td><td>Ngoại lệ / kiểm biên</td><td>Đăng nhập đủ quyền; dữ liệu sẵn sàng</td><td>Hệ thống chặn & báo lỗi đúng quy tắc</td></tr>
+</tbody>
+</table><h2 id="uat">3. UAT Scenarios (trọng yếu)</h2><table>
+<thead><tr><th>Mã</th><th>Kịch bản UAT</th><th>Kết quả kỳ vọng</th></tr></thead>
+<tbody>
+<tr><td>UAT-01</td><td>Khách đặt hàng qua Portal theo HĐ khung → nội bộ duyệt → giao → nghiệm thu → xuất HĐ → thu tiền</td><td>4 cột mốc cập nhật đúng; sổ kho & sổ cái ghi nhận</td></tr>
+<tr><td>UAT-02</td><td>Khách A đăng nhập cố truy cập dữ liệu khách B / module nội bộ</td><td>Bị chặn 403 — cô lập dữ liệu</td></tr>
+<tr><td>UAT-03</td><td>Đặt vượt hạn mức HĐ khung bán</td><td>Hệ thống chặn, báo lỗi rõ ràng</td></tr>
+<tr><td>UAT-04</td><td>Xuất kho vi phạm FEFO / lô hết hạn</td><td>Cảnh báo & chặn theo quy tắc</td></tr>
+<tr><td>UAT-05</td><td>Xuất hóa đơn khi chưa nghiệm thu</td><td>Bị chặn</td></tr>
+</tbody>
+</table><h2 id="checklist">4. Checklist nghiệm thu</h2><ul><li>100% UC có ≥1 TC luồng chính + 1 TC ngoại lệ.</li><li>Kiểm thử cô lập Portal PASS (không rò rỉ chéo).</li><li>Sổ kho/sổ cái khớp chứng từ; audit trail đầy đủ.</li><li>Hiệu năng đạt ngưỡng NFR.</li></ul>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: TC | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

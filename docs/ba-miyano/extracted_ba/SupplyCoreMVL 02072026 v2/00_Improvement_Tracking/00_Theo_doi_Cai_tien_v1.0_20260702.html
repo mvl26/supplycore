@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHG — Theo dõi Cải tiến (đối sánh bộ BA mới ↔ bộ BA cũ) | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Theo dõi Cải tiến (đối sánh bộ BA mới ↔ bộ BA cũ)</h1>
+  <div class="doc-meta">
+    <span>Mã: CHG-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Theo dõi Cải tiến (đối sánh bộ BA mới ↔ bộ BA cũ)
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#phien-ban">1. Hai phiên bản đối sánh</a></li>
+        <li><a href="#tom-tat">2. Tóm tắt cải tiến</a></li>
+        <li><a href="#delta">3. Đối sánh Bộ Số Chuẩn</a></li>
+        <li><a href="#theo-tai-lieu">4. Theo dõi cải tiến theo tài liệu</a></li>
+        <li><a href="#chi-tiet">5. Chi tiết thay đổi từng tài liệu</a></li>
+        <li><a href="#matran-chg">6. Ma trận truy vết thay đổi</a></li>
+        <li><a href="#changelog">7. Nhật ký phiên bản</a></li>
+    </ol>
+  </nav>
+
+<h2 id="phien-ban">1. Hai phiên bản đối sánh</h2><table>
+<thead><tr><th>Thuộc tính</th><th>Bộ CŨ (tham chiếu)</th><th>Bộ MỚI (baseline)</th></tr></thead>
+<tbody>
+<tr><td>Tên bộ</td><td>SupplyCore (bệnh viện)</td><td>SupplyCore MVL (Miyano Việt Nam)</td></tr>
+<tr><td>Mã bộ / Ngày</td><td>BA HTML v2/v4 · 06–24/06/2026</td><td>BA HTML v1.0 · 02/07/2026</td></tr>
+<tr><td>Tổng tài liệu</td><td>16 + index</td><td>16 + #00 + index</td></tr>
+<tr><td>Chủ thể</td><td>Bệnh viện (tự dùng nội bộ)</td><td>Công ty phân phối (bán cho khách hàng)</td></tr>
+<tr><td>Tác giả</td><td>BA Team + DEV</td><td>BA Team (Anita)</td></tr>
+<tr><td>Vai trò #00</td><td>—</td><td>Baseline v1.0 — nhật ký thay đổi sống</td></tr>
+</tbody>
+</table><div class="callout note"><strong>Ghi chú</strong>Bộ MVL là <b>baseline v1.0</b> độc lập, được thiết lập bằng cách kế thừa có chọn lọc từ bộ bệnh viện. Cột "cũ" trong Delta dùng số liệu bộ bệnh viện để đối sánh mức thay đổi.</div><h2 id="tom-tat">2. Tóm tắt cải tiến (Executive Summary)</h2><ol><li><b>Chuyển mô hình bệnh viện → công ty phân phối.</b> Bối cảnh: MVL bán vật tư–hóa chất cho khách doanh nghiệp. Thay đổi: đổi chủ thể, đổi khoa/phòng thành phòng ban (Thương Mại/Kho/Kế Toán). Lợi ích: tài liệu phản ánh đúng tổ chức MVL.</li><li><b>Bỏ toàn bộ Cấp phát & BHYT.</b> Bối cảnh: không có bệnh nhân. Thay đổi: bỏ 4 UC, các DocType cấp phát/BHYT và tích hợp HIS/Cổng BHYT. Lợi ích: gọn hệ thống, loại chức năng thừa.</li><li><b>Thêm phân hệ Bán hàng & Bàn giao (M7).</b> Thay đổi: thêm Khách hàng, HĐ khung bán, đơn đặt hàng, xuất bán, bàn giao–nghiệm thu. Lợi ích: số hóa toàn bộ chiều bán ra.</li><li><b>Thêm Portal Khách hàng (M12).</b> Thay đổi: cổng đăng nhập độc lập cho khách tra cứu & đặt hàng & theo dõi đơn theo 4 cột mốc. Lợi ích: khách tự phục vụ, giảm tải nội bộ.</li><li><b>Cô lập dữ liệu Portal (bảo mật).</b> Thay đổi: role SC Customer Portal + permission query ràng theo khách; chặn route nội bộ. Lợi ích: an toàn dữ liệu, không rò rỉ chéo.</li><li><b>Mở rộng Kế toán sang chiều bán.</b> Thay đổi: thêm hóa đơn bán & thu tiền khách bên cạnh hóa đơn mua/thanh toán NCC. Lợi ích: quản lý công nợ phải thu.</li><li><b>Chuẩn hóa Bộ Số Chuẩn độc lập.</b> Thay đổi: 12 module, 43 UC, 52 FR, 43 US, 14 WF, 46 API. Lợi ích: bộ MVL tự đứng vững, đánh số liên tục.</li></ol><h2 id="delta">3. Đối sánh Bộ Số Chuẩn (Delta Table)</h2><table>
+<thead><tr><th width="220">Chỉ số</th><th width="70">Cũ (BV)</th><th width="80">Mới (MVL)</th><th width="60">Δ</th><th>Ghi chú</th></tr></thead>
+<tbody>
+<tr><td>Số Module</td><td>11</td><td>12</td><td>+1</td><td>+M7 Bán hàng, +M12 Portal, −M7 cấp phát cũ</td></tr>
+<tr><td>Số Use Case</td><td>37</td><td>43</td><td>+6</td><td>+12 UC bán hàng/Portal, −6 cấp phát/BHYT</td></tr>
+<tr><td>Số FR</td><td>42</td><td>52</td><td>+10</td><td></td></tr>
+<tr><td>Số User Story</td><td>37</td><td>43</td><td>+6</td><td></td></tr>
+<tr><td>Số NFR</td><td>14</td><td>14</td><td>0</td><td></td></tr>
+<tr><td>Số Business Rule</td><td>24</td><td>28</td><td>+4</td><td></td></tr>
+<tr><td>Số Workflow</td><td>12</td><td>14</td><td>+2</td><td></td></tr>
+<tr><td>Số Role</td><td>13</td><td>10</td><td>-3</td><td>gộp & bỏ vai trò cấp phát/BHYT</td></tr>
+<tr><td>Số DocType chính</td><td>38</td><td>40</td><td>+2</td><td></td></tr>
+<tr><td>Số Child table</td><td>22</td><td>20</td><td>-2</td><td></td></tr>
+<tr><td>Số API</td><td>40</td><td>46</td><td>+6</td><td>thêm API Portal & bán hàng</td></tr>
+<tr><td>Số Màn hình</td><td>37</td><td>43</td><td>+6</td><td></td></tr>
+<tr><td>Số Test Case</td><td>74</td><td>86</td><td>+12</td><td></td></tr>
+</tbody>
+</table><h2 id="theo-tai-lieu">4. Theo dõi cải tiến theo tài liệu (16 tài liệu)</h2><table>
+<thead><tr><th width="40">#</th><th width="60">Mã</th><th width="90">PB cũ→mới</th><th width="150">Loại</th><th>Mô tả thay đổi</th><th>CHG</th><th>Tác động</th></tr></thead>
+<tbody>
+<tr><td>#01</td><td><code>PID</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Đổi chủ thể sang MVL, phòng ban thay khoa/phòng.</td><td>CHG-001</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#02</td><td><code>BRD</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm yêu cầu bán hàng & Portal khách hàng.</td><td>CHG-002</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#03</td><td><code>PRC</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>TO-BE thêm luồng bán–bàn giao–thu tiền; bỏ cấp phát.</td><td>CHG-003</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#04</td><td><code>BRU</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm nhóm quy tắc bán/HĐ khung bán/công nợ/cô lập Portal.</td><td>CHG-004</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#05</td><td><code>SRS</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm FR M7/M12 & NFR cô lập dữ liệu.</td><td>CHG-005</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#06</td><td><code>UC</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span> / <span class="badge" style="background:#C00000;color:#fff">Bỏ</span></td><td>Thêm 12 UC (M7,M12); bỏ 4 UC cấp phát/BHYT.</td><td>CHG-006, CHG-007</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#07</td><td><code>US</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm US bán hàng & Portal; bỏ US cấp phát.</td><td>CHG-008</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td>#08</td><td><code>DM</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span> / <span class="badge" style="background:#C00000;color:#fff">Bỏ</span></td><td>Thêm DocType bán hàng; bỏ DocType cấp phát/BHYT.</td><td>CHG-009, CHG-010</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#09</td><td><code>UI</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm màn Portal & bán hàng vào UI Spec + Design System.</td><td>CHG-011</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td>#10</td><td><code>PROTO</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Prototype thêm nhóm màn M7/M12 (Portal & PDA).</td><td>CHG-012</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td>#11</td><td><code>API</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm API Portal & bán hàng.</td><td>CHG-013</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#12</td><td><code>ARCH</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Bỏ tích hợp HIS/BHYT; thêm cổng Portal.</td><td>CHG-014</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td>#13</td><td><code>SEC</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Đổi vai trò theo phòng ban; thêm role Portal cô lập.</td><td>CHG-015</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#14</td><td><code>TC</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm TC bán hàng & kiểm thử cô lập Portal.</td><td>CHG-016</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td>#15</td><td><code>RTM</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Phủ 43 UC/52 FR/86 TC của MVL.</td><td>CHG-017</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td>#16</td><td><code>WSS</code></td><td>cũ → v1.0</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm workflow đơn bán/bàn giao/hóa đơn bán; bỏ cấp phát.</td><td>CHG-018</td><td><span class="badge badge-must">Cao</span></td></tr>
+</tbody>
+</table><h2 id="chi-tiet">5. Chi tiết thay đổi theo từng tài liệu</h2><h3>#01 — PID</h3><p>Tài liệu Khởi tạo đổi toàn bộ bối cảnh chủ thể: từ bệnh viện sang Công ty Miyano Việt Nam (MVL). Mục Tổng quan (§1) và Các bên liên quan (§4) thay khoa/phòng lâm sàng bằng ba phòng ban: Phòng Thương Mại, Bộ phận Kho, Kế Toán. Bộ Số Chuẩn được đặt lại độc lập (12 module, 43 UC). Hạng mục liên quan: CHG-001.</p><h3>#02 — BRD</h3><p>BRD thêm nhóm yêu cầu nghiệp vụ bán hàng (BR-M7) và Portal khách hàng (BR-M12): quản lý khách, HĐ khung bán, đặt hàng qua cổng, theo dõi đơn. Hạng mục: CHG-002.</p><h3>#03 — PRC</h3><p>Quy trình TO-BE bổ sung chuỗi Bán hàng → Xuất kho bán → Bàn giao → Nghiệm thu → Xuất hóa đơn → Thu tiền, đồng thời loại bỏ luồng cấp phát cho bệnh nhân của bản bệnh viện. Hạng mục: CHG-003.</p><h3>#04 — BRU</h3><p>Business Rules thêm các nhóm: HĐ khung bán (BRU-SFC-001/002), bán hàng (BRU-SO-001/002), bàn giao (BRU-DEL-001), công nợ (BRU-AR-001), khách hàng (BRU-CUS-001/002), bảo mật cô lập Portal (BRU-SEC-001). Hạng mục: CHG-004.</p><h3>#05 — SRS</h3><p>SRS thêm FR nhóm M7 (FR-M7-22..26, FR-M7-90) và M12 (FR-M12-40..43, FR-M12-90); NFR-SEC-01 quy định cô lập dữ liệu Portal. Hạng mục: CHG-005.</p><h3>#06 — UC</h3><p>Use Case: THÊM UC-22..UC-26 (Bán hàng) và UC-40..UC-43 (Portal) — tổng 12 UC mới. BỎ 4 UC cấp phát & BHYT của bản cũ (tương ứng UC cũ 20–23). Đánh số MVL liên tục UC-01..UC-43. Hạng mục: CHG-006, CHG-007.</p><h3>#07 — US</h3><p>User Stories thêm US cho các UC bán hàng & Portal (persona Nhân viên Bán hàng, Khách hàng), bỏ US thuộc cấp phát. Tổng 43 US map 1-1 với UC. Hạng mục: CHG-008.</p><h3>#08 — DM</h3><p>Data Model THÊM: SC Customer (DT-CUS), SC Sales Framework Contract (DT-SFC), SC Sales Order (DT-SO), SC Delivery Note (DT-DN), SC Acceptance Record (DT-ACC), SC Sales Invoice (DT-SI), SC Sales Receipt (DT-RCPT) + child SFC Item, SO Item, DN Item, SI Item. BỎ SC Patient, SC Dispensing Request, SC Patient Dispensing, SC BHYT Code Config. Hạng mục: CHG-009, CHG-010.</p><h3>#09 — UI</h3><p>UI Spec + Design System thêm archetype & màn hình Portal (đăng nhập, catalog, đặt hàng, theo dõi đơn) và màn bán hàng nội bộ (SCR-22..26, SCR-40..43). Hạng mục: CHG-011.</p><h3>#10 — PROTO</h3><p>Prototype thêm nhóm màn M7 và M12; Portal render trong khung điện thoại, PDA quét mã. Sidebar sitemap thêm 2 nhóm phân hệ mới. Hạng mục: CHG-012.</p><h3>#11 — API</h3><p>API thêm nhóm Portal (API-M12-01..07: login, contracts, catalog, order.place, order.track, order.history, document.download) và API bán hàng (API-M7-*). Hạng mục: CHG-013.</p><h3>#12 — ARCH</h3><p>Kiến trúc bỏ tích hợp HIS/EMR (INT cũ 01) và Cổng BHYT (INT cũ 02); thêm cổng Portal khách hàng (www/portal) và giữ máy in nhãn. Hạng mục: CHG-014.</p><h3>#13 — SEC</h3><p>Ma trận Phân quyền rút còn 10 vai trò, đổi tên theo phòng ban MVL; thêm role SC Customer Portal với permission query cô lập theo khách. Hạng mục: CHG-015.</p><h3>#14 — TC</h3><p>Test Cases thêm TC cho UC bán hàng (TC-22..26) và Portal (TC-40..43), gồm ca kiểm thử an ninh cô lập dữ liệu. Tổng 86 TC (2/UC). Hạng mục: CHG-016.</p><h3>#15 — RTM</h3><p>RTM cập nhật để phủ 43 UC / 52 FR / 43 US / 86 TC / 14 WF của MVL, đảm bảo không yêu cầu mồ côi. Hạng mục: CHG-017.</p><h3>#16 — WSS</h3><p>Workflow thêm WF-09 (đơn bán), WF-10 (phiếu bàn giao), WF-11 (hóa đơn bán) và bỏ workflow cấp phát của bản cũ. Hạng mục: CHG-018.</p><h2 id="matran-chg">6. Ma trận truy vết thay đổi</h2><table>
+<thead><tr><th width="70">CHG</th><th width="40">TL</th><th width="70">Loại</th><th>Mô tả</th><th>ID hạng mục</th><th>Driver</th><th>Tác động</th></tr></thead>
+<tbody>
+<tr><td><code>CHG-001</code></td><td>#01</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Đổi chủ thể từ bệnh viện sang Công ty Miyano Việt Nam (MVL); đổi khoa/phòng thành phòng ban.</td><td><code>PID §1,§4</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-002</code></td><td>#02</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Bổ sung mục tiêu bán hàng &amp; cổng đặt hàng khách hàng vào yêu cầu nghiệp vụ.</td><td><code>BR-M7,BR-M12</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-003</code></td><td>#03</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Quy trình TO-BE bổ sung luồng Bán hàng–Bàn giao–Nghiệm thu–Thu tiền; bỏ luồng cấp phát bệnh nhân.</td><td><code>PRC TO-BE</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-004</code></td><td>#04</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm nhóm quy tắc bán hàng, HĐ khung bán, công nợ, cô lập Portal.</td><td><code>BRU-SFC/SO/AR/SEC</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-005</code></td><td>#05</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm FR cho M7 (bán hàng) &amp; M12 (Portal); thêm NFR cô lập dữ liệu Portal.</td><td><code>FR-M7-*,FR-M12-*,NFR-SEC-01</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-006</code></td><td>#06</td><td><span class="badge" style="background:#C00000;color:#fff">Bỏ</span></td><td>Bỏ 4 Use Case cấp phát &amp; BHYT của bản bệnh viện.</td><td><code>UC cũ 20-23</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-007</code></td><td>#06</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm 12 Use Case mới cho Bán hàng (M7) và Portal (M12).</td><td><code>UC-22..26,UC-40..43</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-008</code></td><td>#07</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm User Story tương ứng UC bán hàng &amp; Portal; bỏ US cấp phát.</td><td><code>US mới M7/M12</code></td><td>Yêu cầu user</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td><code>CHG-009</code></td><td>#08</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm DocType: SC Customer, SC Sales Framework Contract, SC Sales Order, SC Delivery Note, SC Sales Invoice, SC Sales Receipt, SC Acceptance Record + child.</td><td><code>DT-CUS,DT-SFC,DT-SO,DT-DN,DT-SI</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-010</code></td><td>#08</td><td><span class="badge" style="background:#C00000;color:#fff">Bỏ</span></td><td>Bỏ DocType: SC Patient, SC Dispensing Request, SC Patient Dispensing, SC BHYT Code Config + child.</td><td><code>DocType cấp phát/BHYT</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-011</code></td><td>#09</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm màn hình Portal khách hàng &amp; màn bán hàng vào UI Spec + Design System.</td><td><code>SCR-22..26,SCR-40..43</code></td><td>Yêu cầu user</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td><code>CHG-012</code></td><td>#10</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Prototype bổ sung nhóm màn M7/M12 (gồm khung điện thoại Portal &amp; PDA).</td><td><code>scr-uc-22..26,40..43</code></td><td>Yêu cầu user</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td><code>CHG-013</code></td><td>#11</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm nhóm API Portal (login, contracts, catalog, order, track) &amp; API bán hàng.</td><td><code>API-M12-*,API-M7-*</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-014</code></td><td>#12</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Bỏ tích hợp HIS/EMR &amp; Cổng BHYT; thêm cổng Portal khách hàng vào kiến trúc.</td><td><code>INT cũ 01,02</code></td><td>Yêu cầu user</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td><code>CHG-015</code></td><td>#13</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Rút gọn &amp; đổi tên vai trò theo phòng ban; thêm role SC Customer Portal + cô lập dữ liệu.</td><td><code>ROLE MVL</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-016</code></td><td>#14</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm Test Case cho bán hàng &amp; kiểm thử cô lập Portal (an ninh).</td><td><code>TC-22..26,40..43</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+<tr><td><code>CHG-017</code></td><td>#15</td><td><span class="badge" style="background:#E36C09;color:#fff">Sửa</span></td><td>Cập nhật RTM phủ 43 UC / 52 FR / 86 TC của MVL.</td><td><code>RTM MVL</code></td><td>Yêu cầu user</td><td><span class="badge badge-should">TB</span></td></tr>
+<tr><td><code>CHG-018</code></td><td>#16</td><td><span class="badge" style="background:#375623;color:#fff">Thêm</span></td><td>Thêm workflow đơn bán, phiếu bàn giao, hóa đơn bán; bỏ workflow cấp phát.</td><td><code>WF-09,WF-10,WF-11</code></td><td>Yêu cầu user</td><td><span class="badge badge-must">Cao</span></td></tr>
+</tbody>
+</table><h2 id="changelog">7. Nhật ký phiên bản</h2><table>
+<thead><tr><th>Ngày</th><th>Version</th><th>Mô tả</th><th>Người</th></tr></thead>
+<tbody>
+<tr><td>02/07/2026</td><td>v1.0</td><td>Baseline — khởi tạo bộ BA SupplyCore MVL từ kế thừa có chọn lọc bản bệnh viện.</td><td>BA Team (Anita)</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: CHG | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>
