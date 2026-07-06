@@ -219,14 +219,6 @@
    "print": 1
   },
   {
-   "role": "SupplyCore Ward Staff",
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "submit": 1,
-   "report": 1
-  },
-  {
    "role": "SupplyCore Accountant",
    "read": 1,
    "report": 1

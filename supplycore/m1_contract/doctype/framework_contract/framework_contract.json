@@ -126,7 +126,6 @@
   {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "submit": 1, "report": 1, "print": 1},
   {"role": "SupplyCore Executive", "read": 1, "report": 1, "print": 1},
   {"role": "Warehouse Officer", "read": 1, "report": 1},
-  {"role": "Pharmacy Officer", "read": 1, "report": 1},
   {"role": "SupplyCore Purchaser", "read": 1, "report": 1, "print": 1},
   {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1}
  ],

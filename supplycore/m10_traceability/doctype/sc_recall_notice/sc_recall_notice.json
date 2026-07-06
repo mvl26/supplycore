@@ -69,7 +69,6 @@
   {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1, "email": 1},
   {"role": "SupplyCore Executive", "read": 1, "submit": 1, "cancel": 1, "report": 1, "print": 1},
   {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "report": 1, "print": 1},
-  {"role": "Pharmacy Officer", "read": 1, "report": 1},
   {"role": "QC Officer", "read": 1, "report": 1},
   {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1}
  ],

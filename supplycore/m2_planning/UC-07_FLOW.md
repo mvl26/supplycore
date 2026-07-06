@@ -9,7 +9,6 @@
 ## Actor
 
 - Thủ kho (SupplyCore Storekeeper)
-- Nhân viên khoa phòng (SupplyCore Ward Staff)
 - Quản lý (SupplyCore Manager) — duyệt/từ chối
 - Kế toán (SupplyCore Accountant) — tạo PO sau duyệt
 

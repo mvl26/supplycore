@@ -119,7 +119,7 @@ def _send_expiry_email(rows, critical_days):
         recipients = frappe.db.sql_list("""
             SELECT DISTINCT u.email FROM `tabUser` u
             JOIN `tabHas Role` r ON r.parent = u.name
-            WHERE r.role IN ('SupplyCore Storekeeper', 'SupplyCore Manager', 'Pharmacy Officer')
+            WHERE r.role IN ('SupplyCore Storekeeper', 'SupplyCore Manager')
               AND u.enabled = 1 AND u.email IS NOT NULL AND u.email != ''
         """) or []
     if not recipients:

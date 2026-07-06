@@ -115,23 +115,6 @@ ROLE_GUIDE: dict[str, dict] = {
         "modules": ["M3", "M4", "M5", "M6", "M9"],
         "danger_level": "low",
     },
-    "SupplyCore Ward Staff": {
-        "vn_name": "Nhân viên khoa lâm sàng",
-        "scope": "M7 Cấp phát, đọc tồn kho kho khoa",
-        "duties": [
-            "Tạo Yêu cầu cấp phát (Dispensing Request)",
-            "Ghi nhận cấp phát cho bệnh nhân (Patient Dispensing)",
-            "Đọc tồn kho khoa, lịch sử cấp phát",
-        ],
-        "limits": [
-            "Chỉ truy cập kho thuộc khoa được gán",
-            "Không cấu hình BHYT code / payment rate",
-            "Không duyệt phiếu khác khoa",
-            "Không truy cập M1/M2/M8",
-        ],
-        "modules": ["M7"],
-        "danger_level": "low",
-    },
     "SupplyCore Accountant": {
         "vn_name": "Kế toán",
         "scope": "M8 Kế toán, M1 hợp đồng, đọc M2 PO",
@@ -213,53 +196,6 @@ ROLE_GUIDE: dict[str, dict] = {
             "Không truy cập kế toán",
         ],
         "modules": ["M3", "M4", "M5"],
-        "danger_level": "low",
-    },
-    "Pharmacy Officer": {
-        "vn_name": "Cán bộ dược",
-        "scope": "M7 Cấp phát, M5 FEFO, đọc M3/M4",
-        "duties": [
-            "Cấp phát thuốc theo FEFO",
-            "Theo dõi BHYT claim, hạn dùng",
-            "Phối hợp cấp phát cho khoa",
-        ],
-        "limits": [
-            "Không tạo Item mới",
-            "Không kế toán",
-            "Tuân thủ FEFO bắt buộc, không skip lô gần hết hạn",
-        ],
-        "modules": ["M5", "M7"],
-        "danger_level": "low",
-    },
-    "BHYT Officer": {
-        "vn_name": "Cán bộ BHYT",
-        "scope": "Cấu hình BHYT Code, kiểm soát claim",
-        "duties": [
-            "Cập nhật bảng giá BHYT (BHYT Code Config)",
-            "Audit BHYT claim, đối chiếu N01–N09",
-            "Phối hợp với Pharmacy về thuốc BHYT",
-        ],
-        "limits": [
-            "Không cấp phát trực tiếp",
-            "Thay đổi tỷ lệ BHYT phải submit + audit",
-        ],
-        "modules": ["M0", "M7"],
-        "danger_level": "medium",
-    },
-    "Department Requester": {
-        "vn_name": "Người yêu cầu (khoa/phòng)",
-        "scope": "Tạo yêu cầu — không duyệt",
-        "duties": [
-            "Tạo Material Request từ phòng/khoa",
-            "Tạo Transfer Request liên khoa",
-            "Đọc tình trạng yêu cầu của mình",
-        ],
-        "limits": [
-            "Không duyệt yêu cầu của khoa khác",
-            "Không truy cập kho ngoài khoa của mình",
-            "Không cấu hình hệ thống",
-        ],
-        "modules": ["M2", "M6"],
         "danger_level": "low",
     },
 }

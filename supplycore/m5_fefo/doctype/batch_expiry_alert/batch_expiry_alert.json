@@ -52,8 +52,7 @@
   {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1},
   {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "report": 1},
   {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "report": 1},
-  {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1},
-  {"role": "Pharmacy Officer", "read": 1, "report": 1}
+  {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1}
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",

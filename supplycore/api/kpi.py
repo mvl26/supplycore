@@ -36,9 +36,6 @@ ROLE_WIDGETS = {
     "SupplyCore Storekeeper": [
         "stock_value", "expiring_soon", "low_stock_items",
     ],
-    "Pharmacy Officer": [
-        "monthly_cost", "expiring_soon",
-    ],
 }
 
 
@@ -348,8 +345,7 @@ def get_dashboard_for_role(role: str = None, period: str = "this_month",
     if not role:
         user_roles = set(frappe.get_roles(frappe.session.user))
         for r in ("SupplyCore Executive", "SupplyCore Manager",
-                   "SupplyCore Accountant", "SupplyCore Storekeeper",
-                   "Pharmacy Officer"):
+                   "SupplyCore Accountant", "SupplyCore Storekeeper"):
             if r in user_roles:
                 role = r
                 break

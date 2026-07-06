@@ -19,7 +19,7 @@
 
 ## Actor
 
-- Quản lý / Thủ kho / Pharmacy Officer
+- Quản lý / Thủ kho
 
 ## Pre-condition
 

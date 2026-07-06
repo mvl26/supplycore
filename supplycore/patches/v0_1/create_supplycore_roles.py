@@ -4,7 +4,6 @@ import frappe
 
 URS_ROLES = [
     "SupplyCore Storekeeper",
-    "SupplyCore Ward Staff",
     "SupplyCore Accountant",
     "SupplyCore Executive",
     "SupplyCore Purchaser",

@@ -92,8 +92,6 @@ Module quản lý **SC Transfer Request** (phiếu yêu cầu chuyển kho có p
 | SupplyCore Manager | ✓ | ✓ | ✓ | ✓ | approve cross-tier |
 | SupplyCore Storekeeper | ✓ | ✓ | ✓ | — | tạo + submit nội bộ tier |
 | Warehouse Officer | ✓ | ✓ | ✓ | — | cùng SK |
-| SupplyCore Ward Staff | ✓ | ✓ | ✓ | — | tạo TR yêu cầu cho khoa |
-| Pharmacy Officer | ✓ | ✓ | — | — | tạo draft, MGR submit |
 | SupplyCore Accountant | ✓ | — | — | — | xem audit |
 
 ## Vận hành

@@ -12,7 +12,6 @@ TEST_USERS = [
     ("test.executive@sc.local",    "Test Executive",    "SupplyCore Executive"),
     ("test.purchaser@sc.local",    "Test Purchaser",    "SupplyCore Purchaser"),
     ("test.auditor@sc.local",      "Test Auditor",      "SupplyCore Auditor"),
-    ("test.pharmacy@sc.local",     "Test Pharmacy",     "Pharmacy Officer"),
     ("test.warehouse@sc.local",    "Test Warehouse",    "Warehouse Officer"),
     ("test.qc@sc.local",           "Test QC",           "QC Officer"),
     ("test.manager@sc.local",      "Test Manager",      "SupplyCore Manager"),

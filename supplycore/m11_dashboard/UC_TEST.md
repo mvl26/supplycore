@@ -42,7 +42,7 @@
 1. `/app/sc-alert-rule/new`.
 2. alert_type: 7 loại — expiring_batch, contract_expiring, fc_remaining_low, low_stock, overdue_payment, qc_pending, recall_outstanding.
 3. severity (Critical/Warning/Info), threshold_value, frequency.
-4. recipient_roles (CSV vd "SupplyCore Manager,Pharmacy Officer").
+4. recipient_roles (CSV vd "SupplyCore Manager,SupplyCore Storekeeper").
 5. enabled=1.
 6. Daily 02:00 → scan_alerts() chạy → tạo SC Alert (dedup 7-day window theo rule × reference).
 
