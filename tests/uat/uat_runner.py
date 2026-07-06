@@ -425,34 +425,6 @@ def uat_m6():
 
 
 # ============================================================
-# M7 — Dispensing + BHYT
-# ============================================================
-def uat_m7():
-    M = "M7 — Cấp phát & BHYT"
-    print(f"\n=== {M} ===")
-    pat = f"UAT-PAT-{TS}"
-    step(M, "Tạo SC Patient", lambda: create("SC Patient", {
-        "patient_id": pat, "patient_name": "Nguyễn Văn UAT", "gender": "Nam",
-        "bhyt_card_no": f"DN1{TS}", "bhyt_payment_rate": 80,
-    }))
-    dr = step(M, "Tạo SC Dispensing Request", lambda: create("SC Dispensing Request", {
-        "request_date": ADD(0),
-        "purpose": "Routine",
-        "department": "Khoa Nhi",
-        "from_warehouse": "Kho Vật tư tiêu hao",
-        "patient": pat,
-        "items": [{
-            "item": "VTTH-MASK-3PLY",
-            "requested_qty": 2, "uom": "Hộp",
-        }],
-    })["name"])
-    if dr:
-        step(M, "Submit DR", lambda: submit_doc("SC Dispensing Request", dr))
-
-    write_log("m7_dispensing", M)
-
-
-# ============================================================
 # M8 — Accounting & 3-way match
 # ============================================================
 def uat_m8(pr_name):
@@ -548,7 +520,7 @@ def uat_m11():
 
     step(M, "API get_warehouse_dashboard", lambda: (
         r := call_method("supplycore.api.kpi.get_warehouse_dashboard", {"warehouse": "Kho Vật tư tiêu hao"}),
-        f"qty_total={r['stock_qty_total']}, expiring={r['expiring_batches']}, dr={r['pending_dispensing_requests']}")[1])
+        f"qty_total={r['stock_qty_total']}, expiring={r['expiring_batches']}, pending_tr={r['pending_transfer_requests']}")[1])
 
     rule = step(M, "Tạo SC Alert Rule (UAT)", lambda: create("SC Alert Rule", {
         "title": f"UAT Alert {TS}", "alert_type": "expiring_batch",
@@ -583,7 +555,6 @@ def main():
     uat_m4()
     uat_m5()
     uat_m6()
-    uat_m7()
     uat_m8(pr_data[0] if pr_data else None)
     uat_m9()
     uat_m10()
