@@ -378,9 +378,9 @@ cd /home/hoangvietyeuem/frappe-bench
 bench --site supplycore execute supplycore.api.wipe.wipe_transactions \
   --kwargs '{"confirm": "YES-WIPE-ALL-TRANSACTIONS"}'
 
-# Xoá giao dịch M1/M2/M3/M6/M7 (HĐ khung / YCMH / Phiếu KCS / YCCK / CPBN / Yêu cầu cấp phát)
+# Xoá giao dịch M1/M2/M3/M6 (HĐ khung / YCMH / Phiếu KCS / YCCK)
 bench --site supplycore execute supplycore.api.wipe.wipe_modules \
-  --kwargs '{"confirm": "YES-WIPE-MODULES-1-2-3-6-7"}'
+  --kwargs '{"confirm": "YES-WIPE-MODULES-1-2-3-6"}'
 
 # Xoá M8/M9/M10 (Hoá đơn / Thanh toán / Bút toán sổ cái / Đối soát kho / Phiếu kiểm kê / Phiếu thu hồi / Báo cáo điều tra)
 bench --site supplycore execute supplycore.api.wipe.wipe_modules_8_10 \

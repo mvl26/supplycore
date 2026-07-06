@@ -21,7 +21,7 @@ from frappe.utils import today, add_days, flt, now, random_string
 # Cấu hình
 # ---------------------------------------------------------------------
 MAIN_WH = "Kho Trung chuyển"       # Kho nhập đầu vào (PR)
-DEPT_WH = "Kho Khoa Dược"          # Kho cấp phát (PD)
+DEPT_WH = "Kho Khoa Dược"          # Kho phân phối nội bộ
 
 CONTRACT_NUMBERS = [
     "HD-2026-DHG-001", "HD-2026-TPC-002", "HD-2026-PMP-003", "HD-2026-IMX-004",

@@ -157,12 +157,12 @@ def _child_tables_of(parent_dt: str):
 def wipe_modules(confirm: str = ""):
     """Xóa transactional M1/M2/M3/M6 (giữ nguyên master).
 
-    Yêu cầu confirm == 'YES-WIPE-MODULES-1-2-3-6-7'.
+    Yêu cầu confirm == 'YES-WIPE-MODULES-1-2-3-6'.
 
     Tự dò child tables qua frappe.get_meta. Bypass docstatus + hook.
     """
-    if confirm != "YES-WIPE-MODULES-1-2-3-6-7":
-        return {"error": "Pass confirm='YES-WIPE-MODULES-1-2-3-6-7' to proceed."}
+    if confirm != "YES-WIPE-MODULES-1-2-3-6":
+        return {"error": "Pass confirm='YES-WIPE-MODULES-1-2-3-6' to proceed."}
 
     before = count_modules()
     masters_before = count_masters()
