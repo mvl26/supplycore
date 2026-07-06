@@ -7,12 +7,8 @@ DEFAULT_ROLES = [
     "SupplyCore Auditor",
     "Warehouse Officer",
     "QC Officer",
-    "Pharmacy Officer",
-    "BHYT Officer",
-    "Department Requester",
     # Roles URS-aligned (mapping với SC-* code trong tài liệu)
     "SupplyCore Storekeeper",   # SC-STOREKEEPER
-    "SupplyCore Ward Staff",    # SC-WARD-STAFF
     "SupplyCore Accountant",    # SC-ACCOUNTANT
     "SupplyCore Executive",     # SC-EXECUTIVE
     "SupplyCore Purchaser",     # SC-PURCHASER

@@ -83,9 +83,6 @@ website_redirects = [
 permission_query_conditions = {
     "SC Stock Entry": "supplycore.utils.permissions.stock_entry_query",
 }
-has_permission = {
-    "Patient Dispensing": "supplycore.utils.permissions.dispensing_perm",
-}
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -93,16 +90,16 @@ has_permission = {
 fixtures = [
     {"dt": "Role", "filters": [["name", "in", [
         "SupplyCore Manager", "SupplyCore User", "SupplyCore Auditor",
-        "SupplyCore Storekeeper", "SupplyCore Ward Staff",
+        "SupplyCore Storekeeper",
         "SupplyCore Accountant", "SupplyCore Executive", "SupplyCore Purchaser",
-        "Warehouse Officer", "QC Officer", "Pharmacy Officer", "BHYT Officer", "Department Requester",
+        "Warehouse Officer", "QC Officer",
     ]]]},
     {"dt": "Workflow",       "filters": [["name", "like", "SupplyCore%"]]},
     {"dt": "Workflow State", "filters": [["name", "like", "SupplyCore%"]]},
     {"dt": "Workflow Action Master", "filters": [["name", "like", "SupplyCore%"]]},
     {"dt": "Print Format",   "filters": [["module", "in", [
         "Supplycore", "M1 Contract", "M2 Planning", "M3 Receiving",
-        "M4 WMS", "M5 FEFO", "M6 Transfer", "M7 Dispensing",
+        "M4 WMS", "M5 FEFO", "M6 Transfer",
         "M8 Accounting", "M9 Stocktake", "M10 Traceability", "M11 Dashboard"]]]},
     {"dt": "Email Template", "filters": [["module", "like", "%Supplycore%"]]},
 ]
@@ -111,5 +108,5 @@ boot_session = "supplycore.boot.boot_session"
 after_install = "supplycore.install.after_install"
 before_uninstall = "supplycore.uninstall.before_uninstall"
 
-# Outbound webhooks (HIS / Cổng BHYT) — runtime qua DocType "Webhook"
+# Outbound webhooks — runtime qua DocType "Webhook"
 webhooks = []
