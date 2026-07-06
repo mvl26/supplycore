@@ -25,7 +25,6 @@
   "section_alerts",
   "email_alert_recipients",
   "section_integration",
-  "his_endpoint",
   "sms_gateway_endpoint",
   "section_site_map",
   "site_name",
@@ -68,7 +67,6 @@
   {"fieldname": "email_alert_recipients", "fieldtype": "Small Text", "label": "Email nhận cảnh báo", "description": "Phân cách bằng dấu phẩy. Để trống = gửi cho tất cả role SC-Manager/Storekeeper"},
 
   {"fieldname": "section_integration", "fieldtype": "Section Break", "label": "Tích hợp", "collapsible": 1},
-  {"fieldname": "his_endpoint", "fieldtype": "Data", "label": "HIS Endpoint URL"},
   {"fieldname": "sms_gateway_endpoint", "fieldtype": "Data", "label": "SMS Gateway Endpoint URL",
    "description": "UC-33: dùng cho SC Alert Rule channel_sms"},
 
