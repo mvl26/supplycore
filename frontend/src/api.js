@@ -338,6 +338,20 @@ export const warehouseMap = {
   listMapped: () => call('supplycore.api.warehouse_map.list_mapped_warehouses'),
 }
 
+// === Fetch upstream — pull data từ doc cha vào doc mới ===
+export const fetchUpstream = {
+  sourcesFor: (targetDoctype) =>
+    call('supplycore.api.fetch_upstream.sources_for', { target_doctype: targetDoctype }),
+  listCandidates: (sourceDoctype, targetDoctype, search = '', limit = 20) =>
+    call('supplycore.api.fetch_upstream.list_candidates', {
+      source_doctype: sourceDoctype, target_doctype: targetDoctype, search, limit,
+    }),
+  fetch: (sourceDoctype, sourceName, targetDoctype) =>
+    call('supplycore.api.fetch_upstream.fetch', {
+      source_doctype: sourceDoctype, source_name: sourceName, target_doctype: targetDoctype,
+    }),
+}
+
 // === User management ===
 export const users = {
   listRoles: () => call('supplycore.api.users.list_roles'),

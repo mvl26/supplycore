@@ -11,6 +11,7 @@ import ActionPanel from '../components/ActionPanel.vue'
 import DocForm from '../components/DocForm.vue'
 import RelatedDocs from '../components/RelatedDocs.vue'
 import WarehouseStockPanel from '../components/WarehouseStockPanel.vue'
+import FetchUpstream from '../components/FetchUpstream.vue'
 import RecallRecoveryPanel from '../components/RecallRecoveryPanel.vue'
 import CountEntryPanel from '../components/CountEntryPanel.vue'
 import IcsSummaryPanel from '../components/IcsSummaryPanel.vue'
@@ -249,6 +250,28 @@ function findHeaderField(fieldName) {
 
 watch(() => route.fullPath, load)
 onMounted(load)
+
+// Merge data từ FetchUpstream → đè header field + replace items
+function onUpstreamMerge({ header, items, source }) {
+  if (!doc.value) return
+  const next = { ...doc.value, ...(header || {}) }
+  // Child table: nếu schema có items field → set; nếu form chưa có items array → init
+  const itemsField = schema.value?.items?.field || 'items'
+  if (Array.isArray(items) && items.length) {
+    const existing = Array.isArray(next[itemsField]) ? next[itemsField] : []
+    // Nếu user đã thêm vài dòng → append; nếu rỗng → thay
+    if (existing.filter(r => r && Object.keys(r).length > 1).length === 0) {
+      next[itemsField] = items
+    } else {
+      next[itemsField] = [...existing, ...items]
+    }
+  }
+  // Lưu meta source để hiển thị badge
+  if (source?.name) {
+    next._upstream_source = `${source.doctype} ${source.name}`
+  }
+  doc.value = next
+}
 
 // WarehouseStockPanel (TR / SE): điền các dòng tồn kho đã tích → bảng chi tiết
 async function onStockFill(picked) {
@@ -644,6 +667,8 @@ function displayField(value, key) {
 
     <!-- New / Edit mode → DocForm -->
     <template v-if="isNew || editing">
+      <!-- Fetch upstream — chỉ hiện ở form New để pull data từ doc cha -->
+      <FetchUpstream v-if="isNew" :target-doctype="doctype" @merge="onUpstreamMerge" />
       <DocForm ref="docFormRef" v-model="doc" :doctype="doctype" @submit="save" @create-new="onCreateNewLink" />
       <div v-if="!schema" class="sc-card p-6 text-center">
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
