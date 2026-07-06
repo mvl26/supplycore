@@ -60,7 +60,7 @@ class SCStockLedgerEntry(Document):
         """Query tồn kho TỔNG của item+warehouse (+ batch optional).
 
         TỔNG ở đây = mọi SLE (kể cả batch QC Pending). Dùng cho báo cáo
-        kế toán / kiểm kê — cần đối chiếu vật lý. Để check "có cấp phát
+        kế toán / kiểm kê — cần đối chiếu vật lý. Để check "có xuất kho
         được không" → dùng get_available_qty() (loại trừ Pending/Rejected).
         """
         from frappe.utils import flt
@@ -79,8 +79,8 @@ class SCStockLedgerEntry(Document):
     def get_available_qty(item, warehouse, batch=None) -> float:
         """BUG-002: tồn kho KHẢ DỤNG — loại trừ batch QC Pending/Rejected.
 
-        Dùng cho mọi nghiệp vụ xuất kho (Material Issue/Transfer, Dispensing).
-        Lô chưa qua QC (Pending) hoặc fail QC (Rejected) KHÔNG được cấp phát.
+        Dùng cho mọi nghiệp vụ xuất kho (Material Issue/Transfer).
+        Lô chưa qua QC (Pending) hoặc fail QC (Rejected) KHÔNG được xuất kho.
 
         Logic: JOIN SC Batch on qc_status. SLE không có batch (item chưa
         track lô) coi như available luôn — vì chỉ batch-tracked item mới

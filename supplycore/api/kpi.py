@@ -433,10 +433,6 @@ def get_warehouse_dashboard(warehouse: str) -> dict:
     """, warehouse)
     expiring_at_wh = flt(rows_exp[0][0]) if rows_exp else 0
 
-    pending_dr = frappe.db.count("SC Dispensing Request",
-        {"from_warehouse": warehouse, "docstatus": 1,
-         "status": ["in", ["Approved", "Issued"]]})
-
     pending_tr = frappe.db.count("SC Transfer Request",
         {"from_warehouse": warehouse, "docstatus": 1,
          "status": ["in", ["Approved", "In Transit"]]})
@@ -445,7 +441,6 @@ def get_warehouse_dashboard(warehouse: str) -> dict:
         "warehouse": warehouse,
         "stock_qty_total": qty_total,
         "expiring_batches": int(expiring_at_wh),
-        "pending_dispensing_requests": pending_dr,
         "pending_transfer_requests": pending_tr,
     }
 

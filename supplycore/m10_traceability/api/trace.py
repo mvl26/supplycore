@@ -7,7 +7,10 @@ from frappe.utils import flt
 @frappe.whitelist()
 def get_batch_trace(batch_no: str) -> dict:
     """UC-29: trả full vòng đời batch — header + origin + movements +
-    dispensing + current_stock + data_quality."""
+    current_stock + data_quality.
+
+    # TODO GĐ2: bổ sung trace/recall theo SC Delivery Note → SC Customer (chuỗi bán)
+    """
     if not batch_no or not frappe.db.exists("SC Batch", batch_no):
         return {"exists": False, "batch_no": batch_no}
 
@@ -79,29 +82,6 @@ def get_batch_trace(batch_no: str) -> dict:
             "is_cancelled": bool(m["is_cancelled"]),
         })
 
-    # Dispensing: SC PD Item
-    dispensing_raw = frappe.db.sql("""
-        SELECT pdi.parent AS pd, pd.dispensing_date, pd.patient,
-               p.patient_name, pd.ward, pdi.qty, pdi.unit_cost,
-               pdi.bhyt_amount, pdi.patient_pays
-        FROM `tabSC PD Item` pdi
-        JOIN `tabSC Patient Dispensing` pd ON pd.name = pdi.parent
-        LEFT JOIN `tabSC Patient` p ON p.name = pd.patient
-        WHERE pdi.batch = %s AND pd.docstatus = 1
-        ORDER BY pd.dispensing_date ASC
-    """, batch_no, as_dict=True)
-    dispensing = [{
-        "pd": d["pd"],
-        "dispensing_date": str(d["dispensing_date"]),
-        "patient": d["patient"],
-        "patient_name": d["patient_name"],
-        "ward": d["ward"],
-        "qty": flt(d["qty"]),
-        "unit_cost": flt(d["unit_cost"]),
-        "bhyt_amount": flt(d["bhyt_amount"]),
-        "patient_pays": flt(d["patient_pays"]),
-    } for d in dispensing_raw]
-
     # Current stock per warehouse
     by_wh_raw = frappe.db.sql("""
         SELECT warehouse, COALESCE(SUM(qty_change), 0) AS qty
@@ -138,7 +118,6 @@ def get_batch_trace(batch_no: str) -> dict:
         "header": header,
         "origin": origin,
         "movements": movements,
-        "dispensing": dispensing,
         "current_stock": current_stock,
         "data_quality": data_quality,
     }

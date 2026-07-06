@@ -14,7 +14,7 @@
   "voucher_no",
   "voucher_date",
   "section_qty",
-  "qty_dispensed",
+  "qty_issued",
   "recovered_qty",
   "destroyed_qty",
   "column_break_qty",
@@ -93,9 +93,9 @@
    "label": "Số lượng"
   },
   {
-   "fieldname": "qty_dispensed",
+   "fieldname": "qty_issued",
    "fieldtype": "Float",
-   "label": "SL đã cấp/tồn",
+   "label": "SL đã xuất",
    "read_only": 1,
    "in_list_view": 1,
    "columns": 1

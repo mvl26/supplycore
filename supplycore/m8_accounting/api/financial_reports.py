@@ -142,52 +142,6 @@ def period_cost_report(from_date: str, to_date: str,
 
 
 @frappe.whitelist()
-def bhyt_settlement_report(from_date: str, to_date: str,
-                            department: str = None,
-                            bhyt_group: str = None) -> dict:
-    """Quyết toán BHYT: aggregate SC PD Item theo (bhyt_group, ward)."""
-    if not (from_date and to_date):
-        frappe.throw("from_date và to_date bắt buộc")
-
-    where = ["pd.dispensing_date BETWEEN %(fd)s AND %(td)s",
-             "pd.docstatus = 1"]
-    params = {"fd": from_date, "td": to_date}
-    if department:
-        where.append("pd.ward = %(dept)s"); params["dept"] = department
-    if bhyt_group:
-        where.append("pdi.bhyt_group = %(bg)s"); params["bg"] = bhyt_group
-
-    rows = frappe.db.sql(f"""
-        SELECT COALESCE(pdi.bhyt_group, 'NoBHYT') AS bhyt_group,
-               pd.ward,
-               COUNT(DISTINCT pd.name) AS pd_count,
-               COUNT(DISTINCT pd.patient) AS patient_count,
-               SUM(pdi.qty) AS total_qty,
-               SUM(pdi.total_cost) AS total_cost,
-               SUM(pdi.bhyt_amount) AS total_bhyt_covered,
-               SUM(pdi.patient_pays) AS total_patient_pays,
-               SUM(COALESCE(pdi.ceiling_overage, 0)) AS total_ceiling_overage
-        FROM `tabSC PD Item` pdi
-        JOIN `tabSC Patient Dispensing` pd ON pd.name = pdi.parent
-        WHERE {' AND '.join(where)}
-        GROUP BY pdi.bhyt_group, pd.ward
-        ORDER BY pdi.bhyt_group, pd.ward
-    """, params, as_dict=True)
-
-    return {
-        "from_date": from_date,
-        "to_date": to_date,
-        "rows": rows,
-        "summary": {
-            "total_cost": sum(flt(r["total_cost"]) for r in rows),
-            "total_bhyt_covered": sum(flt(r["total_bhyt_covered"]) for r in rows),
-            "total_patient_pays": sum(flt(r["total_patient_pays"]) for r in rows),
-            "total_ceiling_overage": sum(flt(r["total_ceiling_overage"]) for r in rows),
-        },
-    }
-
-
-@frappe.whitelist()
 def get_voucher_details(voucher_type: str, voucher_no: str) -> dict:
     """UC-26 5a drill-down: header + items + linked vouchers."""
     if not frappe.db.exists(voucher_type, voucher_no):
@@ -229,17 +183,12 @@ def check_period_finalized(from_date: str, to_date: str) -> dict:
         "docstatus": 0,
         "payment_date": ["between", [from_date, to_date]],
     })
-    pending_pd = frappe.db.count("SC Patient Dispensing", {
-        "docstatus": 0,
-        "dispensing_date": ["between", [from_date, to_date]],
-    })
-    total = pending_pi + pending_pe + pending_pd
+    total = pending_pi + pending_pe
     return {
         "finalized": total == 0,
         "pending": {
             "purchase_invoice": pending_pi,
             "payment_entry": pending_pe,
-            "patient_dispensing": pending_pd,
             "total": total,
         },
     }

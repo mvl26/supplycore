@@ -11,13 +11,3 @@ def stock_entry_query(user=None):
         return ""
     # TODO: lookup warehouses gán cho user, return SQL where clause
     return ""
-
-
-def dispensing_perm(doc, user=None, permission_type=None):
-    """has_permission cho Patient Dispensing — chỉ Pharmacy Officer + bác sĩ liên quan."""
-    if not user:
-        user = frappe.session.user
-    roles = frappe.get_roles(user)
-    if "System Manager" in roles or "Pharmacy Officer" in roles:
-        return True
-    return False

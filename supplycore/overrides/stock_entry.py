@@ -1,4 +1,4 @@
-"""Hook vào ERPNext Stock Entry — M4 bin suggest + M5 FEFO + M7 dispensing log."""
+"""Hook vào ERPNext Stock Entry — M4 bin suggest + M5 FEFO."""
 
 import frappe
 from frappe import _
@@ -12,11 +12,6 @@ def enforce_fefo(doc, method=None):
     _suggest_bin_for_items(doc)
     _validate_bin_consistency(doc)
     _enforce_fefo_rules(doc)
-
-
-def log_dispensing(doc, method=None):
-    """on_submit: ghi nhận Patient Dispensing nếu link tới Dispensing Request (M7)."""
-    pass
 
 
 # ---------------------------------------------------------------------------
