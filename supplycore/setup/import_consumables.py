@@ -12,7 +12,7 @@ Quyết định (chốt 2026-06-11):
   - has_batch_no = 0 cho tất cả (vật tư tiêu hao; bật lô theo nhóm sau nếu cần).
   - UOM giữ nguyên text gốc (chỉ trim khoảng trắng) — không remap rác.
   - item_group lấy từ cột "Tên nhóm" (4 nhóm: VTTH/HC/DCYT/TBYT) dưới 1 root.
-  - item_name cắt 140 ký tự (full vào description); his_code để trống.
+  - item_name cắt 140 ký tự (full vào description).
 """
 
 import csv

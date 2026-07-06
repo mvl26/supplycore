@@ -98,8 +98,8 @@ def run():
     results.append({"step": "Block enforce on Issue", "threw": block_threw})
 
     # 7. Update affected_items: nhập recovered_qty
-    rcl.affected_items[0].recovered_qty = flt(rcl.affected_items[0].qty_dispensed) / 2
-    rcl.affected_items[0].destroyed_qty = flt(rcl.affected_items[0].qty_dispensed) / 2
+    rcl.affected_items[0].recovered_qty = flt(rcl.affected_items[0].qty_issued) / 2
+    rcl.affected_items[0].destroyed_qty = flt(rcl.affected_items[0].qty_issued) / 2
     rcl.affected_items[0].status = "Recovered"
     rcl.save()
     rcl.reload()

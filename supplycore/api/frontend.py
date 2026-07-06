@@ -134,8 +134,6 @@ def related_docs(doctype, name):
     - SC Quality Inspection → PR + Item
     - SC Item → Batches + recent SLE
     - SC Batch → SLE + Recall + Trace movements
-    - SC Patient → recent PDs
-    - SC Dispensing Request → PD generated
     """
     out = {}
     if not frappe.has_permission(doctype, "read", doc=name):
@@ -216,18 +214,6 @@ def related_docs(doctype, name):
             GROUP BY warehouse
             HAVING qty > 0
         """, name, as_dict=True)
-
-    elif doctype == "SC Patient":
-        out["dispensings"] = frappe.db.get_all("SC Patient Dispensing",
-            filters={"patient": name, "docstatus": 1},
-            fields=["name", "dispensing_date", "ward", "total_cost", "patient_pays"],
-            order_by="dispensing_date desc", limit=20)
-
-    elif doctype == "SC Dispensing Request":
-        out["patient_dispensings"] = frappe.db.get_all("SC Patient Dispensing",
-            filters={"dispensing_request": name},
-            fields=["name", "dispensing_date", "patient", "patient_name", "total_cost"],
-            limit=10)
 
     elif doctype == "SC Supplier":
         out["framework_contracts"] = frappe.db.get_all("Framework Contract",
@@ -501,7 +487,7 @@ def assign_bin(assignments):
 def item_eligible_uoms(item=None):
     """Trả về danh sách UOM hợp lệ cho 1 vật tư.
 
-    SC Item có 3 trường UOM: uom (tồn kho), buy_uom (mua), use_uom (sử dụng/BHYT).
+    SC Item có 3 trường UOM: uom (tồn kho), buy_uom (mua), use_uom (sử dụng).
     Frontend dùng để filter dropdown UOM trong child table — chỉ hiển thị các UOM
     của item đang chọn, không phải toàn bộ SC UOM.
     """
@@ -674,7 +660,7 @@ def get_audit_trail(
                                                "M1 Contract", "M2 Planning",
                                                "M3 Receiving", "M4 Wms",
                                                "M5 Fefo", "M6 Transfer",
-                                               "M7 Dispensing", "M8 Accounting",
+                                               "M8 Accounting",
                                                "M9 Stocktake", "M10 Traceability",
                                                "M11 Dashboard"))},
                     pluck="name",

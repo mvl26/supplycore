@@ -398,19 +398,19 @@ SUPPLIERS = [
 # 6. SC Item (vật tư mẫu — 12 items đại diện)
 # ---------------------------------------------------------------------------
 ITEMS = [
-    # (code, name, group, uom, has_batch, is_medical, lead_time, min_shelf_life, has_bhyt, bhyt_group, bhyt_rate)
-    ("VTTH-GLOVE-S",   "Găng tay phẫu thuật vô trùng cỡ 7.5", "Găng tay",     "Đôi",  1, 1, 14, 180, 1, "N05", 80),
-    ("VTTH-MASK-3PLY", "Khẩu trang y tế 3 lớp",                "Khẩu trang",   "Cái",  1, 1, 7,  90,  0, None, None),
-    ("VTTH-GAUZE-5",   "Băng gạc y tế cuộn 5cm",               "Băng gạc",     "Cuộn", 1, 1, 14, 180, 1, "N05", 80),
-    ("VTTH-COTTON",    "Bông y tế tiệt trùng 100g",            "Bông y tế",    "Gói",  1, 1, 14, 180, 1, "N05", 80),
-    ("VTTH-NEEDLE-23", "Kim tiêm 23G x 1 inch",                "Kim tiêm",     "Cái",  1, 1, 14, 180, 1, "N05", 100),
-    ("VTTH-SYR-5ML",   "Bơm tiêm 5ml + kim",                   "Bơm tiêm",     "Cái",  1, 1, 14, 180, 1, "N05", 100),
-    ("VTTH-IV-SET",    "Dây truyền dịch tiệt trùng",           "Dây truyền",   "Bộ",   1, 1, 14, 180, 1, "N05", 100),
-    ("DTRC-NACL09",    "Dịch truyền NaCl 0.9% 500ml",          "Nước muối sinh lý", "Chai", 1, 1, 21, 180, 1, "N05", 100),
-    ("DTRC-GLU5",      "Dịch truyền Glucose 5% 500ml",         "Glucose",      "Chai", 1, 1, 21, 180, 1, "N05", 100),
-    ("DTRC-RL",        "Dịch truyền Ringer Lactate 500ml",     "Ringer Lactate","Chai",1, 1, 21, 180, 1, "N05", 100),
-    ("VTPT-COND-70",   "Cồn 70 độ y tế 500ml",                 "Cồn y tế",     "Chai", 1, 1, 14, 365, 0, None, None),
-    ("VTPT-IODINE",    "Povidine iod 10% 500ml",               "Sát khuẩn",    "Chai", 1, 1, 14, 365, 1, "N05", 100),
+    # (code, name, group, uom, has_batch, is_medical, lead_time, min_shelf_life)
+    ("VTTH-GLOVE-S",   "Găng tay phẫu thuật vô trùng cỡ 7.5", "Găng tay",     "Đôi",  1, 1, 14, 180),
+    ("VTTH-MASK-3PLY", "Khẩu trang y tế 3 lớp",                "Khẩu trang",   "Cái",  1, 1, 7,  90),
+    ("VTTH-GAUZE-5",   "Băng gạc y tế cuộn 5cm",               "Băng gạc",     "Cuộn", 1, 1, 14, 180),
+    ("VTTH-COTTON",    "Bông y tế tiệt trùng 100g",            "Bông y tế",    "Gói",  1, 1, 14, 180),
+    ("VTTH-NEEDLE-23", "Kim tiêm 23G x 1 inch",                "Kim tiêm",     "Cái",  1, 1, 14, 180),
+    ("VTTH-SYR-5ML",   "Bơm tiêm 5ml + kim",                   "Bơm tiêm",     "Cái",  1, 1, 14, 180),
+    ("VTTH-IV-SET",    "Dây truyền dịch tiệt trùng",           "Dây truyền",   "Bộ",   1, 1, 14, 180),
+    ("DTRC-NACL09",    "Dịch truyền NaCl 0.9% 500ml",          "Nước muối sinh lý", "Chai", 1, 1, 21, 180),
+    ("DTRC-GLU5",      "Dịch truyền Glucose 5% 500ml",         "Glucose",      "Chai", 1, 1, 21, 180),
+    ("DTRC-RL",        "Dịch truyền Ringer Lactate 500ml",     "Ringer Lactate","Chai",1, 1, 21, 180),
+    ("VTPT-COND-70",   "Cồn 70 độ y tế 500ml",                 "Cồn y tế",     "Chai", 1, 1, 14, 365),
+    ("VTPT-IODINE",    "Povidine iod 10% 500ml",               "Sát khuẩn",    "Chai", 1, 1, 14, 365),
 ]
 
 
@@ -586,7 +586,7 @@ def _apply_supplier_fields(d, sup: dict):
 
 def _seed_items() -> int:
     created = 0
-    for code, name, group, uom, has_batch, is_med, lead, min_shelf, has_bhyt, bhyt_grp, bhyt_rate in ITEMS:
+    for code, name, group, uom, has_batch, is_med, lead, min_shelf in ITEMS:
         if frappe.db.exists("SC Item", code):
             continue
         if not frappe.db.exists("SC UOM", uom):
@@ -609,10 +609,6 @@ def _seed_items() -> int:
         d.lead_time_days = lead
         d.min_shelf_life_days = min_shelf
         d.safety_stock = 50
-        d.has_bhyt = has_bhyt
-        d.bhyt_code = code if has_bhyt else None
-        d.bhyt_group = bhyt_grp
-        d.bhyt_payment_rate = bhyt_rate or 0
         d.flags.ignore_permissions = True
         d.insert()
         created += 1

@@ -736,7 +736,7 @@ EXPORT_ONLY = {"SC Stock Ledger Entry", "SC GL Entry"}
 # user có quyền (linh hoạt cho admin).
 IMPORTABLE_BY_MODULE: dict[str, list[str]] = {
     "M0": ["SC Item", "SC Item Group", "SC UOM", "SC Supplier", "SC Warehouse",
-            "Bin Location", "SC Department", "SC Patient", "SC BHYT Code Config",
+            "Bin Location", "SC Department",
             "SC GL Account"],
     "M1": ["Framework Contract"],
     "M2": ["SC Material Request", "SC Purchase Order"],
@@ -744,7 +744,6 @@ IMPORTABLE_BY_MODULE: dict[str, list[str]] = {
     "M4": ["SC Warehouse", "Bin Location", "SC Batch", "SC Stock Ledger Entry"],
     "M5": ["SC Batch"],
     "M6": ["SC Transfer Request", "SC Stock Entry"],
-    "M7": ["SC Dispensing Request", "SC Patient Dispensing"],
     "M8": ["SC Purchase Invoice", "SC Payment Entry", "SC GL Entry"],
     "M9": ["SC Inventory Count Sheet", "SC Stock Reconciliation"],
     "M10": ["SC Recall Notice", "SC Investigation Report"],

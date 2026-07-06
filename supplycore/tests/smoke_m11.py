@@ -30,7 +30,6 @@ def run():
     results.append({"step": "Warehouse dashboard",
                     "stock_qty_total": wh_dash["stock_qty_total"],
                     "expiring_batches": wh_dash["expiring_batches"],
-                    "pending_dr": wh_dash["pending_dispensing_requests"],
                     "pending_tr": wh_dash["pending_transfer_requests"]})
 
     # 3. Cleanup test rules + alerts

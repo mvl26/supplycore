@@ -5,7 +5,7 @@ Run all:        bench --site supplycore execute supplycore.tests.uc34_test.run
 """
 
 import frappe
-from frappe.utils import now, today, add_days, add_to_date, random_string, flt
+from frappe.utils import now, today, add_to_date, random_string
 
 
 def _pick_warehouse():
@@ -217,42 +217,6 @@ def test_escalate_skips_resolved():
         return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
 
 
-def test_action_priority_dispense_resolves():
-    """expiring_batch action → resolution_action=Acted Upon, resolved=1."""
-    # Create a batch (simple)
-    item = frappe.new_doc("SC Item")
-    item.item_code = f"UC34-PD-{random_string(5)}"
-    item.item_name = "UC34 priority"
-    item.uom = frappe.db.get_value("SC UOM", {}, "name")
-    item.is_stock_item = 1
-    item.has_batch_no = 1
-    item.flags.ignore_permissions = True
-    item.insert()
-    from supplycore.m5_fefo.api.batch_helpers import generate_batch_id
-    batch = frappe.new_doc("SC Batch")
-    expiry = add_days(today(), 20)
-    batch.batch_id = generate_batch_id(item.name, str(expiry))
-    batch.item = item.name
-    batch.expiry_date = expiry
-    batch.qc_status = "Accepted"
-    batch.flags.ignore_permissions = True
-    batch.flags.ignore_short_expiry = 1
-    batch.insert()
-    a = _make_alert(alert_type="expiring_batch",
-                     reference_doctype="SC Batch", reference_name=batch.name)
-    try:
-        a.action_priority_dispense(note="Ưu tiên cho ICU")
-        a.reload()
-        frappe.db.rollback()
-        if (a.resolved == 1 and a.resolution_action == "Acted Upon"
-            and "Ưu tiên" in (a.remarks or "")):
-            return {"pass": True, "msg": "OK marked priority"}
-        return {"pass": False, "msg": f"X resolved={a.resolved} action={a.resolution_action}"}
-    except Exception as e:
-        frappe.db.rollback()
-        return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
-
-
 def test_action_contact_supplier_needs_supplier():
     """contact_supplier không có reference → throw."""
     a = _make_alert(alert_type="low_stock")  # no reference
@@ -280,7 +244,6 @@ def run():
         test_auto_resolve_skip_when_condition_still_holds,
         test_escalate_after_48h,
         test_escalate_skips_resolved,
-        test_action_priority_dispense_resolves,
         test_action_contact_supplier_needs_supplier,
     ]
     results = []

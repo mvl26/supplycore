@@ -162,25 +162,6 @@ def run_all():
           "SC Stock Reconciliation → SLE adjustment + GL Dr 152/Cr 642. Wire qua M9.")
 
     # ============================================================
-    # M7 — Dispensing & Usage
-    # ============================================================
-    check("UC-20", "Create Stock Request (DR)", "Ward", "M7",
-          "ok" if has_dt("SC Dispensing Request") else "missing",
-          "SC DR submit → status=Approved.")
-
-    check("UC-21", "Process & Dispense Stock", "SK", "M7",
-          "ok" if has_dt("SC Patient Dispensing") else "missing",
-          "DR Approved → SE Material Issue (FEFO bắt buộc) → tạo PD. Dispensing slip print format có template (templates/print_formats/dispensing_slip.html).")
-
-    check("UC-22", "Record Item Usage per Patient", "Ward", "M7",
-          "ok" if has_dt("SC Patient Dispensing") else "missing",
-          "PD + PD Item ghi nhận qty/unit_cost/bhyt_amount/patient_pays per BN. Trace qua SC PD Item.")
-
-    check("UC-23", "Manage BHYT Codes", "MGR/ACC", "M7",
-          "ok" if has_dt("SC BHYT Code Config") else "missing",
-          "SC BHYT Code Config N01-N09 + ceiling_price + payment_rate. get_active_config priority item-spec > group > fallback.")
-
-    # ============================================================
     # M8 — Accounting & Payment
     # ============================================================
     check("UC-24", "Create & Match Purchase Invoice", "ACC", "M8",
@@ -211,7 +192,7 @@ def run_all():
     # ============================================================
     check("UC-29", "Trace Item Origin (Batch Trace)", "MGR/SK", "M10",
           "ok" if has_method("supplycore.api.trace", "get_batch_trace") else "missing",
-          "API get_batch_trace trả source PR + movements + patient_dispensings + current qty per warehouse.")
+          "API get_batch_trace trả source PR + movements + current qty per warehouse.")
 
     check("UC-30", "Recall Management", "MGR/SK", "M10",
           "ok" if has_dt("SC Recall Notice") else "missing",

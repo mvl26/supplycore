@@ -5,7 +5,7 @@ Phải chạy `supplycore.setup.seed_10_framework_contracts.run` trước.
 Mỗi FC sẽ sinh:
     YCMH (MR) → ĐM (PO) → Phiếu nhập (PR) → Lô + Phiếu KCS (auto)
     → YCCK (TR) → Phiếu chuyển kho (SE)
-    → Cấp phát BN (PD) → Hoá đơn (PI) → Phiếu thanh toán (PE)
+    → Hoá đơn (PI) → Phiếu thanh toán (PE)
 
 Cuối luồng tạo 1 Đối soát kho (SR) cho Kho Khoa Dược.
 
@@ -33,8 +33,6 @@ CONTRACT_NUMBERS = [
 QTY_CAP_PER_ITEM = 100
 # Tỷ lệ luân chuyển sang Kho Khoa Dược (% của qty nhận)
 TRANSFER_PCT = 0.5
-# Số lượng cấp phát mỗi PD (per item)
-DISPENSE_QTY = 2
 # Tỷ lệ thuế VAT
 VAT_RATE = 8
 
@@ -45,7 +43,7 @@ def run() -> dict:
         "mrs": [], "pos": [], "prs": [],
         "qis_submitted": 0, "batches_created": 0,
         "trs": [], "ses": [],
-        "pds": [], "pis": [], "pes": [],
+        "pis": [], "pes": [],
         "sr": None,
         "errors": [],
         "summary": {},
@@ -66,16 +64,9 @@ def run() -> dict:
             "found": [f.contract_number for f in fcs],
         }
 
-    patients = frappe.get_all("SC Patient", filters={"disabled": 0},
-                                fields=["name", "bhyt_card_no",
-                                        "bhyt_payment_rate", "current_department"],
-                                order_by="name")
-    if not patients:
-        result["errors"].append("Không có SC Patient nào để cấp phát")
-
     for idx, fc in enumerate(fcs):
         try:
-            _process_one_fc(fc, idx, patients, result)
+            _process_one_fc(fc, idx, result)
             result["fcs_processed"].append(fc.contract_number)
         except Exception as e:
             result["errors"].append({"fc": fc.contract_number, "stage": "top",
@@ -109,7 +100,6 @@ def run() -> dict:
         "batches_created": result["batches_created"],
         "trs": len(result["trs"]),
         "ses": len(result["ses"]),
-        "pds": len(result["pds"]),
         "pis": len(result["pis"]),
         "pes": len(result["pes"]),
         "sr": 1 if result["sr"] else 0,
@@ -121,7 +111,7 @@ def run() -> dict:
 # =====================================================================
 # Chain cho 1 FC
 # =====================================================================
-def _process_one_fc(fc, idx, patients, result):
+def _process_one_fc(fc, idx, result):
     fc_doc = frappe.get_doc("Framework Contract", fc.name)
 
     # --- Bước 2: YCMH ---
@@ -278,48 +268,6 @@ def _process_one_fc(fc, idx, patients, result):
     se.submit()
     result["ses"].append(se_name)
 
-    # --- Bước 10: Cấp phát BN (PD) ---
-    if patients:
-        try:
-            patient = patients[idx % len(patients)]
-            pd = frappe.new_doc("SC Patient Dispensing")
-            pd.dispensing_date = today()
-            pd.patient = patient.name
-            pd.bhyt_card_no = patient.bhyt_card_no
-            pd.bhyt_payment_rate = patient.bhyt_payment_rate or 0
-            pd.ward = patient.current_department
-            pd.remarks = f"Cấp phát từ HĐ {fc.contract_number}"
-            added_any = False
-            for poi in po_reload.items:
-                avail = flt(frappe.db.sql("""
-                    SELECT COALESCE(SUM(qty_change), 0)
-                    FROM `tabSC Stock Ledger Entry`
-                    WHERE item = %s AND warehouse = %s AND is_cancelled = 0
-                """, (poi.item, DEPT_WH))[0][0])
-                if avail < DISPENSE_QTY:
-                    continue
-                # Pick FEFO batch ở DEPT_WH
-                batch = _pick_fefo_batch(poi.item, DEPT_WH)
-                pd.append("items", {
-                    "item": poi.item,
-                    "uom": poi.uom,
-                    "qty": DISPENSE_QTY,
-                    "unit_cost": flt(poi.rate),
-                    "warehouse": DEPT_WH,
-                    "batch": batch,
-                })
-                added_any = True
-            if added_any:
-                pd.flags.ignore_permissions = True
-                pd.insert()
-                pd.submit()
-                result["pds"].append(pd.name)
-        except Exception as e:
-            result["errors"].append({
-                "fc": fc.contract_number, "stage": "pd",
-                "error": str(e)[:200],
-            })
-
     # --- Bước 11: Hoá đơn (PI) ---
     try:
         pi = frappe.new_doc("SC Purchase Invoice")
@@ -373,24 +321,6 @@ def _process_one_fc(fc, idx, patients, result):
 # =====================================================================
 # Helpers
 # =====================================================================
-def _pick_fefo_batch(item, warehouse):
-    """Pick batch còn tồn sớm hết hạn nhất ở warehouse."""
-    row = frappe.db.sql("""
-        SELECT sle.batch,
-                COALESCE(b.expiry_date, '9999-12-31') AS expiry,
-                SUM(sle.qty_change) AS qty
-        FROM `tabSC Stock Ledger Entry` sle
-        LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
-        WHERE sle.item = %s AND sle.warehouse = %s
-          AND sle.is_cancelled = 0 AND sle.batch IS NOT NULL
-        GROUP BY sle.batch
-        HAVING qty > 0
-        ORDER BY expiry ASC
-        LIMIT 1
-    """, (item, warehouse), as_dict=True)
-    return row[0].batch if row else None
-
-
 def _create_stock_reconciliation(warehouse):
     """Tạo 1 SC Stock Reconciliation ở warehouse với toàn bộ item đang có tồn."""
     items_with_stock = frappe.db.sql("""

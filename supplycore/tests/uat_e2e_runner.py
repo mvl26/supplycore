@@ -218,30 +218,6 @@ def run_all():
     except Exception as e:
         note("7.1", f"TR submit fail: {str(e)[:150]}", "High")
 
-    print("\n=== Section 8: M7 Dispensing + BHYT ===")
-    try:
-        pat = frappe.new_doc("SC Patient")
-        pat.patient_id = f"BN-DOC-{ts}"
-        pat.patient_name = "Nguyễn Văn UAT-DOC"
-        pat.gender = "Nam"
-        pat.bhyt_card_no = f"DN1{ts}"
-        pat.bhyt_payment_rate = 80
-        pat.flags.ignore_permissions = True
-        pat.insert()
-
-        dr = frappe.new_doc("SC Dispensing Request")
-        dr.request_date = today()
-        dr.purpose = "Patient-Specific"
-        dr.department = "Khoa Nhi"
-        dr.from_warehouse = main_wh
-        dr.patient = pat.name
-        dr.append("items", {"item": item, "requested_qty": 2, "uom": item_uom})
-        dr.flags.ignore_permissions = True
-        dr.insert(); dr.submit(); dr.reload()
-        print(f"  ✓ DR {dr.name} submit, status={dr.status}")
-    except Exception as e:
-        note("8.2", f"DR submit fail: {str(e)[:150]}", "High")
-
     print("\n=== Section 10: M11 Dashboard ===")
     try:
         from supplycore.api.kpi import get_executive_dashboard
