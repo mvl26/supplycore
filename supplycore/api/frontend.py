@@ -264,7 +264,7 @@ def related_docs(doctype, name):
     elif doctype == "SC Recall Notice":
         out["affected_items"] = frappe.db.get_all("SC Recall Affected Item",
             filters={"parent": name},
-            fields=["name", "warehouse", "department", "patient", "qty_issued",
+            fields=["name", "warehouse", "department", "qty_issued",
                      "recovered_qty", "destroyed_qty", "status"],
             limit=50)
 

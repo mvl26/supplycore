@@ -8,7 +8,6 @@
   "location_type",
   "warehouse",
   "department",
-  "patient",
   "column_break_1",
   "voucher_type",
   "voucher_no",
@@ -32,7 +31,7 @@
   {
    "fieldname": "location_type",
    "fieldtype": "Select",
-   "options": "Warehouse\nDepartment\nPatient",
+   "options": "Warehouse\nDepartment",
    "label": "Loại vị trí",
    "reqd": 1,
    "in_list_view": 1,
@@ -53,13 +52,6 @@
    "options": "SC Department",
    "label": "Khoa",
    "depends_on": "eval:doc.location_type=='Department'"
-  },
-  {
-   "fieldname": "patient",
-   "fieldtype": "Link",
-   "options": "SC Patient",
-   "label": "Bệnh nhân",
-   "depends_on": "eval:doc.location_type=='Patient'"
   },
   {
    "fieldname": "column_break_1",

@@ -23,3 +23,4 @@ supplycore.patches.v0_4.fc_exhausted_backfill
 supplycore.patches.v0_4.cleanup_test_data
 supplycore.patches.v0_5.cleanup_test_data_v3
 supplycore.patches.v0_5.backfill_bin_status
+supplycore.patches.v0_6.remove_hospital_domain
