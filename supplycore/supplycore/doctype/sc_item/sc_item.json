@@ -2,7 +2,7 @@
  "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
  "autoname": "field:item_code", "track_changes": 1,
  "field_order": [
-  "section_main", "item_code", "item_name", "his_code", "description",
+  "section_main", "item_code", "item_name", "description",
   "column_break_1", "item_group", "uom", "disabled",
   "section_flags", "is_stock_item", "is_purchase_item", "has_batch_no",
   "column_break_flags", "is_medical_supply", "inspection_required_before_purchase", "barcodes_section", "barcodes",
@@ -12,15 +12,12 @@
   "column_break_planning", "standard_order_qty", "lead_time_days",
   "min_shelf_life_days", "default_supplier",
   "section_reorder_overrides", "reorder_levels",
-  "section_wms", "default_bin_location", "default_warehouse",
-  "section_bhyt", "has_bhyt", "bhyt_code", "bhyt_group",
-  "column_break_bhyt", "bhyt_payment_rate"
+  "section_wms", "default_bin_location", "default_warehouse"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin chính"},
   {"fieldname": "item_code", "fieldtype": "Data", "label": "Mã VT", "reqd": 1, "unique": 1, "in_list_view": 1, "search_index": 1},
   {"fieldname": "item_name", "fieldtype": "Data", "label": "Tên vật tư", "reqd": 1, "in_list_view": 1, "search_index": 1},
-  {"fieldname": "his_code", "fieldtype": "Data", "label": "Mã HIS", "search_index": 1, "in_standard_filter": 1, "description": "Mã vật tư trong phần mềm HIS — dùng đối chiếu khi nhập phiếu chuyển kho HIS (UC-18B)"},
   {"fieldname": "description", "fieldtype": "Text", "label": "Mô tả"},
   {"fieldname": "column_break_1", "fieldtype": "Column Break"},
   {"fieldname": "item_group", "fieldtype": "Link", "options": "SC Item Group", "label": "Nhóm", "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
@@ -39,7 +36,7 @@
 
   {"fieldname": "section_uom", "fieldtype": "Section Break", "label": "Đơn vị kép (BR-BH-03)"},
   {"fieldname": "buy_uom", "fieldtype": "Link", "options": "SC UOM", "label": "Đơn vị mua (hộp/thùng)"},
-  {"fieldname": "use_uom", "fieldtype": "Link", "options": "SC UOM", "label": "Đơn vị sử dụng/BHYT"},
+  {"fieldname": "use_uom", "fieldtype": "Link", "options": "SC UOM", "label": "Đơn vị sử dụng"},
   {"fieldname": "uom_conversion_factor", "fieldtype": "Float", "label": "Hệ số quy đổi mua → dùng",
    "default": "1", "description": "1 hộp = X cái → nhập X. Vd: 1 hộp 100 cái → 100"},
   {"fieldname": "column_break_uom", "fieldtype": "Column Break"},
@@ -60,16 +57,7 @@
 
   {"fieldname": "section_wms", "fieldtype": "Section Break", "label": "WMS", "collapsible": 1},
   {"fieldname": "default_bin_location", "fieldtype": "Link", "options": "Bin Location", "label": "Bin mặc định"},
-  {"fieldname": "default_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho mặc định"},
-
-  {"fieldname": "section_bhyt", "fieldtype": "Section Break", "label": "BHYT (M7)", "collapsible": 1, "depends_on": "is_medical_supply"},
-  {"fieldname": "has_bhyt", "fieldtype": "Check", "label": "Có mã BHYT", "default": "0"},
-  {"fieldname": "bhyt_code", "fieldtype": "Data", "label": "Mã BHYT", "depends_on": "has_bhyt"},
-  {"fieldname": "bhyt_group", "fieldtype": "Select",
-   "options": "\nN01\nN02\nN03\nN04\nN05\nN06\nN07\nN08\nN09",
-   "label": "Nhóm BHYT", "depends_on": "has_bhyt"},
-  {"fieldname": "column_break_bhyt", "fieldtype": "Column Break"},
-  {"fieldname": "bhyt_payment_rate", "fieldtype": "Percent", "label": "Tỷ lệ thanh toán BHYT (%)", "depends_on": "has_bhyt", "default": "80"}
+  {"fieldname": "default_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho mặc định"}
  ],
  "permissions": [
   {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "export": 1, "print": 1},
@@ -84,6 +72,6 @@
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
  "module": "Supplycore", "name": "SC Item", "title_field": "item_name",
- "search_fields": "item_code,item_name,bhyt_code",
+ "search_fields": "item_code,item_name",
  "sort_field": "modified", "sort_order": "DESC"
 }
