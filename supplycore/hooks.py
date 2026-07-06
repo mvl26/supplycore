@@ -54,9 +54,6 @@ scheduler_events = {
     "weekly": [
         "supplycore.m2_planning.tasks.generate_procurement_forecast",
     ],
-    "hourly": [
-        "supplycore.api.webhook.flush_outbound_queue",
-    ],
     "cron": {
         "0 1 * * *": ["supplycore.m9_stocktake.tasks.create_periodic_count"],
     },
