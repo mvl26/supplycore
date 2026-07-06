@@ -118,7 +118,6 @@ await go('/warehouse-map', 'warehouse_map')
 await go('/map-editor', 'map_editor')
 await go('/batch-trace', 'batch_trace')
 await go('/financial-reports', 'financial_reports')
-await go('/his-import', 'his_import')
 await go('/users', 'users')
 
 // --- 3) Module hubs m0..m11 ---
@@ -131,7 +130,6 @@ const DTS = {
   pp: 'Procurement Plan', mr: 'SC Material Request', po: 'SC Purchase Order',
   pr: 'SC Purchase Receipt', qi: 'SC Quality Inspection', batch: 'SC Batch',
   fefo: 'FEFO Picker Rule', bin: 'Bin Location', tr: 'SC Transfer Request',
-  dr: 'SC Dispensing Request', pd: 'SC Patient Dispensing', bhyt: 'SC BHYT Code Config',
   pi: 'SC Purchase Invoice', pe: 'SC Payment Entry', ics: 'SC Inventory Count Sheet',
   sr: 'SC Stock Reconciliation', recall: 'SC Recall Notice', inv: 'SC Investigation Report',
 }

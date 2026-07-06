@@ -157,12 +157,6 @@ export const ACTIONS = {
       when: (d) => d.docstatus === 1 && !d.return_pr },
     { method: 'create_write_off',    label: 'Tạo Phiếu hủy',       icon: 'trash', variant: 'danger',
       when: (d) => d.docstatus === 1 && !d.write_off_entry },
-    { method: 'audit_dispensings_in_period', label: 'Audit cấp phát', icon: 'clipboard-list', variant: 'secondary',
-      when: () => true,
-      args: [
-        { key: 'start_date', label: 'Từ ngày', type: 'date' },
-        { key: 'end_date',   label: 'Đến ngày', type: 'date' },
-      ]},
     // UC-30 step 6: cập nhật thu hồi 1 dòng affected_item
     { method: 'update_recovery', label: 'Cập nhật thu hồi (dòng)', icon: 'file-text', variant: 'secondary',
       when: (d) => d.docstatus === 1 && d.status !== 'Closed',
@@ -234,11 +228,6 @@ export const ACTIONS = {
       label: 'Tạo Yêu cầu mua (MR)', icon: 'file-text', variant: 'secondary',
       when: (d) => !d.resolved && d.alert_type === 'low_stock',
       navigateOnSuccess: { type: 'doc', dt: 'SC Material Request', from: 'mr' } },
-    // Expiring → ưu tiên cấp phát lô gần hết hạn
-    { method: 'action_priority_dispense',
-      label: 'Ưu tiên cấp phát', icon: 'zap', variant: 'warning',
-      when: (d) => !d.resolved && (d.alert_type === 'expiring' || d.alert_type === 'expiring_soon'),
-      args: [{ key: 'note', label: 'Ghi chú dispense', type: 'textarea' }] },
     // PO overdue / supplier issue → liên hệ NCC
     { method: 'action_contact_supplier',
       label: 'Liên hệ NCC', icon: 'mail', variant: 'primary',

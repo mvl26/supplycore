@@ -51,7 +51,7 @@ function openRecovery(row) {
 
 async function quickFullRecover(row) {
   await doQuickUpdate(row, {
-    recovered_qty: Number(row.qty_dispensed || 0),
+    recovered_qty: Number(row.qty_issued || 0),
     destroyed_qty: 0,
     status: 'Recovered',
     remarks: 'Thu hồi toàn bộ (quick action)',
@@ -61,7 +61,7 @@ async function quickFullRecover(row) {
 async function quickFullDestroy(row) {
   await doQuickUpdate(row, {
     recovered_qty: 0,
-    destroyed_qty: Number(row.qty_dispensed || 0),
+    destroyed_qty: Number(row.qty_issued || 0),
     status: 'Destroyed',
     remarks: 'Huỷ toàn bộ (quick action)',
   }, 'Đã huỷ toàn bộ')
@@ -85,7 +85,7 @@ async function doQuickUpdate(row, payload, successMsg) {
 async function saveRecovery() {
   if (!editing.value) return
   const row = editing.value
-  const qtyDis = Number(row.qty_dispensed || 0)
+  const qtyDis = Number(row.qty_issued || 0)
   const totalAct = Number(form.value.recovered_qty || 0) + Number(form.value.destroyed_qty || 0)
   if (totalAct > qtyDis + 0.0001) {
     toast.error(`Tổng thu hồi + huỷ (${totalAct}) > SL phát (${qtyDis})`)
@@ -189,7 +189,7 @@ function pct(part, whole) {
               <div class="font-mono text-xs">{{ r.voucher_no }}</div>
               <div class="text-xs text-sc-text-muted">{{ r.voucher_type?.replace('SC ', '') }}</div>
             </td>
-            <td class="text-right font-mono font-semibold">{{ r.qty_dispensed }}</td>
+            <td class="text-right font-mono font-semibold">{{ r.qty_issued }}</td>
             <td class="text-right font-mono text-green-700">{{ r.recovered_qty || 0 }}</td>
             <td class="text-right font-mono text-red-700">{{ r.destroyed_qty || 0 }}</td>
             <td class="text-right font-mono"
@@ -227,7 +227,7 @@ function pct(part, whole) {
         <div class="bg-sc-bg p-3 rounded text-sm">
           <div class="flex justify-between">
             <span class="text-sc-text-muted">SL phát:</span>
-            <strong class="font-mono">{{ editing.qty_dispensed }}</strong>
+            <strong class="font-mono">{{ editing.qty_issued }}</strong>
           </div>
           <div class="flex justify-between mt-1">
             <span class="text-sc-text-muted">Vị trí:</span>

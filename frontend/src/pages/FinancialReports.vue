@@ -16,7 +16,6 @@ const TABS = [
   { id: 'inventory', label: 'Tồn kho — giá trị', api: 'inventory_value_report' },
   { id: 'ap_aging',  label: 'Công nợ NCC (Aging)', api: 'ap_aging_report' },
   { id: 'period',    label: 'Chi phí vật tư kỳ',  api: 'period_cost_report' },
-  { id: 'bhyt',      label: 'Quyết toán BHYT',     api: 'bhyt_settlement_report' },
 ]
 const active = ref('inventory')
 
@@ -27,8 +26,6 @@ const filters = ref({
   warehouse: '',
   item_group: '',
   supplier: '',
-  department: '',
-  bhyt_group: '',
   as_of_date: today,
   from_date: firstDayMonth,
   to_date: today,
@@ -37,7 +34,6 @@ const filters = ref({
 // Suggestions
 const whSuggestions = ref([])
 const supSuggestions = ref([])
-const deptSuggestions = ref([])
 
 const loading = ref(false)
 const data = ref(null)
@@ -49,14 +45,12 @@ const drillData = ref(null)
 const API_PREFIX = 'supplycore.m8_accounting.api.financial_reports.'
 
 async function loadSuggestions() {
-  const [whs, sups, depts] = await Promise.all([
+  const [whs, sups] = await Promise.all([
     getList('SC Warehouse', { fields: ['name'], filters: { is_group: 0, disabled: 0 }, limit: 200 }).catch(() => []),
     getList('SC Supplier', { fields: ['name', 'supplier_name'], filters: { disabled: 0 }, limit: 300 }).catch(() => []),
-    getList('SC Department', { fields: ['name'], filters: { disabled: 0 }, limit: 100 }).catch(() => []),
   ])
   whSuggestions.value = whs
   supSuggestions.value = sups
-  deptSuggestions.value = depts
 }
 
 async function runReport() {
@@ -78,11 +72,6 @@ async function runReport() {
       args.to_date = filters.value.to_date
       if (filters.value.item_group) args.item_group = filters.value.item_group
       if (filters.value.warehouse) args.warehouse = filters.value.warehouse
-    } else if (active.value === 'bhyt') {
-      args.from_date = filters.value.from_date
-      args.to_date = filters.value.to_date
-      if (filters.value.department) args.department = filters.value.department
-      if (filters.value.bhyt_group) args.bhyt_group = filters.value.bhyt_group
     }
     data.value = await call(API_PREFIX + tab.api, args)
   } catch (e) {
@@ -251,27 +240,6 @@ onMounted(loadSuggestions)
         </select>
       </div>
     </div>
-    <div v-else-if="active === 'bhyt'" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Từ ngày <span class="text-red-500">*</span></label>
-        <input v-model="filters.from_date" type="date" class="sc-input" />
-      </div>
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Đến ngày <span class="text-red-500">*</span></label>
-        <input v-model="filters.to_date" type="date" class="sc-input" />
-      </div>
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Khoa phòng</label>
-        <select v-model="filters.department" class="sc-input">
-          <option value="">— Tất cả —</option>
-          <option v-for="d in deptSuggestions" :key="d.name" :value="d.name">{{ d.name }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Nhóm BHYT (N01-N09)</label>
-        <input v-model="filters.bhyt_group" class="sc-input" placeholder="VD: N01" />
-      </div>
-    </div>
   </div>
 
   <!-- Period finalization warning -->
@@ -284,8 +252,7 @@ onMounted(loadSuggestions)
         — vẫn còn chứng từ <em>Draft</em> trong kỳ. Số liệu có thể thay đổi:
         <span v-if="data.pending_drafts">
           PI nháp = <strong>{{ data.pending_drafts.purchase_invoice || 0 }}</strong>,
-          PE nháp = <strong>{{ data.pending_drafts.payment_entry || 0 }}</strong>,
-          PD nháp = <strong>{{ data.pending_drafts.patient_dispensing || 0 }}</strong>
+          PE nháp = <strong>{{ data.pending_drafts.payment_entry || 0 }}</strong>
         </span>
       </div>
     </div>
@@ -424,59 +391,6 @@ onMounted(loadSuggestions)
               <td class="text-right font-mono">
                 {{ data.total_cost > 0 ? ((r.subtotal / data.total_cost) * 100).toFixed(1) : '0' }}%
               </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 4: BHYT Settlement -->
-  <div v-else-if="active === 'bhyt'" class="space-y-4">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="sc-card p-4">
-        <div class="text-xs text-sc-text-muted">Tổng chi phí</div>
-        <div class="text-xl font-bold font-mono text-sc-navy">{{ fmtVNDShort(data.summary.total_cost) }}</div>
-      </div>
-      <div class="sc-card p-4 bg-green-50">
-        <div class="text-xs text-sc-text-muted">BHYT chi trả</div>
-        <div class="text-xl font-bold font-mono text-green-700">{{ fmtVNDShort(data.summary.total_bhyt_covered) }}</div>
-      </div>
-      <div class="sc-card p-4 bg-amber-50">
-        <div class="text-xs text-sc-text-muted">BN tự trả</div>
-        <div class="text-xl font-bold font-mono text-amber-700">{{ fmtVNDShort(data.summary.total_patient_pays) }}</div>
-      </div>
-      <div class="sc-card p-4 bg-red-50">
-        <div class="text-xs text-sc-text-muted">Vượt trần</div>
-        <div class="text-xl font-bold font-mono text-red-700">{{ fmtVNDShort(data.summary.total_ceiling_overage) }}</div>
-      </div>
-    </div>
-    <div class="sc-card overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="sc-table">
-          <thead>
-            <tr>
-              <th>Nhóm BHYT</th><th>Khoa</th>
-              <th class="text-right">Số PD</th>
-              <th class="text-right">Số BN</th>
-              <th class="text-right">Tổng SL</th>
-              <th class="text-right">Tổng CP</th>
-              <th class="text-right">BHYT trả</th>
-              <th class="text-right">BN trả</th>
-              <th class="text-right">Vượt trần</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(r, idx) in data.rows" :key="idx" class="hover:bg-sc-bg">
-              <td class="font-medium">{{ r.bhyt_group }}</td>
-              <td>{{ r.ward }}</td>
-              <td class="text-right font-mono">{{ r.pd_count }}</td>
-              <td class="text-right font-mono">{{ r.patient_count }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.total_qty) }}</td>
-              <td class="text-right font-mono font-semibold">{{ fmtVND(r.total_cost) }}</td>
-              <td class="text-right font-mono text-green-700">{{ fmtVND(r.total_bhyt_covered) }}</td>
-              <td class="text-right font-mono text-amber-700">{{ fmtVND(r.total_patient_pays) }}</td>
-              <td class="text-right font-mono text-red-700">{{ fmtVND(r.total_ceiling_overage) }}</td>
             </tr>
           </tbody>
         </table>

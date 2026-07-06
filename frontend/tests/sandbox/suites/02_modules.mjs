@@ -1,4 +1,4 @@
-// Suite 02: 12 module hubs M0..M11
+// Suite 02: 11 module hubs M0..M11 (M7 Dispensing dropped, GĐ1)
 
 const MODULES = [
   ['m0', 'Dữ liệu nền'],
@@ -8,7 +8,6 @@ const MODULES = [
   ['m4', 'Quản lý kho'],
   ['m5', 'FEFO'],
   ['m6', 'Chuyển kho'],
-  ['m7', 'Cấp phát'],
   ['m8', 'Kế toán'],
   ['m9', 'Kiểm kê'],
   ['m10', 'Truy xuất & Thu hồi'],

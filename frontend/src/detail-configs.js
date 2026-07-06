@@ -445,134 +445,6 @@ export const DETAIL_CONFIGS = {
     },
   },
 
-  // ===== Clinical: DR =======================================================
-  'SC Dispensing Request': {
-    icon: 'clipboard-list',
-    accentLabel: 'Yêu cầu cấp phát',
-    title: (d) => d.department || d.name,
-    subtitleMono: (d) => d.name,
-    meta: [
-      { icon: 'calendar', text: (d) => d.request_date ? `Yêu cầu ${fmtDate(d.request_date)}` : null },
-      { icon: 'clock', text: (d) => d.required_by ? `Cần ${fmtDate(d.required_by)}` : null },
-      { icon: 'user', text: (d) => d.patient ? `BN ${d.patient}` : null },
-      { icon: 'warehouse', text: (d) => d.from_warehouse ? `Kho cấp ${d.from_warehouse}` : null },
-      { icon: 'tag', text: (d) => d.purpose },
-    ],
-    status: (d) => {
-      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
-      return statusByField(d, {
-        'Draft': { label: 'Bản nháp', cls: 'sc-badge-neutral', icon: 'file' },
-        'Approved': { label: 'Đã duyệt', cls: 'sc-badge-info', icon: 'check' },
-        'Issued': { label: 'Đã xuất kho', cls: 'sc-badge-info', icon: 'package' },
-        'Dispensed': { label: 'Đã cấp phát', cls: 'sc-badge-success', icon: 'check-circle-2' },
-        'Cancelled': { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' },
-      })
-    },
-    tiles: [
-      { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
-      { icon: 'boxes', label: 'Tổng SL', value: (d) => d.total_qty, fmt: 'number' },
-      { icon: 'wallet', label: 'Ước tính giá trị', value: (d) => d.total_estimated_value, fmt: 'moneyShort' },
-      { icon: 'shield-check', label: 'Vượt hạn mức',
-        value: (d) => d.quota_override_acknowledged ? 'Manager xác nhận' : '—',
-        accent: (d) => d.quota_override_acknowledged ? 'amber' : 'default' },
-    ],
-    sections: [
-      { title: 'Bối cảnh cấp phát', icon: 'info', fields: [
-        { label: 'Khoa', value: (d) => d.department },
-        { label: 'Bệnh nhân', value: (d) => d.patient,
-          link: (d) => d.patient ? `/doc/SC Patient/${d.patient}` : null },
-        { label: 'Mục đích', value: (d) => d.purpose },
-        { label: 'Kho cấp', value: (d) => d.from_warehouse },
-        { label: 'Người YC', value: (d) => d.requested_by },
-        { label: 'Lý do', value: (d) => d.reason, pre: true },
-      ]},
-      { title: 'Downstream', icon: 'arrow-right', fields: [
-        { label: 'Stock Entry', value: (d) => d.stock_entry,
-          link: (d) => d.stock_entry ? `/doc/SC Stock Entry/${d.stock_entry}` : null },
-        { label: 'Patient Dispensing', value: (d) => d.patient_dispensing,
-          link: (d) => d.patient_dispensing ? `/doc/SC Patient Dispensing/${d.patient_dispensing}` : null },
-      ]},
-    ],
-    items: {
-      field: 'items',
-      label: 'Vật tư yêu cầu',
-      icon: 'syringe',
-      columns: [
-        { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
-        { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
-        { label: 'SL YC', accessor: 'requested_qty', align: 'right', fmt: 'number' },
-        { label: 'Duyệt', accessor: 'approved_qty', align: 'right', fmt: 'number' },
-        { label: 'Đã cấp', accessor: 'issued_qty', align: 'right', fmt: 'number', anchor: 'navy' },
-        { label: 'Lô', accessor: 'batch', mono: true },
-      ],
-      totals: [null, null, null, 'requested_qty', 'approved_qty', 'issued_qty', null],
-    },
-  },
-
-  // ===== Clinical: PD =======================================================
-  'SC Patient Dispensing': {
-    icon: 'syringe',
-    accentLabel: 'Cấp phát bệnh nhân',
-    title: (d) => d.patient_name || d.patient || '—',
-    subtitleMono: (d) => d.name,
-    meta: [
-      { icon: 'calendar', text: (d) => d.dispensing_date ? `Cấp ${fmtDate(d.dispensing_date)}` : null },
-      { icon: 'building-2', text: (d) => d.ward ? `Khoa ${d.ward}` : null },
-      { icon: 'shield', text: (d) => d.bhyt_card_no ? `BHYT ${d.bhyt_card_no}` : null },
-      { icon: 'link', text: (d) => d.dispensing_request ? `DR ${d.dispensing_request}` : null },
-    ],
-    status: (d) => {
-      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
-      if (d.docstatus === 1) return { label: 'Đã cấp phát', cls: 'sc-badge-success', icon: 'check-circle-2' }
-      return { label: 'Bản nháp', cls: 'sc-badge-neutral', icon: 'file' }
-    },
-    tiles: [
-      { icon: 'wallet', label: 'Tổng chi phí', value: (d) => d.total_cost, fmt: 'moneyShort' },
-      { icon: 'shield-check', label: 'BHYT chi trả', value: (d) => d.bhyt_covered, fmt: 'moneyShort',
-        sublabel: (d) => d.bhyt_payment_rate ? `${d.bhyt_payment_rate}% theo BHYT` : null,
-        accent: 'emerald' },
-      { icon: 'user', label: 'BN tự trả', value: (d) => d.patient_pays, fmt: 'moneyShort',
-        sublabel: (d) => d.ceiling_overage ? `Vượt trần ${fmtVND(d.ceiling_overage)}` : null,
-        accent: (d) => Number(d.ceiling_overage) > 0 ? 'amber' : 'default' },
-      { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
-    ],
-    sections: [
-      { title: 'Bệnh nhân', icon: 'user', fields: [
-        { label: 'Mã BN', value: (d) => d.patient,
-          link: (d) => d.patient ? `/doc/SC Patient/${d.patient}` : null },
-        { label: 'Họ tên', value: (d) => d.patient_name },
-        { label: 'Khoa', value: (d) => d.ward },
-        { label: 'Thẻ BHYT', value: (d) => d.bhyt_card_no },
-        { label: 'Loại BHYT', value: (d) => d.bhyt_type },
-        { label: 'Tỷ lệ BHYT', value: (d) => d.bhyt_payment_rate ? `${d.bhyt_payment_rate}%` : '—' },
-      ]},
-      { title: 'Nguồn cấp phát', icon: 'arrow-right', fields: [
-        { label: 'DR liên quan', value: (d) => d.dispensing_request,
-          link: (d) => d.dispensing_request ? `/doc/SC Dispensing Request/${d.dispensing_request}` : null },
-        { label: 'Stock Entry', value: (d) => d.stock_entry,
-          link: (d) => d.stock_entry ? `/doc/SC Stock Entry/${d.stock_entry}` : null },
-      ]},
-    ],
-    items: {
-      field: 'items',
-      label: 'Vật tư cấp phát',
-      icon: 'pill',
-      columns: [
-        { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
-        { label: 'Tên', accessor: 'item_name', max: true },
-        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
-        { label: 'SL', accessor: 'qty', align: 'right', fmt: 'number' },
-        { label: 'Lô', accessor: 'batch', mono: true },
-        { label: 'Đơn giá', accessor: 'unit_cost', align: 'right', fmt: 'money' },
-        { label: 'BHYT', accessor: 'bhyt_amount', align: 'right', fmt: 'money', anchor: 'navy' },
-        { label: 'BN trả', accessor: 'patient_pays', align: 'right', fmt: 'money' },
-        { label: 'Vượt trần', accessor: 'ceiling_overage', align: 'right', fmt: 'money', anchor: 'muted' },
-      ],
-      totals: [null, null, null, 'qty', null, null, 'bhyt_amount', 'patient_pays', 'ceiling_overage'],
-    },
-  },
-
   // ===== M10: Recall Notice =================================================
   'SC Recall Notice': {
     icon: 'alert-octagon',
@@ -634,16 +506,16 @@ export const DETAIL_CONFIGS = {
       icon: 'map-pin',
       columns: [
         { label: 'Loại', accessor: 'location_type', align: 'center' },
-        { label: 'Kho/Khoa/BN', accessor: (r) => r.warehouse || r.department || r.patient || '—', mono: true },
+        { label: 'Kho/Khoa', accessor: (r) => r.warehouse || r.department || '—', mono: true },
         { label: 'Chứng từ', accessor: 'voucher_no', mono: true, anchor: 'navy' },
         { label: 'Ngày', accessor: 'voucher_date', fmt: 'date', align: 'center' },
-        { label: 'SL phát', accessor: 'qty_dispensed', align: 'right', fmt: 'number' },
+        { label: 'SL xuất', accessor: 'qty_issued', align: 'right', fmt: 'number' },
         { label: 'Đã thu', accessor: 'recovered_qty', align: 'right', fmt: 'number' },
         { label: 'Đã huỷ', accessor: 'destroyed_qty', align: 'right', fmt: 'number' },
         { label: 'Còn', accessor: 'outstanding_qty', align: 'right', fmt: 'number', anchor: 'navy' },
         { label: 'Trạng thái', accessor: 'status' },
       ],
-      totals: [null, null, null, null, null, 'qty_dispensed', 'recovered_qty', 'destroyed_qty', 'outstanding_qty', null],
+      totals: [null, null, null, null, null, 'qty_issued', 'recovered_qty', 'destroyed_qty', 'outstanding_qty', null],
     },
   },
 

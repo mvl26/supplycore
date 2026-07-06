@@ -352,46 +352,5 @@ const missingLabel = {
       </div>
     </div>
 
-    <!-- Section 5: Dispensing -->
-    <div class="sc-card overflow-hidden">
-      <div class="p-5 pb-3">
-        <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-          <span class="text-xl"><Icon name="syringe" :size="18" /></span>
-          Cấp phát bệnh nhân ({{ trace.dispensing.length }})
-        </h3>
-      </div>
-      <div v-if="!trace.dispensing.length" class="p-5 text-center text-sc-text-muted">
-        Chưa có ca cấp phát nào dùng lô này.
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="sc-table">
-          <thead>
-            <tr>
-              <th>Ngày</th><th>PD</th><th>Bệnh nhân</th><th>Khoa</th>
-              <th class="text-right">SL</th>
-              <th class="text-right">Đơn giá</th>
-              <th class="text-right">BHYT trả</th>
-              <th class="text-right">BN trả</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(d, idx) in trace.dispensing" :key="idx" class="hover:bg-sc-bg">
-              <td>{{ fmtDate(d.dispensing_date) }}</td>
-              <td class="font-mono text-xs cursor-pointer text-sc-royal hover:underline"
-                @click="goToDoc('SC Patient Dispensing', d.pd)">{{ d.pd }}</td>
-              <td>
-                <div class="text-xs font-mono">{{ d.patient }}</div>
-                <div class="text-xs">{{ d.patient_name }}</div>
-              </td>
-              <td>{{ d.ward }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(d.qty) }}</td>
-              <td class="text-right font-mono">{{ fmtVND(d.unit_cost) }}</td>
-              <td class="text-right font-mono text-green-700">{{ fmtVND(d.bhyt_amount) }}</td>
-              <td class="text-right font-mono text-amber-700">{{ fmtVND(d.patient_pays) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </template>

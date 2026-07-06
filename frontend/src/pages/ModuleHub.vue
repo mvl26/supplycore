@@ -89,14 +89,6 @@ function newDoc(dt) {
     <PageHeader :title="moduleInfo.name" :icon="moduleInfo.icon"
       :code="`${moduleInfo.code} · ${moduleInfo.group}`" />
 
-    <!-- M6 UC-18B: nhập phiếu chuyển kho tự động từ HIS -->
-    <div v-if="moduleId === 'm6'" class="mb-5">
-      <button @click="router.push('/his-import')"
-        class="sc-btn-primary text-sm inline-flex items-center gap-2">
-        <Icon name="zap" :size="16" /> Nhập phiếu chuyển kho từ HIS (PDF)
-      </button>
-    </div>
-
     <!-- Doctype stats với + Tạo mới button -->
     <div v-if="doctypes.length"
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-6 sc-stagger">

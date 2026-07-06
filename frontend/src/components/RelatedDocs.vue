@@ -42,14 +42,12 @@ const SECTION_LABELS = {
   recent_movements:     { title: 'Sổ kho gần đây',    icon: 'trending-up', dt: 'SC Stock Ledger Entry' },
   movements:            { title: 'Lịch sử SLE',       icon: 'trending-up', dt: 'SC Stock Ledger Entry' },
   recalls:              { title: 'Recall liên quan',  icon: 'siren', dt: 'SC Recall Notice' },
-  dispensings:          { title: 'Lịch sử cấp phát',  icon: 'syringe', dt: 'SC Patient Dispensing' },
-  patient_dispensings:  { title: 'Cấp phát BN từ DR', icon: 'syringe', dt: 'SC Patient Dispensing' },
   framework_contracts:  { title: 'HĐ khung',           icon: 'file-text', dt: 'Framework Contract' },
   affected_items:       { title: 'Vật tư bị ảnh hưởng', icon: 'alert-triangle', dt: null },
 }
 
 const STATUS_KEYS = new Set(['status', 'qc_status', 'overall_status', 'severity',
-  'request_type', 'warehouse_type', 'entry_type', 'alert_type', 'bhyt_type'])
+  'request_type', 'warehouse_type', 'entry_type', 'alert_type'])
 
 // Per-section item navigation override (vd stock_balance click → batch detail)
 const NAV_OVERRIDE = {

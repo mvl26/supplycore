@@ -14,7 +14,7 @@ const highlights = [
   { icon: 'layers',   title: 'Quản lý lô & hạn dùng', desc: 'Xuất FEFO tự động, cảnh báo cận hạn' },
   { icon: 'shield',   title: 'Truy xuất & thu hồi',   desc: 'Lần vết lô vật tư toàn chuỗi cung ứng' },
   { icon: 'activity', title: 'Vận hành thời gian thực', desc: 'Tồn kho 3 tầng, bản đồ vị trí lưu trữ' },
-  { icon: 'wallet',   title: 'Đối soát 3-way & BHYT',  desc: 'Kiểm soát hóa đơn, thanh toán, chi phí' },
+  { icon: 'wallet',   title: 'Đối soát 3-way',  desc: 'Kiểm soát hóa đơn, thanh toán, chi phí' },
 ]
 
 async function submit() {
@@ -66,8 +66,8 @@ async function submit() {
             Quản lý chuỗi cung ứng<br />y tế — chính xác & minh bạch
           </h1>
           <p class="mt-3 text-white/55 text-sm max-w-sm leading-relaxed">
-            Nền tảng vận hành kho bệnh viện: từ hợp đồng, mua sắm, tiếp nhận đến
-            cấp phát và quyết toán BHYT.
+            Nền tảng vận hành kho: từ hợp đồng, mua sắm, tiếp nhận đến
+            chuyển kho và kế toán.
           </p>
         </div>
 

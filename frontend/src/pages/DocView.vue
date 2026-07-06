@@ -10,9 +10,7 @@ import Icon from '../components/Icon.vue'
 import ActionPanel from '../components/ActionPanel.vue'
 import DocForm from '../components/DocForm.vue'
 import RelatedDocs from '../components/RelatedDocs.vue'
-import FefoPickGuide from '../components/FefoPickGuide.vue'
 import WarehouseStockPanel from '../components/WarehouseStockPanel.vue'
-import FetchUpstream from '../components/FetchUpstream.vue'
 import RecallRecoveryPanel from '../components/RecallRecoveryPanel.vue'
 import CountEntryPanel from '../components/CountEntryPanel.vue'
 import IcsSummaryPanel from '../components/IcsSummaryPanel.vue'
@@ -173,7 +171,7 @@ async function onCreateNewLink(payload) {
   const NAME_FIELD = {
     'SC Item Group': 'group_name', 'SC UOM': 'uom_name', 'SC Supplier': 'supplier_name',
     'SC Warehouse': 'warehouse_name', 'SC Department': 'department_name',
-    'SC Item': 'item_name', 'SC Patient': 'patient_name',
+    'SC Item': 'item_name',
     'SC GL Account': 'account_name',
   }
   if (searchText && NAME_FIELD[field.linkTo]) {
@@ -251,28 +249,6 @@ function findHeaderField(fieldName) {
 
 watch(() => route.fullPath, load)
 onMounted(load)
-
-// Merge data từ FetchUpstream → đè header field + replace items
-function onUpstreamMerge({ header, items, source }) {
-  if (!doc.value) return
-  const next = { ...doc.value, ...(header || {}) }
-  // Child table: nếu schema có items field → set; nếu form chưa có items array → init
-  const itemsField = schema.value?.items?.field || 'items'
-  if (Array.isArray(items) && items.length) {
-    const existing = Array.isArray(next[itemsField]) ? next[itemsField] : []
-    // Nếu user đã thêm vài dòng → append; nếu rỗng → thay
-    if (existing.filter(r => r && Object.keys(r).length > 1).length === 0) {
-      next[itemsField] = items
-    } else {
-      next[itemsField] = [...existing, ...items]
-    }
-  }
-  // Lưu meta source để hiển thị badge
-  if (source?.name) {
-    next._upstream_source = `${source.doctype} ${source.name}`
-  }
-  doc.value = next
-}
 
 // WarehouseStockPanel (TR / SE): điền các dòng tồn kho đã tích → bảng chi tiết
 async function onStockFill(picked) {
@@ -549,7 +525,7 @@ const STATUS_KEYS = new Set([
   'status', 'qc_status', 'overall_status', 'severity', 'request_type',
   'warehouse_type', 'department_type', 'count_type', 'recall_type',
   'investigation_type', 'variance_reason', 'payment_method',
-  'bhyt_type', 'entry_type', 'alert_type', 'approval_stage',
+  'entry_type', 'alert_type', 'approval_stage',
 ])
 
 function displayField(value, key) {
@@ -665,22 +641,16 @@ function displayField(value, key) {
       :selectable="isNew || editing"
       :title="isNew || editing ? 'Chọn tồn kho nguồn — tích để điền vào bảng chi tiết' : 'Tồn kho nguồn'"
       @fill="onStockFill" />
-    <template v-if="doctype === 'SC Patient Dispensing' && doc.items?.length">
-      <FefoPickGuide v-for="(it, i) in doc.items.filter(it => it.item && it.warehouse && it.qty)"
-        :key="`fefo-${i}`" :item="it.item" :warehouse="it.warehouse" :qtyNeeded="it.qty" />
-    </template>
 
     <!-- New / Edit mode → DocForm -->
     <template v-if="isNew || editing">
-      <!-- Fetch upstream — chỉ hiện ở form New để pull data từ doc cha -->
-      <FetchUpstream v-if="isNew" :target-doctype="doctype" @merge="onUpstreamMerge" />
       <DocForm ref="docFormRef" v-model="doc" :doctype="doctype" @submit="save" @create-new="onCreateNewLink" />
       <div v-if="!schema" class="sc-card p-6 text-center">
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
       </div>
     </template>
 
-    <!-- CR-03: modal Tạo nhanh bản ghi tham chiếu (NCC, Vật tư, Kho, BN, Khoa…) -->
+    <!-- CR-03: modal Tạo nhanh bản ghi tham chiếu (NCC, Vật tư, Kho, Khoa…) -->
     <QuickCreateModal v-if="quickCreate"
       :doctype="quickCreate.doctype" :prefill="quickCreate.prefill"
       @created="onQuickCreated" @close="quickCreate = null" />

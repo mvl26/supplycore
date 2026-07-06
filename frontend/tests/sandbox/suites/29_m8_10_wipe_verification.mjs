@@ -11,16 +11,17 @@ const EXPECTED_EMPTY_8_10 = [
 ]
 
 const EXPECTED_MASTER = {
-  'SC Item': 12, 'SC Supplier': 12, 'SC Warehouse': 15, 'SC Patient': 13,
+  'SC Item': 12, 'SC Supplier': 12, 'SC Warehouse': 15,
   'SC UOM': 18, 'SC Department': 33, 'SC Item Group': 23,
 }
 
 const ALSO_STILL_EMPTY = [
-  // Wipe trước (M1/M2/M3/M6/M7 + PR/PO/SE/Batch/SLE)
+  // Wipe trước (M1/M2/M3/M6 + PR/PO/SE/Batch/SLE)
+  // M7 Dispensing đã bỏ khỏi backend (GĐ1) — không còn doctype để check.
   'SC Purchase Receipt', 'SC Purchase Order', 'SC Stock Entry',
   'SC Stock Ledger Entry', 'SC Batch',
   'Framework Contract', 'SC Material Request', 'SC Quality Inspection',
-  'SC Transfer Request', 'SC Patient Dispensing', 'SC Dispensing Request',
+  'SC Transfer Request',
 ]
 
 const PAGES = [

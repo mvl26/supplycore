@@ -1,7 +1,8 @@
 // Suite 104: Persona RBAC sandbox
 //
-// Mục đích: với từng persona (6 personas trong personas.js + ROLE_TO_PERSONA),
-// dựng 1 user sandbox idempotent, login, kiểm chức năng tiêu biểu của role:
+// Mục đích: với từng persona (4 personas còn lại trong personas.js +
+// ROLE_TO_PERSONA — GĐ1 đã bỏ "mai"/"quynh" vì role nguồn bị xoá), dựng 1
+// user sandbox idempotent, login, kiểm chức năng tiêu biểu của role:
 //   - Login đúng → get_logged_user trả email user.
 //   - list_docs trên doctype thuộc quyền đọc → status 200.
 //   - list_docs trên doctype ngoài quyền → status 403 + PermissionError.
@@ -10,7 +11,7 @@
 // Mỗi persona test logout → login user mới → assert → giữ session.
 //
 // User sandbox không bị xoá cuối run — tái sử dụng giữa các lần chạy
-// (sandbox environment). Password fix: `Sandbox2026!` cho cả 6 user.
+// (sandbox environment). Password fix: `Sandbox2026!` cho cả 4 user.
 
 const PWD_SANDBOX = 'Sandbox2026!'
 
@@ -18,9 +19,7 @@ const PWD_SANDBOX = 'Sandbox2026!'
 // admin: skip forbidden (Sys Manager full access).
 // lan: skip forbidden (Manager wide access). Allowed = SC Purchase Order.
 // tam: Storekeeper — đọc PR/SE/MR, không đọc Payment Entry.
-// mai: Ward Staff — đọc DR/PD/MR, không đọc Purchase Order.
 // phong: Accountant — đọc PI/PE/GL, không đọc Purchase Receipt.
-// quynh: Pharmacy Officer — đọc PD/DR/Patient, không đọc Purchase Order.
 const PERSONAS = [
   { id: 'admin', email: 'sandbox.admin@sc.test', full: 'Sandbox Admin',
     role: 'System Manager',
@@ -31,15 +30,9 @@ const PERSONAS = [
   { id: 'tam',   email: 'sandbox.tam@sc.test',   full: 'Sandbox Storekeeper Tam',
     role: 'SupplyCore Storekeeper',
     allowed: 'SC Purchase Receipt', forbidden: 'SC Payment Entry' },
-  { id: 'mai',   email: 'sandbox.mai@sc.test',   full: 'Sandbox Ward Mai',
-    role: 'SupplyCore Ward Staff',
-    allowed: 'SC Dispensing Request', forbidden: 'SC Purchase Order' },
   { id: 'phong', email: 'sandbox.phong@sc.test', full: 'Sandbox Accountant Phong',
     role: 'SupplyCore Accountant',
     allowed: 'SC Purchase Invoice', forbidden: 'SC Stock Entry' },
-  { id: 'quynh', email: 'sandbox.quynh@sc.test', full: 'Sandbox Pharmacy Quynh',
-    role: 'Pharmacy Officer',
-    allowed: 'SC Patient Dispensing', forbidden: 'SC Purchase Order' },
 ]
 
 // ===== Helpers =====
@@ -138,10 +131,10 @@ async function tryListDocs(page, doctype) {
 // ===== Tests =====
 export const tests = [
   // ---------------------------------------------------------------------
-  // Bootstrap: tạo / refresh 6 user sandbox (chạy với session Admin)
+  // Bootstrap: tạo / refresh 4 user sandbox (chạy với session Admin)
   // ---------------------------------------------------------------------
   {
-    name: 'Bootstrap 6 sandbox users (idempotent)',
+    name: 'Bootstrap 4 sandbox users (idempotent)',
     run: async ({ page }) => {
       const results = []
       for (const p of PERSONAS) {

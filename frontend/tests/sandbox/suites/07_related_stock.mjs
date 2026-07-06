@@ -1,4 +1,4 @@
-// Suite 07: Related docs + Stock balance + PO/QI/PD list khắc phục
+// Suite 07: Related docs + Stock balance + PO/QI list khắc phục
 import { apiCall, apiGetList, navigateTo } from '../helpers.mjs'
 
 export const tests = [
@@ -88,18 +88,6 @@ export const tests = [
     },
   },
   {
-    name: 'PD list visible với 3+ rows',
-    run: async ({ page, BASE, OUT, name }) => {
-      await navigateTo(page, BASE, '/list/SC%20Patient%20Dispensing')
-      await page.waitForTimeout(1500)
-      await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
-      const rows = await page.locator('table tbody tr').count()
-      return rows >= 1
-        ? { ok: true, detail: `${rows} PD rows visible` }
-        : { ok: false, detail: 'PD list empty' }
-    },
-  },
-  {
     name: 'QI list visible với rows',
     run: async ({ page, BASE, OUT, name }) => {
       await navigateTo(page, BASE, '/list/SC%20Quality%20Inspection')
@@ -109,21 +97,6 @@ export const tests = [
       return rows >= 1
         ? { ok: true, detail: `${rows} QI rows visible` }
         : { ok: false, detail: 'QI list empty' }
-    },
-  },
-  {
-    name: 'Patient detail có related "Lịch sử cấp phát"',
-    run: async ({ page, BASE, OUT, name }) => {
-      const pds = await apiGetList(page, 'SC Patient Dispensing',
-        { fields: ['patient'], filters: { docstatus: 1 }, limit: 1 })
-      if (!pds.length) return { ok: false, detail: 'No PD' }
-      await navigateTo(page, BASE, `/doc/SC%20Patient/${encodeURIComponent(pds[0].patient)}`)
-      await page.waitForTimeout(2500)
-      await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
-      const dispSection = await page.locator('text=Lịch sử cấp phát').count()
-      return dispSection >= 1
-        ? { ok: true, detail: `Patient ${pds[0].patient}: có lịch sử cấp phát` }
-        : { ok: false, detail: 'No section' }
     },
   },
 ]

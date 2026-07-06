@@ -16,7 +16,7 @@ const emit = defineEmits(['update:modelValue', 'selected', 'createNew'])
 
 // L03/T05: ưu tiên hiển thị TÊN (mã làm phụ). Map field tên theo doctype.
 const NAME_FIELD = {
-  'SC Item': 'item_name', 'SC Supplier': 'supplier_name', 'SC Patient': 'patient_name',
+  'SC Item': 'item_name', 'SC Supplier': 'supplier_name',
   'User': 'full_name', 'SC Warehouse': 'warehouse_name', 'SC Department': 'department_name',
   'SC Item Group': 'group_name', 'SC UOM': 'uom_name',
   'Framework Contract': 'contract_number',
@@ -117,7 +117,6 @@ async function doSearch(q) {
       : []
     const fields = props.linkTo === 'SC Item' ? ['name', 'item_name']
                   : props.linkTo === 'SC Supplier' ? ['name', 'supplier_name']
-                  : props.linkTo === 'SC Patient' ? ['name', 'patient_name']
                   : props.linkTo === 'User' ? ['name', 'full_name']
                   : props.linkTo === 'SC Batch' ? ['name', 'item', 'expiry_date']
                   : props.linkTo === 'Framework Contract' ? ['name', 'contract_number', 'supplier_name']

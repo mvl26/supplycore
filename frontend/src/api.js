@@ -293,8 +293,7 @@ export const dataIo = {
 
 // === Phiếu cha-con — xuất/nhập Excel 2 sheet (engine chung, theo doctype) ===
 // Hỗ trợ: Framework Contract, SC Material Request, SC Purchase Order,
-//   SC Purchase Receipt, SC Transfer Request, SC Dispensing Request,
-//   SC Patient Dispensing, SC Inventory Count Sheet.
+//   SC Purchase Receipt, SC Transfer Request, SC Inventory Count Sheet.
 export const voucherIo = {
   export: (doctype, opts = {}) => call('supplycore.api.voucher_io.export_voucher', {
     doctype,
@@ -325,8 +324,7 @@ export const voucherIo = {
 // Doctype hỗ trợ xuất/nhập phiếu cha-con (khớp voucher_io.CONFIGS).
 export const VOUCHER_IO_DOCTYPES = [
   'Framework Contract', 'SC Material Request', 'SC Purchase Order',
-  'SC Purchase Receipt', 'SC Transfer Request', 'SC Dispensing Request',
-  'SC Patient Dispensing', 'SC Inventory Count Sheet',
+  'SC Purchase Receipt', 'SC Transfer Request', 'SC Inventory Count Sheet',
 ]
 
 // === Bản đồ kho — khuôn viên BV + sơ đồ bin ===
@@ -338,20 +336,6 @@ export const warehouseMap = {
   route: (fromWarehouse, toWarehouse) => call('supplycore.api.warehouse_map.get_route',
     { from_warehouse: fromWarehouse, to_warehouse: toWarehouse }),
   listMapped: () => call('supplycore.api.warehouse_map.list_mapped_warehouses'),
-}
-
-// === Fetch upstream — pull data từ doc cha vào doc mới ===
-export const fetchUpstream = {
-  sourcesFor: (targetDoctype) =>
-    call('supplycore.api.fetch_upstream.sources_for', { target_doctype: targetDoctype }),
-  listCandidates: (sourceDoctype, targetDoctype, search = '', limit = 20) =>
-    call('supplycore.api.fetch_upstream.list_candidates', {
-      source_doctype: sourceDoctype, target_doctype: targetDoctype, search, limit,
-    }),
-  fetch: (sourceDoctype, sourceName, targetDoctype) =>
-    call('supplycore.api.fetch_upstream.fetch', {
-      source_doctype: sourceDoctype, source_name: sourceName, target_doctype: targetDoctype,
-    }),
 }
 
 // === User management ===
@@ -405,15 +389,4 @@ export function fileToBase64(file) {
     r.onerror = () => reject(r.error)
     r.readAsDataURL(file)
   })
-}
-
-// === Upload file (Frappe /api/method/upload_file) → trả {file_url, ...} ===
-// Dùng cho UC-18B: upload PDF phiếu HIS rồi nhập tự động.
-export async function uploadFile(file, { isPrivate = true, folder = 'Home' } = {}) {
-  const fd = new FormData()
-  fd.append('file', file, file.name)
-  fd.append('is_private', isPrivate ? '1' : '0')
-  fd.append('folder', folder)
-  const data = await request('/api/method/upload_file', { method: 'POST', body: fd })
-  return data.message  // { file_url, file_name, ... }
 }

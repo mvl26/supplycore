@@ -1,6 +1,6 @@
 // Suite 33: Persona-aware sidebar — phân quyền theo tài khoản, không có dropdown chọn
 //
-// Tạo 5 user (mỗi user 1 Frappe role tương ứng 1 persona), login lần lượt,
+// Tạo 3 user (mỗi user 1 Frappe role tương ứng 1 persona), login lần lượt,
 // xác nhận sidebar render đúng persona card + nav curated. Không có
 // persona switcher hiển thị — persona = derive 100% từ login user roles.
 //
@@ -8,8 +8,9 @@
 //   - SupplyCore Manager        → "lan"   (Trưởng phòng Vật tư)
 //   - SupplyCore Storekeeper    → "tam"   (Thủ kho)
 //   - SupplyCore Accountant     → "phong" (Kế toán)
-//   - SupplyCore Ward Staff     → "mai"   (Điều dưỡng / NV Khoa)
-//   - Pharmacy Officer          → "quynh" (Kiểm soát Chất lượng)
+//
+// GĐ1: bỏ 2 persona "mai" (SupplyCore Ward Staff) và "quynh" (Pharmacy
+// Officer) — cả 2 Frappe role đã bị xoá khỏi backend.
 
 import { randomBytes } from 'crypto'
 
@@ -31,7 +32,7 @@ const PERSONAS = [
     personaName: 'Trưởng phòng Vật tư',
     personaRole: 'SC-MANAGER',
     // Manager has very broad access — sample a representative subset.
-    visibleHrefs: ['/m1', '/m2', '/m7', '/alerts'],
+    visibleHrefs: ['/m1', '/m2', '/alerts'],
     hiddenHrefs:  ['/putaway'],  // putaway feature is storekeeper-specific
   },
   {
@@ -51,24 +52,6 @@ const PERSONAS = [
     personaRole: 'SC-ACCOUNTANT',
     visibleHrefs: ['/m8', '/financial-reports'],
     hiddenHrefs:  ['/m3', '/m4', '/m6', '/users', '/putaway'],
-  },
-  {
-    id: 'mai',
-    email: `psn-ward-${RUN_ID}@local.test`,
-    role: 'SupplyCore Ward Staff',
-    personaName: 'Điều dưỡng',  // matches "Điều dưỡng / NV Khoa" — substring match
-    personaRole: 'SC-WARD-NURSE',
-    visibleHrefs: [],  // ward staff has minimal direct routes; sidebar may be small
-    hiddenHrefs:  ['/m1', '/m2', '/m8', '/users', '/putaway', '/financial-reports'],
-  },
-  {
-    id: 'quynh',
-    email: `psn-pharm-${RUN_ID}@local.test`,
-    role: 'Pharmacy Officer',
-    personaName: 'Kiểm soát Chất lượng',
-    personaRole: 'SC-QC',
-    visibleHrefs: ['/m5', '/m7', '/m10', '/batch-trace'],
-    hiddenHrefs:  ['/m1', '/m2', '/m8', '/users', '/financial-reports'],
   },
 ]
 
@@ -162,7 +145,7 @@ export const tests = [
       }
 
       // 5. NO persona switcher dropdown anywhere — phân quyền không cho chọn.
-      const switcher = await page.locator('header button:has-text("Trưởng phòng"), header button:has-text("Thủ kho"), header button:has-text("Kế toán"), header button:has-text("Điều dưỡng"), header button:has-text("Kiểm soát Chất lượng")').count()
+      const switcher = await page.locator('header button:has-text("Trưởng phòng"), header button:has-text("Thủ kho"), header button:has-text("Kế toán")').count()
 
       const ok = cardName > 0 && cardRole > 0 && scope > 0
         && visMisses.length === 0 && hidLeaks.length === 0

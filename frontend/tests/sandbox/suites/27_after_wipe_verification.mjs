@@ -13,7 +13,6 @@ const EXPECTED_MASTER_MIN = {
   'SC Item': 12,
   'SC Supplier': 12,
   'SC Warehouse': 15,
-  'SC Patient': 13,
   'SC UOM': 18,
   'SC Department': 33,
   'SC Item Group': 23,

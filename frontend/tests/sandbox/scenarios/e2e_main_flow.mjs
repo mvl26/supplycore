@@ -10,7 +10,7 @@
  *   5. Tạo Lô tự động qua PR submit
  *   6. Xếp hàng vào kho (Bin Location qua PR)
  *   7. Chuyển kho: Stock Entry Material Transfer
- *   8. Cấp phát Bệnh nhân: Patient Dispensing + BHYT calc
+ *   (PHASE 8 Cấp phát/BHYT đã bỏ — GĐ1 gỡ M7 Dispensing/BHYT khỏi backend)
  *
  * Mỗi step có Issue logging vào docs/E2E_MAIN_FLOW_LOG.md
  *
@@ -176,7 +176,7 @@ try {
   })
 
   // Pick master data
-  await step('PRE: Pick master data (Supplier, Item, Warehouse, Patient)', async () => {
+  await step('PRE: Pick master data (Supplier, Item, Warehouse, Department)', async () => {
     const suppliers = await listDocs(page, 'SC Supplier', { fields: ['name', 'supplier_name'], limit: 1 })
     const items = await listDocs(page, 'SC Item', {
       fields: ['name', 'item_name', 'uom', 'has_batch_no'],
@@ -185,14 +185,10 @@ try {
     })
     const warehouses = await listDocs(page, 'SC Warehouse',
       { fields: ['name'], filters: { is_group: 0, disabled: 0 }, limit: 2 })
-    const patients = await listDocs(page, 'SC Patient', {
-      fields: ['name', 'patient_name', 'bhyt_card_no'],
-      filters: { disabled: 0 }, limit: 1,
-    })
     const depts = await listDocs(page, 'SC Department', { fields: ['name'], limit: 1 })
 
-    if (!suppliers.length || !items.length || warehouses.length < 2 || !patients.length || !depts.length) {
-      throw new Error(`Missing master: sup=${suppliers.length}, item=${items.length}, wh=${warehouses.length}, pat=${patients.length}, dept=${depts.length}`)
+    if (!suppliers.length || !items.length || warehouses.length < 2 || !depts.length) {
+      throw new Error(`Missing master: sup=${suppliers.length}, item=${items.length}, wh=${warehouses.length}, dept=${depts.length}`)
     }
 
     ctx.supplier = suppliers[0].name
@@ -200,11 +196,9 @@ try {
     ctx.itemUom = items[0].uom
     ctx.warehouse_main = warehouses[0].name
     ctx.warehouse_to = warehouses[1].name
-    ctx.patient = patients[0].name
-    ctx.bhyt_card = patients[0].bhyt_card_no
     ctx.department = depts[0].name
 
-    return { detail: `Sup=${ctx.supplier}, Item=${ctx.item} (${ctx.itemUom}), WH1=${ctx.warehouse_main}, WH2=${ctx.warehouse_to}, BN=${ctx.patient}` }
+    return { detail: `Sup=${ctx.supplier}, Item=${ctx.item} (${ctx.itemUom}), WH1=${ctx.warehouse_main}, WH2=${ctx.warehouse_to}` }
   })
 
   // ============================================================
@@ -498,47 +492,9 @@ try {
     return { detail: `${ctx.warehouse_main}=${totMain}, ${ctx.warehouse_to}=${totTo}` }
   })
 
-  // ============================================================
-  // PHASE 7: CẤP PHÁT BỆNH NHÂN — Patient Dispensing
-  // ============================================================
-  await step('7.1 Tạo Patient Dispensing (BHYT)', async () => {
-    const pd = await createDocViaAPI(page, 'SC Patient Dispensing', {
-      dispensing_date: today(),
-      patient: ctx.patient,
-      ward: ctx.department,
-      bhyt_card_no: ctx.bhyt_card || null,
-      bhyt_payment_rate: ctx.bhyt_card ? 80 : 0,
-      items: [{
-        item: ctx.item, uom: ctx.itemUom,
-        qty: 5, unit_cost: 5000,
-        batch: ctx.batch,
-        warehouse: ctx.warehouse_main,
-      }],
-    })
-    ctx.pd = pd.name
-    return { detail: `PD=${pd.name} cho BN ${ctx.patient}` }
-  })
-
-  await step('7.2 PD submit → BHYT calc + SLE âm', async () => {
-    await api(page, 'supplycore.api.frontend.submit_doc', { doctype: 'SC Patient Dispensing', name: ctx.pd })
-    const pd = await getDoc(page, 'SC Patient Dispensing', ctx.pd)
-    if (pd.docstatus !== 1) throw new Error(`docstatus=${pd.docstatus}`)
-    const total = pd.total_cost
-    const paid = pd.patient_pays
-    const bhyt = pd.bhyt_amount
-    return { detail: `total_cost=${total}, bhyt=${bhyt}, patient_pays=${paid}` }
-  })
-
-  await step('7.3 Verify tồn sau cấp phát (70 - 5 = 65)', async () => {
-    const sle = await listDocs(page, 'SC Stock Ledger Entry', {
-      fields: ['qty_change'],
-      filters: { item: ctx.item, warehouse: ctx.warehouse_main, batch: ctx.batch, is_cancelled: 0 },
-      limit: 100,
-    })
-    const tot = sle.reduce((s, r) => s + (r.qty_change || 0), 0)
-    if (tot !== 65) throw new Error(`Tồn=${tot}, expected 65 (70-5)`)
-    return { detail: `${ctx.warehouse_main}/${ctx.batch}: ${tot}` }
-  })
+  // PHASE 7 (Cấp phát Bệnh nhân / Patient Dispensing + BHYT) đã bỏ — GĐ1 gỡ
+  // M7 Dispensing/BHYT khỏi backend. Verify tồn cuối cùng dùng số dư sau
+  // PHASE 6 (70 ở wh_main).
 
   // ============================================================
   // VERIFY UI VISIBILITY
@@ -559,14 +515,6 @@ try {
     const title = await page.locator('h1').first().textContent()
     if (!title?.includes(ctx.pr)) throw new Error(`Title không chứa PR name: ${title}`)
     return { detail: `Title="${title}"` }
-  })
-
-  await step('8.3 UI: PD detail có items + BHYT info', async () => {
-    await page.goto(`${BASE}/supplycore/doc/SC%20Patient%20Dispensing/${encodeURIComponent(ctx.pd)}`)
-    await page.waitForTimeout(2000)
-    await page.screenshot({ path: `${SCREENSHOTS}/pd_detail.png`, fullPage: true })
-    const bhytText = await page.locator(`text=${ctx.bhyt_card || 'BHYT'}`).count()
-    return { detail: `PD ${ctx.pd} rendered (BHYT match=${bhytText})` }
   })
 
 } catch (e) {

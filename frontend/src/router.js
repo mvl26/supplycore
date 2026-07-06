@@ -14,7 +14,6 @@ import FinancialReports from './pages/FinancialReports.vue'
 import BatchTrace from './pages/BatchTrace.vue'
 import WarehouseMapPage from './pages/WarehouseMapPage.vue'
 import MapEditor from './pages/MapEditor.vue'
-import HISImport from './pages/HISImport.vue'
 import Forbidden from './pages/Forbidden.vue'
 import { useAuthStore } from './stores/auth'
 import { useAccessStore } from './stores/access'
@@ -39,7 +38,6 @@ const router = createRouter({
     { path: '/batch-trace', name: 'batchTrace', component: BatchTrace, meta: { title: 'Truy xuất lô', requireFeature: 'batch_trace' } },
     { path: '/warehouse-map', name: 'warehouseMap', component: WarehouseMapPage, meta: { title: 'Bản đồ kho', requireFeature: 'warehouse_map' } },
     { path: '/map-editor', name: 'mapEditor', component: MapEditor, meta: { title: 'Thiết kế bản đồ', requireFeature: 'map_editor' } },
-    { path: '/his-import', name: 'hisImport', component: HISImport, meta: { title: 'Nhập phiếu HIS' } },
     { path: '/403', name: 'forbidden', component: Forbidden, meta: { title: 'Không có quyền' } },
 
     // T01: alias URL ngữ nghĩa → redirect tới route chuẩn (dễ nhớ/chia sẻ)
@@ -50,7 +48,6 @@ const router = createRouter({
     { path: '/material-requests', redirect: '/list/SC%20Material%20Request' },
     { path: '/receipts', redirect: '/list/SC%20Purchase%20Receipt' },
     { path: '/transfers', redirect: '/list/SC%20Transfer%20Request' },
-    { path: '/dispensing', redirect: '/list/SC%20Patient%20Dispensing' },
     { path: '/quality', redirect: '/list/SC%20Quality%20Inspection' },
     { path: '/stocktake', redirect: '/list/SC%20Inventory%20Count%20Sheet' },
     { path: '/inventory', redirect: '/stock-balance' },

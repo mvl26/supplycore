@@ -8,7 +8,6 @@ export const MODULES = [
   { id: 'm4',  code: 'M4',  name: 'Quản lý kho',          icon: 'warehouse',        route: '/m4',  group: 'Vận hành' },
   { id: 'm5',  code: 'M5',  name: 'Quản lý lô vật tư',    icon: 'layers',           route: '/m5',  group: 'Vận hành' },
   { id: 'm6',  code: 'M6',  name: 'Chuyển kho',           icon: 'arrow-left-right', route: '/m6',  group: 'Vận hành' },
-  { id: 'm7',  code: 'M7',  name: 'Cấp phát',             icon: 'syringe',          route: '/m7',  group: 'Vận hành' },
   { id: 'm8',  code: 'M8',  name: 'Kế toán',              icon: 'wallet',           route: '/m8',  group: 'Tài chính' },
   { id: 'm9',  code: 'M9',  name: 'Kiểm kê',              icon: 'clipboard-check',  route: '/m9',  group: 'Chất lượng' },
   { id: 'm10', code: 'M10', name: 'Truy xuất & Thu hồi',  icon: 'file-search',      route: '/m10', group: 'Chất lượng' },
@@ -101,7 +100,7 @@ export const SUBMITTABLE_DOCTYPES = new Set([
   'Framework Contract', 'Release Order', 'Procurement Plan',
   'SC Material Request', 'SC Purchase Order', 'SC Purchase Receipt',
   'SC Quality Inspection', 'SC Stock Entry',
-  'SC Transfer Request', 'SC Dispensing Request', 'SC Patient Dispensing',
+  'SC Transfer Request',
   'SC Inventory Count Sheet', 'SC Stock Reconciliation',
   'SC Recall Notice', 'SC Investigation Report',
   'SC Purchase Invoice', 'SC Payment Entry',
@@ -218,33 +217,6 @@ export const DT = {
       { key: 'disabled', label: 'Vô hiệu', type: 'check' },
     ],
     listFields: ['name', 'department_name', 'department_code', 'department_type', 'disabled'],
-  },
-  'SC Patient': {
-    module: 'm0', label: 'Bệnh nhân', icon: 'heart-pulse',
-    listColumns: [
-      { key: 'name', label: 'Mã BN', mono: true },
-      { key: 'patient_name', label: 'Họ tên' },
-      { key: 'gender', label: 'Giới' },
-      { key: 'bhyt_card_no', label: 'Thẻ BHYT', mono: true },
-      { key: 'bhyt_type', label: 'Loại BHYT' },
-      { key: 'current_department', label: 'Khoa' },
-    ],
-    listFields: ['name', 'patient_name', 'gender', 'dob', 'bhyt_card_no',
-                  'bhyt_type', 'bhyt_payment_rate', 'current_department', 'disabled'],
-  },
-  'SC BHYT Code Config': {
-    module: 'm0', label: 'Mã BHYT', icon: 'tag',
-    listColumns: [
-      { key: 'name', label: 'Mã', mono: true },
-      { key: 'bhyt_code', label: 'BHYT Code' },
-      { key: 'bhyt_name', label: 'Tên BHYT' },
-      { key: 'bhyt_group', label: 'Nhóm' },
-      { key: 'payment_rate', label: 'Tỷ lệ %', type: 'int', align: 'right' },
-      { key: 'ceiling_price', label: 'Giá trần', type: 'currency', align: 'right' },
-      { key: 'is_active', label: 'Hiệu lực', type: 'check' },
-    ],
-    listFields: ['name', 'bhyt_code', 'bhyt_name', 'bhyt_group', 'payment_rate',
-                  'ceiling_price', 'item', 'item_group', 'is_active'],
   },
   'SC GL Account': {
     module: 'm0', label: 'TK kế toán', icon: 'book',
@@ -418,34 +390,6 @@ export const DT = {
     ],
     listFields: ['name', 'posting_date', 'entry_type', 'from_warehouse', 'to_warehouse',
                   'total_qty', 'total_value', 'docstatus'],
-  },
-
-  // === M7 ===
-  'SC Dispensing Request': {
-    module: 'm7', label: 'Yêu cầu cấp phát', icon: 'clipboard-plus',
-    listColumns: [
-      { key: 'name', label: 'Mã DR', mono: true },
-      { key: 'request_date', label: 'Ngày', type: 'date' },
-      { key: 'department', label: 'Khoa' },
-      { key: 'from_warehouse', label: 'Kho' },
-      { key: 'purpose', label: 'Mục đích' },
-      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
-    ],
-    listFields: ['name', 'request_date', 'department', 'from_warehouse', 'purpose', 'status', 'docstatus'],
-  },
-  'SC Patient Dispensing': {
-    module: 'm7', label: 'Cấp phát BN', icon: 'syringe',
-    listColumns: [
-      { key: 'name', label: 'Mã PD', mono: true },
-      { key: 'dispensing_date', label: 'Ngày', type: 'date' },
-      { key: 'patient', label: 'BN', mono: true },
-      { key: 'patient_name', label: 'Tên BN' },
-      { key: 'ward', label: 'Khoa' },
-      { key: 'total_cost', label: 'Tổng', type: 'currency', align: 'right' },
-      { key: 'patient_pays', label: 'BN trả', type: 'currency', align: 'right' },
-    ],
-    listFields: ['name', 'dispensing_date', 'patient', 'patient_name', 'ward',
-                  'total_cost', 'patient_pays', 'docstatus'],
   },
 
   // === M8 ===

@@ -19,14 +19,13 @@ export const FORM_SCHEMAS = {
       { title: 'Cấu hình', fields: [
         { name: 'is_stock_item', label: 'Quản lý tồn kho', type: 'Check', default: 1 },
         { name: 'has_batch_no', label: 'Có quản lý lô', type: 'Check' },
-        { name: 'has_bhyt', label: 'Có BHYT', type: 'Check' },
         { name: 'safety_stock', label: 'Tồn kho an toàn', type: 'Float' },
         { name: 'reorder_level', label: 'Mức tái đặt', type: 'Float' },
         { name: 'disabled', label: 'Vô hiệu hoá', type: 'Check' },
       ]},
       { title: 'Đơn vị kép (BR-BH-03)', fields: [
         { name: 'buy_uom', label: 'Đơn vị mua (hộp/thùng)', type: 'Link', linkTo: 'SC UOM' },
-        { name: 'use_uom', label: 'Đơn vị sử dụng/BHYT', type: 'Link', linkTo: 'SC UOM' },
+        { name: 'use_uom', label: 'Đơn vị sử dụng', type: 'Link', linkTo: 'SC UOM' },
         { name: 'uom_conversion_factor', label: 'Hệ số quy đổi', type: 'Float' },
       ]},
     ],
@@ -181,50 +180,6 @@ export const FORM_SCHEMAS = {
             { value: 'Other', label: 'Khác' },
           ] },
         { name: 'disabled', label: 'Vô hiệu hoá', type: 'Check' },
-      ]},
-    ],
-  },
-  'SC Patient': {
-    sections: [
-      { title: 'Thông tin BN', fields: [
-        { name: 'patient_id', label: 'Mã BN', type: 'Data', required: true },
-        { name: 'patient_name', label: 'Họ tên', type: 'Data', required: true },
-        { name: 'gender', label: 'Giới tính', type: 'Select', options: ['Nam', 'Nữ', 'Khác'] },
-        { name: 'dob', label: 'Ngày sinh', type: 'Date' },
-        { name: 'phone', label: 'Điện thoại', type: 'Data' },
-        { name: 'address', label: 'Địa chỉ', type: 'Small Text' },
-      ]},
-      { title: 'BHYT', fields: [
-        { name: 'bhyt_card_no', label: 'Số thẻ BHYT', type: 'Data' },
-        { name: 'bhyt_type', label: 'Loại BHYT', type: 'Select',
-          options: ['Đúng tuyến', 'Trái tuyến', 'Không có BHYT'] },
-        { name: 'bhyt_payment_rate', label: 'Tỷ lệ BHYT (%)', type: 'Percent', default: 80 },
-        { name: 'bhyt_valid_to', label: 'Thẻ BHYT hết hạn', type: 'Date' },
-      ]},
-      { title: 'Nhập viện', fields: [
-        { name: 'current_department', label: 'Khoa hiện tại', type: 'Link', linkTo: 'SC Department' },
-        { name: 'current_bed', label: 'Giường', type: 'Data' },
-        { name: 'admission_date', label: 'Ngày nhập viện', type: 'Date' },
-        { name: 'discharge_date', label: 'Ngày xuất viện', type: 'Date' },
-      ]},
-    ],
-  },
-  'SC BHYT Code Config': {
-    sections: [
-      { title: 'Mã BHYT', fields: [
-        { name: 'bhyt_code', label: 'Mã BHYT', type: 'Data', required: true },
-        { name: 'bhyt_name', label: 'Tên BHYT', type: 'Data', required: true },
-        { name: 'bhyt_group', label: 'Nhóm BHYT', type: 'Select',
-          options: ['N01', 'N02', 'N03', 'N04', 'N05', 'N06', 'N07', 'N08', 'N09'] },
-        { name: 'payment_rate', label: 'Tỷ lệ thanh toán (%)', type: 'Percent', required: true, default: 80 },
-        { name: 'ceiling_price', label: 'Giá trần', type: 'Currency' },
-      ]},
-      { title: 'Phạm vi áp dụng', fields: [
-        { name: 'item', label: 'Vật tư', type: 'Link', linkTo: 'SC Item' },
-        { name: 'item_group', label: 'Nhóm vật tư', type: 'Link', linkTo: 'SC Item Group' },
-        { name: 'effective_from', label: 'Hiệu lực từ', type: 'Date', required: true, default: 'today' },
-        { name: 'effective_to', label: 'Hết hiệu lực', type: 'Date', hint: 'Để trống = chưa kết thúc' },
-        { name: 'is_active', label: 'Đang áp dụng', type: 'Check', default: 1 },
       ]},
     ],
   },
@@ -567,74 +522,6 @@ export const FORM_SCHEMAS = {
   },
 
   // ============================================================
-  // M7 Dispensing
-  // ============================================================
-  'SC Dispensing Request': {
-    sections: [
-      { title: 'Thông tin', fields: [
-        { name: 'request_date', label: 'Ngày YC', type: 'Date', required: true, default: 'today' },
-        { name: 'purpose', label: 'Mục đích', type: 'Select',
-          options: [
-            { value: 'Routine', label: 'Thường quy' },
-            { value: 'Patient-Specific', label: 'Theo bệnh nhân' },
-            { value: 'Emergency', label: 'Cấp cứu' },
-          ], default: 'Routine' },
-        { name: 'required_by', label: 'Cần trước', type: 'Date' },
-        { name: 'department', label: 'Khoa yêu cầu', type: 'Link', linkTo: 'SC Department', required: true },
-        { name: 'patient', label: 'Bệnh nhân (Patient-Specific)', type: 'Link', linkTo: 'SC Patient',
-          dependOn: 'purpose' },
-        { name: 'from_warehouse', label: 'Kho cấp', type: 'Link', linkTo: 'SC Warehouse' },
-        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
-      ]},
-    ],
-    items: {
-      field: 'items', label: 'Chi tiết',
-      columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '32%',
-          scope: { warehouseField: 'from_warehouse', warehouseFromParent: true } },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '15%',
-          scope: { itemField: 'item' },
-          fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
-        { name: 'requested_qty', label: 'SL YC', type: 'Float', required: true, width: '18%' },
-        { name: 'approved_qty', label: 'SL duyệt', type: 'Float', width: '18%' },
-        { name: 'remarks', label: 'Ghi chú', type: 'Data', width: '17%' },
-      ],
-    },
-  },
-
-  'SC Patient Dispensing': {
-    sections: [
-      { title: 'Thông tin', fields: [
-        { name: 'dispensing_date', label: 'Ngày cấp', type: 'Date', required: true, default: 'today' },
-        { name: 'patient', label: 'Bệnh nhân', type: 'Link', linkTo: 'SC Patient', required: true },
-        { name: 'ward', label: 'Khoa', type: 'Link', linkTo: 'SC Department' },
-        { name: 'dispensing_request', label: 'DR liên quan', type: 'Link', linkTo: 'SC Dispensing Request' },
-        { name: 'bhyt_card_no', label: 'Số thẻ BHYT', type: 'Data',
-          fetchFrom: { source: 'patient', target_doctype: 'SC Patient', target_field: 'bhyt_card_no' } },
-        { name: 'bhyt_payment_rate', label: 'Tỷ lệ BHYT (%)', type: 'Percent', default: 80 },
-      ]},
-    ],
-    items: {
-      field: 'items', label: 'Vật tư cấp phát',
-      autoFetch: {
-        on: ['item', 'warehouse'],
-        api: 'supplycore.api.frontend.pd_item_autofetch',
-      },
-      columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '24%',
-          scope: { warehouseField: 'warehouse' } },
-        { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', required: true, width: '18%' },
-        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
-          scope: { itemField: 'item' } },
-        { name: 'qty', label: 'SL', type: 'Float', required: true, width: '10%' },
-        { name: 'unit_cost', label: 'Đơn giá', type: 'Currency', required: true, width: '14%' },
-        { name: 'batch', label: 'Lô (FEFO)', type: 'Link', linkTo: 'SC Batch', width: '18%',
-          scope: { itemField: 'item' } },
-      ],
-    },
-  },
-
-  // ============================================================
   // M8 Accounting
   // ============================================================
   'SC Purchase Invoice': {
@@ -838,7 +725,7 @@ export const FORM_SCHEMAS = {
         { name: 'department', label: 'Khoa', type: 'Link', linkTo: 'SC Department', width: '12%' },
         { name: 'voucher_type', label: 'Chứng từ', type: 'Data', width: '10%' },
         { name: 'voucher_no', label: 'Mã CT', type: 'Data', width: '12%' },
-        { name: 'qty_dispensed', label: 'SL', type: 'Float', width: '8%' },
+        { name: 'qty_issued', label: 'SL', type: 'Float', width: '8%' },
         { name: 'recovered_qty', label: 'Đã thu', type: 'Float', width: '8%' },
         { name: 'destroyed_qty', label: 'Đã huỷ', type: 'Float', width: '8%' },
         { name: 'outstanding_qty', label: 'Còn', type: 'Float', width: '8%' },
@@ -1000,14 +887,6 @@ export const QUICK_CREATE = {
     prefillField: 'warehouse_name',
     fields: [
       { name: 'warehouse_name', label: 'Tên kho', type: 'Data', required: true },
-    ],
-  },
-  'SC Patient': {
-    title: 'Tạo nhanh Bệnh nhân',
-    prefillField: 'patient_name',
-    fields: [
-      { name: 'patient_id', label: 'Mã BN', type: 'Data', required: true },
-      { name: 'patient_name', label: 'Họ tên', type: 'Data', required: true },
     ],
   },
   'SC Department': {

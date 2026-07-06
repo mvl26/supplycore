@@ -27,7 +27,7 @@ const FIELD_LABEL = {
   // Dates
   transaction_date: 'Ngày chứng từ', posting_date: 'Ngày hạch toán',
   schedule_date: 'Ngày cần', request_date: 'Ngày yêu cầu',
-  inspection_date: 'Ngày kiểm', dispensing_date: 'Ngày cấp phát',
+  inspection_date: 'Ngày kiểm',
   invoice_date: 'Ngày HĐ', payment_date: 'Ngày thanh toán',
   recall_date: 'Ngày thu hồi', investigation_date: 'Ngày điều tra',
   contract_date: 'Ngày ký HĐ', valid_from: 'Hiệu lực từ', valid_to: 'Hiệu lực đến',
@@ -38,7 +38,6 @@ const FIELD_LABEL = {
   grand_total: 'Tổng', total_amount: 'Tổng tiền',
   outstanding_amount: 'Còn nợ', amount: 'Số tiền',
   unit_price: 'Đơn giá', rate: 'Đơn giá', total_cost: 'Tổng chi phí',
-  patient_pays: 'BN trả', bhyt_covered: 'BHYT chi trả',
   ceiling_price: 'Giá trần', payment_rate: 'Tỷ lệ TT', payment_terms: 'Điều khoản TT',
   payment_method: 'Phương thức TT', debit: 'Nợ', credit: 'Có',
   // Quantities
@@ -60,13 +59,7 @@ const FIELD_LABEL = {
   manual_inspection: 'Kiểm thủ công',
   // Batch
   batch: 'Lô', batch_no: 'Mã lô', blocked: 'Khoá',
-  // Patient / BHYT
-  patient: 'Bệnh nhân', patient_name: 'Tên BN', ward: 'Khoa',
-  gender: 'Giới tính', dob: 'Ngày sinh',
-  bhyt_card_no: 'Số thẻ BHYT', bhyt_type: 'Loại BHYT',
-  bhyt_payment_rate: 'Tỷ lệ BHYT', bhyt_code: 'Mã BHYT',
-  bhyt_name: 'Tên BHYT', bhyt_group: 'Nhóm BHYT', bhyt_amount: 'Số tiền BHYT',
-  ceiling_overage: 'Vượt trần', is_active: 'Hiệu lực',
+  is_active: 'Hiệu lực',
   // Department
   department: 'Khoa phòng', department_name: 'Tên khoa',
   department_code: 'Mã khoa', department_type: 'Loại khoa',

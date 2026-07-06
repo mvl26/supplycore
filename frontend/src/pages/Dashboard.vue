@@ -50,7 +50,6 @@ const ROLE_WIDGETS = {
                          'expiring_soon','low_stock_items','contract_expiring_30d','po_overdue_count'],
   'SupplyCore Accountant': ['monthly_cost','ap_outstanding','pending_pos'],
   'SupplyCore Storekeeper': ['stock_value','expiring_soon','low_stock_items'],
-  'Pharmacy Officer': ['monthly_cost','expiring_soon'],
 }
 
 const visibleKpiKeys = computed(() => {
@@ -214,7 +213,6 @@ function exportTrend() {
         <option value="SupplyCore Manager">Vai trò Quản lý</option>
         <option value="SupplyCore Accountant">Vai trò Kế toán</option>
         <option value="SupplyCore Storekeeper">Vai trò Thủ kho</option>
-        <option value="Pharmacy Officer">Vai trò Dược viên</option>
       </select>
       <select v-model="warehouse" @change="load(1)"
         class="sc-input max-w-[160px] text-sm" title="Lọc theo kho">

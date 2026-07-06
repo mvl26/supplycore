@@ -34,7 +34,6 @@ const RESULT_ACTIONS = new Set([
   'run_audit_trail',
   'compare_stock',
   'detect_anomalies',
-  'audit_dispensings_in_period',
   'verify_audit_integrity',
   'create_purchase_orders',
   'get_po_suggestion',
@@ -302,7 +301,7 @@ const btnClass = {
         </div>
       </div>
 
-      <!-- Recovery / Dispensing audit summary -->
+      <!-- Recovery / audit summary -->
       <div v-else-if="result.audited != null || result.notified != null || result.recipients != null">
         <div class="font-semibold mb-2 flex items-center gap-2"><Icon name="bar-chart" :size="16" /> Tổng hợp</div>
         <div class="grid grid-cols-2 gap-2">
