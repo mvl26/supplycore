@@ -22,13 +22,10 @@
   "section_planning",
   "default_safety_stock_pct",
   "contract_expiry_alert_days",
-  "section_bhyt",
-  "bhyt_auto_calculate",
   "section_alerts",
   "email_alert_recipients",
   "section_integration",
   "his_endpoint",
-  "bhyt_endpoint",
   "sms_gateway_endpoint",
   "section_site_map",
   "site_name",
@@ -67,15 +64,11 @@
   {"fieldname": "default_safety_stock_pct", "fieldtype": "Percent", "label": "Safety stock mặc định (%)", "default": "20"},
   {"fieldname": "contract_expiry_alert_days", "fieldtype": "Int", "label": "Cảnh báo HĐ hết hạn (ngày)", "default": "30"},
 
-  {"fieldname": "section_bhyt", "fieldtype": "Section Break", "label": "BHYT"},
-  {"fieldname": "bhyt_auto_calculate", "fieldtype": "Check", "label": "Tự tính BHYT khi save Patient Dispensing", "default": "1"},
-
   {"fieldname": "section_alerts", "fieldtype": "Section Break", "label": "Email cảnh báo"},
   {"fieldname": "email_alert_recipients", "fieldtype": "Small Text", "label": "Email nhận cảnh báo", "description": "Phân cách bằng dấu phẩy. Để trống = gửi cho tất cả role SC-Manager/Storekeeper"},
 
   {"fieldname": "section_integration", "fieldtype": "Section Break", "label": "Tích hợp", "collapsible": 1},
   {"fieldname": "his_endpoint", "fieldtype": "Data", "label": "HIS Endpoint URL"},
-  {"fieldname": "bhyt_endpoint", "fieldtype": "Data", "label": "Cổng BHYT Endpoint URL"},
   {"fieldname": "sms_gateway_endpoint", "fieldtype": "Data", "label": "SMS Gateway Endpoint URL",
    "description": "UC-33: dùng cho SC Alert Rule channel_sms"},
 

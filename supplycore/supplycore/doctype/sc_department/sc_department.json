@@ -2,7 +2,7 @@
  "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
  "autoname": "field:department_name", "track_changes": 1,
  "field_order": ["department_name", "department_code", "department_type",
-                 "column_break_1", "head_user", "phone", "monthly_dispensing_quota", "disabled", "remarks"],
+                 "column_break_1", "head_user", "phone", "disabled", "remarks"],
  "fields": [
   {"fieldname": "department_name", "fieldtype": "Data", "label": "Tên khoa/phòng", "reqd": 1, "unique": 1, "in_list_view": 1},
   {"fieldname": "department_code", "fieldtype": "Data", "label": "Mã KP", "in_list_view": 1, "in_standard_filter": 1},
@@ -11,7 +11,6 @@
   {"fieldname": "column_break_1", "fieldtype": "Column Break"},
   {"fieldname": "head_user", "fieldtype": "Link", "options": "User", "label": "Trưởng khoa"},
   {"fieldname": "phone", "fieldtype": "Data", "label": "Điện thoại"},
-  {"fieldname": "monthly_dispensing_quota", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Hạn mức xuất/tháng (VND)", "default": "0", "description": "0 = không giới hạn. Vượt → cần Manager xác nhận khi submit chứng từ xuất"},
   {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0"},
   {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
  ],

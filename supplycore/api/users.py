@@ -53,7 +53,7 @@ ROLE_GUIDE: dict[str, dict] = {
         "scope": "Toàn bộ 11 module SupplyCore",
         "duties": [
             "Duyệt hợp đồng khung (Framework Contract), PO giá trị lớn",
-            "Cấu hình rule alert, FEFO, putaway, BHYT",
+            "Cấu hình rule alert, FEFO, putaway",
             "Truy cập Dashboard + tất cả báo cáo KPI",
             "Quản lý người dùng + phân quyền cấp module",
         ],
@@ -69,7 +69,7 @@ ROLE_GUIDE: dict[str, dict] = {
         "vn_name": "Người dùng SupplyCore (cơ bản)",
         "scope": "Đọc dữ liệu chung + thao tác nghiệp vụ cơ bản",
         "duties": [
-            "Đọc danh sách Item, Supplier, Warehouse, Patient",
+            "Đọc danh sách Item, Supplier, Warehouse",
             "Tạo / sửa các phiếu nghiệp vụ cấp Draft",
             "Xem báo cáo cá nhân",
         ],
@@ -107,7 +107,7 @@ ROLE_GUIDE: dict[str, dict] = {
             "Truy cập tồn kho tất cả warehouse được gán",
         ],
         "limits": [
-            "Không tạo / sửa Item, Supplier, Patient",
+            "Không tạo / sửa Item, Supplier",
             "Không duyệt PO, hợp đồng",
             "Không đụng vào kế toán (M8) / cấp phát BN (M7)",
             "Bị filter theo warehouse được gán (permission_query_conditions)",

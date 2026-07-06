@@ -1,7 +1,7 @@
 app_name = "supplycore"
 app_title = "SupplyCore"
 app_publisher = "SupplyCore Project"
-app_description = "Hospital medical supply chain management — Frappe-only custom app (no ERPNext dependency)"
+app_description = "Medical supply distribution management — Frappe-only custom app (no ERPNext dependency)"
 app_email = "info@miyano.com.vn"
 app_license = "MIT"
 required_apps = ["frappe/frappe"]  # ERPNext không còn bắt buộc kể từ v0.2
