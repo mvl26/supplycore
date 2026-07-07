@@ -56,7 +56,7 @@ async function submit() {
           </svg>
           <div>
             <div class="text-xl font-extrabold tracking-tight">SupplyCore</div>
-            <div class="text-[11px] uppercase tracking-[0.18em] text-white/50">Cung ứng Bệnh viện</div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-white/50">Chuỗi cung ứng Phân phối</div>
           </div>
         </div>
 
@@ -103,7 +103,7 @@ async function submit() {
             <path d="M20 11v18 M11 20h18" stroke="#fff" stroke-width="3.8" stroke-linecap="round" />
           </svg>
           <div class="text-xl font-extrabold tracking-tight text-sc-navy mt-2.5">SupplyCore</div>
-          <div class="text-[11px] uppercase tracking-[0.16em] text-sc-text-muted">Cung ứng Bệnh viện</div>
+          <div class="text-[11px] uppercase tracking-[0.16em] text-sc-text-muted">Chuỗi cung ứng Phân phối</div>
         </div>
 
         <div class="bg-sc-surface rounded-2xl shadow-sc-lg border border-sc-border p-7 sm:p-8">
@@ -167,7 +167,7 @@ async function submit() {
         </div>
 
         <p class="text-center text-[11px] text-sc-text-muted mt-5 lg:hidden">
-          © 2026 SupplyCore · Chuỗi cung ứng Bệnh viện v0.1
+          © 2026 SupplyCore · Chuỗi cung ứng & Phân phối MVL v0.1
         </p>
       </div>
     </div>

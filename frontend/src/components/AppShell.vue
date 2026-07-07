@@ -140,7 +140,7 @@ async function logout() {
         <div v-if="!collapsed" class="min-w-0 overflow-hidden">
           <div class="text-[15px] font-extrabold tracking-tight leading-tight">SupplyCore</div>
           <div class="text-[10.5px] uppercase tracking-[0.14em] text-white/45 leading-tight mt-0.5">
-            Cung ứng Bệnh viện
+            Chuỗi cung ứng Phân phối
           </div>
         </div>
       </div>

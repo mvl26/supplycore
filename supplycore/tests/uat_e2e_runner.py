@@ -17,7 +17,7 @@ def run_all():
     item_uom = frappe.db.get_value("SC Item", item, "uom")
     main_wh = "Kho Vật tư tiêu hao"
     dept_wh = frappe.db.get_value("SC Warehouse", {"warehouse_type": "Department", "disabled": 0}, "name") \
-              or "Kho Khoa Nhi"
+              or "Kho Phòng CSKH"
 
     print("\n=== Section 1: M1 Hợp đồng khung ===")
     # 1.1-1.2: Tạo + submit FC

@@ -256,7 +256,7 @@ class SCPurchaseOrder(Document):
         )
         msg = f"""
             <p>Kính gửi {self.supplier_name or self.supplier},</p>
-            <p>Bệnh viện đặt hàng theo PO <b>{self.name}</b>:</p>
+            <p>Công ty Miyano Việt Nam đặt hàng theo PO <b>{self.name}</b>:</p>
             <table border="1" cellpadding="6" cellspacing="0">
                 <tr><th>Mã VT</th><th>SL</th><th>UOM</th><th>Đơn giá</th><th>Thành tiền</th></tr>
                 {items_html}

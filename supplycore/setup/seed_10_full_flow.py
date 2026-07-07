@@ -7,7 +7,7 @@ Mỗi FC sẽ sinh:
     → YCCK (TR) → Phiếu chuyển kho (SE)
     → Hoá đơn (PI) → Phiếu thanh toán (PE)
 
-Cuối luồng tạo 1 Đối soát kho (SR) cho Kho Khoa Dược.
+Cuối luồng tạo 1 Đối soát kho (SR) cho Kho Giao hàng.
 
 Usage:
     bench --site supplycore execute supplycore.setup.seed_10_full_flow.run
@@ -21,7 +21,7 @@ from frappe.utils import today, add_days, flt, now, random_string
 # Cấu hình
 # ---------------------------------------------------------------------
 MAIN_WH = "Kho Trung chuyển"       # Kho nhập đầu vào (PR)
-DEPT_WH = "Kho Khoa Dược"          # Kho phân phối nội bộ
+DEPT_WH = "Kho Giao hàng"          # Kho phân phối nội bộ
 
 CONTRACT_NUMBERS = [
     "HD-2026-DHG-001", "HD-2026-TPC-002", "HD-2026-PMP-003", "HD-2026-IMX-004",
@@ -31,7 +31,7 @@ CONTRACT_NUMBERS = [
 
 # Giới hạn SL mua/nhập trên 1 dòng để dữ liệu mẫu gọn
 QTY_CAP_PER_ITEM = 100
-# Tỷ lệ luân chuyển sang Kho Khoa Dược (% của qty nhận)
+# Tỷ lệ luân chuyển sang Kho Giao hàng (% của qty nhận)
 TRANSFER_PCT = 0.5
 # Tỷ lệ thuế VAT
 VAT_RATE = 8
@@ -79,7 +79,7 @@ def run() -> dict:
             # Re-fetch fc after rollback
             continue
 
-    # 1 SR cuối ở Kho Khoa Dược
+    # 1 SR cuối ở Kho Giao hàng
     try:
         sr_name = _create_stock_reconciliation(DEPT_WH)
         result["sr"] = sr_name

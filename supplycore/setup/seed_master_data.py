@@ -1,4 +1,4 @@
-"""Seed master data đặc thù bệnh viện Việt Nam.
+"""Seed master data đặc thù nhà phân phối vật tư/hóa chất y tế Việt Nam (MVL).
 
 Idempotent: chạy lại không trùng. Gọi qua patch v0_2 hoặc bench execute thủ công:
   bench --site <site> execute supplycore.setup.seed_master_data.run
@@ -6,8 +6,8 @@ Idempotent: chạy lại không trùng. Gọi qua patch v0_2 hoặc bench execut
 Bao gồm:
   - SC UOM         : 18 đơn vị tính y tế phổ biến
   - SC Item Group  : 6 nhóm gốc + ~20 nhóm con
-  - SC Department  : 30+ khoa/phòng cấp BV quận-huyện
-  - SC Warehouse   : Kho Tổng → 5 kho con + 8 kho khoa (3-tier)
+  - SC Department  : phòng ban công ty phân phối (Kinh doanh, Mua hàng, Kho vận…)
+  - SC Warehouse   : Kho Tổng → 5 kho con + 8 kho phòng ban (3-tier)
   - SC Supplier    : 8 NCC tiêu biểu (đa quốc gia + nội địa)
   - SC Item        : 12 vật tư y tế mẫu mỗi nhóm chính
 """
@@ -78,47 +78,21 @@ ITEM_GROUPS = [
 
 
 # ---------------------------------------------------------------------------
-# 3. SC Department (cấp BV quận/huyện điển hình)
+# 3. SC Department (phòng ban công ty phân phối MVL điển hình)
 # ---------------------------------------------------------------------------
 DEPARTMENTS = [
     # (name, code, type, head, phone)
-    # Lâm sàng
-    ("Khoa Nội tổng hợp",         "KNT", "Clinical", None, None),
-    ("Khoa Ngoại tổng hợp",       "KNG", "Surgical", None, None),
-    ("Khoa Sản",                  "KS",  "Clinical", None, None),
-    ("Khoa Nhi",                  "KN",  "Clinical", None, None),
-    ("Khoa Cấp cứu",              "KCC", "Clinical", None, None),
-    ("Khoa Hồi sức tích cực",     "KHS", "Clinical", None, None),
-    ("Khoa Tim mạch",             "KTM", "Clinical", None, None),
-    ("Khoa Tiêu hóa",             "KTH", "Clinical", None, None),
-    ("Khoa Thần kinh",            "KTK", "Clinical", None, None),
-    ("Khoa Mắt",                  "KM",  "Clinical", None, None),
-    ("Khoa Tai Mũi Họng",         "KTMH","Clinical", None, None),
-    ("Khoa Răng Hàm Mặt",         "KRHM","Surgical", None, None),
-    ("Khoa Da liễu",              "KDL", "Clinical", None, None),
-    ("Khoa Truyền nhiễm",         "KTN", "Clinical", None, None),
-    ("Khoa Y học cổ truyền",      "KYHCT","Clinical", None, None),
-    ("Khoa Chấn thương chỉnh hình","KCTCH","Surgical", None, None),
-    ("Khoa Ung bướu",             "KUB", "Clinical", None, None),
-    ("Khoa Phục hồi chức năng",   "KPHCN","Clinical", None, None),
-    # Cận lâm sàng
-    ("Khoa Chẩn đoán hình ảnh",   "KCDHA","Lab",      None, None),
-    ("Khoa Xét nghiệm",           "KXN", "Lab",       None, None),
-    ("Khoa Vi sinh",              "KVS", "Lab",       None, None),
-    ("Khoa Giải phẫu bệnh",       "KGPB","Lab",       None, None),
-    ("Khoa Thăm dò chức năng",    "KTDCN","Lab",      None, None),
-    # Phòng mổ + dược
-    ("Khoa Gây mê hồi sức",       "KGMHS","Surgical", None, None),
-    ("Phòng Mổ",                  "PM",   "Surgical", None, None),
-    ("Khoa Dược",                 "KD",   "Pharmacy", None, None),
-    ("Phòng Vật tư - TTBYT",      "PVT",  "Admin",    None, None),
-    # Quản lý
-    ("Phòng Khám tổng hợp",       "PKTH", "Clinical", None, None),
-    ("Phòng Kế hoạch tổng hợp",   "PKHTH","Admin",    None, None),
-    ("Phòng Tài chính kế toán",   "PTCKT","Admin",    None, None),
-    ("Phòng Tổ chức cán bộ",      "PTCCB","Admin",    None, None),
-    ("Phòng CNTT",                "PCNTT","Admin",    None, None),
-    ("Ban Giám đốc",              "BGD",  "Admin",    None, None),
+    ("Phòng Kinh doanh",              "PKD",   "Admin", None, None),
+    ("Phòng Mua hàng",                "PMH",   "Admin", None, None),
+    ("Phòng Kho vận",                 "PKV",   "Admin", None, None),
+    ("Phòng Giao nhận",               "PGN",   "Admin", None, None),
+    ("Phòng Kế toán",                 "PKT",   "Admin", None, None),
+    ("Phòng QC - Chất lượng",         "PQC",   "Admin", None, None),
+    ("Phòng Chăm sóc khách hàng",     "PCSKH", "Admin", None, None),
+    ("Phòng Marketing",               "PMKT",  "Admin", None, None),
+    ("Phòng Nhân sự",                 "PNS",   "Admin", None, None),
+    ("Phòng CNTT",                    "PCNTT", "Admin", None, None),
+    ("Ban Giám đốc",                  "BGD",   "Admin", None, None),
 ]
 
 
@@ -128,23 +102,23 @@ DEPARTMENTS = [
 WAREHOUSES = [
     # (name, code, type, parent, is_group, department)
     # Tầng 1: Kho Tổng (group)
-    ("Kho Tổng Bệnh viện",        "KHO-TONG",      "Main",      None,                   1, None),
+    ("Kho Tổng MVL",               "KHO-TONG",      "Main",      None,             1, None),
     # Tầng 2: Kho con
-    ("Kho Vật tư tiêu hao",        "KHO-VTTH",      "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Hóa chất sinh phẩm",     "KHO-HCSP",      "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Vật tư cấy ghép",        "KHO-CG",        "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Dịch truyền",            "KHO-DT",        "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Cách ly QC",             "KHO-QC",        "Quarantine","Kho Tổng Bệnh viện",   0, None),
-    ("Kho Trung chuyển",           "KHO-TC",        "Transit",   "Kho Tổng Bệnh viện",   0, None),
-    # Tầng 3: Kho khoa phòng
-    ("Kho Khoa Cấp cứu",           "KHO-KCC",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Cấp cứu"),
-    ("Kho Khoa ICU",               "KHO-KHS",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Hồi sức tích cực"),
-    ("Kho Khoa Nội tổng hợp",      "KHO-KNT",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Nội tổng hợp"),
-    ("Kho Khoa Ngoại tổng hợp",    "KHO-KNG",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Ngoại tổng hợp"),
-    ("Kho Khoa Sản",               "KHO-KS",        "Department","Kho Tổng Bệnh viện",   0, "Khoa Sản"),
-    ("Kho Khoa Nhi",               "KHO-KN",        "Department","Kho Tổng Bệnh viện",   0, "Khoa Nhi"),
-    ("Kho Phòng Mổ",               "KHO-PM",        "Department","Kho Tổng Bệnh viện",   0, "Phòng Mổ"),
-    ("Kho Khoa Dược",              "KHO-KD",        "Department","Kho Tổng Bệnh viện",   0, "Khoa Dược"),
+    ("Kho Vật tư tiêu hao",        "KHO-VTTH",      "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Hóa chất sinh phẩm",     "KHO-HCSP",      "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Vật tư cấy ghép",        "KHO-CG",        "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Dịch truyền",            "KHO-DT",        "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Cách ly QC",             "KHO-QC",        "Quarantine","Kho Tổng MVL",   0, None),
+    ("Kho Trung chuyển",           "KHO-TC",        "Transit",   "Kho Tổng MVL",   0, None),
+    # Tầng 3: Kho phòng ban
+    ("Kho Phòng Kinh doanh",       "KHO-KCC",       "Department","Kho Tổng MVL",   0, "Phòng Kinh doanh"),
+    ("Kho Phòng Mua hàng",         "KHO-KHS",       "Department","Kho Tổng MVL",   0, "Phòng Mua hàng"),
+    ("Kho Phòng Kế toán",          "KHO-KNT",       "Department","Kho Tổng MVL",   0, "Phòng Kế toán"),
+    ("Kho Phòng Marketing",        "KHO-KNG",       "Department","Kho Tổng MVL",   0, "Phòng Marketing"),
+    ("Kho Phòng Nhân sự",          "KHO-KS",        "Department","Kho Tổng MVL",   0, "Phòng Nhân sự"),
+    ("Kho Phòng CSKH",             "KHO-KN",        "Department","Kho Tổng MVL",   0, "Phòng Chăm sóc khách hàng"),
+    ("Kho Phòng QC",               "KHO-PM",        "Department","Kho Tổng MVL",   0, "Phòng QC - Chất lượng"),
+    ("Kho Giao hàng",              "KHO-KD",        "Department","Kho Tổng MVL",   0, "Phòng Giao nhận"),
 ]
 
 

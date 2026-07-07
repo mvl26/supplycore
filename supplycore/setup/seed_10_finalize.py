@@ -6,7 +6,7 @@ Transfer) chưa có bin_location. Script này xử lý cả 2:
 
 1. **MR approval** — gọi `mr.approve()` để chuyển Pending → Approved
 2. **Putaway** — gán `bin_location` round-robin cho SLE chưa xếp kệ ở
-   `Kho Trung chuyển` (PR) + `Kho Khoa Dược` (SE)
+   `Kho Trung chuyển` (PR) + `Kho Giao hàng` (SE)
 3. **Recompute bin occupancy** — cập nhật `current_qty` + `status` cho mọi bin
 
 Usage:
@@ -17,7 +17,7 @@ import frappe
 from frappe.utils import flt
 
 
-WAREHOUSES_TO_PUTAWAY = ["Kho Trung chuyển", "Kho Khoa Dược"]
+WAREHOUSES_TO_PUTAWAY = ["Kho Trung chuyển", "Kho Giao hàng"]
 
 
 def run() -> dict:

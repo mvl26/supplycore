@@ -250,7 +250,7 @@ class SCPurchaseReceipt(Document):
         )
         sup_name = frappe.db.get_value("SC Supplier", self.supplier, "supplier_name") or self.supplier
         msg = (f"<p>Kính gửi {sup_name},</p>"
-               f"<p>Bệnh viện trả hàng theo Phiếu trả <b>{self.name}</b>:</p>"
+               f"<p>Công ty Miyano Việt Nam trả hàng theo Phiếu trả <b>{self.name}</b>:</p>"
                f"<table border='1' cellpadding='6'>"
                f"<tr><th>Mã VT</th><th>SL</th><th>UOM</th></tr>{items_html}</table>"
                f"<p><b>Lý do:</b> {frappe.utils.escape_html(self.return_reason or '—')}</p>"

@@ -156,7 +156,7 @@ function gridCols() {
 
 <template>
   <PageHeader title="Bản đồ khuôn viên" icon="map"
-    subtitle="Tùy chỉnh sơ đồ kho theo bệnh viện — đặt cổng, sắp xếp kho lên lưới, lưu cấu hình">
+    subtitle="Tùy chỉnh sơ đồ kho phân phối — đặt cổng, sắp xếp kho lên lưới, lưu cấu hình">
     <template #actions>
       <button @click="load" :disabled="loading" class="sc-btn-secondary text-sm">
         <Icon name="refresh-ccw" :size="14" /> Tải lại
@@ -174,13 +174,13 @@ function gridCols() {
     <!-- =================== CONFIG PANEL =================== -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy text-sm mb-4 flex items-center gap-2">
-        <Icon name="building-2" :size="15" /> Thông tin bệnh viện
+        <Icon name="building-2" :size="15" /> Thông tin công ty
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
         <label class="flex flex-col gap-1">
-          <span class="text-xs uppercase tracking-wider text-sc-text-muted">Tên bệnh viện</span>
+          <span class="text-xs uppercase tracking-wider text-sc-text-muted">Tên công ty</span>
           <input v-model="config.site_name"
-            class="border border-sc-border rounded-md px-3 py-1.5" placeholder="VD: BV Bạch Mai" />
+            class="border border-sc-border rounded-md px-3 py-1.5" placeholder="VD: Công ty Miyano Việt Nam" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-xs uppercase tracking-wider text-sc-text-muted">Địa chỉ</span>

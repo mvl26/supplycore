@@ -645,7 +645,7 @@ function displayField(value, key) {
     <IrScopePanel v-if="doctype === 'SC Investigation Report' && !isNew && doc?.name"
       :doc="doc" />
 
-    <!-- Bản đồ chỉ đường: Chuyển kho / Cấp phát / Vị trí lưu trữ -->
+    <!-- Bản đồ chỉ đường: Chuyển kho / Xuất kho / Vị trí lưu trữ -->
     <RouteGuidePanel v-if="!isNew && doc?.name" :doctype="doctype" :doc="doc" />
 
     <!-- Banner: HĐ đã duyệt 3-tier → khoá sửa -->

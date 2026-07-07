@@ -1,6 +1,6 @@
 # SupplyCore
 
-Hệ thống Quản lý Chuỗi Cung Ứng Vật Tư Y Tế — Custom Frappe app **(no ERPNext dependency, v0.2)**.
+Hệ thống Quản lý Chuỗi Cung Ứng & Bán hàng Vật Tư/Hóa Chất Y Tế cho nhà phân phối (Công ty Miyano Việt Nam — MVL) — Custom Frappe app **(no ERPNext dependency, v0.2)**.
 
 > 🔄 **Cập nhật 2026-05-07:** Bỏ ERPNext khỏi `required_apps`. Mọi DocType ERP-domain (Item / Warehouse / Supplier / Batch / Stock Entry / PR / PO / MR / QI) được build lại từ scratch với prefix `SC `. Xem [MIGRATION_v0.2.md](MIGRATION_v0.2.md).
 
@@ -62,7 +62,7 @@ sudo supervisorctl restart all   # production
 | M4 WMS & PDA | v0.2 | ✅ Bin + /pda + APIs + README |
 | M5 Lô/FEFO | v0.2 | ✅ FEFO + Batch Expiry Alert + README |
 | M6 Luân chuyển | — | Planned (folder scaffolded) |
-| M7 Cấp phát BHYT | — | Planned |
+| M7 Bán hàng (Sales) | — | Planned |
 | M8 Kế toán | — | Planned (cần tự build GL nếu dùng) |
 | M9 Kiểm kê | — | Planned |
 | M10 Truy xuất | — | Planned |
@@ -70,7 +70,7 @@ sudo supervisorctl restart all   # production
 
 ## Roles SupplyCore
 
-`SupplyCore Manager` · `SupplyCore Storekeeper` · `SupplyCore Ward Staff` · `SupplyCore Accountant` · `SupplyCore Executive` · `SupplyCore Purchaser` · `SupplyCore Auditor` · `SupplyCore User` + legacy: `Warehouse Officer`, `QC Officer`, `Pharmacy Officer`, `BHYT Officer`, `Department Requester`.
+`SupplyCore Manager` · `SupplyCore Storekeeper` · `SupplyCore Accountant` · `SupplyCore Executive` · `SupplyCore Purchaser` · `SupplyCore Auditor` · `SupplyCore User` · `SC Customer Portal` (khách hàng) + legacy: `Warehouse Officer`, `QC Officer`.
 
 ## Vận hành nhanh
 

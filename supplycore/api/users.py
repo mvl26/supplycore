@@ -196,7 +196,7 @@ ROLE_GUIDE: dict[str, dict] = {
         ],
         "limits": [
             "Không sửa kết quả QI đã submit (chỉ amend qua Manager)",
-            "Không cấp phát / chuyển kho",
+            "Không xuất kho / chuyển kho",
             "Không truy cập kế toán",
         ],
         "modules": ["M3", "M4", "M5"],

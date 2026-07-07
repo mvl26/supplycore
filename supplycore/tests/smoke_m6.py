@@ -7,7 +7,7 @@ from frappe.utils import today, add_days, random_string, flt
 def run():
     item_code = "DTRC-NACL09"  # has_batch=1
     from_wh = "Kho Dịch truyền"
-    to_wh = "Kho Khoa Cấp cứu"
+    to_wh = "Kho Phòng Kinh doanh"
     if not all([frappe.db.exists("SC Item", item_code),
                 frappe.db.exists("SC Warehouse", from_wh),
                 frappe.db.exists("SC Warehouse", to_wh)]):

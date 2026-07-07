@@ -1,6 +1,6 @@
-"""Bản đồ kho — 2 cấp: khuôn viên bệnh viện + sơ đồ bin trong kho.
+"""Bản đồ kho — 2 cấp: khuôn viên kho phân phối + sơ đồ bin trong kho.
 
-Bệnh viện Y học cổ truyền Bộ Công an (Hà Đông, Hà Nội).
+Công ty Miyano Việt Nam (MVL) — Hà Nội.
 
 API:
   - get_site_map(target_warehouse) — bản đồ khuôn viên + chỉ đường tới 1 kho
@@ -16,14 +16,14 @@ from frappe import _
 
 # Defaults — sẽ được Settings override (xem _site_config). Giữ làm fallback
 # khi DB chưa migrate hoặc test fixture chưa seed.
-SITE_NAME = "Bệnh viện Y học cổ truyền Bộ Công an"
-SITE_ADDRESS = "Hà Đông, Hà Nội"
+SITE_NAME = "Công ty Miyano Việt Nam"
+SITE_ADDRESS = "Hà Nội, Việt Nam"
 SITE_ENTRANCE = {"row": 5, "col": 3}
 SITE_ENTRANCE_LABEL = "Cổng chính"
 
 
 def _site_config() -> dict:
-    """Đọc cấu hình site map từ SupplyCore Settings (tùy chỉnh per bệnh viện).
+    """Đọc cấu hình site map từ SupplyCore Settings (tùy chỉnh per công ty).
     Fallback về hardcoded nếu field chưa tồn tại trong DB.
     """
     try:
@@ -75,7 +75,7 @@ def _manhattan_path(start: dict, end: dict, vertical_first: bool = True) -> list
 
 @frappe.whitelist()
 def get_site_map(target_warehouse: str = None) -> dict:
-    """Bản đồ khuôn viên bệnh viện — vị trí các kho + chỉ đường tới target."""
+    """Bản đồ khuôn viên kho phân phối — vị trí các kho + chỉ đường tới target."""
     cfg = _site_config()
     whs = frappe.get_all("SC Warehouse",
         filters={"disabled": 0},
@@ -239,7 +239,7 @@ def list_mapped_warehouses() -> list:
 
 
 # =============================================================================
-# Site map editor — admin/manager tùy chỉnh per bệnh viện
+# Site map editor — admin/manager tùy chỉnh per công ty
 # =============================================================================
 
 WAREHOUSE_TYPES = ["Main", "Sub", "Department", "Quarantine", "Transit"]

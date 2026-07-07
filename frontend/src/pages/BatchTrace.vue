@@ -114,7 +114,7 @@ const missingLabel = {
 
 <template>
   <PageHeader title="Truy xuất lô — UC-29" icon="file-search" code="M10"
-    subtitle="Tra cứu vòng đời 1 lô vật tư: nguồn gốc → di chuyển → cấp phát → tồn hiện tại" />
+    subtitle="Tra cứu vòng đời 1 lô vật tư: nguồn gốc → di chuyển → xuất bán → tồn hiện tại" />
 
   <!-- Lookup form -->
   <div class="sc-card p-4 mb-4">

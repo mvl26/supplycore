@@ -512,7 +512,7 @@ def _phase4_receiving(ctx):
 def _phase5_initial_stock(ctx):
     """Tạo:
     - SLE seed cho 5 items chưa qua PR (initial stock direct)
-    - 1 SE Material Transfer (Kho Tổng → Kho Khoa Dược)
+    - 1 SE Material Transfer (Kho Tổng → Kho Giao hàng)
     - 1 batch short-expiry với ack (UC-15a)
     - 1 batch blocked manual (cho UC-30)
     """
@@ -574,7 +574,7 @@ def _phase5_initial_stock(ctx):
             se.posting_date = today()
             se.from_warehouse = wh_main
             se.to_warehouse = wh_dept
-            se.purpose = "Phân kho từ Kho Tổng xuống Kho Khoa Dược"
+            se.purpose = "Phân kho từ Kho Tổng xuống Kho Giao hàng"
             for item in items_no_batch[:3]:
                 uom = frappe.db.get_value("SC Item", item, "uom")
                 se.append("items", {
@@ -659,7 +659,7 @@ def _phase7_accounting(ctx):
 # PHASE 7 — Stocktake (UC-28)
 # ---------------------------------------------------------------------
 def _phase8_stocktake(ctx):
-    wh = _pick_warehouse("Khoa Dược") or _pick_warehouse()
+    wh = _pick_warehouse("Giao hàng") or _pick_warehouse()
     items = _pick_items(3)
     ics_count = 0
     sr_count = 0

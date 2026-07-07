@@ -13,10 +13,10 @@
 // Frappe roles via `ROLE_TO_PERSONA` below; admins extend the lookup as new
 // Frappe roles are introduced.
 //
-// GĐ1 (2026-07): bỏ 2 persona bệnh viện (điều dưỡng khoa; QC tạm map vào
-// 1 role dược đã xoá) — cả 2 Frappe role nguồn đã bị xoá khỏi backend, không
-// còn cách nào resolve tới các persona này. GĐ2 sẽ định nghĩa lại role/persona
-// theo mô hình phân phối.
+// GĐ1 (2026-07): bỏ 2 persona thuộc mô hình cũ (điều dưỡng khoa; QC tạm map
+// vào 1 role đã xoá) — cả 2 Frappe role nguồn đã bị xoá khỏi backend, không
+// còn cách nào resolve tới các persona này. GĐ2 đã định nghĩa lại role/persona
+// theo mô hình phân phối MVL.
 //
 // Admin (System Manager / SupplyCore Executive) gets the default flat view
 // — full M0..M11 + every primary feature — which is also the fallback for

@@ -27,3 +27,4 @@ supplycore.patches.v0_6.remove_hospital_domain
 supplycore.patches.v0_7.remove_hospital_roles
 supplycore.patches.v0_8.seed_sales_gl_accounts
 supplycore.patches.v0_9.create_portal_role
+supplycore.patches.v0_10.rebrand_miyano

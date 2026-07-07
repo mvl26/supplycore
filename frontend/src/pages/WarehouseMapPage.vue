@@ -66,7 +66,7 @@ onMounted(async () => {
 
 <template>
   <PageHeader title="Bản đồ kho" icon="map" code="Warehouse Map"
-    subtitle="Bản đồ khuôn viên bệnh viện + sơ đồ vị trí lưu trữ trong từng kho">
+    subtitle="Bản đồ khuôn viên kho phân phối + sơ đồ vị trí lưu trữ trong từng kho">
   </PageHeader>
 
   <!-- Tabs -->
