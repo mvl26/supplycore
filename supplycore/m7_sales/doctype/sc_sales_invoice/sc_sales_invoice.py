@@ -1,0 +1,208 @@
+"""SC Sales Invoice -- hóa đơn bán hàng MVL, ghi sổ cái phải thu + COGS (M7 Sales,
+GĐ2 Task 7).
+
+Business rules:
+- BRU-DEL-001: chỉ được lập hóa đơn cho Phiếu giao hàng (SC Delivery Note) đã
+  ở trạng thái "Đã nghiệm thu" -- nếu chưa, validate() throw.
+- BRU-INVC-001: danh mục vật tư trên hóa đơn phải khớp CHÍNH XÁC (item + qty)
+  với danh mục trên Phiếu giao hàng -- lệch (thiếu/thừa/khác SL) → throw.
+- BRU-PAY-001: không được submit hóa đơn có invoice_date <= Settings.fiscal_lock_date
+  (khóa sổ kỳ kế toán trước).
+
+Submit: ghi 2 bút toán độc lập (mỗi bút toán tự cân Nợ=Có):
+  1. Bút toán phải thu: Dr 131 (party=customer) grand_total / Cr 511 total_amount
+     / Cr 3331 tax_amount (nếu > 0).
+  2. Bút toán giá vốn (COGS): Dr 632 cogs / Cr 156 cogs -- cogs = Σ(|qty_change| ×
+     valuation_rate) của các dòng SC Stock Ledger Entry mà Phiếu giao hàng đã ghi.
+Set status "Đã phát hành"; delivery_note.status = "Đã xuất HĐ".
+Cancel: `SCGLEntry.cancel_voucher("SC Sales Invoice", name)` (đảo cả 2 bút toán vì
+cùng voucher_type/voucher_no); trả delivery_note.status về "Đã nghiệm thu"; status "Hủy".
+"""
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from frappe.utils import flt, getdate
+
+
+class SCSalesInvoice(Document):
+
+    def validate(self):
+        self._check_dn_status()
+        self._check_items_match_dn()
+        self._compute_totals()
+
+    def on_submit(self):
+        self._check_fiscal_lock()
+        self._post_ar_gl()
+        self._post_cogs_gl()
+        self.db_set("status", "Đã phát hành")
+        if self.delivery_note:
+            frappe.db.set_value("SC Delivery Note", self.delivery_note, "status", "Đã xuất HĐ")
+
+    def on_cancel(self):
+        from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
+
+        SCGLEntry.cancel_voucher("SC Sales Invoice", self.name)
+        if self.delivery_note:
+            frappe.db.set_value("SC Delivery Note", self.delivery_note, "status", "Đã nghiệm thu")
+        self.db_set("status", "Hủy")
+
+    # ------------------------------------------------------------------
+    # BRU-DEL-001
+    # ------------------------------------------------------------------
+    def _check_dn_status(self):
+        if not self.delivery_note:
+            return
+        dn_status = frappe.db.get_value("SC Delivery Note", self.delivery_note, "status")
+        if dn_status != "Đã nghiệm thu":
+            frappe.throw(_(
+                "BRU-DEL-001: Phiếu giao hàng {0} chưa được nghiệm thu (trạng thái "
+                "hiện tại: {1}) — không thể lập hóa đơn bán hàng."
+            ).format(self.delivery_note, dn_status), title="BRU-DEL-001")
+
+    # ------------------------------------------------------------------
+    # BRU-INVC-001
+    # ------------------------------------------------------------------
+    def _check_items_match_dn(self):
+        if not self.delivery_note:
+            return
+        dn_qty = {}
+        for r in frappe.get_all("DN Item", filters={"parent": self.delivery_note},
+                                  fields=["item", "qty"]):
+            dn_qty[r.item] = flt(dn_qty.get(r.item, 0)) + flt(r.qty)
+
+        si_qty = {}
+        for r in self.items:
+            si_qty[r.item] = flt(si_qty.get(r.item, 0)) + flt(r.qty)
+
+        if not _qty_dicts_equal(si_qty, dn_qty):
+            frappe.throw(_(
+                "BRU-INVC-001: Danh mục vật tư hóa đơn không khớp với Phiếu giao "
+                "hàng {0}. Hóa đơn: {1}; Phiếu giao hàng: {2}."
+            ).format(self.delivery_note, si_qty, dn_qty), title="BRU-INVC-001")
+
+    # ------------------------------------------------------------------
+    def _compute_totals(self):
+        total = 0
+        for r in self.items:
+            r.amount = flt(r.qty) * flt(r.unit_price)
+            total += flt(r.amount)
+        self.total_amount = total
+        self.tax_amount = flt(total) * flt(self.tax_rate or 0) / 100
+        self.grand_total = flt(self.total_amount) + flt(self.tax_amount)
+        self.outstanding_amount = flt(self.grand_total)
+
+    # ------------------------------------------------------------------
+    # BRU-PAY-001
+    # ------------------------------------------------------------------
+    def _check_fiscal_lock(self):
+        lock = frappe.db.get_single_value("SupplyCore Settings", "fiscal_lock_date")
+        if lock and self.invoice_date and getdate(self.invoice_date) <= getdate(lock):
+            frappe.throw(_(
+                "BRU-PAY-001: Ngày hóa đơn {0} nằm trong kỳ đã khóa sổ (khóa đến "
+                "{1}) — không thể phát hành."
+            ).format(self.invoice_date, lock), title="BRU-PAY-001")
+
+    # ------------------------------------------------------------------
+    # GL posting (VAS pattern)
+    # ------------------------------------------------------------------
+    def _post_ar_gl(self):
+        """
+          Dr 131 Phải thu KH (party=customer)  grand_total
+             Cr 511 Doanh thu bán hàng           total_amount
+             Cr 3331 Thuế GTGT phải nộp           tax_amount  (nếu > 0)
+        """
+        from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
+
+        acc_receivable = _resolve_account("default_receivable_account", "131")
+        acc_revenue = _resolve_account("default_revenue_account", "511")
+        acc_tax = _resolve_account("default_tax_output_account", "3331")
+
+        if not (acc_receivable and acc_revenue):
+            frappe.msgprint(_("Chưa cấu hình SC GL Account 131 và 511 — bỏ qua GL post"),
+                             indicator="orange", alert=True)
+            return
+
+        entries = [
+            {"account": acc_receivable, "debit": flt(self.grand_total),
+             "party_type": "SC Customer", "party": self.customer,
+             "remarks": f"SI {self.name} — phải thu KH"},
+            {"account": acc_revenue, "credit": flt(self.total_amount),
+             "remarks": f"SI {self.name} — doanh thu bán hàng"},
+        ]
+        if flt(self.tax_amount) > 0 and acc_tax:
+            entries.append({"account": acc_tax, "credit": flt(self.tax_amount),
+                             "remarks": f"SI {self.name} — thuế GTGT đầu ra"})
+
+        SCGLEntry.post_journal(
+            entries=entries,
+            voucher_type="SC Sales Invoice", voucher_no=self.name,
+            posting_date=self.invoice_date,
+        )
+
+    def _post_cogs_gl(self):
+        """
+          Dr 632 Giá vốn hàng bán   cogs
+             Cr 156 Hàng hóa          cogs
+        cogs = Σ(|qty_change| × valuation_rate) của SLE mà DN đã ghi khi xuất kho.
+        """
+        from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
+
+        cogs = self._compute_cogs()
+        if flt(cogs) <= 0:
+            return
+
+        acc_cogs = _resolve_account(None, "632")
+        acc_inventory = _resolve_account(None, "156")
+        if not (acc_cogs and acc_inventory):
+            frappe.msgprint(_("Chưa cấu hình SC GL Account 632 và 156 — bỏ qua GL post COGS"),
+                             indicator="orange", alert=True)
+            return
+
+        entries = [
+            {"account": acc_cogs, "debit": flt(cogs), "remarks": f"SI {self.name} — giá vốn hàng bán"},
+            {"account": acc_inventory, "credit": flt(cogs), "remarks": f"SI {self.name} — xuất kho theo giá vốn"},
+        ]
+        SCGLEntry.post_journal(
+            entries=entries,
+            voucher_type="SC Sales Invoice", voucher_no=self.name,
+            posting_date=self.invoice_date,
+        )
+
+    def _compute_cogs(self) -> float:
+        """Σ(|qty_change| × valuation_rate) chỉ tính dòng XUẤT (qty_change < 0).
+
+        Mirror lưu ý SC Delivery Note._reverse_stock_ledger: dòng đối ứng khi
+        hủy DN vẫn giữ is_cancelled=0 (để tự triệt tiêu số lượng qua SUM), nên
+        lọc thêm qty_change<0 tránh cộng luôn dòng đối ứng nhập ngược (+qty)
+        nếu DN từng bị hủy trước khi lập hóa đơn (không xảy ra trên luồng bình
+        thường accept→invoice vì DN phải "Đã nghiệm thu", nhưng an toàn hơn).
+        """
+        if not self.delivery_note:
+            return 0.0
+        rows = frappe.get_all(
+            "SC Stock Ledger Entry",
+            filters={"voucher_type": "SC Delivery Note", "voucher_no": self.delivery_note,
+                     "is_cancelled": 0, "qty_change": ["<", 0]},
+            fields=["qty_change", "valuation_rate"],
+        )
+        return flt(sum(abs(flt(r.qty_change)) * flt(r.valuation_rate) for r in rows))
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _qty_dicts_equal(a: dict, b: dict) -> bool:
+    keys = set(a.keys()) | set(b.keys())
+    return all(abs(flt(a.get(k, 0)) - flt(b.get(k, 0))) < 0.0001 for k in keys)
+
+
+def _resolve_account(settings_field: str, fallback_code: str) -> str:
+    """Ưu tiên SupplyCore Settings mapping, fallback theo account_code."""
+    if settings_field:
+        mapped = frappe.db.get_single_value("SupplyCore Settings", settings_field)
+        if mapped:
+            return mapped
+    return frappe.db.get_value("SC GL Account", fallback_code, "name") or \
+        frappe.db.get_value("SC GL Account", {"account_code": fallback_code}, "name")

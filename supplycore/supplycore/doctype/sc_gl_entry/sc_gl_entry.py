@@ -66,7 +66,15 @@ class SCGLEntry(Document):
 
     @staticmethod
     def cancel_voucher(voucher_type: str, voucher_no: str):
-        """Đảo ngược: insert GL đối ứng + đánh dấu original is_cancelled."""
+        """Đảo ngược: insert GL đối ứng cho từng dòng gốc.
+
+        LƯU Ý: KHÔNG đánh dấu dòng gốc is_cancelled=1 (mirror
+        SC Delivery Note._reverse_stock_ledger — xem comment ở đó). Mọi truy vấn
+        số dư (get_balance, SC Payment Entry...) đều lọc `is_cancelled = 0`; nếu
+        dòng gốc bị loại trong khi dòng đối ứng vẫn được tính, số dư sẽ lệch đúng
+        bằng giá trị đã hủy thay vì về 0 (double-reversal bug). Giữ cả 2 dòng
+        is_cancelled=0 để chúng tự triệt tiêu qua giá trị Nợ/Có.
+        """
         rows = frappe.get_all("SC GL Entry",
             filters={"voucher_type": voucher_type, "voucher_no": voucher_no, "is_cancelled": 0},
             fields=["name", "account", "debit", "credit", "posting_date",
@@ -83,7 +91,6 @@ class SCGLEntry(Document):
                 voucher_detail_no=(r.voucher_detail_no or "") + "-CANCEL",
                 remarks=f"Cancel of GL {r.name}",
             )
-            frappe.db.set_value("SC GL Entry", r.name, "is_cancelled", 1)
 
     @staticmethod
     def get_balance(account: str, party: str = None) -> float:

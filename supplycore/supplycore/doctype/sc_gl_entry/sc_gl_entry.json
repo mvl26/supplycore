@@ -24,7 +24,7 @@
   {"fieldname": "against_account", "fieldtype": "Data", "label": "Đối ứng"},
 
   {"fieldname": "section_party", "fieldtype": "Section Break", "label": "Đối tượng"},
-  {"fieldname": "party_type", "fieldtype": "Select", "options": "\nSC Supplier\nUser", "label": "Loại đối tượng"},
+  {"fieldname": "party_type", "fieldtype": "Select", "options": "\nSC Supplier\nSC Customer\nUser", "label": "Loại đối tượng"},
   {"fieldname": "party", "fieldtype": "Data", "label": "Đối tượng", "in_standard_filter": 1, "search_index": 1},
 
   {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
