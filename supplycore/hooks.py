@@ -148,6 +148,17 @@ override_whitelisted_methods = {
     "frappe.client.get": "supplycore.api.portal.guarded_client_get",
 }
 
+# ---------------------------------------------------------------------------
+# GĐ4 Task 2 — đóng residual RSK-01: REST `/api/resource/<child>/<name>`
+# (SO Item/DN Item/SI Item/SFC Item) không đi qua `frappe.client.get` (route
+# `frappe/api/v1.py::read_doc`) nên không bị `guarded_client_get` ở trên
+# chặn. Chặn ở mức request-path qua `before_request`, xem docstring
+# `supplycore.utils.permissions.portal_block_rest_child`.
+# ---------------------------------------------------------------------------
+before_request = [
+    "supplycore.utils.permissions.portal_block_rest_child",
+]
+
 boot_session = "supplycore.boot.boot_session"
 after_install = "supplycore.install.after_install"
 before_uninstall = "supplycore.uninstall.before_uninstall"

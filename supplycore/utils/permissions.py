@@ -1,6 +1,7 @@
 """Custom permission logic — gọi từ hooks.py."""
 
 import frappe
+from urllib.parse import unquote
 
 
 def stock_entry_query(user=None):
@@ -173,3 +174,84 @@ def portal_doc_permission(doc, user=None, ptype=None, **kwargs):
 
     owner_user = frappe.db.get_value("SC Customer", customer, "portal_user")
     return owner_user == user
+
+
+# ---------------------------------------------------------------------------
+# Residual RSK-01 hardening (GĐ4 Task 2) — REST resource/document read
+# `/api/resource/<child>/<name>` (v1) và `/api/v2/document/<child>/<name>` (v2)
+# ---------------------------------------------------------------------------
+# `frappe.client.get` (dùng bởi `/api/method/frappe.client.get`) đã được chặn
+# qua `override_whitelisted_methods` (xem hooks.py + `api/portal.py::
+# guarded_client_get`). Nhưng route REST single-doc KHÔNG đi qua
+# `frappe.client.get` — Frappe có 2 router version song song
+# (`frappe/api/__init__.py::API_URL_MAP`, submount cả `/api` và `/api/v1` vào
+# `v1.py::url_rules`, và `/api/v2` vào `v2.py::url_rules`):
+#   - v1: `GET /api/resource/<doctype>/<name>/` (cũng khớp `/api/v1/resource/...`)
+#     -> `frappe/api/v1.py::read_doc` -> `frappe.get_doc(...).check_permission("read")`
+#   - v2: `GET /api/v2/document/<doctype>/<name>/`
+#     -> `frappe/api/v2.py::read_doc` -> CÙNG PATTERN `doc.check_permission("read")`
+# Cả 2 đều dẫn tới `has_child_permission()`, và như đã trace ở
+# `portal_child_permission`/`test_portal_child_read_scoped`, hàm này không lọc
+# theo customer khi resolve 1 child doc độc lập (không có `parent_doc` gắn
+# sẵn) — chỉ còn lại quyền doctype-level (luôn True với role Portal đã có
+# read=1 trên doctype cha). Docname là hash ngẫu nhiên (không enumerable qua
+# bất kỳ API portal nào) nên rủi ro thực tế thấp, nhưng đây vẫn là 1 lỗ hổng
+# thật nếu caller biết đúng docname — đóng cả 2 đường bằng 1 `before_request`
+# hook chặn Ở MỨC REQUEST-PATH, trước khi request được dispatch tới handler.
+
+_PORTAL_BLOCKED_REST_CHILDREN = ("SO Item", "DN Item", "SI Item", "SFC Item")
+
+# Thứ tự không quan trọng — kiểm từng prefix, dùng prefix khớp đầu tiên để
+# tách tên doctype (segment ngay sau prefix).
+_PORTAL_REST_CHILD_PREFIXES = (
+    "/api/resource/",        # v1, submount "/api"
+    "/api/v1/resource/",     # v1, submount "/api/v1" (cùng url_rules, xem api/__init__.py)
+    "/api/v2/document/",     # v2, submount "/api/v2"
+)
+
+
+def portal_block_rest_child():
+    """`before_request` hook (đăng ký ở hooks.py) — chặn role Portal truy cập
+    REST resource/document endpoint (`/api/resource/`, `/api/v1/resource/`
+    v1 và `/api/v2/document/` v2 — xem `_PORTAL_REST_CHILD_PREFIXES`) cho 4
+    child doctype bán hàng (SO Item/DN Item/SI Item/SFC Item), bất kể có
+    `<name>` hay không.
+
+    Chạy trên MỌI request (Frappe gọi `before_request` cho tất cả request,
+    kể cả static/non-API) — PHẢI rẻ và an toàn: return sớm nếu thiếu
+    request/session, không bao giờ throw cho user không có role Portal hay
+    path không khớp 1 trong 3 prefix REST của 4 child doctype này. Không đụng
+    tới REST resource của doctype CHA (SC Sales Order/... — đã được gate qua
+    `portal_doc_permission`/`has_permission` sẵn có, không thuộc phạm vi hook
+    này) hay bất kỳ path nào khác.
+
+    Thời điểm chạy: `frappe/app.py::init_request()` gọi các `before_request`
+    hook SAU KHI `HTTPRequest()` đã resume session từ cookie (`set_session()`
+    -> `LoginManager()`), nên `frappe.session.user` ở đây đã là user thật đã
+    đăng nhập (không phải "Guest" mặc định của `frappe.init()`), TRƯỚC KHI
+    request được dispatch tới route handler (`frappe.api.handle` / `read_doc`).
+    """
+    req = getattr(frappe.local, "request", None)
+    if not req:
+        return
+
+    path = getattr(req, "path", None)
+    if not path or "/api/" not in path:
+        return
+
+    decoded = unquote(path)
+    matched_prefix = next((p for p in _PORTAL_REST_CHILD_PREFIXES if decoded.startswith(p)), None)
+    if not matched_prefix:
+        return
+
+    doctype = decoded[len(matched_prefix):].split("/", 1)[0]
+    if doctype not in _PORTAL_BLOCKED_REST_CHILDREN:
+        return
+
+    session = getattr(frappe.local, "session", None)
+    user = getattr(session, "user", None) if session else None
+    if not user or user == "Guest":
+        return
+
+    if PORTAL_ROLE in frappe.get_roles(user):
+        frappe.throw(frappe._("Không có quyền truy cập dữ liệu này"), frappe.PermissionError)

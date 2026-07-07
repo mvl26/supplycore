@@ -455,6 +455,106 @@ def test_portal_child_get_denied():
         frappe.db.rollback()
 
 
+def test_portal_rest_child_guard():
+    """GĐ4 Task 2 -- đóng residual RSK-01 còn lại: hàm guard
+    `portal_block_rest_child` (đăng ký làm `before_request` hook ở hooks.py)
+    phải chặn role Portal đọc REST resource/document endpoint cho 4 child
+    doctype bán hàng (SO Item/DN Item/SI Item/SFC Item), CẢ 2 router version
+    của Frappe -- vector RSK-01 duy nhất còn hở sau `test_portal_child_get_denied`
+    (xem docstring `test_portal_child_read_scoped`): 2 route này đi qua
+    `frappe/api/v1.py::read_doc` và `frappe/api/v2.py::read_doc`
+    (`frappe/api/__init__.py::API_URL_MAP` submount CẢ HAI song song, không
+    phải 1 route duy nhất), KHÔNG qua `override_whitelisted_methods` (chỉ áp
+    dụng `/api/method/frappe.client.get`) nên không bị `guarded_client_get`
+    chặn -- nếu biết đúng docname (hash) của dòng con khách khác, Portal
+    caller vẫn đọc được qua 1 trong 2 route REST này.
+
+    Gọi THẲNG hàm guard (không dựng HTTP request thật -- `bench execute`
+    không có WSGI/Werkzeug request context để spin 1 request HTTP đầy đủ; xem
+    ghi chú giới hạn trong task-2-report.md), mô phỏng `frappe.local.request`
+    bằng 1 fake object chỉ có thuộc tính `.path` (đúng thuộc tính hàm guard
+    đọc, xem docstring `portal_block_rest_child`).
+
+    Kiểm cả 3 prefix REST (`/api/resource/`, `/api/v1/resource/`,
+    `/api/v2/document/`) với path child của B -> PermissionError cho Portal
+    A; rồi thêm 2 nhánh trên path `/api/resource/`: internal Manager với
+    CÙNG path -> không raise (không hồi quy nội bộ); Portal A với path REST
+    resource của doctype CHA (SC Sales Order) -- đã được gate ở nhánh khác
+    (`portal_doc_permission`), KHÔNG thuộc phạm vi guard này -> không raise."""
+    from supplycore.utils.permissions import portal_block_rest_child
+
+    class _FakeRequest:
+        def __init__(self, path):
+            self.path = path
+
+    orig_user = frappe.session.user
+    orig_request = getattr(frappe.local, "request", None)
+    try:
+        _, a_email, a_so = _seed_customer_with_order("RESTG")
+        manager_email = _make_manager_user()
+
+        child_name = "some-hash-name-doesnt-need-to-exist"
+        child_paths = [
+            f"/api/resource/SO Item/{child_name}",
+            f"/api/v1/resource/SO Item/{child_name}",
+            f"/api/v2/document/SO Item/{child_name}/",
+        ]
+        parent_path = f"/api/resource/SC Sales Order/{a_so}"
+
+        # 1) Portal A doc REST child cua khach khac qua CA 3 prefix (v1 qua
+        # submount "/api" va "/api/v1", v2 qua "/api/v2/document") -> phai bi
+        # chan o muc path, khong can doc thuc DB.
+        frappe.set_user(a_email)
+        child_blocked_per_path = {}
+        for p in child_paths:
+            frappe.local.request = _FakeRequest(p)
+            try:
+                portal_block_rest_child()
+                child_blocked_per_path[p] = False
+            except frappe.PermissionError:
+                child_blocked_per_path[p] = True
+        child_blocked = all(child_blocked_per_path.values())
+
+        # 2) Internal Manager (khong phai Portal) voi CUNG path v1 -> khong bi
+        # chan (guard chi nham role Portal, khong hoi quy noi bo).
+        frappe.local.request = _FakeRequest(child_paths[0])
+        frappe.set_user(manager_email)
+        manager_ok = True
+        try:
+            portal_block_rest_child()
+        except Exception:
+            manager_ok = False
+
+        # 3) Portal A voi REST resource cua doctype CHA chinh minh -> khong
+        # thuoc pham vi guard nay (da duoc gate rieng qua
+        # portal_doc_permission/has_permission) -> khong raise tu day.
+        frappe.local.request = _FakeRequest(parent_path)
+        frappe.set_user(a_email)
+        parent_ok = True
+        try:
+            portal_block_rest_child()
+        except Exception:
+            parent_ok = False
+
+        ok = child_blocked and manager_ok and parent_ok
+        if ok:
+            return {"pass": True, "msg": (
+                "OK guard chan Portal tren ca 3 prefix REST child (v1 /api, "
+                "v1 /api/v1, v2 /api/v2/document), khong chan Manager noi bo "
+                "hay path REST cua doctype cha"
+            )}
+        return {"pass": False, "msg": (
+            f"X child_blocked_per_path={child_blocked_per_path} "
+            f"manager_ok={manager_ok} parent_ok={parent_ok}"
+        )}
+    except Exception as e:
+        return {"pass": False, "msg": f"X threw: {str(e)[:300]}"}
+    finally:
+        frappe.local.request = orig_request
+        frappe.set_user(orig_user)
+        frappe.db.rollback()
+
+
 def run():
     tests = [
         test_portal_A_lists_only_own_orders,
@@ -464,6 +564,7 @@ def run():
         test_portal_child_table_isolation,
         test_portal_child_read_scoped,
         test_portal_child_get_denied,
+        test_portal_rest_child_guard,
     ]
     results = []
     for t in tests:
