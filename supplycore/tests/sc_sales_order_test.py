@@ -154,6 +154,36 @@ def test_approve_reduces_remaining():
         return {"pass": False, "msg": f"X threw: {str(e)[:200]}"}
 
 
+def test_two_orders_cannot_overcommit_sfc():
+    """GD2 review I-2 (BRU-SO-001 TOCTOU): SFC contract_qty=100. Submit SO-A
+    qty=70 (ok, remaining_qty van la 100 vi chi cap nhat luc approve()). Submit
+    SO-B qty=70 -> phai THROW BRU-SO-001 vi live committed (70 tu A da submit)
+    + 70 (B) = 140 > 100, du remaining_qty luu con nguyen la 100."""
+    cust = _make_customer("OVERCOMMIT")
+    item = _make_item("OVERCOMMIT")
+    sfc = _make_submitted_sfc(cust.name, item.name, 100, 1000)
+    so_a = _make_so(cust.name, sfc.name, [{"item": item.name, "qty": 70}])
+    try:
+        so_a.insert()
+        so_a.submit()
+
+        so_b = _make_so(cust.name, sfc.name, [{"item": item.name, "qty": 70}])
+        try:
+            so_b.insert()
+            so_b.submit()
+            frappe.db.rollback()
+            return {"pass": False, "msg": "X SO-B did not throw (over-commit slipped through)"}
+        except frappe.ValidationError as e:
+            msg = str(e)
+            frappe.db.rollback()
+            if "BRU-SO-001" in msg:
+                return {"pass": True, "msg": "OK SO-B threw BRU-SO-001"}
+            return {"pass": False, "msg": f"X threw wrong msg: {msg[:150]}"}
+    except Exception as e:
+        frappe.db.rollback()
+        return {"pass": False, "msg": f"X threw unexpected: {str(e)[:200]}"}
+
+
 def test_credit_limit_exceeded_holds():
     """customer credit_limit=5000, SO total 10000 -> on_submit throws + credit_hold set."""
     cust = _make_customer("CREDIT", credit_limit=5000)
@@ -182,6 +212,7 @@ def run():
         test_price_from_sfc_not_editable,
         test_item_not_in_sfc_blocked,
         test_qty_exceeds_remaining_blocked,
+        test_two_orders_cannot_overcommit_sfc,
         test_approve_reduces_remaining,
         test_credit_limit_exceeded_holds,
     ]

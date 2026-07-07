@@ -23,9 +23,6 @@ def execute():
     d.root_type = "Income"
     d.vas_reference = "TT200"
     d.flags.ignore_permissions = True
-    try:
-        d.insert()
-        frappe.db.commit()
-        print("  ✓ SC GL Account 511 (Doanh thu bán hàng) created")
-    except Exception as e:
-        frappe.log_error(message=f"GL Account 511 failed: {e}", title="Seed sales GL accounts")
+    d.insert()
+    frappe.db.commit()
+    print("  ✓ SC GL Account 511 (Doanh thu bán hàng) created")

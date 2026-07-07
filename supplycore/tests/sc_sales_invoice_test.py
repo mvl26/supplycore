@@ -266,6 +266,24 @@ def test_si_fiscal_lock_blocked():
         frappe.db.rollback()
 
 
+def test_si_desk_price_override_ignored():
+    """GD2 review I-1 (BRU-SFC-002 gia SI): Desk sua tay unit_price tren SI Item
+    (vd 5000 thay vi gia SFC-lock 1000) -> sau save phai bi ghi de ve gia goc
+    (tu SO Item qua delivery_note.sales_order), grand_total tinh theo gia goc."""
+    ctx = _seed_chain("PRICEOVR", qty=30, unit_price=1000)
+    si = _make_si(ctx, items=[{"item": ctx["item"].name, "qty": 30, "unit_price": 5000}])
+    try:
+        si.insert()
+        ok = (flt(si.items[0].unit_price) == 1000 and flt(si.grand_total) == 30000)
+        frappe.db.rollback()
+        if ok:
+            return {"pass": True, "msg": f"OK unit_price={si.items[0].unit_price} grand_total={si.grand_total}"}
+        return {"pass": False, "msg": f"X unit_price={si.items[0].unit_price} grand_total={si.grand_total}"}
+    except Exception as e:
+        frappe.db.rollback()
+        return {"pass": False, "msg": f"X threw: {str(e)[:250]}"}
+
+
 def test_si_cancel_reverses_gl():
     """Submit roi cancel -> 131 balance quay lai truoc submit."""
     ctx = _seed_chain("CANCEL", qty=25, unit_price=1200)
@@ -290,6 +308,7 @@ def run():
     tests = [
         test_si_from_unaccepted_dn_blocked,
         test_si_mismatch_dn_blocked,
+        test_si_desk_price_override_ignored,
         test_si_posts_ar_gl,
         test_si_cogs_posted,
         test_si_fiscal_lock_blocked,

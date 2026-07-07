@@ -167,3 +167,155 @@ false positive.
 (`supplycore/tests/sales_e2e_test.py`,
 `supplycore/setup/seed_sales_demo.py`) + report này — không có file nào
 khác bị thay đổi ngoài phạm vi task, an toàn để commit riêng.
+
+---
+
+# GĐ2 review fixes — 2 bypass BRU quan trọng (Desk-reachable, TDD)
+
+Bối cảnh: review cuối GĐ2 M7 Sales tìm thấy 2 finding "Important" — cả hai là
+BRU bypass chỉ khai thác được qua Desk UI (test cũ chỉ phủ API happy-path).
+Sửa theo TDD nghiêm ngặt: viết test tái hiện lỗi → xác nhận RED trên code cũ
+(stash code fix, giữ nguyên test) → phục hồi fix → xác nhận GREEN → chạy lại
+toàn bộ regression suite GĐ2 sales.
+
+## FIX I-1 — BRU-SFC-002 (giá SI): Desk sửa tay `unit_price` trên SC Sales Invoice
+
+**Lỗ hổng:** `si_item.json::unit_price` không `read_only` + `_check_items_match_dn`
+chỉ so item+qty, không so giá — Kế toán mở SC Sales Invoice trực tiếp trên Desk,
+sửa `unit_price` dòng bất kỳ → GL Dr 131 / Cr 511 ghi sai số tiền, không đi qua
+giá đã khoá ở SFC/SO.
+
+**Test tái hiện (RED trước khi sửa):**
+`supplycore/tests/sc_sales_invoice_test.py::test_si_desk_price_override_ignored`
+— dựng DN đã nghiệm thu (SFC giá 1000, qty 30), tạo SI cùng item/qty nhưng set
+`unit_price=5000`.
+
+```
+# RED (code cũ, đã stash fix qua `git stash push -- <4 file fix>`):
+{"pass": false, "msg": "X unit_price=5000 grand_total=150000.0",
+ "test": "test_si_desk_price_override_ignored"}
+```
+→ đúng như dự đoán: giá Desk nhập (5000) lọt qua, `grand_total` sai (150000
+thay vì 30000 đúng).
+
+**Fix:**
+- `supplycore/m7_sales/doctype/si_item/si_item.json`: `unit_price` → `"read_only": 1`
+  (chặn sửa tay trên form Desk).
+- `supplycore/m7_sales/doctype/sc_sales_invoice/sc_sales_invoice.py`: thêm
+  `_derive_prices_from_so()`, gọi trong `validate()` TRƯỚC `_compute_totals()`
+  (sau `_check_items_match_dn`). Load `delivery_note.sales_order`, map
+  `SO Item.unit_price` theo `item`, ghi đè `si_item.unit_price` bất kể giá trị
+  đã có trên dòng (không tin field đến từ Desk/API); nếu item không có trong
+  SO Item tương ứng → `frappe.throw(BRU-SFC-002)`. `_check_items_match_dn`
+  (item+qty) giữ nguyên không đổi.
+
+**GREEN (sau khi phục hồi fix):**
+```
+{"pass": true, "msg": "OK unit_price=1000.0 grand_total=30000.0",
+ "test": "test_si_desk_price_override_ignored"}
+```
+
+## FIX I-2 — BRU-SO-001 (over-commit SFC): TOCTOU giữa 2 SC Sales Order submit gần như đồng thời
+
+**Lỗ hổng:** `_apply_sfc_pricing_and_limits()` so `qty > sfc_item.remaining_qty`
+với `remaining_qty` **đã lưu** trong SFC Item — field này chỉ được cập nhật lúc
+`approve()` (qua `_recalculate_sfc()`), KHÔNG cập nhật lúc `submit()`. Vậy 2
+SC Sales Order cùng framework_contract+item, cả hai submit trước khi cái nào
+được duyệt, đều thấy `remaining_qty` còn nguyên → cả hai pass check → sau khi
+approve cả hai, `SFC Item.remaining_qty` âm (over-commit).
+
+**Test tái hiện (RED trước khi sửa):**
+`supplycore/tests/sc_sales_order_test.py::test_two_orders_cannot_overcommit_sfc`
+— SFC `contract_qty=100`; submit SO-A qty=70 (ok); submit SO-B qty=70 (kỳ vọng
+throw BRU-SO-001 vì 70+70=140 > 100).
+
+```
+# RED (code cũ):
+{"pass": false, "msg": "X SO-B did not throw (over-commit slipped through)",
+ "test": "test_two_orders_cannot_overcommit_sfc"}
+```
+→ xác nhận đúng lỗ hổng: SO-B submit trót lọt dù đã over-commit 40 đơn vị.
+
+**Fix:**
+- `supplycore/m7_sales/doctype/sc_sales_order/sc_sales_order.py`
+  `_apply_sfc_pricing_and_limits()`: thay so sánh `remaining_qty` (stored)
+  bằng tính **LIVE** `committed = SUM(SO Item.qty)` qua SQL join `tabSO Item` +
+  `tabSC Sales Order` — lọc `docstatus=1 AND name != self.name AND
+  framework_contract = ... AND item = ...` (mirror pattern SQL của
+  `sc_purchase_order.py::_validate_against_framework_contract` /
+  `FC Item.remaining_qty`). Điều kiện mới: `this_order_qty + committed <=
+  sfc_item.contract_qty` (so với `contract_qty` — tổng capacity — thay vì
+  `remaining_qty` có thể trễ), nếu vượt → `throw(BRU-SO-001)`.
+- Defense-in-depth trong `approve()`: thêm `_check_sfc_not_oversold()` gọi
+  NGAY SAU `_recalculate_sfc()`, TRƯỚC khi `db_set("status", "Đã duyệt")` —
+  duyệt qua từng `SFC Item` của hợp đồng, nếu `remaining_qty < 0` →
+  `throw(BRU-SO-001)` (không set status "Đã duyệt", không set approval_by;
+  exception khiến request rollback toàn bộ transaction kể cả `set_value`
+  vừa recalc).
+
+**GREEN (sau khi phục hồi fix):**
+```
+{"pass": true, "msg": "OK SO-B threw BRU-SO-001",
+ "test": "test_two_orders_cannot_overcommit_sfc"}
+```
+
+## MINOR — patch v0_8 seed 511 hết swallow lỗi
+
+`supplycore/patches/v0_8/seed_sales_gl_accounts.py`: bỏ `try/except
+Exception: frappe.log_error(...)` bọc quanh `d.insert()` — để lỗi seed 511
+raise thẳng (loud failure) thay vì âm thầm log rồi tiếp tục migrate, vì thiếu
+511 sẽ làm hỏng GL doanh thu (511) một cách im lặng ở toàn bộ luồng SI sau
+này. Giữ nguyên idempotency guard `if frappe.db.exists("SC GL Account",
+"511"): return`.
+
+## Quy trình RED→GREEN (cách xác nhận, không chỉ "chạy test sau khi sửa")
+
+Vì code fix đã được viết trước khi có cơ hội chạy RED-trước-fix trong phiên
+này, đã dùng `git stash push -m ... -- <4 file production code fix>` (giữ
+nguyên 2 file test mới) để phục hồi đúng trạng thái code CŨ, chạy 2 suite xác
+nhận RED (kết quả ở trên), rồi `git stash pop` phục hồi fix, `bench migrate`
+(để đồng bộ `read_only` mới trên `si_item.json`), chạy lại xác nhận GREEN.
+
+## Full GĐ2 sales suite — sau fix (không hồi quy)
+
+| Suite | Pass/Total |
+|---|---|
+| sc_customer_test | 3/3 |
+| sc_sfc_test | 2/2 |
+| sc_sales_order_test | 6/6 |
+| sc_delivery_note_test | 5/5 |
+| sc_acceptance_test | 2/2 |
+| sc_sales_invoice_test | 7/7 |
+| sc_sales_receipt_test | 5/5 |
+| sales_api_test | 6/6 |
+| sales_e2e_test | 1/1 |
+| **Tổng** | **37/37** |
+
+`bench --site supplycore-miyano.local migrate` sạch (không lỗi) và
+`frappe.ping` → `"pong"` sau cùng, đúng invariant yêu cầu.
+
+## Concerns
+
+1. `_derive_prices_from_so()` yêu cầu `SO Item` của `delivery_note.sales_order`
+   phải có cùng `item` với SI Item — vì `delivery_note` là `reqd=1` trên SC
+   Sales Invoice và `sales_order` là `reqd=1` trên SC Delivery Note, luồng
+   bình thường (accept → invoice) luôn có đường dẫn này; trường hợp SI không
+   gắn `delivery_note` thì bỏ qua derive (giữ nguyên hành vi cũ, hiện schema
+   không cho phép trường hợp này vì `delivery_note reqd=1`).
+2. Check BRU-SO-001 mới so với `contract_qty` (capacity tổng) thay vì
+   `remaining_qty` đã lưu — đúng theo brief để tránh trễ dữ liệu, nhưng nghĩa
+   là số liệu "còn lại" hiển thị trên SFC Item (`remaining_qty`) vẫn chỉ chính
+   xác sau khi `approve()` chạy `_recalculate_sfc()`; giữa submit và approve,
+   `remaining_qty` hiển thị có thể lạc quan hơn thực tế (đã có brief chấp
+   nhận, vì `_recalculate_sfc()` là nguồn cập nhật duy nhất theo thiết kế
+   sẵn có, task này chỉ thêm lớp kiểm LIVE khi validate/approve, không đổi
+   luồng cập nhật hiển thị).
+3. `approve()` defense-in-depth (`_check_sfc_not_oversold`) không tự động
+   "undo" phần đã `_recalculate_sfc()` set trực tiếp qua `frappe.db.set_value`
+   nếu happens ngoài transaction rollback (vd gọi qua API không theo request
+   cycle chuẩn của Frappe) — trong luồng Desk/whitelist thông thường,
+   exception sẽ khiến toàn bộ request rollback nên không phát sinh trạng thái
+   nửa vời; chưa có test riêng cho path defense-in-depth này (test mới chặn
+   được ở tầng `validate()`/submit trước khi cần tới approve — path
+   `_check_sfc_not_oversold` throw thực tế chỉ kích hoạt trong race condition
+   sâu hơn, ví dụ 2 request đồng thời thật sự chạm DB cùng lúc).

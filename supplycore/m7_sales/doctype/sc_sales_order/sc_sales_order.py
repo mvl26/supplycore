@@ -4,7 +4,12 @@ Business rules:
 - BRU-SFC-001: mỗi dòng item phải tồn tại trong Hợp đồng khung bán hàng (SFC) đang
   Hiệu lực, nếu không → throw.
 - BRU-SFC-002: đơn giá luôn lấy từ SFC Item, người dùng KHÔNG được sửa (bị ghi đè).
-- BRU-SO-001: tổng SL đặt (gộp theo item) không được vượt remaining_qty của SFC Item.
+- BRU-SO-001: tổng SL đặt (gộp theo item) không được vượt SL còn lại của SFC Item.
+  Kiểm LIVE (SUM SO Item.qty của các SC Sales Order khác đã submit cùng
+  framework_contract+item) thay vì tin remaining_qty đã lưu (remaining_qty chỉ
+  cập nhật lúc approve()) — chặn TOCTOU khi 2 SO submit gần như đồng thời trong
+  lúc remaining_qty còn nguyên. approve() kiểm lại lần nữa (defense-in-depth)
+  sau khi recalc, nếu SFC Item.remaining_qty âm thì không cho duyệt.
 - BRU-AR-001: khi submit, nếu (dư nợ AR hiện tại + tổng đơn) vượt hạn mức công nợ
   của khách hàng → giữ đơn (credit_hold) + throw, cần duyệt cấp cao xử lý riêng.
 """
@@ -48,18 +53,32 @@ class SCSalesOrder(Document):
             row.unit_price = flt(sfc_item.unit_price)
             row.amount = flt(row.qty) * flt(row.unit_price)
 
-        # BRU-SO-001: gộp SL theo item rồi so với remaining_qty của SFC Item
+        # BRU-SO-001: gộp SL theo item rồi so với SL còn lại của SFC Item, tính
+        # LIVE (không tin remaining_qty đã lưu — remaining_qty chỉ cập nhật lúc
+        # approve(), nên 2 SO submit gần như đồng thời đều thấy remaining còn
+        # nguyên → TOCTOU). Cộng thêm SL đã cam kết bởi các SC Sales Order KHÁC
+        # đã submit (docstatus=1) cùng framework_contract+item, so với tổng
+        # contract_qty của SFC Item.
         qty_by_item = {}
         for row in self.items:
             qty_by_item[row.item] = qty_by_item.get(row.item, 0) + flt(row.qty)
         for item_code, qty in qty_by_item.items():
             sfc_item = sfc_items_by_item[item_code]
-            remaining = flt(sfc_item.remaining_qty)
-            if qty > remaining:
+            committed = flt(frappe.db.sql("""
+                SELECT COALESCE(SUM(soi.qty), 0)
+                FROM `tabSO Item` soi
+                JOIN `tabSC Sales Order` so ON so.name = soi.parent
+                WHERE so.framework_contract = %s
+                  AND so.docstatus = 1
+                  AND so.name != %s
+                  AND soi.item = %s
+            """, (self.framework_contract, self.name or "", item_code))[0][0])
+            contract_qty = flt(sfc_item.contract_qty)
+            if (qty + committed) > contract_qty:
                 frappe.throw(_(
-                    "BRU-SO-001: Vật tư {0} đặt tổng {1} vượt SL còn lại của Hợp đồng "
-                    "khung ({2})."
-                ).format(item_code, qty, remaining), title="BRU-SO-001")
+                    "BRU-SO-001: Vật tư {0} đặt {1} + đã cam kết {2} (đơn khác đã submit) "
+                    "vượt tổng SL Hợp đồng khung ({3})."
+                ).format(item_code, qty, committed, contract_qty), title="BRU-SO-001")
 
     def _compute_totals(self):
         self.total_amount = sum(flt(r.amount) for r in self.items)
@@ -96,9 +115,10 @@ class SCSalesOrder(Document):
     def approve(self):
         if self.docstatus != 1:
             frappe.throw(_("Chỉ duyệt đơn đã submit"))
+        self._recalculate_sfc()
+        self._check_sfc_not_oversold()
         self.db_set("status", "Đã duyệt")
         self.db_set("approval_by", frappe.session.user)
-        self._recalculate_sfc()
         return {"status": "Đã duyệt"}
 
     @frappe.whitelist()
@@ -112,3 +132,18 @@ class SCSalesOrder(Document):
         if not self.framework_contract:
             return
         frappe.get_doc("SC Sales Framework Contract", self.framework_contract).recalculate_sold_qty()
+
+    def _check_sfc_not_oversold(self):
+        """Defense-in-depth cho BRU-SO-001: sau recalc, nếu SFC Item.remaining_qty
+        âm (over-commit lọt qua check ở validate() — vd race condition thực sự
+        đồng thời) thì KHÔNG cho duyệt đơn này."""
+        if not self.framework_contract:
+            return
+        fc = frappe.get_doc("SC Sales Framework Contract", self.framework_contract)
+        for row in fc.items:
+            if flt(row.remaining_qty) < 0:
+                frappe.throw(_(
+                    "BRU-SO-001: Sau khi duyệt, Vật tư {0} của Hợp đồng khung {1} có SL "
+                    "còn lại âm ({2}) — over-commit, không thể duyệt đơn này."
+                ).format(row.item, self.framework_contract, row.remaining_qty),
+                    title="BRU-SO-001")

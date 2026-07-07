@@ -6,6 +6,9 @@ Business rules:
   ở trạng thái "Đã nghiệm thu" -- nếu chưa, validate() throw.
 - BRU-INVC-001: danh mục vật tư trên hóa đơn phải khớp CHÍNH XÁC (item + qty)
   với danh mục trên Phiếu giao hàng -- lệch (thiếu/thừa/khác SL) → throw.
+- BRU-SFC-002 (giá SI): unit_price của SI Item KHÔNG được tin theo giá trị Desk
+  nhập -- luôn ghi đè bằng đơn giá gốc lấy từ SO Item (qua delivery_note.sales_order)
+  của cùng item -- chặn Accountant sửa tay unit_price trực tiếp trên hóa đơn.
 - BRU-PAY-001: không được submit hóa đơn có invoice_date <= Settings.fiscal_lock_date
   (khóa sổ kỳ kế toán trước).
 
@@ -30,6 +33,7 @@ class SCSalesInvoice(Document):
     def validate(self):
         self._check_dn_status()
         self._check_items_match_dn()
+        self._derive_prices_from_so()
         self._compute_totals()
 
     def on_submit(self):
@@ -81,6 +85,30 @@ class SCSalesInvoice(Document):
                 "BRU-INVC-001: Danh mục vật tư hóa đơn không khớp với Phiếu giao "
                 "hàng {0}. Hóa đơn: {1}; Phiếu giao hàng: {2}."
             ).format(self.delivery_note, si_qty, dn_qty), title="BRU-INVC-001")
+
+    # ------------------------------------------------------------------
+    # BRU-SFC-002 (giá SI) — unit_price KHÔNG được tin theo Desk, luôn derive
+    # từ SO Item (giá SFC-lock) qua delivery_note.sales_order.
+    # ------------------------------------------------------------------
+    def _derive_prices_from_so(self):
+        if not self.delivery_note:
+            return
+        sales_order = frappe.db.get_value("SC Delivery Note", self.delivery_note, "sales_order")
+        if not sales_order:
+            return
+        so_price_by_item = {}
+        for r in frappe.get_all("SO Item", filters={"parent": sales_order},
+                                  fields=["item", "unit_price"]):
+            so_price_by_item[r.item] = flt(r.unit_price)
+
+        for row in self.items:
+            if row.item not in so_price_by_item:
+                frappe.throw(_(
+                    "BRU-SFC-002: Vật tư {0} không có trong Đơn hàng bán {1} — không thể "
+                    "xác định đơn giá gốc để lập hóa đơn."
+                ).format(row.item, sales_order), title="BRU-SFC-002")
+            # Ghi đè bất kể giá trị Desk đã nhập — giá luôn lấy từ SO (đã bị SFC khoá).
+            row.unit_price = so_price_by_item[row.item]
 
     # ------------------------------------------------------------------
     def _compute_totals(self):
