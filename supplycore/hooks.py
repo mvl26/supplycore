@@ -129,6 +129,25 @@ fixtures = [
     {"dt": "Email Template", "filters": [["module", "like", "%Supplycore%"]]},
 ]
 
+# ---------------------------------------------------------------------------
+# Override whitelisted methods (RSK-01 Critical — rò rỉ chéo child-row)
+# ---------------------------------------------------------------------------
+# `frappe.client.get` (dùng bởi `/api/method/frappe.client.get` + FrappeClient)
+# đi qua `doc.check_permission()` trên CHÍNH dòng con vừa load đơn lẻ (không
+# nằm trong parent doc đầy đủ) — `has_child_permission()` của Frappe resolve
+# `doc=getattr(child_doc, "parent_doc", child_doc.parent)`, và child doc độc
+# lập luôn có sẵn thuộc tính `parent_doc` (property, mặc định None) nên
+# `getattr` trả về None thay vì fallback về `child_doc.parent` như tưởng —
+# `has_permission(parent_doctype, doc=None, ...)` chỉ còn kiểm tra doctype-level
+# (luôn True với role Portal đã có read=1 trên 5 doctype cha), bỏ qua hoàn
+# toàn `portal_doc_permission`. Xem `supplycore/api/portal.py::guarded_client_get`
+# + `supplycore/utils/permissions.py::portal_child_permission` (docstring) để
+# trace chi tiết. `permission_query_conditions` (list-query) đã lọc đúng —
+# hole này CHỈ nằm ở đường `frappe.client.get` theo tên/filter đơn lẻ.
+override_whitelisted_methods = {
+    "frappe.client.get": "supplycore.api.portal.guarded_client_get",
+}
+
 boot_session = "supplycore.boot.boot_session"
 after_install = "supplycore.install.after_install"
 before_uninstall = "supplycore.uninstall.before_uninstall"

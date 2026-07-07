@@ -19,6 +19,19 @@ PORTAL_ROLE = "SC Customer Portal"
 PROVISION_ROLES = {"System Manager", "SupplyCore Manager", "SupplyCore Purchaser"}
 DOWNLOADABLE_DOCTYPES = {"SC Sales Invoice", "SC Delivery Note"}
 
+# ---------------------------------------------------------------------------
+# RSK-01 Critical — chặn rò rỉ chéo child-row qua `frappe.client.get`
+# ---------------------------------------------------------------------------
+# 4 child doctype bán hàng: khi đọc đơn lẻ (theo `name` hoặc `filters`) qua
+# `frappe.client.get`, Frappe KHÔNG chạy `portal_doc_permission`/
+# `portal_child_permission` (xem docstring `guarded_client_get` +
+# `hooks.py::override_whitelisted_methods` để trace chi tiết bug gốc trong
+# `has_child_permission()`) — chỉ còn lại kiểm tra doctype-level luôn True
+# với role Portal. Portal user KHÔNG BAO GIỜ cần đọc trực tiếp các doctype
+# này (7 API portal ở dưới đã tự lọc + trả field cần thiết), nên đơn giản
+# và an toàn nhất là CHẶN HẲN mọi truy cập trực tiếp của Portal caller.
+_PORTAL_BLOCKED_CHILD = {"SO Item", "DN Item", "SI Item", "SFC Item"}
+
 
 @frappe.whitelist()
 def portal_provision(customer, email):
@@ -59,6 +72,36 @@ def portal_provision(customer, email):
     frappe.db.set_value("SC Customer", customer, "portal_user", user_doc.name)
 
     return user_doc.name
+
+
+@frappe.whitelist()
+def guarded_client_get(doctype, name=None, filters=None, parent=None):
+    """Override của `frappe.client.get` (đăng ký qua
+    `hooks.py::override_whitelisted_methods`) — chặn RSK-01 Critical.
+
+    Chữ ký PHẢI khớp CHÍNH XÁC `frappe.client.get(doctype, name=None,
+    filters=None, parent=None)` (Frappe hiện tại không có kwargs nào khác)
+    để `frappe.call`/dispatcher forward đúng tham số, không phá caller nội
+    bộ hợp lệ nào.
+
+    Với caller có role "SC Customer Portal": nếu `doctype` là 1 trong 4
+    child doctype bán hàng (`SO Item`/`DN Item`/`SI Item`/`SFC Item`) →
+    luôn từ chối (PermissionError), bất kể `name`/`filters` gì — vì
+    `has_child_permission()` của Frappe (xem trace trong `hooks.py`) resolve
+    `doc=None` khi đọc 1 dòng con độc lập (không nằm trong parent doc đầy
+    đủ), bỏ qua hoàn toàn `portal_doc_permission`/`portal_child_permission`,
+    và chỉ còn lại kiểm tra doctype-level (luôn True vì role Portal có
+    read=1 trên 5 doctype cha). Portal user không cần đọc trực tiếp các
+    doctype này — 7 API portal ở trên đã tự lọc theo customer + chỉ trả
+    field cần thiết (không trả `name`/docname child ra ngoài).
+
+    Mọi caller khác (không có role Portal) và mọi doctype khác → delegate
+    nguyên vẹn cho `frappe.client.get` gốc — không thay đổi hành vi."""
+    if doctype in _PORTAL_BLOCKED_CHILD and PORTAL_ROLE in frappe.get_roles(frappe.session.user):
+        frappe.throw(_("Không có quyền truy cập dữ liệu này"), frappe.PermissionError)
+
+    from frappe.client import get as _orig_client_get
+    return _orig_client_get(doctype, name, filters, parent)
 
 
 # ---------------------------------------------------------------------------

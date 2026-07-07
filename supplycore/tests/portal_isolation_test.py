@@ -13,6 +13,14 @@ def _get_uom() -> str:
     return frappe.db.get_value("SC UOM", {}, "name")
 
 
+def _pick_warehouse() -> str:
+    rows = frappe.get_all("SC Warehouse", filters={"is_group": 0, "disabled": 0},
+                           pluck="name", order_by="name", limit=1)
+    if not rows:
+        frappe.throw("portal_isolation_test: cần seed SC Warehouse")
+    return rows[0]
+
+
 def _make_item(suffix):
     item = frappe.new_doc("SC Item")
     item.item_code = f"ISO-{suffix}-{random_string(5)}"
@@ -86,6 +94,81 @@ def _seed_customer_with_order(suffix, qty=10, unit_price=1000):
     sfc = _make_submitted_sfc(cust.name, item.name, contract_qty=100, unit_price=unit_price)
     so_name = _make_approved_so(cust.name, sfc.name, item.name, qty)
     return cust.name, portal_email, so_name
+
+
+def _make_batch(item, expiry_date):
+    b = frappe.new_doc("SC Batch")
+    b.batch_id = f"{item}-{random_string(6)}"
+    b.item = item
+    b.expiry_date = expiry_date
+    b.manufacturing_date = add_days(expiry_date, -365)
+    b.qc_status = "Accepted"
+    b.flags.ignore_permissions = True
+    b.flags.ignore_short_expiry = True
+    b.insert()
+    return b
+
+
+def _seed_stock(item, warehouse, batch, qty, rate=1000):
+    from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+    SCStockLedgerEntry.post(
+        item=item, warehouse=warehouse, qty_change=flt(qty),
+        voucher_type="SC Purchase Receipt", voucher_no=f"TEST-IN-{random_string(6)}",
+        batch=batch, valuation_rate=rate,
+    )
+
+
+def _accept_dn(dn):
+    ar = frappe.new_doc("SC Acceptance Record")
+    ar.delivery_note = dn.name
+    ar.acceptance_date = today()
+    ar.accepted_by = "Nguyễn Văn A"
+    ar.flags.ignore_permissions = True
+    ar.insert()
+    ar.submit()
+    dn.reload()
+    return ar
+
+
+def _seed_customer_full_chain(suffix, qty=10, unit_price=1000):
+    """Dung chuoi day du: khach Portal -> SFC(hieu luc) -> SO(duyet) ->
+    DN(nghiem thu) -> SI(phat hanh), de co dong that o ca 4 child doctype
+    ban hang (SFC Item/SO Item/DN Item/SI Item) dung cho test RSK-01
+    Critical (frappe.client.get). Tra ve dict de goi noi don gian tai
+    diem goi."""
+    cust, portal_email = _make_portal_customer(suffix)
+    item = _make_item(suffix)
+    sfc = _make_submitted_sfc(cust.name, item.name, contract_qty=100, unit_price=unit_price)
+    so_name = _make_approved_so(cust.name, sfc.name, item.name, qty)
+
+    wh = _pick_warehouse()
+    batch = _make_batch(item.name, add_days(today(), 200))
+    _seed_stock(item.name, wh, batch.name, qty * 2, rate=unit_price)
+
+    dn = frappe.new_doc("SC Delivery Note")
+    dn.sales_order = so_name
+    dn.from_warehouse = wh
+    dn.delivery_date = today()
+    dn.append("items", {"item": item.name, "uom": _get_uom(), "qty": flt(qty)})
+    dn.flags.ignore_permissions = True
+    dn.insert()
+    dn.submit()
+    dn.reload()
+    _accept_dn(dn)
+
+    si = frappe.new_doc("SC Sales Invoice")
+    si.customer = cust.name
+    si.delivery_note = dn.name
+    si.invoice_date = today()
+    si.append("items", {"item": item.name, "qty": flt(qty), "unit_price": flt(unit_price)})
+    si.flags.ignore_permissions = True
+    si.insert()
+    si.submit()
+
+    return {
+        "customer": cust.name, "portal_email": portal_email, "item": item.name,
+        "sfc": sfc.name, "so": so_name, "dn": dn.name, "si": si.name,
+    }
 
 
 def _make_manager_user():
@@ -282,6 +365,96 @@ def test_portal_child_read_scoped():
         frappe.db.rollback()
 
 
+def test_portal_child_get_denied():
+    """RSK-01 Critical: `frappe.client.get` (whitelisted, dùng bởi REST
+    `/api/method/frappe.client.get` và FrappeClient) trên 4 child doctype bán
+    hàng (SO Item/DN Item/SI Item/SFC Item) PHẢI bị chặn cho Portal caller,
+    kể cả khi biết chính xác docname của dòng khách khác (gap đã flag ở
+    `test_portal_child_read_scoped`/task-3-report.md, nay đóng lại ở mức
+    Critical qua `guarded_client_get`).
+
+    Kiểm cả 3 dạng gọi (per RSK-01 brief): theo `name` đã biết, theo
+    `filters={"parent": ...}` (không cần biết docname), theo
+    `filters={"item": ...}` (không cần biết parent) -- cho cả 4 doctype.
+    Đồng thời kiểm 2 regression bắt buộc: Portal A vẫn đọc được dữ liệu CỦA
+    CHÍNH MÌNH qua Portal API (không over-block), và internal Manager vẫn
+    `frappe.client.get` được dòng con bình thường (delegation nguyên vẹn).
+
+    QUAN TRỌNG: gọi qua `frappe.override_whitelisted_method("frappe.client.get")`
+    + `frappe.get_attr(...)` -- ĐÚNG cơ chế resolve mà `frappe.handler.execute_cmd`
+    dùng khi 1 request thật tới `/api/method/frappe.client.get` -- KHÔNG gọi
+    thẳng `frappe.client.get` (import trực tiếp sẽ bỏ qua override hoàn toàn,
+    test sẽ luôn "pass" giả -- không phản ánh đúng đường đi thật)."""
+    from supplycore.api.portal import portal_order_track
+
+    def client_get(doctype, **kwargs):
+        method_path = frappe.override_whitelisted_method("frappe.client.get")
+        method = frappe.get_attr(method_path)
+        return method(doctype, **kwargs)
+
+    orig_user = frappe.session.user
+    try:
+        _, a_email, a_so = _seed_customer_with_order("CGETA")
+        b = _seed_customer_full_chain("CGETB")
+        manager_email = _make_manager_user()
+
+        b_so_item = frappe.db.get_value("SO Item", {"parent": b["so"]}, "name")
+        b_sfc_item = frappe.db.get_value("SFC Item", {"parent": b["sfc"]}, "name")
+        b_dn_item = frappe.db.get_value("DN Item", {"parent": b["dn"]}, "name")
+        b_si_item = frappe.db.get_value("SI Item", {"parent": b["si"]}, "name")
+
+        forms = [
+            ("SO Item", {"name": b_so_item, "parent": "SC Sales Order"}),
+            ("SO Item", {"filters": {"parent": b["so"]}, "parent": "SC Sales Order"}),
+            ("SO Item", {"filters": {"item": b["item"]}, "parent": "SC Sales Order"}),
+            ("DN Item", {"name": b_dn_item, "parent": "SC Delivery Note"}),
+            ("DN Item", {"filters": {"parent": b["dn"]}, "parent": "SC Delivery Note"}),
+            ("DN Item", {"filters": {"item": b["item"]}, "parent": "SC Delivery Note"}),
+            ("SI Item", {"name": b_si_item, "parent": "SC Sales Invoice"}),
+            ("SI Item", {"filters": {"parent": b["si"]}, "parent": "SC Sales Invoice"}),
+            ("SI Item", {"filters": {"item": b["item"]}, "parent": "SC Sales Invoice"}),
+            ("SFC Item", {"name": b_sfc_item, "parent": "SC Sales Framework Contract"}),
+            ("SFC Item", {"filters": {"parent": b["sfc"]}, "parent": "SC Sales Framework Contract"}),
+            ("SFC Item", {"filters": {"item": b["item"]}, "parent": "SC Sales Framework Contract"}),
+        ]
+
+        frappe.set_user(a_email)
+        leaks = []
+        for doctype, kwargs in forms:
+            try:
+                res = client_get(doctype, **kwargs)
+                leaks.append(f"{doctype} {kwargs} -> LEAKED {res}")
+            except frappe.PermissionError:
+                pass
+            except Exception as e:
+                leaks.append(f"{doctype} {kwargs} -> unexpected {type(e).__name__}: {str(e)[:120]}")
+
+        # Regression 1: A vẫn đọc được đơn CỦA CHÍNH MÌNH qua Portal API.
+        own = portal_order_track(a_so)
+        own_ok = own.get("order") == a_so
+
+        # Regression 2: internal Manager (không phải Portal) vẫn frappe.client.get
+        # được dòng con bình thường -- delegation nguyên vẹn, không over-block.
+        frappe.set_user(manager_email)
+        internal_res = client_get("SO Item", name=b_so_item, parent="SC Sales Order")
+        internal_ok = internal_res.get("parent") == b["so"]
+
+        ok = (not leaks) and own_ok and internal_ok
+        if ok:
+            return {"pass": True, "msg": (
+                f"OK {len(forms)} dạng gọi đều PermissionError, A đọc được đơn "
+                f"của mình, Manager nội bộ vẫn frappe.client.get được"
+            )}
+        return {"pass": False, "msg": (
+            f"X leaks={leaks} own_ok={own_ok} internal_ok={internal_ok}"
+        )}
+    except Exception as e:
+        return {"pass": False, "msg": f"X threw: {str(e)[:300]}"}
+    finally:
+        frappe.set_user(orig_user)
+        frappe.db.rollback()
+
+
 def run():
     tests = [
         test_portal_A_lists_only_own_orders,
@@ -290,6 +463,7 @@ def run():
         test_internal_manager_sees_all,
         test_portal_child_table_isolation,
         test_portal_child_read_scoped,
+        test_portal_child_get_denied,
     ]
     results = []
     for t in tests:
