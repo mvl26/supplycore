@@ -19,6 +19,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
+from supplycore.utils.permissions import block_portal
+
 
 class SCSalesOrder(Document):
 
@@ -113,6 +115,15 @@ class SCSalesOrder(Document):
     # ------------------------------------------------------------------
     @frappe.whitelist()
     def approve(self):
+        # GĐ4 Task 5 (security sweep): `run_doc_method` (đường gọi whitelisted
+        # instance method) chỉ kiểm `doc.has_permission("read")` trước khi gọi
+        # method — KHÔNG kiểm thêm gì cho hành động này. Vì role
+        # "SC Customer Portal" có read=1 (đã scope đúng theo khách) trên
+        # chính SC Sales Order của khách, nếu không chặn ở đây khách hàng có
+        # thể tự gọi approve() duyệt luôn đơn hàng của chính mình — bỏ qua
+        # bước duyệt nội bộ (đặc quyền leo thang, không phải rò rỉ chéo
+        # khách nhưng vẫn là bypass quy trình nghiệp vụ nội bộ).
+        block_portal()
         if self.docstatus != 1:
             frappe.throw(_("Chỉ duyệt đơn đã submit"))
         self._recalculate_sfc()
@@ -123,6 +134,7 @@ class SCSalesOrder(Document):
 
     @frappe.whitelist()
     def reject(self):
+        block_portal()
         if self.docstatus != 1:
             frappe.throw(_("Chỉ từ chối đơn đã submit"))
         self.db_set("status", "Từ chối")

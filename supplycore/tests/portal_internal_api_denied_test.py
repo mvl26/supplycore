@@ -24,9 +24,11 @@ Run all:        bench --site supplycore-miyano.local execute supplycore.tests.po
 """
 
 import frappe
-from frappe.utils import random_string, add_days, today
+from frappe.utils import random_string, add_days, today, flt
 
-from supplycore.tests.portal_api_test import _make_portal_customer, _make_manager_user, _make_item, _make_batch
+from supplycore.tests.portal_api_test import (
+    _make_portal_customer, _make_manager_user, _make_item, _make_batch, _get_uom,
+)
 
 
 def _call_denied_for_portal_ok_for_manager(fn, kwargs):
@@ -185,6 +187,112 @@ def test_frontend_list_docs_denied():
     )
 
 
+def test_related_docs_denied():
+    """Defense-in-depth (commit dc0dd6d): `api/frontend.py::related_docs` dung
+    `frappe.db.get_all` (= `frappe.get_all`, luon ignore_permissions=True) cho
+    cac truy van "related" lien ket (vd PO -> PR/PI/MR) sau khi da qua
+    `has_permission(doctype, "read", doc=name)` tren doc goc -- doc-level check
+    da chan Portal (khong co DocPerm tren cac doctype procurement ma ham nay xu
+    ly), nhung them `block_portal()` dau ham de nhat quan voi thiet ke "Portal
+    chi duoc goi api/portal.py, khong bao gio goi frontend.py" (khong phu thuoc
+    vao viec ram tuong lai co them nhanh doctype ban hang moi vao ham nay)."""
+    from supplycore.api.frontend import related_docs
+    item = _make_item(f"IAPIREL{random_string(4)}")
+    return _call_denied_for_portal_ok_for_manager(related_docs, {"doctype": "SC Item", "name": item.name})
+
+
+def test_get_doc_versions_denied():
+    """Defense-in-depth (commit dc0dd6d): `get_doc_versions` tra lich su sua
+    (tabVersion) cho bat ky doctype/docname nao caller co quyen "read" -- gate
+    them `block_portal()` de Portal khong bao gio goi duoc ham SPA nội bộ nay,
+    dong bo voi nguyen tac thiet ke portal chi qua api/portal.py."""
+    from supplycore.api.frontend import get_doc_versions
+    item = _make_item(f"IAPIVER{random_string(4)}")
+    return _call_denied_for_portal_ok_for_manager(get_doc_versions, {"doctype": "SC Item", "name": item.name})
+
+
+def test_sales_order_approve_reject_denied():
+    """Privilege escalation (khong phai RSK-01 ro ri cheo khach, ma la bypass
+    quy trinh duyet noi bo): `run_doc_method` (duong goi whitelisted instance
+    method qua HTTP) chi kiem `doc.has_permission("read")` truoc khi invoke
+    method -- KHONG kiem gi them cho tung hanh dong. Role "SC Customer
+    Portal" co read=1 tren CHINH don hang cua khach (da scope dung qua
+    portal_doc_permission), nen neu `SC Sales Order.approve()`/`reject()`
+    khong tu gate rieng, khach hang co the tu goi approve() DUYET LUON don
+    hang cua chinh minh -- bo qua buoc duyet noi bo (approval_by bi ghi la
+    chinh email cua khach, khong phai nguoi duyet that). Da xac nhan bang
+    thuc nghiem (goi truc tiep doc.approve() duoi session portal) -- thanh
+    cong, khong throw gi -- TRUOC khi them `block_portal()`. Da fix bang
+    `block_portal()` dau ca hai method (mirror pattern block-list dung cho
+    moi API noi bo khac trong sweep nay)."""
+    cust, portal_email = _make_portal_customer(f"SOAPR{random_string(5)}")
+    item = _make_item(f"SOAPR{random_string(4)}")
+    uom = _get_uom()
+
+    sfc = frappe.new_doc("SC Sales Framework Contract")
+    sfc.customer = cust.name
+    sfc.valid_from = today()
+    sfc.valid_to = add_days(today(), 365)
+    sfc.append("items", {"item": item.name, "uom": uom, "contract_qty": flt(100), "unit_price": flt(1000)})
+    sfc.flags.ignore_permissions = True
+    sfc.insert()
+    sfc.submit()
+
+    so = frappe.new_doc("SC Sales Order")
+    so.customer = cust.name
+    so.framework_contract = sfc.name
+    so.order_date = today()
+    so.append("items", {"item": item.name, "uom": uom, "qty": flt(10), "unit_price": flt(1000)})
+    so.flags.ignore_permissions = True
+    so.insert()
+    so.submit()
+
+    orig_user = frappe.session.user
+    try:
+        manager_email = _make_manager_user()
+
+        frappe.set_user(portal_email)
+        doc = frappe.get_doc("SC Sales Order", so.name)
+        try:
+            doc.approve()
+            return {"pass": False, "msg": (
+                "X portal user tu goi approve() DUYET DUOC don hang cua chinh minh "
+                "(khong throw PermissionError) -- BYPASS quy trinh duyet noi bo"
+            )}
+        except frappe.PermissionError:
+            pass
+        except Exception as e:
+            return {"pass": False, "msg": f"X approve() throw sai loai {type(e).__name__}: {str(e)[:150]}"}
+
+        doc2 = frappe.get_doc("SC Sales Order", so.name)
+        try:
+            doc2.reject()
+            return {"pass": False, "msg": "X portal user tu goi reject() thanh cong -- khong bi chan"}
+        except frappe.PermissionError:
+            pass
+        except Exception as e:
+            return {"pass": False, "msg": f"X reject() throw sai loai {type(e).__name__}: {str(e)[:150]}"}
+
+        frappe.set_user(manager_email)
+        doc3 = frappe.get_doc("SC Sales Order", so.name)
+        try:
+            doc3.approve()
+        except frappe.PermissionError as e:
+            return {"pass": False, "msg": f"X internal Manager BI CHAN NHAM khi approve(): {str(e)[:150]}"}
+        except Exception:
+            pass
+
+        return {"pass": True, "msg": (
+            "OK SC Sales Order.approve()/reject(): portal -> PermissionError ca hai, "
+            "Manager noi bo van approve() duoc"
+        )}
+    except Exception as e:
+        return {"pass": False, "msg": f"X threw setup error: {str(e)[:200]}"}
+    finally:
+        frappe.set_user(orig_user)
+        frappe.db.rollback()
+
+
 def run():
     tests = [
         test_ap_aging_report_denied,
@@ -195,6 +303,9 @@ def run():
         test_investigation_audit_trail_denied,
         test_data_io_export_denied,
         test_frontend_list_docs_denied,
+        test_related_docs_denied,
+        test_get_doc_versions_denied,
+        test_sales_order_approve_reject_denied,
     ]
     results = []
     for t in tests:
