@@ -119,6 +119,72 @@ def test_investigation_audit_trail_denied():
     return _call_denied_for_portal_ok_for_manager(get_audit_trail, {})
 
 
+def test_data_io_export_denied():
+    """RSK-01 Critical (task-5 completeness sweep): api/data_io.py whitelisted
+    functions chi kiem `frappe.has_permission(doctype, "read")` (doctype-level,
+    khong theo tung doc) roi doc du lieu qua `frappe.get_all(doctype, ...)` --
+    ham nay CO ignore_permissions=True mac dinh va bo qua ca
+    `permission_query_conditions` lan `has_permission` per-doc dung de co lap
+    khach hang (xem `portal_doc_permission`/`sales_invoice_portal_query` trong
+    utils/permissions.py). `doctype` la tham so tu do do caller truyen, khong
+    co allowlist. Vi role "SC Customer Portal" co doctype-level read=1 tren 5
+    doctype ban hang, portal user co the goi thang:
+      export_data(doctype="SC Sales Invoice", fields=[...], filters={})
+    va lay duoc hoa don cua MOI khach hang (khong chi cua minh) -- bulk-export
+    cheo khach xuyen suot toan bo module ban hang (SO/DN/SI/Receipt/FC).
+    RED (truoc fix): khong throw PermissionError -> ro ri toan bo. GREEN (sau
+    fix, gate bang `block_portal()`): portal -> PermissionError; internal
+    Manager (SupplyCore Manager) van goi binh thuong tren doctype minh co
+    quyen -- khong hoi quy."""
+    from supplycore.api.data_io import export_data, export_list, get_template
+
+    checks = [
+        ("export_data", export_data, {
+            "doctype": "SC Sales Invoice",
+            "fields": ["name", "customer", "grand_total", "outstanding_amount"],
+            "filters": {},
+        }),
+        ("export_list", export_list, {"doctype": "SC Sales Invoice", "filters": {}}),
+        ("get_template", get_template, {"doctype": "SC Sales Invoice", "with_data": 1}),
+    ]
+
+    fails = []
+    for label, fn, kwargs in checks:
+        r = _call_denied_for_portal_ok_for_manager(fn, kwargs)
+        if not r.get("pass"):
+            fails.append(f"{label}: {r.get('msg')}")
+
+    if fails:
+        return {"pass": False, "msg": " | ".join(fails)}
+    return {"pass": True, "msg": (
+        "OK data_io.export_data/export_list/get_template: portal -> "
+        "PermissionError, Manager noi bo khong bi chan")}
+
+
+def test_frontend_list_docs_denied():
+    """RSK-01 Critical (task-5 completeness sweep, sibling gap phat hien qua
+    audit doc dong voi data_io.py): `api/frontend.py::list_docs` truyen
+    `ignore_permissions=False` vao `frappe.db.get_all(doctype, **kwargs)`,
+    nhung `frappe.get_all()` (frappe/__init__.py) LUON ghi de
+    `kwargs["ignore_permissions"] = True` truoc khi goi `get_list` -- nghia la
+    `permission_query_conditions` (co che co lap khach hang cho 5 doctype ban
+    hang) khong bao gio duoc ap dung o day, bat ke tham so truyen vao. Chi con
+    lai `frappe.has_permission(doctype, "read")` doctype-level -- ma role
+    "SC Customer Portal" co read=1 tren ca 5 doctype do. Sibling `count_docs`
+    trong cung file DA duoc gate tu GD4 Task 5 (docstring tu giai thich chinh
+    ly do nay) nhung `list_docs` -- ro ri NANG HON vi tra ca hang du lieu chu
+    khong chi tong so -- lai bi bo sot. RED (truoc fix): portal user goi
+    list_docs(doctype="SC Sales Invoice", ...) khong throw, nhan duoc hang
+    hoa don CUA MOI khach hang. GREEN (sau fix, gate bang `block_portal()`
+    giong het `count_docs`): portal -> PermissionError; internal Manager van
+    goi binh thuong -- khong hoi quy."""
+    from supplycore.api.frontend import list_docs
+    return _call_denied_for_portal_ok_for_manager(
+        list_docs,
+        {"doctype": "SC Sales Invoice", "fields": ["name", "customer"], "filters": {}},
+    )
+
+
 def run():
     tests = [
         test_ap_aging_report_denied,
@@ -127,6 +193,8 @@ def run():
         test_get_batch_trace_denied,
         test_stock_balance_denied,
         test_investigation_audit_trail_denied,
+        test_data_io_export_denied,
+        test_frontend_list_docs_denied,
     ]
     results = []
     for t in tests:

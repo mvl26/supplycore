@@ -18,7 +18,18 @@ def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start
 
     Vẫn check role permission qua frappe.has_permission.
     or_filters: list điều kiện OR (vd tìm theo mã HOẶC tên) — L11/T05.
+
+    RSK-01 (phát hiện task-5 completeness sweep, sibling gap của data_io.py):
+    dù truyền `ignore_permissions=False`, `frappe.db.get_all` → `frappe.get_all`
+    LUÔN ghi đè `kwargs["ignore_permissions"] = True` (frappe/__init__.py) trước
+    khi gọi `get_list` — nghĩa là `permission_query_conditions` (cơ chế cô lập
+    khách hàng cho 5 doctype bán hàng, xem utils/permissions.py) KHÔNG BAO GIỜ
+    được áp dụng ở đây, bất kể tham số truyền vào. Chỉ còn lại
+    `frappe.has_permission(doctype, "read")` doctype-level — mà role
+    "SC Customer Portal" có read=1 trên cả 5 doctype đó. Phải `block_portal()`
+    giống hệt `count_docs` bên dưới (cùng lý do, cùng doctype phạm vi).
     """
+    block_portal()
     if not frappe.has_permission(doctype, "read"):
         frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
 

@@ -23,6 +23,8 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt, getdate, get_datetime
 
+from supplycore.utils.permissions import block_portal
+
 # Fieldtype không xuất/không nhập
 SKIP_FIELDTYPES = {
     "Section Break", "Column Break", "Tab Break", "HTML", "Button",
@@ -150,6 +152,7 @@ def _fieldname_map(doctype: str) -> dict[str, str]:
 @frappe.whitelist()
 def get_doctype_schema(doctype: str) -> dict:
     """Trả meta fields + flags cho UI preview."""
+    block_portal()
     _check_perm(doctype, "read")
     meta = frappe.get_meta(doctype)
     return {
@@ -270,6 +273,7 @@ def get_template(doctype: str, file_type: str = "csv",
 
     Header = fieldname (round-trip an toàn). Child table xuất dưới dạng JSON array.
     """
+    block_portal()
     _check_perm(doctype, "read")
     meta = frappe.get_meta(doctype)
 
@@ -335,6 +339,7 @@ def export_data(doctype: str, fields=None, filters=None,
                 file_type: str = "csv", limit: int | str = 10000,
                 order_by: str = "modified desc") -> dict:
     """Export rows ra CSV/XLSX. Tuỳ chọn fields + filters (1-dòng header)."""
+    block_portal()
     _check_perm(doctype, "read")
     if isinstance(fields, str):
         fields = json.loads(fields) if fields.strip() else None
@@ -367,6 +372,7 @@ def export_list(doctype: str, columns=None, filters=None,
       filters: Frappe filters (dict hoặc list) — lấy từ filter list đang hiển thị.
       order_by: sort hiện tại của list.
     """
+    block_portal()
     _check_perm(doctype, "read")
     if isinstance(columns, str):
         columns = json.loads(columns) if columns.strip() else None
@@ -405,6 +411,7 @@ def export_list(doctype: str, columns=None, filters=None,
 def get_list_columns(doctype: str) -> dict:
     """Trả danh sách cột chọn được cho export — {fieldname, label, in_list_view}.
     UI dùng để render checkbox chọn cột."""
+    block_portal()
     _check_perm(doctype, "read")
     meta = frappe.get_meta(doctype)
     cols = [{"fieldname": "name", "label": _("Mã / ID"), "in_list_view": 1}]
@@ -433,6 +440,7 @@ def get_list_template(doctype: str, columns=None, file_type: str = "csv",
     columns: JSON list fieldname. None → tất cả field WRITABLE (có thể nhập).
              Luôn kèm 'name' đầu tiên để update round-trip.
     """
+    block_portal()
     _check_perm(doctype, "read")
     if isinstance(columns, str):
         columns = json.loads(columns) if columns.strip() else None
@@ -754,6 +762,7 @@ IMPORTABLE_BY_MODULE: dict[str, list[str]] = {
 @frappe.whitelist()
 def list_importable() -> dict:
     """Liệt kê doctype theo module + permission flags cho UI."""
+    block_portal()
     out: dict[str, list[dict]] = {}
     for mod, doctypes in IMPORTABLE_BY_MODULE.items():
         out[mod] = []
