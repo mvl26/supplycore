@@ -235,24 +235,31 @@ def portal_order_place(contract, items):
 
 
 def compute_milestones(order: str):
-    """4 cột mốc theo dõi đơn hàng: đặt hàng / giao & nghiệm thu / xuất hoá
-    đơn / thanh toán. Mỗi mốc {key, label, status: done|current|pending,
-    time}. `current` = mốc pending đầu tiên. Bản đầy đủ (mốc xử lý một
-    phần/kết hợp Task 4 E2E) sẽ được formalize ở Task 4 -- bản này đã tính
-    đúng cho luồng chính (đủ để portal_order_track dùng ngay)."""
-    so = frappe.db.get_value("SC Sales Order", order, ["creation"], as_dict=True)
+    """4 cột mốc theo dõi đơn hàng (GĐ3 Task 4 -- formalize từ bản provisional
+    của Task 3): đặt hàng / giao & nghiệm thu / xuất hoá đơn / thanh toán.
+
+    Mỗi mốc {key, label, status: done|current|pending, time}. Đi qua lần lượt
+    4 mốc theo đúng thứ tự chuỗi nghiệp vụ (SO -> DN -> SI -> SR); mốc `pending`
+    ĐẦU TIÊN gặp phải được đánh dấu `current`, các mốc sau đó (nếu có) vẫn giữ
+    `pending`. Chỉ đọc (read-only), dùng `frappe.get_all`/`frappe.db.get_value`
+    (không `get_doc`) và guard `None` ở mọi bước để chịu được chuỗi chưa đi
+    hết (đơn mới đặt, chưa giao, chưa xuất HĐ, ...)."""
+    so = frappe.db.get_value("SC Sales Order", order, ["order_date", "creation"], as_dict=True)
 
     milestones = [
-        {"key": "placed", "label": "Đặt hàng", "status": "pending", "time": None},
-        {"key": "delivered_accepted", "label": "Giao hàng & nghiệm thu", "status": "pending", "time": None},
-        {"key": "invoiced", "label": "Xuất hoá đơn", "status": "pending", "time": None},
-        {"key": "paid", "label": "Thanh toán", "status": "pending", "time": None},
+        {"key": "placed", "label": "Đã đặt hàng", "status": "pending", "time": None},
+        {"key": "delivered_accepted", "label": "Đã bàn giao & nghiệm thu", "status": "pending", "time": None},
+        {"key": "invoiced", "label": "Đã cấp hóa đơn", "status": "pending", "time": None},
+        {"key": "paid", "label": "Đã thu tiền", "status": "pending", "time": None},
     ]
 
-    # Mốc 1: đơn tồn tại
+    # Mốc 1 "placed": đơn đã tồn tại (luôn done -- portal_order_track đã xác
+    # nhận đơn tồn tại + thuộc khách trước khi gọi hàm này).
     milestones[0]["status"] = "done"
-    milestones[0]["time"] = so.creation if so else None
+    milestones[0]["time"] = (so.order_date or so.creation) if so else None
 
+    # Mốc 2 "delivered_accepted": có SC Delivery Note của SO này đã nghiệm thu
+    # (hoặc đã xuất HĐ, tức đã qua nghiệm thu từ trước).
     dn = frappe.db.get_value(
         "SC Delivery Note", {"sales_order": order, "docstatus": 1},
         ["name", "status", "modified"], order_by="creation", as_dict=True,
@@ -261,18 +268,27 @@ def compute_milestones(order: str):
         milestones[1]["status"] = "done"
         milestones[1]["time"] = dn.modified
 
+    # Mốc 3 "invoiced": có SC Sales Invoice đã phát hành (docstatus=1 loại
+    # trừ Nháp/Hủy) cho đúng Phiếu giao hàng ở mốc 2.
     si = None
     if dn:
         si = frappe.db.get_value(
             "SC Sales Invoice", {"delivery_note": dn.name, "docstatus": 1},
-            ["name", "status", "outstanding_amount", "modified"], order_by="creation", as_dict=True,
+            ["name", "status", "invoice_date", "outstanding_amount"], order_by="creation", as_dict=True,
         )
-    if si and si.status != "Hủy":
+    if si and si.status != "Nháp":
         milestones[2]["status"] = "done"
-        milestones[2]["time"] = si.modified
+        milestones[2]["time"] = si.invoice_date
+
+        # Mốc 4 "paid": hóa đơn đã thu đủ (outstanding_amount <= 0); thời
+        # điểm lấy từ phiếu thu gần nhất đã tất toán hóa đơn này.
         if flt(si.outstanding_amount) <= 0:
+            last_receipt_date = frappe.db.get_value(
+                "SC Sales Receipt", {"sales_invoice": si.name, "docstatus": 1},
+                "receipt_date", order_by="creation desc",
+            )
             milestones[3]["status"] = "done"
-            milestones[3]["time"] = si.modified
+            milestones[3]["time"] = last_receipt_date
 
     found_current = False
     for m in milestones:
