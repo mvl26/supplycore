@@ -99,6 +99,14 @@ has_permission = {
     "SC Sales Invoice": "supplycore.utils.permissions.portal_doc_permission",
     "SC Sales Receipt": "supplycore.utils.permissions.portal_doc_permission",
     "SC Sales Framework Contract": "supplycore.utils.permissions.portal_doc_permission",
+    # Defense-in-depth (Task 2 review, Minor 1) — KHÔNG phải đường đi
+    # enforcement chính, xem docstring `portal_child_permission`: Frappe
+    # resolve has_permission của child doctype thẳng về cha thật qua
+    # has_child_permission() TRƯỚC KHI hook này có cơ hội chạy.
+    "SO Item": "supplycore.utils.permissions.portal_child_permission",
+    "DN Item": "supplycore.utils.permissions.portal_child_permission",
+    "SI Item": "supplycore.utils.permissions.portal_child_permission",
+    "SFC Item": "supplycore.utils.permissions.portal_child_permission",
 }
 
 # ---------------------------------------------------------------------------

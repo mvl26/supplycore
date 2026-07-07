@@ -1,16 +1,23 @@
 """API Portal khách hàng -- M12 Customer Portal (GĐ3).
 
-Task 1 (GĐ3): provisioning tài khoản Portal cho SC Customer. Các API còn
-lại (portal_me, portal_contracts, portal_catalog, portal_order_place,
-portal_order_track, portal_order_history, portal_document_download) sẽ
-được bổ sung ở Task 3.
+Task 1 (GĐ3): provisioning tài khoản Portal cho SC Customer.
+Task 3 (GĐ3): 7 API portal tự lọc theo khách hàng đăng nhập -- portal_me,
+portal_contracts, portal_catalog, portal_order_place, portal_order_track,
+portal_order_history, portal_document_download.
+
+Mọi API (trừ portal_provision) đều gọi `_require_portal_customer()` đầu
+tiên rồi tự lọc/kiểm tra theo `customer` trả về -- không tin filters do
+client gửi lên. Không trả `name` (docname) của dòng child-table ra ngoài
+(chỉ item/qty/giá) để tránh rò rỉ định danh nội bộ không cần thiết.
 """
 
 import frappe
 from frappe import _
+from frappe.utils import cint, flt, today
 
 PORTAL_ROLE = "SC Customer Portal"
 PROVISION_ROLES = {"System Manager", "SupplyCore Manager", "SupplyCore Purchaser"}
+DOWNLOADABLE_DOCTYPES = {"SC Sales Invoice", "SC Delivery Note"}
 
 
 @frappe.whitelist()
@@ -52,3 +59,229 @@ def portal_provision(customer, email):
     frappe.db.set_value("SC Customer", customer, "portal_user", user_doc.name)
 
     return user_doc.name
+
+
+# ---------------------------------------------------------------------------
+# Task 3 (GĐ3) — 7 API portal khách hàng
+# ---------------------------------------------------------------------------
+
+
+def _require_portal_customer() -> str:
+    """Chặn user không phải Portal hoặc chưa link SC Customer nào.
+
+    Trả về `SC Customer.name` của `frappe.session.user`. Mọi API bên dưới
+    PHẢI gọi hàm này đầu tiên và tự lọc/kiểm tra dữ liệu theo giá trị trả
+    về -- không được tin bất kỳ tham số "customer" nào do client gửi lên.
+    """
+    user = frappe.session.user
+    if PORTAL_ROLE not in frappe.get_roles(user):
+        frappe.throw(_("Chỉ tài khoản Portal khách hàng mới được gọi API này"),
+                      frappe.PermissionError)
+
+    customer = frappe.db.get_value("SC Customer", {"portal_user": user}, "name")
+    if not customer:
+        frappe.throw(_("Tài khoản Portal chưa được liên kết với khách hàng nào"),
+                      frappe.PermissionError)
+    return customer
+
+
+def _customer_outstanding(customer: str) -> float:
+    """Dư nợ phải thu hiện tại của khách (Nợ 131 - Có 131), mirror
+    `sc_sales_invoice.py::_resolve_account` + `SCGLEntry.get_balance`."""
+    from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
+
+    ar_account = frappe.db.get_single_value("SupplyCore Settings", "default_receivable_account") \
+        or frappe.db.get_value("SC GL Account", {"account_code": "131"}, "name")
+    if not ar_account:
+        return 0.0
+    return flt(SCGLEntry.get_balance(ar_account, customer))
+
+
+@frappe.whitelist()
+def portal_me():
+    """Hồ sơ khách hàng đăng nhập: tên, hạn mức công nợ, dư nợ hiện tại."""
+    customer = _require_portal_customer()
+    doc = frappe.get_doc("SC Customer", customer)
+    return {
+        "customer": doc.name,
+        "customer_name": doc.customer_name,
+        "status": doc.status,
+        "credit_limit": flt(doc.credit_limit),
+        "outstanding": _customer_outstanding(customer),
+    }
+
+
+@frappe.whitelist()
+def portal_contracts():
+    """Danh sách Hợp đồng khung (SFC) đang Hiệu lực của khách + items."""
+    customer = _require_portal_customer()
+    contracts = frappe.get_all(
+        "SC Sales Framework Contract",
+        filters={"customer": customer, "status": "Hiệu lực"},
+        fields=["name", "valid_from", "valid_to", "total_value", "status"],
+        order_by="valid_from desc",
+    )
+    for c in contracts:
+        c["items"] = frappe.get_all(
+            "SFC Item", filters={"parent": c["name"]},
+            fields=["item", "uom", "contract_qty", "sold_qty", "remaining_qty", "unit_price"],
+            order_by="idx",
+        )
+    return contracts
+
+
+@frappe.whitelist()
+def portal_catalog():
+    """Danh mục vật tư gộp từ mọi SFC còn Hiệu lực của khách."""
+    customer = _require_portal_customer()
+    sfc_names = frappe.get_all(
+        "SC Sales Framework Contract",
+        filters={"customer": customer, "status": "Hiệu lực"},
+        pluck="name",
+    )
+    if not sfc_names:
+        return []
+    return frappe.get_all(
+        "SFC Item", filters={"parent": ["in", sfc_names]},
+        fields=["item", "uom", "unit_price", "remaining_qty", "parent as framework_contract"],
+        order_by="item",
+    )
+
+
+@frappe.whitelist()
+def portal_order_place(contract, items):
+    """Tạo SC Sales Order cho khách đăng nhập trên Hợp đồng khung của chính
+    khách. `items` chỉ cần `item` + `qty` -- đơn giá do controller SC Sales
+    Order tự lấy từ SFC Item (BRU-SFC-002), không tin giá do client gửi.
+    Insert bằng ignore_permissions (Portal không có quyền create ở DocPerm)
+    nhưng controller vẫn enforce đầy đủ BRU-SFC-001/002 + BRU-SO-001 +
+    BRU-AR-001 -- các throw của controller được cho lan (propagate) nguyên
+    vẹn ra ngoài."""
+    customer = _require_portal_customer()
+
+    if isinstance(items, str):
+        items = frappe.parse_json(items)
+
+    fc_customer = frappe.db.get_value("SC Sales Framework Contract", contract, "customer")
+    if not fc_customer or fc_customer != customer:
+        frappe.throw(_("Không có quyền đặt hàng trên Hợp đồng khung này"),
+                      frappe.PermissionError)
+
+    uom_by_item = {
+        r.item: r.uom for r in frappe.get_all(
+            "SFC Item", filters={"parent": contract}, fields=["item", "uom"])
+    }
+
+    so = frappe.new_doc("SC Sales Order")
+    so.customer = customer
+    so.framework_contract = contract
+    so.order_date = today()
+    for row in items:
+        item_code = row.get("item")
+        so.append("items", {
+            "item": item_code,
+            "uom": uom_by_item.get(item_code),
+            "qty": flt(row.get("qty")),
+        })
+    so.flags.ignore_permissions = True
+    so.insert()
+    so.submit()
+    so.reload()
+
+    return {"order": so.name, "total_amount": flt(so.total_amount)}
+
+
+def compute_milestones(order: str):
+    """4 cột mốc theo dõi đơn hàng: đặt hàng / giao & nghiệm thu / xuất hoá
+    đơn / thanh toán. Mỗi mốc {key, label, status: done|current|pending,
+    time}. `current` = mốc pending đầu tiên. Bản đầy đủ (mốc xử lý một
+    phần/kết hợp Task 4 E2E) sẽ được formalize ở Task 4 -- bản này đã tính
+    đúng cho luồng chính (đủ để portal_order_track dùng ngay)."""
+    so = frappe.db.get_value("SC Sales Order", order, ["creation"], as_dict=True)
+
+    milestones = [
+        {"key": "placed", "label": "Đặt hàng", "status": "pending", "time": None},
+        {"key": "delivered_accepted", "label": "Giao hàng & nghiệm thu", "status": "pending", "time": None},
+        {"key": "invoiced", "label": "Xuất hoá đơn", "status": "pending", "time": None},
+        {"key": "paid", "label": "Thanh toán", "status": "pending", "time": None},
+    ]
+
+    # Mốc 1: đơn tồn tại
+    milestones[0]["status"] = "done"
+    milestones[0]["time"] = so.creation if so else None
+
+    dn = frappe.db.get_value(
+        "SC Delivery Note", {"sales_order": order, "docstatus": 1},
+        ["name", "status", "modified"], order_by="creation", as_dict=True,
+    )
+    if dn and dn.status in ("Đã nghiệm thu", "Đã xuất HĐ"):
+        milestones[1]["status"] = "done"
+        milestones[1]["time"] = dn.modified
+
+    si = None
+    if dn:
+        si = frappe.db.get_value(
+            "SC Sales Invoice", {"delivery_note": dn.name, "docstatus": 1},
+            ["name", "status", "outstanding_amount", "modified"], order_by="creation", as_dict=True,
+        )
+    if si and si.status != "Hủy":
+        milestones[2]["status"] = "done"
+        milestones[2]["time"] = si.modified
+        if flt(si.outstanding_amount) <= 0:
+            milestones[3]["status"] = "done"
+            milestones[3]["time"] = si.modified
+
+    found_current = False
+    for m in milestones:
+        if m["status"] == "pending" and not found_current:
+            m["status"] = "current"
+            found_current = True
+
+    return milestones
+
+
+@frappe.whitelist()
+def portal_order_track(order):
+    """Theo dõi 1 đơn hàng của khách đăng nhập. Đơn của khách khác -> PermissionError."""
+    customer = _require_portal_customer()
+
+    so_customer, so_status = frappe.db.get_value(
+        "SC Sales Order", order, ["customer", "status"]) or (None, None)
+    if not so_customer or so_customer != customer:
+        frappe.throw(_("Không có quyền theo dõi đơn hàng này"), frappe.PermissionError)
+
+    return {
+        "order": order,
+        "status": so_status,
+        "milestones": compute_milestones(order),
+    }
+
+
+@frappe.whitelist()
+def portal_order_history(limit=20, start=0):
+    """Lịch sử đơn hàng của khách đăng nhập (phân trang)."""
+    customer = _require_portal_customer()
+    return frappe.get_all(
+        "SC Sales Order", filters={"customer": customer},
+        fields=["name", "order_date", "status", "total_amount"],
+        order_by="creation desc",
+        limit_page_length=cint(limit), limit_start=cint(start),
+    )
+
+
+@frappe.whitelist()
+def portal_document_download(doctype, name):
+    """Xuất bản in HTML (SC Sales Invoice / SC Delivery Note) của khách
+    đăng nhập. Doctype ngoài danh sách cho phép -> throw (ValidationError,
+    KHÔNG phải PermissionError -- lỗi tham số, không phải lỗi phân quyền).
+    Chứng từ của khách khác -> PermissionError."""
+    customer = _require_portal_customer()
+
+    if doctype not in DOWNLOADABLE_DOCTYPES:
+        frappe.throw(_("Loại tài liệu {0} không được phép tải xuống qua Portal").format(doctype))
+
+    doc_customer = frappe.db.get_value(doctype, name, "customer")
+    if not doc_customer or doc_customer != customer:
+        frappe.throw(_("Không có quyền tải tài liệu này"), frappe.PermissionError)
+
+    return {"html": frappe.get_print(doctype, name)}

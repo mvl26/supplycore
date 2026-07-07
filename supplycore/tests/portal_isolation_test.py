@@ -229,6 +229,59 @@ def test_portal_child_table_isolation():
         frappe.db.rollback()
 
 
+def test_portal_child_read_scoped():
+    """`SO Item` khong the bi liet ke chua qua filter -- ke ca KHONG truyen
+    filter `parent` nao (khong chi truong hop da biet parent nhu
+    `test_portal_child_table_isolation`) -- permission_query_conditions vao
+    thang doctype con van luon ap dung. Day la bao dam THAT SU dang giu:
+    khong the DISCOVER docname dong cua khach khac qua bat ky truy van
+    list-based nao (list/report) tren "SO Item".
+
+    LUU Y (phat hien khi vet nguon Frappe, xem `portal_child_permission` +
+    concerns trong task-3-report.md): mot lan doc DON LE bang dung docname
+    da biet truoc -- `frappe.get_doc("SO Item", <name_da_biet>)` roi
+    `frappe.has_permission("SO Item", doc=...)` (hoac REST
+    `frappe.client.get("SO Item", <name>, parent="SC Sales Order")`) --
+    KHONG duoc `has_child_permission()` cua Frappe loc theo customer, vi no
+    resolve `doc=getattr(child_doc, "parent_doc", child_doc.parent)` va
+    child doc doc lap luon co san thuoc tinh `parent_doc=None` (khong phai
+    thieu) nen `getattr` tra ve None thay vi fallback ve `child_doc.parent`
+    nhu ky vong -- ca `portal_doc_permission` (cha) lan `portal_child_permission`
+    (con, moi dang ky task nay) deu KHONG duoc goi trong duong nay, chi con
+    lai kiem tra quyen doctype-level tho (luon True voi role Portal da co
+    read=1 tren "SC Sales Order"). Da xac minh thuc nghiem: A doc duoc dong
+    "SO Item" cua B qua duong nay neu biet dung docname. Rui ro thuc te thap
+    (docname la hash ngau nhien, khong enumerable qua bat ky API portal nao
+    -- test nay chinh la bang chung cho dieu do) nhung VAN LA MOT GAP THAT,
+    khong the dong bang hook cap child -- can nhan dien va risk-accept o
+    muc con nguoi (xem task-3-report.md Concerns), khong phai task nay tu
+    "vá" duoc."""
+    orig_user = frappe.session.user
+    try:
+        _, a_email, a_so = _seed_customer_with_order("CHSGA")
+        _, b_email, b_so = _seed_customer_with_order("CHSGB")
+
+        frappe.set_user(a_email)
+        # KHONG truyen filter parent -- permission_query_conditions vao
+        # thang "SO Item" (Task 2) phai tu loc, khong dua vao caller cung
+        # cap dung filter.
+        rows = frappe.get_list(
+            "SO Item", fields=["name", "item", "qty", "parent"],
+            parent_doctype="SC Sales Order", limit_page_length=0,
+        )
+        parents = {r["parent"] for r in rows}
+
+        ok = (a_so in parents) and (b_so not in parents)
+        if ok:
+            return {"pass": True, "msg": f"OK khong the liet ke/enumerate dong SO Item cua B qua truy van khong filter: parents={parents}"}
+        return {"pass": False, "msg": f"X parents={parents}"}
+    except Exception as e:
+        return {"pass": False, "msg": f"X threw: {str(e)[:200]}"}
+    finally:
+        frappe.set_user(orig_user)
+        frappe.db.rollback()
+
+
 def run():
     tests = [
         test_portal_A_lists_only_own_orders,
@@ -236,6 +289,7 @@ def run():
         test_portal_blocked_internal_doctypes,
         test_internal_manager_sees_all,
         test_portal_child_table_isolation,
+        test_portal_child_read_scoped,
     ]
     results = []
     for t in tests:

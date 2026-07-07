@@ -102,6 +102,45 @@ def sfc_item_portal_query(user=None):
     return _portal_child_scope("SFC Item", "SC Sales Framework Contract", user or frappe.session.user)
 
 
+def portal_child_permission(doc, user=None, ptype=None, **kwargs):
+    """has_permission hook cho 4 child doctype (SO/DN/SI/SFC Item) — phòng
+    thủ chiều sâu (defense-in-depth), theo phát hiện review Task 2 (Minor 1).
+
+    LƯU Ý QUAN TRỌNG (đã trace source `frappe/permissions.py`): đây KHÔNG
+    PHẢI đường đi enforcement chính. `frappe.has_permission()` kiểm tra
+    `frappe.is_table(doctype)` TRƯỚC TIÊN — nếu đúng, nó gọi thẳng
+    `has_child_permission()` (permissions.py:763), hàm này resolve
+    `child_doc.parent` (docname CHA THẬT của dòng con) rồi gọi lại
+    `has_permission(parent_doctype, doc=<cha thật>, ...)` — tức là luôn
+    chạy `portal_doc_permission` (ở trên) trên ĐÚNG chứng từ cha, không
+    bao giờ chạm tới hook đăng ký riêng cho doctype con (hook con chỉ được
+    tra qua `has_controller_permissions()`, mà hàm đó chỉ được gọi từ
+    `get_doc_permissions()` — nhánh mà `is_table()` đã bỏ qua trước khi tới
+    đó). Vì vậy hook này thực chất KHÔNG BAO GIỜ được Frappe core gọi qua
+    luồng chuẩn (`doc.check_permission()`, `frappe.client.get`, single-doc
+    `frappe.has_permission(...)`) — cơ chế cô lập con THẬT SỰ vẫn là:
+      - `permission_query_conditions` trên 4 child doctype (Task 2) — lọc
+        list-query thẳng vào child doctype.
+      - `portal_doc_permission` trên 5 doctype cha (Task 2) — chặn
+        single-doc read của cha (kể cả khi resolve từ child qua
+        has_child_permission như trên).
+    Đăng ký hook này chỉ để phòng ngừa Frappe thay đổi hành vi tương lai
+    hoặc một đường gọi phi chuẩn nào đó gọi thẳng `has_controller_permissions`
+    cho doctype con — KHÔNG được coi/báo cáo đây là cơ chế đang chặn thật.
+    """
+    user = user or frappe.session.user
+    if PORTAL_ROLE not in frappe.get_roles(user):
+        return True
+
+    if ptype not in (None, "read", "print", "report"):
+        return False
+
+    parent_customer = frappe.db.get_value(doc.parenttype, doc.parent, "customer")
+    if not parent_customer:
+        return False
+    return frappe.db.get_value("SC Customer", parent_customer, "portal_user") == user
+
+
 def portal_doc_permission(doc, user=None, ptype=None, **kwargs):
     """has_permission hook cho 5 doctype bán — chặn Portal user khỏi doc của khách khác.
 
