@@ -34,6 +34,8 @@ MODULE_ROLES: dict[str, list[str]] = {
             "QC Officer", "SupplyCore Storekeeper", "SupplyCore Auditor"],
     "m6":  ["System Manager", "SupplyCore Manager", "SupplyCore Storekeeper",
             "Warehouse Officer", "SupplyCore Auditor"],
+    "m7":  ["System Manager", "SupplyCore Manager", "SupplyCore Purchaser",
+            "SupplyCore Accountant", "SupplyCore Storekeeper", "SupplyCore Auditor"],
     "m8":  ["System Manager", "SupplyCore Manager", "SupplyCore Accountant",
             "SupplyCore Auditor"],
     "m9":  ["System Manager", "SupplyCore Manager", "SupplyCore Storekeeper",
@@ -91,6 +93,9 @@ TRACKED_DOCTYPES: list[str] = [
     "SC Batch", "SC Stock Ledger Entry",
     # M6
     "SC Transfer Request", "SC Stock Entry",
+    # M7
+    "SC Customer", "SC Sales Framework Contract", "SC Sales Order",
+    "SC Delivery Note", "SC Acceptance Record", "SC Sales Invoice", "SC Sales Receipt",
     # M8
     "SC Purchase Invoice", "SC Payment Entry", "SC GL Entry",
     # M9

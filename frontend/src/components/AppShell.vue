@@ -45,7 +45,7 @@ const primaryNav = computed(() => [
 
 // Module groups in deliberate operational order (admin/fallback view)
 const moduleGroups = computed(() => {
-  const order = ['Thiết lập', 'Chiến lược', 'Vận hành', 'Tài chính', 'Chất lượng', 'Báo cáo']
+  const order = ['Thiết lập', 'Chiến lược', 'Kinh doanh', 'Vận hành', 'Tài chính', 'Chất lượng', 'Báo cáo']
   const g = {}
   MODULES.filter(m => access.canModule(m.id)).forEach(m => { (g[m.group] ||= []).push(m) })
   return order.filter(k => g[k]).map(k => ({ label: k, items: g[k] }))

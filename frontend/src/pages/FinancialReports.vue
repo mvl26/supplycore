@@ -15,6 +15,7 @@ const toast = useToastStore()
 const TABS = [
   { id: 'inventory', label: 'Tồn kho — giá trị', api: 'inventory_value_report' },
   { id: 'ap_aging',  label: 'Công nợ NCC (Aging)', api: 'ap_aging_report' },
+  { id: 'ar_aging',  label: 'Công nợ phải thu (Aging)', api: 'ar_aging_by_customer' },
   { id: 'period',    label: 'Chi phí vật tư kỳ',  api: 'period_cost_report' },
 ]
 const active = ref('inventory')
@@ -26,6 +27,7 @@ const filters = ref({
   warehouse: '',
   item_group: '',
   supplier: '',
+  customer: '',
   as_of_date: today,
   from_date: firstDayMonth,
   to_date: today,
@@ -34,6 +36,7 @@ const filters = ref({
 // Suggestions
 const whSuggestions = ref([])
 const supSuggestions = ref([])
+const custSuggestions = ref([])
 
 const loading = ref(false)
 const data = ref(null)
@@ -45,12 +48,14 @@ const drillData = ref(null)
 const API_PREFIX = 'supplycore.m8_accounting.api.financial_reports.'
 
 async function loadSuggestions() {
-  const [whs, sups] = await Promise.all([
+  const [whs, sups, custs] = await Promise.all([
     getList('SC Warehouse', { fields: ['name'], filters: { is_group: 0, disabled: 0 }, limit: 200 }).catch(() => []),
     getList('SC Supplier', { fields: ['name', 'supplier_name'], filters: { disabled: 0 }, limit: 300 }).catch(() => []),
+    getList('SC Customer', { fields: ['name', 'customer_name'], limit: 300 }).catch(() => []),
   ])
   whSuggestions.value = whs
   supSuggestions.value = sups
+  custSuggestions.value = custs
 }
 
 async function runReport() {
@@ -66,6 +71,9 @@ async function runReport() {
       if (filters.value.as_of_date) args.as_of_date = filters.value.as_of_date
     } else if (active.value === 'ap_aging') {
       if (filters.value.supplier) args.supplier = filters.value.supplier
+      if (filters.value.as_of_date) args.as_of_date = filters.value.as_of_date
+    } else if (active.value === 'ar_aging') {
+      if (filters.value.customer) args.customer = filters.value.customer
       if (filters.value.as_of_date) args.as_of_date = filters.value.as_of_date
     } else if (active.value === 'period') {
       args.from_date = filters.value.from_date
@@ -106,6 +114,16 @@ function goToDoc(dt, name) {
 function exportCsv() {
   if (!data.value) return
   let rows = data.value.rows || data.value.by_item_group || []
+  // AR aging: bucket là object lồng nhau — làm phẳng trước khi xuất CSV.
+  if (active.value === 'ar_aging') {
+    rows = rows.map(r => ({
+      customer: r.customer, customer_name: r.customer_name,
+      credit_limit: r.credit_limit,
+      bucket_0_30: r.buckets?.['0_30'], bucket_31_60: r.buckets?.['31_60'],
+      bucket_61_90: r.buckets?.['61_90'], bucket_over_90: r.buckets?.over_90,
+      total_outstanding: r.total_outstanding, over_limit: r.over_limit,
+    }))
+  }
   if (!rows.length) {
     toast.warning('Không có dữ liệu để xuất')
     return
@@ -151,6 +169,24 @@ const bucketCls = {
   '61_90': 'bg-orange-50 border-orange-200',
   over_90: 'bg-red-50 border-red-200',
 }
+
+const bucketLabels = {
+  '0_30':  '0–30 ngày',
+  '31_60': '31–60 ngày',
+  '61_90': '61–90 ngày',
+  over_90: '> 90 ngày',
+}
+
+// AR aging (BRU-AR-001): tổng bucket toàn hệ thống (mọi khách) — hiển thị
+// dạng "tile" tương tự AP, cộng dồn từ rows theo khách.
+const arBuckets = computed(() => {
+  if (active.value !== 'ar_aging' || !data.value) return null
+  const totals = { '0_30': 0, '31_60': 0, '61_90': 0, over_90: 0 }
+  for (const r of (data.value.rows || [])) {
+    for (const k of Object.keys(totals)) totals[k] += r.buckets?.[k] || 0
+  }
+  return Object.entries(totals).map(([k, v]) => ({ key: k, label: bucketLabels[k] || k, amount: v }))
+})
 
 onMounted(loadSuggestions)
 </script>
@@ -211,6 +247,21 @@ onMounted(loadSuggestions)
           <option value="">— Tất cả —</option>
           <option v-for="s in supSuggestions" :key="s.name" :value="s.name">
             {{ s.name }} · {{ s.supplier_name }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-sc-text-muted block mb-1">Tại ngày</label>
+        <input v-model="filters.as_of_date" type="date" class="sc-input" />
+      </div>
+    </div>
+    <div v-else-if="active === 'ar_aging'" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div>
+        <label class="text-xs text-sc-text-muted block mb-1">Khách hàng</label>
+        <select v-model="filters.customer" class="sc-input">
+          <option value="">— Tất cả —</option>
+          <option v-for="c in custSuggestions" :key="c.name" :value="c.name">
+            {{ c.name }} · {{ c.customer_name }}
           </option>
         </select>
       </div>
@@ -356,6 +407,64 @@ onMounted(loadSuggestions)
               <td class="text-right font-mono"
                 :class="r.days_overdue > 60 ? 'text-sc-danger font-bold' : ''">
                 {{ r.days_overdue > 0 ? r.days_overdue : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: AR Aging (công nợ phải thu — BRU-AR-001) -->
+  <div v-else-if="active === 'ar_aging'" class="space-y-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3" v-if="arBuckets">
+      <div v-for="b in arBuckets" :key="b.key"
+        :class="['sc-card p-3 border-2', bucketCls[b.key] || '']">
+        <div class="text-xs text-sc-text-muted">{{ b.label }}</div>
+        <div class="text-lg font-bold font-mono mt-1">{{ fmtVNDShort(b.amount) }}</div>
+      </div>
+    </div>
+    <div class="sc-card p-3 text-sm">
+      Tổng phải thu: <strong class="font-mono text-sc-danger">{{ fmtVND(data.total_outstanding) }}</strong>
+      tại ngày {{ fmtDate(data.as_of_date) }}
+    </div>
+    <div class="sc-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="sc-table">
+          <thead>
+            <tr>
+              <th>Khách hàng</th>
+              <th class="text-right">Hạn mức nợ</th>
+              <th class="text-right">0–30 ngày</th>
+              <th class="text-right">31–60 ngày</th>
+              <th class="text-right">61–90 ngày</th>
+              <th class="text-right">&gt; 90 ngày</th>
+              <th class="text-right">Tổng còn lại</th>
+              <th>Cảnh báo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in data.rows" :key="r.customer"
+              class="hover:bg-sc-bg cursor-pointer"
+              @click="goToDoc('SC Customer', r.customer)"
+              :class="r.over_limit ? 'bg-red-50' : ''">
+              <td>
+                <span class="text-sc-royal hover:underline">{{ r.customer_name }}</span>
+                <span class="block text-xs text-sc-text-muted font-mono">{{ r.customer }}</span>
+              </td>
+              <td class="text-right font-mono">{{ r.credit_limit ? fmtVND(r.credit_limit) : '—' }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.buckets['0_30']) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.buckets['31_60']) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.buckets['61_90']) }}</td>
+              <td class="text-right font-mono" :class="r.buckets.over_90 > 0 ? 'text-sc-danger font-bold' : ''">
+                {{ fmtVND(r.buckets.over_90) }}
+              </td>
+              <td class="text-right font-mono font-semibold text-sc-danger">{{ fmtVND(r.total_outstanding) }}</td>
+              <td>
+                <span v-if="r.over_limit" class="sc-badge sc-badge-critical text-xs">
+                  <Icon name="alert-triangle" :size="12" /> Vượt hạn mức
+                </span>
+                <span v-else class="text-xs text-sc-text-muted">—</span>
               </td>
             </tr>
           </tbody>

@@ -8,6 +8,7 @@ export const MODULES = [
   { id: 'm4',  code: 'M4',  name: 'Quản lý kho',          icon: 'warehouse',        route: '/m4',  group: 'Vận hành' },
   { id: 'm5',  code: 'M5',  name: 'Quản lý lô vật tư',    icon: 'layers',           route: '/m5',  group: 'Vận hành' },
   { id: 'm6',  code: 'M6',  name: 'Chuyển kho',           icon: 'arrow-left-right', route: '/m6',  group: 'Vận hành' },
+  { id: 'm7',  code: 'M7',  name: 'Bán hàng & Bàn giao',  icon: 'send',             route: '/m7',  group: 'Kinh doanh' },
   { id: 'm8',  code: 'M8',  name: 'Kế toán',              icon: 'wallet',           route: '/m8',  group: 'Tài chính' },
   { id: 'm9',  code: 'M9',  name: 'Kiểm kê',              icon: 'clipboard-check',  route: '/m9',  group: 'Chất lượng' },
   { id: 'm10', code: 'M10', name: 'Truy xuất & Thu hồi',  icon: 'file-search',      route: '/m10', group: 'Chất lượng' },
@@ -104,6 +105,8 @@ export const SUBMITTABLE_DOCTYPES = new Set([
   'SC Inventory Count Sheet', 'SC Stock Reconciliation',
   'SC Recall Notice', 'SC Investigation Report',
   'SC Purchase Invoice', 'SC Payment Entry',
+  'SC Sales Framework Contract', 'SC Sales Order', 'SC Delivery Note',
+  'SC Acceptance Record', 'SC Sales Invoice', 'SC Sales Receipt',
 ])
 
 export function isSubmittable(doctype) {
@@ -390,6 +393,99 @@ export const DT = {
     ],
     listFields: ['name', 'posting_date', 'entry_type', 'from_warehouse', 'to_warehouse',
                   'total_qty', 'total_value', 'docstatus'],
+  },
+
+  // === M7 Sales ===
+  'SC Customer': {
+    module: 'm7', label: 'Khách hàng', icon: 'building-2',
+    listColumns: [
+      { key: 'name', label: 'Mã KH', mono: true },
+      { key: 'customer_name', label: 'Tên KH' },
+      { key: 'tax_code', label: 'MST' },
+      { key: 'credit_limit', label: 'Hạn mức nợ', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer_name', 'tax_code', 'credit_limit', 'status'],
+  },
+  'SC Sales Framework Contract': {
+    module: 'm7', label: 'HĐ khung bán hàng', icon: 'file-text',
+    listColumns: [
+      { key: 'name', label: 'Mã HĐ', mono: true },
+      { key: 'customer', label: 'Khách hàng' },
+      { key: 'valid_from', label: 'Hiệu lực từ', type: 'date' },
+      { key: 'valid_to', label: 'Hiệu lực đến', type: 'date' },
+      { key: 'total_value', label: 'Tổng giá trị', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer', 'valid_from', 'valid_to', 'total_value', 'status', 'docstatus'],
+  },
+  'SC Sales Order': {
+    module: 'm7', label: 'Đơn bán hàng', icon: 'clipboard-list',
+    listColumns: [
+      { key: 'name', label: 'Mã SO', mono: true },
+      { key: 'customer', label: 'Khách hàng' },
+      { key: 'framework_contract', label: 'HĐ khung', mono: true },
+      { key: 'order_date', label: 'Ngày đặt', type: 'date' },
+      { key: 'total_amount', label: 'Tổng', type: 'currency', align: 'right' },
+      { key: 'credit_hold', label: 'Khoá tín dụng', type: 'check' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer', 'framework_contract', 'order_date', 'total_amount',
+                  'credit_hold', 'status', 'docstatus'],
+  },
+  'SC Delivery Note': {
+    module: 'm7', label: 'Phiếu giao hàng', icon: 'truck',
+    listColumns: [
+      { key: 'name', label: 'Mã DN', mono: true },
+      { key: 'sales_order', label: 'SO', mono: true },
+      { key: 'customer', label: 'Khách hàng' },
+      { key: 'from_warehouse', label: 'Kho xuất' },
+      { key: 'delivery_date', label: 'Ngày giao', type: 'date' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'sales_order', 'customer', 'from_warehouse', 'delivery_date',
+                  'status', 'docstatus'],
+  },
+  'SC Acceptance Record': {
+    module: 'm7', label: 'Biên bản nghiệm thu', icon: 'check-circle',
+    listColumns: [
+      { key: 'name', label: 'Mã BB', mono: true },
+      { key: 'delivery_note', label: 'DN', mono: true },
+      { key: 'customer', label: 'Khách hàng' },
+      { key: 'acceptance_date', label: 'Ngày nghiệm thu', type: 'date' },
+      { key: 'accepted_by', label: 'Người nhận' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'delivery_note', 'customer', 'acceptance_date', 'accepted_by',
+                  'status', 'docstatus'],
+  },
+  'SC Sales Invoice': {
+    module: 'm7', extraModules: ['m8'], label: 'Hóa đơn bán hàng', icon: 'receipt',
+    listColumns: [
+      { key: 'name', label: 'Mã SI', mono: true },
+      { key: 'customer', label: 'Khách hàng' },
+      { key: 'delivery_note', label: 'DN', mono: true },
+      { key: 'invoice_date', label: 'Ngày HD', type: 'date' },
+      { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
+      { key: 'outstanding_amount', label: 'Còn lại', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer', 'delivery_note', 'invoice_date', 'grand_total',
+                  'outstanding_amount', 'status', 'docstatus'],
+  },
+  'SC Sales Receipt': {
+    module: 'm7', extraModules: ['m8'], label: 'Phiếu thu tiền', icon: 'credit-card',
+    listColumns: [
+      { key: 'name', label: 'Mã PT', mono: true },
+      { key: 'customer', label: 'Khách hàng' },
+      { key: 'sales_invoice', label: 'SI', mono: true },
+      { key: 'receipt_date', label: 'Ngày thu', type: 'date' },
+      { key: 'amount', label: 'Số tiền', type: 'currency', align: 'right' },
+      { key: 'mode', label: 'Phương thức' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer', 'sales_invoice', 'receipt_date', 'amount', 'mode',
+                  'status', 'docstatus'],
   },
 
   // === M8 ===
