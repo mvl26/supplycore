@@ -11,6 +11,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today, add_months, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 class SCSupplier(Document):
 
@@ -98,7 +100,12 @@ def get_scorecard(supplier: str) -> dict:
         ap_outstanding,          # SUM PI outstanding
         open_alerts              # SC Alert count với supplier reference
       }
+
+    GĐ4 Task 5 (security sweep): hàm module-level, KHÔNG qua `run_doc_method`
+    (không tự động check permission) — không gate thì lộ rating/blacklist/
+    công nợ NCC/hợp đồng cho BẤT KỲ supplier nào caller truyền vào.
     """
+    block_portal()
     if not frappe.db.exists("SC Supplier", supplier):
         frappe.throw(_("NCC {0} không tồn tại").format(supplier))
 

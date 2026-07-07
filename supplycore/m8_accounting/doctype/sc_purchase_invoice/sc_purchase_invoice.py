@@ -5,6 +5,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today, now, add_days, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 # Tolerance & threshold (sẽ đọc từ SupplyCore Settings)
 DEFAULT_MATCH_TOLERANCE_PCT = 1.0
@@ -241,7 +243,14 @@ def make_invoice_from_pr(pr_name: str) -> str:
       - pr_item_ref (=PR Item.name), po_item_ref (=PR Item.po_item_ref)
 
     Returns: tên PI draft (chưa submit — user review rồi submit để post GL).
+
+    GĐ4 Task 5 (security sweep): hàm module-level WRITE (tạo PI draft với
+    `ignore_permissions=True`) — KHÔNG qua `run_doc_method` nên không tự động
+    check permission gì. Không gate thì bất kỳ user đăng nhập nào (kể cả
+    Portal) truyền `pr_name` bất kỳ sẽ đọc được PR nội bộ + TẠO ĐƯỢC hóa đơn
+    NCC thật trong hệ thống — vừa lộ dữ liệu vừa ghi dữ liệu trái phép.
     """
+    block_portal()
     pr = frappe.get_doc("SC Purchase Receipt", pr_name)
     if pr.docstatus != 1:
         frappe.throw(_("PR {0} chưa submit").format(pr_name), title="SC-E-PR")

@@ -5,6 +5,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now
 
+from supplycore.utils.permissions import block_portal
+
 
 EXEC_THRESHOLD_DEFAULT = 50_000_000
 
@@ -171,7 +173,14 @@ def _resolve_account(code: str) -> str:
 @frappe.whitelist()
 def auto_load_outstanding_invoices(supplier: str, limit: int = 50) -> list:
     """UC-25 step 2: list PI outstanding của supplier (sorted by due_date ASC).
-    Loại bỏ PI có payment_hold=1."""
+    Loại bỏ PI có payment_hold=1.
+
+    GĐ4 Task 5 (security sweep): hàm module-level, KHÔNG qua `run_doc_method`
+    (không tự động check permission) — không gate sẽ lộ công nợ phải trả NCC
+    (grand_total/outstanding_amount) cho BẤT KỲ supplier nào caller truyền,
+    cùng lớp lỗ hổng với `ap_aging_report` (phát hiện gốc của sweep này).
+    """
+    block_portal()
     rows = frappe.db.sql("""
         SELECT name, supplier_invoice_no, invoice_date, due_date,
                grand_total, paid_amount, outstanding_amount,

@@ -31,6 +31,74 @@ from supplycore.tests.portal_api_test import (
 )
 
 
+def _pick_warehouse() -> str:
+    rows = frappe.get_all("SC Warehouse", filters={"is_group": 0, "disabled": 0},
+                           pluck="name", order_by="name", limit=1)
+    if not rows:
+        frappe.throw("portal_internal_api_denied_test: cần seed SC Warehouse")
+    return rows[0]
+
+
+def _pick_supplier() -> str:
+    rows = frappe.get_all("SC Supplier", filters={"disabled": 0}, pluck="name", limit=1)
+    if not rows:
+        frappe.throw("portal_internal_api_denied_test: cần seed SC Supplier")
+    return rows[0]
+
+
+def _make_plain_item(suffix):
+    """Item khong batch-tracked (khac _make_item cua portal_api_test) -- don gian hoa
+    fixture PO/PR cho cac test gate module-level ben duoi."""
+    item = frappe.new_doc("SC Item")
+    item.item_code = f"IAPIPO-{suffix}-{random_string(5)}"
+    item.item_name = f"Sweep test item {suffix}"
+    item.uom = _get_uom()
+    item.is_stock_item = 1
+    item.is_purchase_item = 1
+    item.flags.ignore_permissions = True
+    item.insert()
+    return item
+
+
+def _make_submitted_po(supplier, item_code, qty, rate, warehouse):
+    po = frappe.new_doc("SC Purchase Order")
+    po.supplier = supplier
+    po.transaction_date = today()
+    po.schedule_date = add_days(today(), 7)
+    po.to_warehouse = warehouse
+    po.append("items", {"item": item_code, "qty": flt(qty), "uom": _get_uom(),
+                         "rate": flt(rate), "warehouse": warehouse})
+    po.flags.ignore_permissions = True
+    po.insert()
+    po.submit_for_review()
+    po.reload()
+    po.approve_as_manager()
+    po.reload()
+    if po.approval_stage == "Executive Review":
+        po.approve_as_executive()
+        po.reload()
+    po.submit()
+    po.reload()
+    return po
+
+
+def _make_submitted_pr(supplier, po_name, item_code, qty, rate, warehouse):
+    pr = frappe.new_doc("SC Purchase Receipt")
+    pr.supplier = supplier
+    pr.purchase_order = po_name
+    pr.posting_date = today()
+    pr.to_warehouse = warehouse
+    pr.qc_required = 0
+    pr.append("items", {"item": item_code, "qty": flt(qty), "uom": _get_uom(),
+                         "rate": flt(rate), "warehouse": warehouse, "po_qty": flt(qty),
+                         "expiry_date": add_days(today(), 365)})
+    pr.flags.ignore_permissions = True
+    pr.insert()
+    pr.submit()
+    pr.reload()
+    return pr
+
+
 def _call_denied_for_portal_ok_for_manager(fn, kwargs):
     """Goi fn(**kwargs) nhu 1 user Portal (ky vong frappe.PermissionError),
     roi nhu 1 user noi bo SupplyCore Manager (KHONG duoc la PermissionError
@@ -293,6 +361,79 @@ def test_sales_order_approve_reject_denied():
         frappe.db.rollback()
 
 
+def test_get_batches_fefo_denied():
+    """`supplycore/overrides/batch.py::get_batches_fefo` -- ham module-level,
+    KHONG qua `run_doc_method` (chi instance method moi tu dong duoc kiem
+    `has_permission`). Truoc gate: khong kiem quyen gi, lo ton kho theo
+    batch/FEFO xuyen kho cho bat ky item/warehouse nao caller truyen -- cung
+    lop voi `api/fefo.py::get_suggested_batches` (da gate tu dau sweep)."""
+    from supplycore.overrides.batch import get_batches_fefo
+    item = _make_item(f"IAPIFEFO{random_string(4)}")
+    warehouse = _pick_warehouse()
+    return _call_denied_for_portal_ok_for_manager(
+        get_batches_fefo, {"item_code": item.name, "warehouse": warehouse})
+
+
+def test_get_scorecard_module_denied():
+    """`sc_supplier.py::get_scorecard` (module-level, KHAC instance method
+    cung ten -- instance method da an toan qua `run_doc_method` vi Portal
+    khong co read tren SC Supplier, nhung ham module-level thi khong qua
+    duong do) -- truoc gate lo rating/blacklist/cong no NCC cho bat ky
+    supplier nao."""
+    from supplycore.supplycore.doctype.sc_supplier.sc_supplier import get_scorecard
+    supplier = _pick_supplier()
+    return _call_denied_for_portal_ok_for_manager(get_scorecard, {"supplier": supplier})
+
+
+def test_auto_load_outstanding_invoices_denied():
+    """`sc_payment_entry.py::auto_load_outstanding_invoices` -- cung lop
+    voi `ap_aging_report` (phat hien goc cua sweep nay): lo cong no phai tra
+    (grand_total/outstanding_amount) cho bat ky supplier nao caller truyen,
+    khong gate gi ca truoc khi sua."""
+    from supplycore.m8_accounting.doctype.sc_payment_entry.sc_payment_entry import (
+        auto_load_outstanding_invoices,
+    )
+    supplier = _pick_supplier()
+    return _call_denied_for_portal_ok_for_manager(
+        auto_load_outstanding_invoices, {"supplier": supplier})
+
+
+def test_make_pr_from_po_denied():
+    """`sc_purchase_order.py::make_pr_from_po` -- ham module-level WRITE (tao
+    SC Purchase Receipt draft voi `ignore_permissions=True`). Truoc gate:
+    khong kiem quyen gi -- bat ky user dang nhap nao (ke ca Portal) truyen
+    `po_name` bat ky se doc duoc PO noi bo + TAO DUOC PR that trong he
+    thong."""
+    from supplycore.supplycore.doctype.sc_purchase_order.sc_purchase_order import (
+        make_pr_from_po,
+    )
+    supplier = _pick_supplier()
+    warehouse = _pick_warehouse()
+    item = _make_plain_item(f"MKPR{random_string(4)}")
+    po = _make_submitted_po(supplier, item.name, 50, 10_000, warehouse)
+    return _call_denied_for_portal_ok_for_manager(make_pr_from_po, {"po_name": po.name})
+
+
+def test_make_invoice_from_pr_denied():
+    """`sc_purchase_invoice.py::make_invoice_from_pr` -- ham module-level
+    WRITE (tao SC Purchase Invoice draft voi `ignore_permissions=True`).
+    Truoc gate: khong kiem quyen gi -- bat ky user dang nhap nao (ke ca
+    Portal) truyen `pr_name` bat ky se doc duoc PR noi bo + TAO DUOC hoa don
+    NCC that trong he thong (vua lo du lieu vua ghi du lieu trai phep)."""
+    from supplycore.supplycore.doctype.sc_purchase_order.sc_purchase_order import (
+        make_pr_from_po,
+    )
+    from supplycore.m8_accounting.doctype.sc_purchase_invoice.sc_purchase_invoice import (
+        make_invoice_from_pr,
+    )
+    supplier = _pick_supplier()
+    warehouse = _pick_warehouse()
+    item = _make_plain_item(f"MKPI{random_string(4)}")
+    po = _make_submitted_po(supplier, item.name, 50, 10_000, warehouse)
+    pr = _make_submitted_pr(supplier, po.name, item.name, 50, 10_000, warehouse)
+    return _call_denied_for_portal_ok_for_manager(make_invoice_from_pr, {"pr_name": pr.name})
+
+
 def run():
     tests = [
         test_ap_aging_report_denied,
@@ -306,6 +447,11 @@ def run():
         test_related_docs_denied,
         test_get_doc_versions_denied,
         test_sales_order_approve_reject_denied,
+        test_get_batches_fefo_denied,
+        test_get_scorecard_module_denied,
+        test_auto_load_outstanding_invoices_denied,
+        test_make_pr_from_po_denied,
+        test_make_invoice_from_pr_denied,
     ]
     results = []
     for t in tests:

@@ -3,10 +3,20 @@
 import frappe
 from frappe.utils import flt
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def get_batches_fefo(item_code, warehouse, qty=0, throw=False, serial_no=None):
-    """Wrapper của ERPNext get_batches: gọi gốc, lọc bỏ block/expired, sort expiry ASC."""
+    """Wrapper của ERPNext get_batches: gọi gốc, lọc bỏ block/expired, sort expiry ASC.
+
+    GĐ4 Task 5 (security sweep, defense-in-depth cuối): hàm module-level nên
+    KHÔNG qua `run_doc_method` (chỉ instance method mới tự động được kiểm
+    `has_permission("read")`) — bản thân decorator `@frappe.whitelist()` không
+    kiểm quyền gì, chỉ đánh dấu network-reachable. Lộ tồn kho theo batch/FEFO
+    xuyên kho, mirror `api/fefo.py::get_suggested_batches` (đã gate).
+    """
+    block_portal()
     try:
         from erpnext.stock.doctype.batch.batch import get_batches as _erpnext_get_batches
         batches = _erpnext_get_batches(item_code, warehouse, qty, throw, serial_no) or []

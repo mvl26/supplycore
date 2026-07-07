@@ -5,6 +5,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today, now, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 class SCPurchaseOrder(Document):
 
@@ -309,6 +311,11 @@ class SCPurchaseOrder(Document):
 # ----------------------------------------------------------------------
 @frappe.whitelist()
 def make_pr_from_po(po_name: str) -> str:
+    """GĐ4 Task 5 (security sweep): hàm module-level WRITE (tạo PR draft với
+    `ignore_permissions=True`) — KHÔNG qua `run_doc_method` nên không tự động
+    check permission. Không gate thì bất kỳ user đăng nhập nào (kể cả Portal)
+    truyền `po_name` bất kỳ sẽ đọc được PO nội bộ + tạo được PR thật."""
+    block_portal()
     po = frappe.get_doc("SC Purchase Order", po_name)
     if po.docstatus != 1:
         frappe.throw(_("PO chưa submit"), title="SC-E-PO")
