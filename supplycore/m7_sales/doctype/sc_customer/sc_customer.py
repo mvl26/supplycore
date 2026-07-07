@@ -9,6 +9,7 @@ class SCCustomer(Document):
 
     def validate(self):
         self._validate_portal_user_unique()
+        self._validate_portal_required_for_active()
 
     def _validate_portal_user_unique(self):
         if not self.portal_user:
@@ -20,3 +21,9 @@ class SCCustomer(Document):
             frappe.throw(_(
                 "BRU-CUS-002: Tài khoản Portal {0} đã được gán cho khách hàng khác"
             ).format(self.portal_user))
+
+    def _validate_portal_required_for_active(self):
+        if self.status == "Hoạt động" and not self.portal_user:
+            frappe.throw(_(
+                "BRU-CUS-001: Khách hàng phải có tài khoản Portal trước khi kích hoạt (Hoạt động)."
+            ))

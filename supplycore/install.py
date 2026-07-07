@@ -12,7 +12,11 @@ DEFAULT_ROLES = [
     "SupplyCore Accountant",    # SC-ACCOUNTANT
     "SupplyCore Executive",     # SC-EXECUTIVE
     "SupplyCore Purchaser",     # SC-PURCHASER
+    "SC Customer Portal",       # M12 Portal khach hang — desk_access=0
 ]
+
+# Roles khong co desk access (Portal / Website User only)
+NO_DESK_ACCESS_ROLES = {"SC Customer Portal"}
 
 
 def after_install():
@@ -25,6 +29,6 @@ def create_default_roles():
             frappe.get_doc({
                 "doctype": "Role",
                 "role_name": role_name,
-                "desk_access": 1,
+                "desk_access": 0 if role_name in NO_DESK_ACCESS_ROLES else 1,
             }).insert(ignore_permissions=True)
     frappe.db.commit()
