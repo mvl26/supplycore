@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def suggest_bin(item: str, warehouse: str, qty: float = 0) -> dict:
@@ -15,6 +17,7 @@ def suggest_bin(item: str, warehouse: str, qty: float = 0) -> dict:
 
     Mỗi bước check capacity còn nhận được qty hay không.
     """
+    block_portal()
     qty = flt(qty)
 
     # 1. Rule (item, warehouse)
@@ -76,6 +79,7 @@ def _bin_has_capacity(bin_name: str, qty: float) -> bool:
 @frappe.whitelist()
 def get_alternative_bin(bin_name: str, qty: float = 0) -> dict:
     """UC-12 3a: bin đầy → tìm bin thay thế gần nhất (cùng warehouse, cùng zone)."""
+    block_portal()
     qty = flt(qty)
     b = frappe.db.get_value("Bin Location", bin_name,
                               ["warehouse", "zone", "aisle"], as_dict=True)

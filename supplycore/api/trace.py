@@ -8,6 +8,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def get_batch_trace(batch_no: str) -> dict:
@@ -25,6 +27,7 @@ def get_batch_trace(batch_no: str) -> dict:
 
     # TODO GĐ2: bổ sung trace/recall theo SC Delivery Note → SC Customer (chuỗi bán)
     """
+    block_portal()
     if not frappe.db.exists("SC Batch", batch_no):
         frappe.throw(_("Batch {0} không tồn tại").format(batch_no))
 
@@ -91,6 +94,7 @@ def get_audit_trail(item: str, warehouse: str = None,
 
     Returns full transaction history with user, voucher, qty change.
     """
+    block_portal()
     if not frappe.db.exists("SC Item", item):
         frappe.throw(_("Item {0} không tồn tại").format(item))
 

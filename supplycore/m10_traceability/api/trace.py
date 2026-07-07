@@ -3,6 +3,8 @@
 import frappe
 from frappe.utils import flt
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def get_batch_trace(batch_no: str) -> dict:
@@ -11,6 +13,7 @@ def get_batch_trace(batch_no: str) -> dict:
 
     # TODO GĐ2: bổ sung trace/recall theo SC Delivery Note → SC Customer (chuỗi bán)
     """
+    block_portal()
     if not batch_no or not frappe.db.exists("SC Batch", batch_no):
         return {"exists": False, "batch_no": batch_no}
 
@@ -126,6 +129,7 @@ def get_batch_trace(batch_no: str) -> dict:
 @frappe.whitelist()
 def list_batches_for_item(item_code_or_name: str, limit: int = 20) -> list:
     """UC-29 luồng 2a: search batches by item code OR name LIKE."""
+    block_portal()
     if not item_code_or_name:
         return []
     items = frappe.db.sql_list("""

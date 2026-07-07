@@ -7,6 +7,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, get_datetime, time_diff_in_seconds
 
+from supplycore.utils.permissions import block_portal
+
 
 # -----------------------------------------------------------------------
 # UC-31 step 1-3: audit trail
@@ -15,6 +17,7 @@ from frappe.utils import flt, getdate, get_datetime, time_diff_in_seconds
 def get_audit_trail(item=None, warehouse=None, start_date=None, end_date=None,
                      user=None, limit=500) -> list:
     """Trả audit trail SLE filtered + IP best-effort từ Activity Log."""
+    block_portal()
     conds = ["1=1"]
     params = {}
     if item:
@@ -77,6 +80,7 @@ def _lookup_ip_for_user_near_time(user, ts):
 @frappe.whitelist()
 def compare_theoretical_vs_actual(item, warehouse=None, batch=None) -> dict:
     """Sum SLE.qty_change (theoretical). Caller cung cấp actual_qty riêng."""
+    block_portal()
     conds = ["item = %(item)s", "is_cancelled = 0"]
     params = {"item": item}
     if warehouse:
@@ -104,6 +108,7 @@ def compare_theoretical_vs_actual(item, warehouse=None, batch=None) -> dict:
 def detect_anomalies(item=None, warehouse=None, start_date=None, end_date=None,
                       user=None, large_qty_threshold=1000) -> list:
     """Apply heuristics → trả list findings (chưa append vào doc)."""
+    block_portal()
     rows = get_audit_trail(item=item, warehouse=warehouse,
                             start_date=start_date, end_date=end_date,
                             user=user, limit=5000)
@@ -269,6 +274,7 @@ def verify_audit_integrity(doctype, docname) -> dict:
     Trả expected_min=0 (mọi doc có create event = 1 version) và actual_count.
     Spec: 'audit log không thể sửa' — Frappe Version table không bị xóa
     bởi user thông thường."""
+    block_portal()
     count = frappe.db.count("Version", filters={
         "ref_doctype": doctype, "docname": docname
     })

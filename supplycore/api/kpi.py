@@ -17,6 +17,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, today, add_days, add_months, getdate, now
 
+from supplycore.utils.permissions import block_portal
+
 
 CACHE_TTL = 300  # 5 minutes
 VALID_PERIODS = {"today", "this_week", "this_month", "this_quarter", "this_year"}
@@ -101,6 +103,7 @@ def get_executive_dashboard(period: str = "this_month",
        Added: contract_expiring_30d, po_overdue_count
        Plus: drill_down URLs, last_updated_at, cached flag.
     """
+    block_portal()
     if period not in VALID_PERIODS:
         frappe.throw(_(
             "SC-E-DSH-INVALID-PERIOD: period phải thuộc {0}"
@@ -319,6 +322,7 @@ def _drill_down_urls():
 @frappe.whitelist()
 def get_monthly_cost_trend(months: int = 12) -> list:
     """Trả 12 tháng gần nhất với chi phí PI submitted."""
+    block_portal()
     months = max(1, min(int(months), 36))
     rows = frappe.db.sql("""
         SELECT DATE_FORMAT(invoice_date, '%%Y-%%m') AS month,
@@ -342,6 +346,7 @@ def get_dashboard_for_role(role: str = None, period: str = "this_month",
                             warehouse=None) -> dict:
     """Trả dashboard tailored cho role.
     Nếu role không truyền → dùng role chính của session user."""
+    block_portal()
     if not role:
         user_roles = set(frappe.get_roles(frappe.session.user))
         for r in ("SupplyCore Executive", "SupplyCore Manager",
@@ -380,6 +385,7 @@ def get_dashboard_for_role(role: str = None, period: str = "this_month",
 def get_dashboard_snapshot_pdf_data(period: str = "this_month",
                                       warehouse=None) -> dict:
     """Data cho Frappe Print Format dashboard snapshot."""
+    block_portal()
     full = get_executive_dashboard(period=period, warehouse=warehouse,
                                      force_refresh=1)
     trend = get_monthly_cost_trend(months=12)
@@ -408,6 +414,7 @@ def get_dashboard_snapshot_pdf_data(period: str = "this_month",
 @frappe.whitelist()
 def get_warehouse_dashboard(warehouse: str) -> dict:
     """KPI cho SK theo warehouse cụ thể."""
+    block_portal()
     if not frappe.db.exists("SC Warehouse", warehouse):
         frappe.throw(_("Warehouse {0} không tồn tại").format(warehouse))
 

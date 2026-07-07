@@ -210,6 +210,41 @@ _PORTAL_REST_CHILD_PREFIXES = (
 )
 
 
+def block_portal(user: str = None) -> None:
+    """GĐ4 Task 5 (RSK-01 completeness sweep) — chặn role Portal khỏi bất kỳ
+    API nội bộ nào KHÔNG tự kiểm tra quyền per-doc (financial reports, KPI,
+    audit trail, warehouse map, WMS/FEFO helper...).
+
+    Khác với `_require_ar_aging_role`/`_require_user_admin` (allow-list nội
+    bộ — chỉ N role cụ thể được gọi), đây là BLOCK-LIST: chỉ chặn role
+    Portal, mọi role nội bộ khác (Manager/Storekeeper/User/...) đều đi qua
+    bình thường. Vì vậy áp dụng hàm này ở đầu 1 whitelisted function KHÔNG
+    có rủi ro hồi quy nội bộ — an toàn để áp rộng cho toàn bộ API nội bộ
+    thiếu permission check, mà không cần liệt kê hết role nào được phép.
+
+    KHÔNG dùng cho `api/portal.py` (Portal user PHẢI gọi được các hàm đó).
+
+    LƯU Ý (phát hiện qua regression Task 5): `frappe.get_roles("Administrator")`
+    KHÔNG đọc bảng "Has Role" như user thường — nó trả về TOÀN BỘ role đang
+    tồn tại trong hệ thống (`frappe/permissions.py::get_roles`, đặc cách cho
+    Administrator), tức là danh sách đó LUÔN chứa cả "SC Customer Portal".
+    Nếu không loại trừ Administrator, mọi lời gọi nội bộ chạy dưới session
+    Administrator (vd `bench execute` test, hoặc controller tự gọi các hàm
+    này qua Python call bình thường) sẽ bị `block_portal()` chặn NHẦM — dù
+    Administrator chưa từng và không thể là user Portal thật. Loại trừ ở đây
+    an toàn tuyệt đối: `frappe.has_permission()` (đường enforcement chính của
+    Frappe) cũng luôn trả True vô điều kiện cho Administrator, nên hành vi
+    này chỉ đồng bộ theo đúng quy ước sẵn có của Frappe, không mở thêm lỗ hổng
+    nào (Administrator thật ngoài đời không bao giờ là Portal user).
+    """
+    user = user or frappe.session.user
+    if user == "Administrator":
+        return
+    if PORTAL_ROLE in frappe.get_roles(user):
+        frappe.throw(frappe._("Không có quyền truy cập dữ liệu nội bộ này"),
+                     frappe.PermissionError)
+
+
 def portal_block_rest_child():
     """`before_request` hook (đăng ký ở hooks.py) — chặn role Portal truy cập
     REST resource/document endpoint (`/api/resource/`, `/api/v1/resource/`

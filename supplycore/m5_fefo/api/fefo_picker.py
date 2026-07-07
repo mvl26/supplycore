@@ -4,10 +4,12 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, today, date_diff, now
 from supplycore.api.fefo import get_suggested_batches
+from supplycore.utils.permissions import block_portal
 
 
 @frappe.whitelist()
 def suggest_batches(item_code: str, warehouse: str, qty: float = 0):
+    block_portal()
     return get_suggested_batches(item_code, warehouse, qty)
 
 

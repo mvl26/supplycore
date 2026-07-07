@@ -9,6 +9,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start=0, or_filters=None):
@@ -87,7 +89,18 @@ def get_doc(doctype, name):
 
 @frappe.whitelist()
 def count_docs(doctype, filters=None):
-    """Count docs."""
+    """Count docs.
+
+    GĐ4 Task 5 (security sweep): `frappe.db.count()` KHÔNG áp
+    `permission_query_conditions` (khác `frappe.db.get_all`/`list_docs` ở
+    trên) — chỉ check quyền doctype-level. Với 5 doctype bán hàng, role
+    Portal CÓ read=1 doctype-level (bị lọc theo khách hàng chỉ ở list-query),
+    nên nếu không chặn riêng, portal user gọi thẳng count_docs sẽ đếm được
+    TỔNG số đơn/hoá đơn... của TOÀN BỘ khách hàng (rò rỉ quy mô kinh doanh
+    liên khách hàng). Hàm này chỉ dùng nội bộ (SPA `frontend/src/api.js`),
+    Portal khách không cần và không được gọi.
+    """
+    block_portal()
     if not frappe.has_permission(doctype, "read"):
         frappe.throw(_("Không có quyền").format(doctype), frappe.PermissionError)
     import json
@@ -260,6 +273,7 @@ def related_docs(doctype, name):
 @frappe.whitelist()
 def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
     """UC-16: tồn kho per item/warehouse/batch. Aggregate SLE."""
+    block_portal()
     conds = ["sle.is_cancelled = 0"]
     params = {}
     if item:
@@ -299,6 +313,7 @@ def items_in_warehouse(warehouse=None):
     """Danh sách MÃ vật tư CÓ TỒN (>0) trong 1 kho — để giới hạn dropdown vật tư
     ở phiếu chuyển kho / cấp phát chỉ hiện VT thực sự đang có trong kho nguồn.
     Trả list[str] mã item; rỗng nếu kho không truyền hoặc không có tồn."""
+    block_portal()
     if not warehouse:
         return []
     rows = frappe.db.sql("""
@@ -316,6 +331,7 @@ def warehouse_stock_for_item(warehouse, item=None):
     """List batches của item (hoặc tất cả) trong warehouse với bin + qty.
     UC-18: hỗ trợ TR form khi user chọn item → hiện tồn + bin.
     """
+    block_portal()
     if not warehouse:
         return []
     conds = ["sle.warehouse = %(wh)s", "sle.is_cancelled = 0"]
@@ -344,6 +360,7 @@ def check_safety_after_transfer(warehouse, item, qty):
     """Kiểm tra nếu chuyển qty từ warehouse → tồn còn lại có dưới safety_stock không.
     Trả {current, after, safety_stock, below_safety, warning_msg}.
     """
+    block_portal()
     current = flt(frappe.db.sql("""
         SELECT COALESCE(SUM(qty_change), 0)
         FROM `tabSC Stock Ledger Entry`
@@ -370,6 +387,7 @@ def fefo_pick_guide(item, warehouse, qty_needed):
     Sort batches by expiry_date ASC (first-expired-first-out).
     Skip blocked batches. Skip batches HD đã hết.
     """
+    block_portal()
     qty_needed = flt(qty_needed)
     if qty_needed <= 0:
         return {"error": "qty_needed phải > 0", "picks": [], "total_picked": 0}
@@ -430,6 +448,7 @@ def pending_putaway(warehouse=None, limit=50):
     """List SLE recent (PR/SE Material Receipt) chưa có bin_location.
     UC: phiếu xếp hàng lên kệ.
     """
+    block_portal()
     conds = ["sle.qty_change > 0", "sle.is_cancelled = 0",
               "(sle.bin_location IS NULL OR sle.bin_location = '')",
               "sle.voucher_type IN ('SC Purchase Receipt', 'SC Stock Entry')"]
@@ -457,6 +476,7 @@ def assign_bin(assignments):
     """Bulk assign bin_location cho list SLE rows.
     Args: assignments = [{sle_name, bin_location}]
     """
+    block_portal()
     import json
     if isinstance(assignments, str):
         assignments = json.loads(assignments)
@@ -491,6 +511,7 @@ def item_eligible_uoms(item=None):
     Frontend dùng để filter dropdown UOM trong child table — chỉ hiển thị các UOM
     của item đang chọn, không phải toàn bộ SC UOM.
     """
+    block_portal()
     if not item:
         return []
     row = frappe.db.get_value("SC Item", item,
@@ -507,6 +528,7 @@ def framework_contracts_for_item(item=None):
     Frontend dùng để filter dropdown 'HĐ khung' trong bảng chi tiết Yêu cầu mua —
     chỉ gợi ý HĐ khung nào thực sự có vật tư đang chọn ở dòng đó (scope theo mã VT).
     """
+    block_portal()
     if not item:
         return []
     rows = frappe.db.sql("""
@@ -525,6 +547,7 @@ def pd_item_autofetch(item=None, warehouse=None):
     tại 1 kho. Lô được chọn = lô có qty > 0 trong kho, QC Accepted (hoặc
     chưa gắn QC), không blocked, sort expiry_date ASC (FEFO).
     """
+    block_portal()
     if not item or not warehouse:
         return {}
 
@@ -579,6 +602,7 @@ def pd_item_autofetch(item=None, warehouse=None):
 def bins_for_warehouse(warehouse=None):
     """List bins. Nếu warehouse=None → trả tất cả bins kèm warehouse
     để frontend có thể group + lọc theo từng row Putaway."""
+    block_portal()
     filters = {"warehouse": warehouse} if warehouse else {}
     return frappe.db.get_all("Bin Location",
         filters=filters,
@@ -589,6 +613,7 @@ def bins_for_warehouse(warehouse=None):
 @frappe.whitelist()
 def warehouse_summary():
     """Liệt kê tất cả warehouse + tổng SL + tổng giá trị + số items."""
+    block_portal()
     return frappe.db.sql("""
         SELECT
             w.name AS name,

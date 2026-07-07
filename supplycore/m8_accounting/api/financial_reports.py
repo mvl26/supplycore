@@ -3,6 +3,8 @@
 import frappe
 from frappe.utils import flt, today, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def inventory_value_report(warehouse: str = None, item_group: str = None,
@@ -11,6 +13,7 @@ def inventory_value_report(warehouse: str = None, item_group: str = None,
 
     Returns: {rows: [...], total_qty, total_value, period_finalized}
     """
+    block_portal()
     where = ["sle.is_cancelled = 0"]
     params = {"lim": int(limit)}
     if warehouse:
@@ -54,7 +57,13 @@ def ap_aging_report(supplier: str = None, as_of_date: str = None,
     """Công nợ NCC aging: bucket theo (today - due_date).
 
     Buckets: current (≤0), 0-30, 31-60, 61-90, >90
+
+    Role-gate (GĐ4 Task 5): mirror `ar_aging_by_customer` -- chỉ System
+    Manager/SupplyCore Manager/Executive/Accountant/Auditor mới được xem
+    công nợ NCC. Trước fix: hàm này KHÔNG gate gì -- bất kỳ user đăng nhập
+    nào (kể cả role Portal) gọi thẳng API đều đọc được toàn bộ payables.
     """
+    _require_finance_report_role()
     asof = as_of_date or today()
     where = ["docstatus = 1", "outstanding_amount > 0", "status != 'Cancelled'"]
     params = {"asof": asof, "lim": int(limit)}
@@ -95,21 +104,23 @@ def ap_aging_report(supplier: str = None, as_of_date: str = None,
     }
 
 
-# GD4 Task 4 -- Dashboard cong no phai thu (AR aging theo khach hang).
-# Chi noi bo Ke toan/Quan ly moi duoc xem -- khong mirror portal (BRU-AR-001:
-# canh bao khach vuot han muc tin dung, du lieu tong hop toan he thong nen
-# KHONG duoc lo qua Portal, khac voi ap_aging_report (hien khong tu gate role
-# o than ham -- xem ghi chu report GD4 Task 4).
-AR_AGING_ROLES = (
+# GĐ4 Task 5 (security sweep) -- gate chung cho báo cáo tài chính nội bộ
+# (AP/AR aging): chỉ Kế toán/Quản lý/Kiểm toán/Executive được xem. Data tổng
+# hợp toàn hệ thống (công nợ NCC, công nợ khách + credit_limit — BRU-AR-001)
+# KHÔNG được lộ qua Portal hay bất kỳ role vận hành khác (Storekeeper,
+# Purchaser...). Dùng allow-list (không phải block_portal) vì đây là báo cáo
+# tài chính nhạy cảm -- chỉ role tài chính/quản lý cụ thể mới được gọi, kể cả
+# nội bộ.
+FINANCE_REPORT_ROLES = (
     "System Manager", "SupplyCore Manager", "SupplyCore Executive",
     "SupplyCore Accountant", "SupplyCore Auditor",
 )
 
 
-def _require_ar_aging_role():
+def _require_finance_report_role():
     user_roles = set(frappe.get_roles(frappe.session.user))
-    if not user_roles.intersection(AR_AGING_ROLES):
-        frappe.throw(frappe._("Không có quyền xem báo cáo công nợ phải thu"),
+    if not user_roles.intersection(FINANCE_REPORT_ROLES):
+        frappe.throw(frappe._("Không có quyền xem báo cáo tài chính này"),
                       frappe.PermissionError)
 
 
@@ -126,7 +137,7 @@ def ar_aging_by_customer(customer: str = None, as_of_date: str = None,
     Auditor -- role Portal (SC Customer Portal) hay cac role noi bo khac
     (Storekeeper/Purchaser...) KHONG duoc goi.
     """
-    _require_ar_aging_role()
+    _require_finance_report_role()
 
     asof = as_of_date or today()
     where = ["si.docstatus = 1", "si.outstanding_amount > 0", "si.status != 'Hủy'"]
@@ -185,6 +196,7 @@ def period_cost_report(from_date: str, to_date: str,
                        item_group: str = None,
                        warehouse: str = None) -> dict:
     """Chi phí vật tư kỳ: PI grand_total + breakdown per item_group."""
+    block_portal()
     if not (from_date and to_date):
         frappe.throw("from_date và to_date bắt buộc")
 
@@ -229,6 +241,7 @@ def period_cost_report(from_date: str, to_date: str,
 @frappe.whitelist()
 def get_voucher_details(voucher_type: str, voucher_no: str) -> dict:
     """UC-26 5a drill-down: header + items + linked vouchers."""
+    block_portal()
     if not frappe.db.exists(voucher_type, voucher_no):
         return {"exists": False}
     doc = frappe.get_doc(voucher_type, voucher_no)
@@ -260,6 +273,7 @@ def get_voucher_details(voucher_type: str, voucher_no: str) -> dict:
 @frappe.whitelist()
 def check_period_finalized(from_date: str, to_date: str) -> dict:
     """UC-26 ngoại lệ: check có Draft document trong kỳ → chưa finalized."""
+    block_portal()
     pending_pi = frappe.db.count("SC Purchase Invoice", {
         "docstatus": 0,
         "invoice_date": ["between", [from_date, to_date]],

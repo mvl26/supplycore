@@ -5,6 +5,47 @@
 
 ---
 
+## Tiến độ thực hiện (07/07/2026 — nhánh `feat/mvl-distributor`)
+
+**GĐ1–GĐ4 đã hoàn tất trên nhánh `feat/mvl-distributor`.** Quyết định kiến trúc #1
+(mục 2) đã thực thi: MVL **thay thế in-place** bản bệnh viện, không còn
+deployment_profile/fork.
+
+- **GĐ1 — Gỡ bệnh viện + M7 Bán hàng + M12 Portal (nền tảng):** gỡ M7
+  Dispensing/BHYT/Patient/HIS map; thêm M7 Sales (SC Customer, SC Sales
+  Framework Contract, SC Sales Order, SC Delivery Note, SC Acceptance Record,
+  SC Sales Invoice, SC Sales Receipt) + BRU-AR-001 (credit_limit) + O2C đầy đủ
+  (đặt hàng → duyệt → giao → nghiệm thu → hoá đơn → thu tiền, hạch toán AR/GL);
+  thêm khung M12 Customer Portal (provisioning + cô lập dữ liệu RSK-01).
+- **GĐ2 — Sales suites + regression nền:** bộ test GĐ2 đầy đủ cho 7 doctype
+  M7 Sales + API bán hàng + kịch bản O2C end-to-end.
+- **GĐ3 — Portal khách hàng + cô lập RSK-01:** `api/portal.py` (7 API tự lọc
+  theo khách hàng đăng nhập: `portal_me/contracts/catalog/order_place/
+  order_track/order_history/document_download`), permission_query_conditions +
+  has_permission trên 5 doctype bán + 4 child doctype, chặn residual REST
+  `/api/resource|/api/v1/resource|/api/v2/document` cho child doctype bán hàng.
+- **GĐ4 — Rebrand Miyano + UI Portal + Sales SPA + hardening cuối:**
+  - Task 1: rebrand toàn bộ nhận diện/seed sang Công ty Miyano Việt Nam (MVL),
+    kho/phòng phân phối thay khoa/phòng bệnh viện.
+  - Task 2: đóng residual hardening `/api/resource` child cho portal.
+  - Task 3: trang Portal khách `www/portal` (catalog, đặt hàng, theo dõi đơn
+    với tracker 4 cột mốc, tải chứng từ) — mobile-first, tách khỏi SPA nội bộ.
+  - Task 4: M7 Sales vào SPA nội bộ (DocView generic) + dashboard công nợ phải
+    thu (`ar_aging_by_customer`, cảnh báo vượt credit_limit).
+  - Task 5 (hoàn tất thành phẩm): security sweep toàn bộ `@frappe.whitelist()`
+    API nội bộ (`api/*.py`, `m*/api/*.py`) — vá lỗ hổng phát hiện
+    (`ap_aging_report` không role-gate, hàng chục hàm KPI/tồn kho/FEFO/audit/
+    truy xuất/WMS thiếu permission check hoàn toàn) bằng `block_portal()`
+    (block-list role Portal) hoặc allow-list vai trò tài chính; test portal-
+    reachability (`portal_internal_api_denied_test`); regression toàn bộ
+    (GĐ2+GĐ3/4+smoke+UC-26) xanh; grep thuật ngữ bệnh viện → 0; docs cập nhật.
+
+Sản phẩm MVL (procure → nhận hàng/QC → nhập kho → bán → giao hàng → xuất hoá
+đơn → thu tiền + Portal khách) sẵn sàng bàn giao trên nhánh
+`feat/mvl-distributor`.
+
+---
+
 ## 0. TL;DR
 
 - **BA v2 KHÔNG phải bản nâng cấp app hiện tại.** Nó là **biến thể MVL cho doanh nghiệp phân phối**, dẫn xuất từ "bản bệnh viện" — mà **bản bệnh viện chính là codebase `supplycore` đang chạy**.

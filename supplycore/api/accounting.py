@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def three_way_match(purchase_invoice: str = None,
@@ -15,6 +17,7 @@ def three_way_match(purchase_invoice: str = None,
         {po_total, pr_total, pi_total, po_var_pct, pr_var_pct,
          status: Match/Mismatch/Not Applicable, variance_amount}
     """
+    block_portal()
     if purchase_invoice:
         pi = frappe.db.get_value("SC Purchase Invoice", purchase_invoice,
                                    ["purchase_order", "subtotal"], as_dict=True)
@@ -58,6 +61,7 @@ def three_way_match(purchase_invoice: str = None,
 @frappe.whitelist()
 def supplier_balance(supplier: str) -> dict:
     """Số dư phải trả NCC + công nợ quá hạn."""
+    block_portal()
     from frappe.utils import today, getdate
     payable = flt(frappe.db.sql("""
         SELECT COALESCE(SUM(grand_total - paid_amount), 0)

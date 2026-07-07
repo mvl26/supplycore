@@ -13,6 +13,8 @@ Chỉ đường = đường Manhattan (đi dọc rồi đi ngang), trả list ô
 import frappe
 from frappe import _
 
+from supplycore.utils.permissions import block_portal
+
 
 # Defaults — sẽ được Settings override (xem _site_config). Giữ làm fallback
 # khi DB chưa migrate hoặc test fixture chưa seed.
@@ -76,6 +78,7 @@ def _manhattan_path(start: dict, end: dict, vertical_first: bool = True) -> list
 @frappe.whitelist()
 def get_site_map(target_warehouse: str = None) -> dict:
     """Bản đồ khuôn viên kho phân phối — vị trí các kho + chỉ đường tới target."""
+    block_portal()
     cfg = _site_config()
     whs = frappe.get_all("SC Warehouse",
         filters={"disabled": 0},
@@ -136,6 +139,7 @@ def get_warehouse_map(warehouse: str, target_bin: str = None) -> dict:
 
     Entrance kho = ô ảo phía trên lưới (row 0, cột giữa).
     """
+    block_portal()
     if not frappe.db.exists("SC Warehouse", warehouse):
         frappe.throw(_("Kho {0} không tồn tại").format(warehouse))
 
@@ -210,6 +214,7 @@ def get_route(from_warehouse: str, to_warehouse: str) -> dict:
 
     Dùng cho M6 Chuyển kho: hiển thị tuyến từ kho nguồn tới kho đích.
     """
+    block_portal()
     base = get_site_map(target_warehouse=to_warehouse)
     src = next((c for c in base["cells"] if c["warehouse"] == from_warehouse), None)
     dst = next((c for c in base["cells"] if c["warehouse"] == to_warehouse), None)
@@ -231,6 +236,7 @@ def get_route(from_warehouse: str, to_warehouse: str) -> dict:
 @frappe.whitelist()
 def list_mapped_warehouses() -> list:
     """List kho đã có sơ đồ bin (map_rows>0) — cho UI chọn xem."""
+    block_portal()
     return frappe.get_all("SC Warehouse",
         filters={"disabled": 0, "is_group": 0},
         fields=["name", "warehouse_type", "map_rows", "map_cols",
@@ -248,6 +254,7 @@ WAREHOUSE_TYPES = ["Main", "Sub", "Department", "Quarantine", "Transit"]
 @frappe.whitelist()
 def get_editable_site_map() -> dict:
     """Editor data — site config + all warehouses (đã đặt + chưa đặt)."""
+    block_portal()
     cfg = _site_config()
     placed = frappe.get_all("SC Warehouse",
         filters={"disabled": 0},
@@ -344,6 +351,7 @@ def save_site_layout(config: dict, warehouses: list) -> dict:
 @frappe.whitelist()
 def list_warehouses_for_editor() -> list:
     """List ALL warehouses (kể cả disabled=0) cho map editor — group/leaf."""
+    block_portal()
     return frappe.get_all("SC Warehouse",
         filters={"disabled": 0},
         fields=["name", "warehouse_type", "is_group", "site_row", "site_col",

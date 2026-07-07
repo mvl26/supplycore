@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, today
 
+from supplycore.utils.permissions import block_portal
+
 
 # ---------------------------------------------------------------------------
 # scan_barcode — resolve barcode → Item / Batch / Bin Location
@@ -22,6 +24,7 @@ def scan_barcode(barcode: str, context: str = None):
         barcode: chuỗi barcode quét được
         context: 'receipt' / 'issue' / 'transfer' / 'count' (optional, ảnh hưởng suggestion)
     """
+    block_portal()
     if not barcode:
         frappe.throw(_("barcode không được rỗng"))
     barcode = barcode.strip()
@@ -98,6 +101,7 @@ def _build_item_response(item_code: str, context: str = None) -> dict:
 @frappe.whitelist()
 def lookup_bin_for_item(item_code: str, warehouse: str = None) -> dict:
     """Gợi ý bin theo thứ tự: Item.default → Putaway Rule → bin trống đầu tiên trong warehouse."""
+    block_portal()
     # 1. Item default
     default_bin = frappe.db.get_value("SC Item", item_code, "default_bin_location")
     if default_bin and frappe.db.exists("Bin Location", default_bin):
@@ -124,6 +128,7 @@ def lookup_bin_for_item(item_code: str, warehouse: str = None) -> dict:
 # ---------------------------------------------------------------------------
 @frappe.whitelist()
 def get_bin_inventory(bin_location: str) -> list:
+    block_portal()
     if not frappe.db.exists("Bin Location", bin_location):
         frappe.throw(_("Bin Location {0} không tồn tại").format(bin_location))
     bin_doc = frappe.get_doc("Bin Location", bin_location)
@@ -138,6 +143,7 @@ def confirm_putaway(item_code: str, warehouse: str, qty: float,
                     bin_location: str = None, batch_no: str = None,
                     pda_session: str = None) -> dict:
     """PDA endpoint: xác nhận putaway, tạo SC Stock Entry draft."""
+    block_portal()
     if flt(qty) <= 0:
         frappe.throw(_("qty phải > 0"))
     if not frappe.db.exists("SC Warehouse", warehouse):
@@ -167,6 +173,7 @@ def confirm_putaway(item_code: str, warehouse: str, qty: float,
 @frappe.whitelist()
 def quick_search(keyword: str, entity_type: str = "item", limit: int = 10) -> list:
     """Search Item / Bin Location theo prefix keyword."""
+    block_portal()
     keyword = (keyword or "").strip()
     if len(keyword) < 2:
         return []
