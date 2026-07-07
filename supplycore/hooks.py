@@ -79,6 +79,26 @@ website_redirects = [
 # ---------------------------------------------------------------------------
 permission_query_conditions = {
     "SC Stock Entry": "supplycore.utils.permissions.stock_entry_query",
+    "SC Sales Order": "supplycore.utils.permissions.sales_order_portal_query",
+    "SC Delivery Note": "supplycore.utils.permissions.delivery_note_portal_query",
+    "SC Sales Invoice": "supplycore.utils.permissions.sales_invoice_portal_query",
+    "SC Sales Receipt": "supplycore.utils.permissions.sales_receipt_portal_query",
+    "SC Sales Framework Contract": "supplycore.utils.permissions.sales_fc_portal_query",
+    # Child tables (RSK-01 caveat — xem permissions.py::_portal_child_scope):
+    # permission_query_conditions tra theo doctype của truy vấn, không kế thừa
+    # từ doctype cha, nên phải đăng ký riêng để chặn truy vấn thẳng child.
+    "SO Item": "supplycore.utils.permissions.so_item_portal_query",
+    "DN Item": "supplycore.utils.permissions.dn_item_portal_query",
+    "SI Item": "supplycore.utils.permissions.si_item_portal_query",
+    "SFC Item": "supplycore.utils.permissions.sfc_item_portal_query",
+}
+
+has_permission = {
+    "SC Sales Order": "supplycore.utils.permissions.portal_doc_permission",
+    "SC Delivery Note": "supplycore.utils.permissions.portal_doc_permission",
+    "SC Sales Invoice": "supplycore.utils.permissions.portal_doc_permission",
+    "SC Sales Receipt": "supplycore.utils.permissions.portal_doc_permission",
+    "SC Sales Framework Contract": "supplycore.utils.permissions.portal_doc_permission",
 }
 
 # ---------------------------------------------------------------------------

@@ -53,22 +53,29 @@ def test_activate_customer_without_portal_blocked():
 
 
 def test_provision_creates_website_user_and_links():
-    """portal_provision(customer, email) -> tao Website User + role Portal + link customer.portal_user."""
+    """portal_provision(customer, email) -> tao Website User + role Portal + link customer.portal_user.
+
+    Luu y: Frappe chuan hoa User.name/email ve chu thuong khi validate
+    (frappe/core/doctype/user/user.py: self.email = self.email.strip().lower()).
+    portal_provision phai tra ve + luu gia tri DA CHUAN HOA (user_doc.name),
+    nen assertion o day so voi email.lower() (email test co the co ky tu hoa
+    tu random_string) -- phat hien qua GD3 Task 2 isolation test."""
     from supplycore.api.portal import portal_provision
 
     c = _make_customer(status="Tạm ngưng")
     email = f"portaltest_{random_string(8)}@example.com"
+    email_norm = email.lower()
     try:
         result = portal_provision(c.name, email)
-        if result != email:
+        if result != email_norm:
             frappe.db.rollback()
-            return {"pass": False, "msg": f"X return={result}, expect {email}"}
+            return {"pass": False, "msg": f"X return={result}, expect {email_norm}"}
 
-        if not frappe.db.exists("User", email):
+        if not frappe.db.exists("User", email_norm):
             frappe.db.rollback()
             return {"pass": False, "msg": "X User khong duoc tao"}
 
-        user_doc = frappe.get_doc("User", email)
+        user_doc = frappe.get_doc("User", email_norm)
         roles = [r.role for r in user_doc.roles]
         if "SC Customer Portal" not in roles:
             frappe.db.rollback()
@@ -80,10 +87,10 @@ def test_provision_creates_website_user_and_links():
 
         portal_user = frappe.db.get_value("SC Customer", c.name, "portal_user")
         frappe.db.rollback()
-        if portal_user != email:
+        if portal_user != email_norm:
             return {"pass": False, "msg": f"X customer.portal_user={portal_user}"}
 
-        return {"pass": True, "msg": f"OK provisioned {email}"}
+        return {"pass": True, "msg": f"OK provisioned {email_norm}"}
     except Exception as e:
         frappe.db.rollback()
         return {"pass": False, "msg": f"X threw: {str(e)[:200]}"}

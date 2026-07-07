@@ -42,6 +42,13 @@ def portal_provision(customer, email):
 
     user_doc.add_roles(PORTAL_ROLE)
 
-    frappe.db.set_value("SC Customer", customer, "portal_user", email)
+    # Frappe chuẩn hoá User.name/email về chữ thường khi validate (xem
+    # frappe/core/doctype/user/user.py: self.email = self.email.strip().lower()).
+    # Phải dùng user_doc.name (đã chuẩn hoá) để lưu vào SC Customer.portal_user
+    # và trả về -- nếu dùng lại biến `email` gốc (có thể khác hoa/thường),
+    # sau này so sánh với frappe.session.user (luôn chữ thường sau khi đăng
+    # nhập thật) sẽ lệch nhau và portal_doc_permission sẽ từ chối luôn cả
+    # chủ sở hữu hợp lệ (GĐ3 Task 2 phát hiện qua isolation test).
+    frappe.db.set_value("SC Customer", customer, "portal_user", user_doc.name)
 
-    return email
+    return user_doc.name
