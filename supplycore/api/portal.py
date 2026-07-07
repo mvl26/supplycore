@@ -238,7 +238,12 @@ def compute_milestones(order: str):
     """4 cột mốc theo dõi đơn hàng (GĐ3 Task 4 -- formalize từ bản provisional
     của Task 3): đặt hàng / giao & nghiệm thu / xuất hoá đơn / thanh toán.
 
-    Mỗi mốc {key, label, status: done|current|pending, time}. Đi qua lần lượt
+    Mỗi mốc {key, label, status: done|current|pending, time}; mốc 2/3 (giao
+    nghiệm thu / xuất hoá đơn) khi `done` có thêm {doctype, docname} trỏ tới
+    SC Delivery Note/SC Sales Invoice tương ứng -- Portal UI (GĐ4 Task 3)
+    dùng cặp này để gọi `portal_document_download(doctype, docname)` tải
+    chứng từ; hàm đó tự kiểm tra lại quyền sở hữu nên không mở thêm rủi ro
+    rò rỉ. Đi qua lần lượt
     4 mốc theo đúng thứ tự chuỗi nghiệp vụ (SO -> DN -> SI -> SR); mốc `pending`
     ĐẦU TIÊN gặp phải được đánh dấu `current`, các mốc sau đó (nếu có) vẫn giữ
     `pending`. Chỉ đọc (read-only), dùng `frappe.get_all`/`frappe.db.get_value`
@@ -267,6 +272,11 @@ def compute_milestones(order: str):
     if dn and dn.status in ("Đã nghiệm thu", "Đã xuất HĐ"):
         milestones[1]["status"] = "done"
         milestones[1]["time"] = dn.modified
+        # doctype/docname để Portal UI gọi `portal_document_download` tải
+        # phiếu giao hàng -- không phải dữ liệu mới, chỉ trỏ tới đúng chứng
+        # từ mà `portal_document_download` đã tự kiểm tra lại quyền sở hữu.
+        milestones[1]["doctype"] = "SC Delivery Note"
+        milestones[1]["docname"] = dn.name
 
     # Mốc 3 "invoiced": có SC Sales Invoice đã phát hành (docstatus=1 loại
     # trừ Nháp/Hủy) cho đúng Phiếu giao hàng ở mốc 2.
@@ -279,6 +289,8 @@ def compute_milestones(order: str):
     if si and si.status != "Nháp":
         milestones[2]["status"] = "done"
         milestones[2]["time"] = si.invoice_date
+        milestones[2]["doctype"] = "SC Sales Invoice"
+        milestones[2]["docname"] = si.name
 
         # Mốc 4 "paid": hóa đơn đã thu đủ (outstanding_amount <= 0); thời
         # điểm lấy từ phiếu thu gần nhất đã tất toán hóa đơn này.
