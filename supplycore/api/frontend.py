@@ -159,6 +159,7 @@ def related_docs(doctype, name):
     - SC Item → Batches + recent SLE
     - SC Batch → SLE + Recall + Trace movements
     """
+    block_portal()
     out = {}
     if not frappe.has_permission(doctype, "read", doc=name):
         frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
@@ -754,6 +755,7 @@ def get_doc_versions(doctype, name, limit=50):
     Mỗi record là 1 lần save. data là JSON {changed: [[field, old, new], ...]}.
     Frontend hiển thị thành bảng "ai-sửa-gì-khi-nào".
     """
+    block_portal()
     if not frappe.has_permission(doctype, "read", doc=name):
         frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
 
