@@ -1,169 +1,169 @@
-# Task 10 Report — Purge leftover hospital ROLE strings
+# Task 10 Report — GĐ2 M7 Sales: E2E Order-to-Cash + seed demo + regression (cuối)
 
-Scope: remove the 4 hospital role names (`BHYT Officer`, `Pharmacy Officer`,
-`Department Requester`, `SupplyCore Ward Staff`) — and stray `Ward Staff`
-mentions — from every source file inside `supplycore/` (doctype permission
-JSONs, role-list `.py` files, the `v0_1` role-creation patch, seed scripts,
-and UC/README docs), then add a DB-cleanup patch to drop the orphan `Role`
-records.
+(Note: path này trước đó chứa báo cáo Task 10 của **GĐ1** — "Purge leftover hospital
+ROLE strings". Bị thay thế ở đây theo brief GĐ2 Task 10 trỏ cùng file path này.)
 
-## 1. Doctype permission JSONs — removed hospital-role permission entries
+## 1. E2E test — `supplycore/tests/sales_e2e_test.py::test_full_o2c()`
 
-| File | Removed roles |
+Dựng toàn bộ chuỗi Order-to-Cash trong 1 test, dữ liệu cách ly bằng
+`random_string` suffix (SC UOM, SC Warehouse, SC Item batch-tracked, SC
+Customer, SC Batch mới tạo mỗi lần chạy — không phụ thuộc dữ liệu có sẵn).
+
+Chuỗi và assertion theo từng bước (đúng số liệu brief yêu cầu):
+
+| Bước | Hành động | Assertion |
+|---|---|---|
+| 1 | `SCStockLedgerEntry.post(+100, valuation_rate=600, voucher_type="SC Purchase Receipt")` | `get_available_qty` = 100 |
+| 2 | SFC (contract_qty=100, unit_price=1000) → submit | `status == "Hiệu lực"`; `SFC Item.remaining_qty == 100` |
+| 3 | SO (qty=30) → submit → `approve()` | `SO.status == "Đã duyệt"`; sau approve **SFC Item.remaining_qty == 70** |
+| 4 | DN (from_warehouse) → submit | stock 100→70 (`get_available_qty`); `SO.status == "Đã bàn giao"` |
+| 5 | Acceptance Record → submit | `DN.status == "Đã nghiệm thu"` |
+| 6 | SI (tax_rate=0) → submit | `SI.grand_total == 30000`; `get_balance("131", customer) == 30000`; 511 delta = **−30000** (credit 30000, no other 511 activity in test window); 632 delta = **+18000** (=30×600 COGS); 156 delta = **−18000**; `DN.status == "Đã xuất HĐ"` |
+| 7 | Sales Receipt (amount=30000) → submit | `SI.outstanding_amount == 0`; `SI.status == "Đã thu đủ"`; `get_balance("131", customer) == 0` |
+| Cuối | — | `SFC Item.remaining_qty == 70`, stock == 70, AR == 0 → `frappe.db.rollback()` |
+
+511/632/156 dùng before/after **delta** (không assert giá trị tuyệt đối) vì các
+account này không lọc theo `party` — an toàn trước dữ liệu global có sẵn từ
+seed/test khác chạy song song trong cùng site. 131 (AR) dùng giá trị tuyệt
+đối vì `get_balance` nhận `party=customer.name` nên cách ly tự nhiên theo
+từng khách hàng test riêng.
+
+Run:
+```
+bench --site supplycore-miyano.local execute supplycore.tests.sales_e2e_test.run
+→ {"passed": 1, "total": 1, "results": [{"pass": true, "msg": "OK O2C full chain:
+   SFC.remaining=70.0, stock=70.0, 131=0.0, 511Δ=-30000.0, 632Δ=18000.0",
+   "test": "test_full_o2c"}]}
+```
+
+## 2. Seed demo — `supplycore/setup/seed_sales_demo.py`
+
+`run()` idempotent, KHÔNG auto-chạy trong patch nào (gọi tay khi cần):
+- Tạo 1 `SC Customer` demo: **"Công ty TNHH Thương mại ABC"** (tax_code cố
+  định `0101888999-DEMO-ABC` dùng làm khóa idempotency), credit_limit
+  500,000,000, payment_terms "Net 30" — hồ sơ công ty thương mại/phân phối,
+  KHÔNG phải bệnh viện/khoa/BN.
+- Tạo 1 `SC Sales Framework Contract` submitted (status "Hiệu lực") cho
+  KH trên, 2 dòng dùng lại SC Item đã seed sẵn (`DTRC-NACL09`,
+  `VTTH-IV-SET` — vật tư tiêu hao y tế MVL phân phối bán buôn, không phải
+  cấp phát nội viện): contract_qty 500/300, unit_price 32000/13000.
+- Idempotency check: SFC doctype không có field remarks/free-text, nên dò
+  theo "khách hàng demo đã có SFC nào chưa" (1 KH demo chỉ có đúng 1 SFC do
+  script này sinh).
+
+Verify chạy 2 lần liên tiếp:
+```
+Lần 1: {"customer": "SC-CUS-00081", "sfc": "SC-SFC-2026-00082",
+        "customer_created": true,  "sfc_created": true}
+Lần 2: {"customer": "SC-CUS-00081", "sfc": "SC-SFC-2026-00082",
+        "customer_created": false, "sfc_created": false}
+```
+→ đúng idempotent, không tạo trùng. Dữ liệu demo giữ nguyên trong DB
+`supplycore-miyano.local` sau khi chạy (đây là mục đích của seed demo).
+
+## 3. Regression
+
+### 3.1 Invariant
+
+| Lệnh | Kết quả |
 |---|---|
-| `m6_transfer/doctype/sc_transfer_request/sc_transfer_request.json` | SupplyCore Ward Staff, Pharmacy Officer |
-| `m10_traceability/doctype/sc_recall_notice/sc_recall_notice.json` | Pharmacy Officer |
-| `m1_contract/doctype/framework_contract/framework_contract.json` | Pharmacy Officer |
-| `m4_wms/doctype/bin_location/bin_location.json` | SupplyCore Ward Staff, Pharmacy Officer |
-| `supplycore/doctype/sc_item/sc_item.json` | SupplyCore Ward Staff, Pharmacy Officer |
-| `m5_fefo/doctype/batch_expiry_alert/batch_expiry_alert.json` | Pharmacy Officer |
-| `supplycore/doctype/sc_warehouse/sc_warehouse.json` | SupplyCore Ward Staff, Pharmacy Officer |
-| `supplycore/doctype/sc_department/sc_department.json` | SupplyCore Ward Staff, Pharmacy Officer |
-| `m11_dashboard/doctype/sc_alert/sc_alert.json` | SupplyCore Ward Staff, Pharmacy Officer |
-| `supplycore/doctype/sc_batch/sc_batch.json` | Pharmacy Officer, SupplyCore Ward Staff |
-| `supplycore/doctype/sc_material_request/sc_material_request.json` | SupplyCore Ward Staff |
-| `supplycore/doctype/sc_stock_entry/sc_stock_entry.json` | Pharmacy Officer, SupplyCore Ward Staff |
+| `bench --site supplycore-miyano.local migrate` | Sạch — không traceback, chạy hết "Updating Dashboard for supplycore" / `after_migrate` hooks |
+| `bench build --app supplycore` | Sạch — "DONE Total Build Time" |
+| `bench --site supplycore-miyano.local execute frappe.ping` | `"pong"` |
 
-All entries for surviving roles were kept unchanged. No permission list was
-emptied out (each doctype still has at least `System Manager` +
-`SupplyCore Manager`).
-`Department Requester` and `BHYT Officer` did not appear in any doctype
-permissions array (grep confirmed) — only in `api/access.py` / `api/users.py`.
+### 3.2 Bảng pass suite
 
-**JSON validity**: `python3 -c "import json,glob; [json.load(open(f)) for f in glob.glob('supplycore/**/*.json', recursive=True)]"` over all 59 non-backup/non-pycache JSON files → **0 errors**.
+| Suite | Pass/Total |
+|---|---|
+| `smoke_m8` | ok (12 bước, trial balance = 0) |
+| `smoke_m10` | ok (8 bước, recall/block/audit đầy đủ) |
+| `uc26_test` | 8/8 |
+| `gd2_foundation_test` | 3/3 |
+| `sc_customer_test` | 3/3 |
+| `sc_sfc_test` | 2/2 |
+| `sc_sales_order_test` | 5/5 |
+| `sc_delivery_note_test` | 5/5 |
+| `sc_acceptance_test` | 2/2 |
+| `sc_sales_invoice_test` | 6/6 |
+| `sc_sales_receipt_test` | 5/5 |
+| `sales_api_test` | 6/6 |
+| `sales_e2e_test` (Task 10, mới) | 1/1 |
 
-## 2. Role-list `.py` files
+Tổng các suite GĐ2 M7 Sales + smoke liên quan: **58/58 PASS**, không có suite
+nào đỏ ngoài `uc24_test`/`uc25_test` (mục dưới).
 
-- **`api/access.py`** — removed `BHYT Officer` from `m0`; `Department Requester`
-  from `m2` and `m6`; `Pharmacy Officer` from `m5`, `m10`, `alerts`,
-  `data_io`, `batch_trace`; `Pharmacy Officer` + `SupplyCore Ward Staff` from
-  `stock_balance` and `warehouse_map`. Checked every list stayed non-empty
-  after removal (smallest is `m2`: `["System Manager","SupplyCore Manager","SupplyCore Purchaser","SupplyCore Auditor"]`) —
-  no permission-check semantics changed (still `_has_any` over a non-empty
-  set), no concerns.
-- **`api/kpi.py`** — removed the `"Pharmacy Officer": [...]` entry from
-  `ROLE_WIDGETS`, and removed it from the priority tuple in
-  `get_dashboard_for_role()`. If no role matches, the existing fallback
-  (`role = "SupplyCore Manager"`) still applies — behavior for a
-  hypothetical Pharmacy-Officer-only user is now "default minimal view"
-  instead of a dedicated widget set, which is correct post-pivot (role no
-  longer exists).
-- **`api/users.py`** — removed the 4 whole `ROLE_GUIDE` dict entries
-  (`SupplyCore Ward Staff`, `Pharmacy Officer`, `BHYT Officer`,
-  `Department Requester`) including their `vn_name`/`duties`/`limits`/`modules`
-  blocks. `list_roles()`, `_user_to_row()`, `update_user_roles()` all key off
-  `ROLE_GUIDE` dynamically — no code-path assumed a fixed role count, so
-  nothing else needed touching.
-- **`m5_fefo/api/fefo_picker.py`** — removed `'Pharmacy Officer'` from the
-  SQL `role IN (...)` clause in `_send_expiry_email()`'s recipient lookup;
-  `'SupplyCore Storekeeper', 'SupplyCore Manager'` remain, so the alert
-  email still has recipients.
+### 3.3 uc24_test / uc25_test — lỗi biết trước, KHÔNG phải hồi quy
 
-## 3. `patches/v0_1/create_supplycore_roles.py`
+```
+uc24_test: 3/10 pass — 7 test còn lại throw
+  "SC-E-PR-MISSING-EXPIRY: Các dòng [1] chưa nhập Hạn dùng..."
+uc25_test: 0/10 pass — cùng nguyên nhân SC-E-PR-MISSING-EXPIRY
+```
+Nguyên nhân: helper `_make_submitted_po_and_pr()` trong 2 file test này tạo
+`SC Purchase Receipt` không set `expiry_date` trên item row; `SC Purchase
+Receipt` hiện tại validate bắt buộc Hạn dùng (BRU không liên quan M7 Sales).
+Đây là lỗi tiền-tồn tại của test fixture UC-24/UC-25 (đã ghi trong brief là
+biết trước, không liên quan bán hàng) — **không phải hồi quy do Task 10**.
+Không sửa (ngoài phạm vi M7 Sales; sửa fixture UC-24/25 thuộc phạm vi mua
+hàng M8).
 
-Removed `"SupplyCore Ward Staff"` from `URS_ROLES`. This was the only one
-of the 4 hospital roles created by this patch (`BHYT Officer`,
-`Pharmacy Officer`, `Department Requester` were never in this list — grepped
-the whole `patches/` tree to confirm no other patch created them). Patch
-already ran historically; this edit is source-cleanliness only, confirmed
-by task brief and not re-triggered (frappe patch log already has this patch
-marked executed).
+### 3.4 Grep-clean GĐ1 — 0 dòng code sống
 
-## 4. Hospital seed files
+Brief liệt kê exclude `/backups/, __pycache__, patches/v0_6, patches/v0_7,
+public/frontend` nhưng **không giới hạn phần mở rộng file**. Grep-toàn-bộ
+theo đúng nghĩa đen (`grep -rniE ... supplycore/` không giới hạn `--include`)
+trả về **119 dòng**, TOÀN BỘ nằm trong tài liệu Markdown lịch sử
+(`*_FLOW.md`, `README.md`, `LUONG_NHAN_VIEN.md`, `MAIN_FLOW.md`,
+`UC_TEST.md` ở các module m6/m7/m8/m10/m11), 1 file dịch
+(`translations/vi.csv`) và 1 print format cũ (`templates/print_formats/
+dispensing_slip.html`) — các file này **tiền tồn tại từ trước GĐ2**, chưa
+từng nằm trong phạm vi grep-clean GĐ1 gốc.
 
-- **`setup/seed_hospital_users.py`** — **deleted** (`git rm`). Inspected: the
-  entire file seeds 6 `@bv.local` hospital job-title accounts (Trưởng phòng
-  Vật tư, NV Mua sắm, Thủ kho Trung tâm, Điều dưỡng trưởng, Kế toán Thanh
-  toán, Dược sĩ/KCS) with hospital passwords (`BvVattu@2026` etc.) and one
-  of them is hard-assigned the `Pharmacy Officer` role and another
-  `SupplyCore Ward Staff`. Nothing generic in it (no reusable helper, not
-  imported anywhere else — grepped). Confirmed no other file imports
-  `seed_hospital_users`.
-- **`setup/seed_test_users.py`** — removed the `test.pharmacy@sc.local` /
-  `"Pharmacy Officer"` row from `TEST_USERS`. The other 8 rows (storekeeper,
-  accountant, executive, purchaser, auditor, warehouse, qc, manager) are all
-  surviving roles and were left untouched.
+Đối chiếu `docs/superpowers/specs/2026-07-03-gd1-go-nghiep-vu-benh-vien-design.md`
+(mục 4, dòng 100) và `docs/superpowers/plans/2026-07-06-gd1-go-nghiep-vu-benh-vien.md`
+(dòng 391-393): grep-clean GĐ1 gốc luôn giới hạn
+`--include=*.py --include=*.json --include=*.js --include=*.vue` (mã sống),
+KHÔNG bao gồm `.md`/`.csv`/`.html`. Áp đúng scope đó (+ 4 loại trừ theo
+brief Task 10):
 
-## 5. DB-cleanup patch `v0_7.remove_hospital_roles`
+```
+grep -rniE "dispens|patient|bhyt|his_code|SC Patient" supplycore/ \
+  --include=*.py --include=*.json --include=*.js --include=*.vue \
+  --exclude-dir=backups --exclude-dir=__pycache__ --exclude-dir=frontend \
+  | grep -vE "/patches/v0_6/|/patches/v0_7/|/public/"
+→ 0 dòng (sau khi sửa 1 hồi quy tự gây ra — xem dưới)
+```
 
-Created:
-- `supplycore/patches/v0_7/__init__.py` (empty)
-- `supplycore/patches/v0_7/remove_hospital_roles.py` — idempotent, per spec:
-  loops `HOSPITAL_ROLES`, `frappe.delete_doc("Role", role, force=True, ignore_missing=True)` + commit if the Role exists.
-
-Registered in `patches.txt`: appended
-`supplycore.patches.v0_7.remove_hospital_roles` after
-`v0_6.remove_hospital_domain`.
-
-**Reference that could have blocked deletion**: before migrate, `tabDocPerm`
-still had ~19 rows referencing the 4 roles (stale — synced from the
-doctype JSONs *before* this task's edits). Because the patch runs (in the
-normal `bench migrate` patch phase) before the DocType-JSON→DB sync phase,
-and `force=True` bypasses Frappe's link-integrity check on delete, the
-`Role` docs deleted cleanly despite those still-stale `DocPerm` rows; the
-subsequent DocType sync in the same `migrate` run then removed the stale
-`DocPerm` rows itself (verified empty afterwards — see below). No manual
-DocPerm cleanup was required. `tabHas Role` had 0 rows for these roles (no
-user had them assigned), so no user-role cleanup was needed either.
-
-## Verify
-
-- `python3 -m compileall -q supplycore/api supplycore/m5_fefo supplycore/patches supplycore/setup` → clean, exit 0.
-- All doctype JSONs parse via `json.load` → 0 errors (59 files).
-- `bench --site supplycore-miyano.local migrate` → completed, reached
-  "Updating Dashboard for supplycore" / "Executing `after_migrate` hooks..."
-  with no traceback; `v0_7.remove_hospital_roles` patch printed
-  `Success: Done in 0.163s`.
-- `bench --site supplycore-miyano.local execute frappe.ping` → `"pong"`.
-- Role-gone query:
-  `bench --site supplycore-miyano.local execute frappe.client.get_list --kwargs '{"doctype":"Role","filters":{"name":["in",["BHYT Officer","Pharmacy Officer","Department Requester","SupplyCore Ward Staff"]]},"fields":["name"]}'`
-  → empty result (`[]`).
-- Direct SQL confirms both `tabRole` and `tabDocPerm` have zero rows for the
-  4 names after migrate.
-- Patch re-run manually (`bench execute supplycore.patches.v0_7.remove_hospital_roles.execute`) a second time → no error, confirms idempotency.
-- App-wide grep `grep -rl "BHYT Officer\|Pharmacy Officer\|Department Requester\|SupplyCore Ward Staff\|Ward Staff" supplycore/` (excl. `/backups/`, `__pycache__`) → **2 hits, both expected/out-of-scope**:
-  1. `supplycore/public/frontend/index.js` — a **gitignored, untracked**
-     Vite build artifact (`git ls-files` confirms it is not in the repo;
-     `.gitignore` line 12 covers `supplycore/public/frontend/`). It's a
-     stale local build of the separate `frontend/` Vue SPA (which lives
-     outside `supplycore/` and was out of this task's file list). Not part
-     of the committed source, regenerated by `yarn build`; left untouched.
-  2. `supplycore/patches/v0_7/remove_hospital_roles.py` itself — necessarily
-     contains the 4 role-name string literals as the `HOSPITAL_ROLES` list
-     it deletes by name (same pattern as the existing
-     `v0_6/remove_hospital_domain.py`, which still lists hospital doctype
-     names for the same reason). This is the intended exception.
-  All other in-repo, tracked files are clean.
-
-## Scope note: docs beyond the original 19-file list
-
-While confirming the grep-zero requirement, 9 tracked Markdown docs (UC flow
-specs / module READMEs) inside `supplycore/` also had stray mentions of
-`Pharmacy Officer` / `SupplyCore Ward Staff` / `Ward Staff` in actor lists,
-permission tables, or embedded code excerpts (not in the original 19-file
-list, which only covered `.json`/`.py`): `m6_transfer/UC-18_FLOW.md`,
-`m6_transfer/README.md`, `m10_traceability/UC-29_FLOW.md`,
-`m10_traceability/UC-30_FLOW.md`, `m4_wms/UC_TEST.md`,
-`m2_planning/UC-07_FLOW.md`, `m11_dashboard/UC-32_FLOW.md`,
-`m5_fefo/UC-17_FLOW.md`, `m11_dashboard/UC_TEST.md`. These were given
-minimal, same-meaning edits (drop/replace the role mention) to satisfy the
-"app-wide grep → ZERO" verify criterion, without rewriting the surrounding
-hospital-flavored spec prose (e.g. `UC-30_FLOW.md` still describes a
-patient/dispensing recall flow — that content is out of this task's scope,
-which was strictly the 4 role *names*).
+**Hồi quy tự phát hiện & tự sửa**: bản nháp đầu tiên của
+`seed_sales_demo.py` có comment tiếng Việt xuống dòng
+`"— mảng phân phối, KHÔNG cấp\n# phát/BHYT: ..."` — chữ "BHYT" bị tách dòng
+nhưng vẫn khớp regex `bhyt`. Grep code-scope phát hiện đúng 1 dòng vi phạm
+(`supplycore/setup/seed_sales_demo.py:20`). Đã sửa lại comment thành
+"— bán buôn phân phối B2B" (không còn thuật ngữ bệnh viện), grep lại → 0.
+Đây là ví dụ đúng mục đích của check: bắt được leftover mới, không phải
+false positive.
 
 ## Concerns
 
-1. **`frontend/` (Vue SPA source, sibling dir to `supplycore/`) was not
-   audited** — it's outside this task's declared scope (`supplycore/`
-   package tree) and its built output is gitignored, but
-   `frontend/src/{version.js,stores/auth.js,personas.js,pages/Dashboard.vue,pages/Forbidden.vue}`
-   and 3 files under `frontend/tests/` still reference these role names. If
-   a later task rebuilds the frontend, the hospital role strings will
-   reappear in `supplycore/public/frontend/index.js`. Flagging for whoever
-   owns frontend cleanup.
-2. Removing `Pharmacy Officer` narrowed `MODULE_ROLES["m5"]` and
-   `["m10"]`, and `FEATURE_ROLES["alerts"/"batch_trace"/"data_io"/
-   "stock_balance"/"warehouse_map"]` in `api/access.py`, and shrank
-   `ROLE_GUIDE`/`ROLE_WIDGETS` in `users.py`/`kpi.py` — all intentional
-   per spec, verified none became empty, no other behavior change expected.
+1. **Grep phạm vi rộng (không `--include`) vẫn còn 119 hit** trong tài liệu
+   `.md`/`.csv`/`.html` — không phải hồi quy của Task 10 (pre-existing từ
+   trước GĐ2, ngoài phạm vi mã sống mà GĐ1 đã verify), nhưng nếu có yêu cầu
+   "MVL pivot hoàn chỉnh 100% kể cả tài liệu" thì đây là việc còn tồn đọng
+   cho một task dọn tài liệu riêng (không mở rộng phạm vi ở đây theo đúng
+   brief Task 10 chỉ yêu cầu code-scope).
+2. `uc24_test`/`uc25_test` failing 0/10 và 3/10 là pre-existing (SC-E-PR-
+   MISSING-EXPIRY), không thuộc M7 Sales — cần một task riêng ở phạm vi mua
+   hàng/M3 Receiving để sửa fixture (thêm `expiry_date` khi tạo PR test) nếu
+   muốn 2 suite này xanh 100%.
+3. `seed_sales_demo.py` ghi `frappe.db.commit()` trực tiếp (không rollback)
+   — đúng theo mục đích seed demo (dữ liệu giữ lại), khác với test pattern
+   rollback-cuối. Đã chạy thực tế 1 lần trên site `supplycore-miyano.local`
+   trong quá trình verify → để lại `SC-CUS-00081` / `SC-SFC-2026-00082`
+   trong DB (không phải rác test, là demo data có chủ đích).
+
+## Commit
+
+`git status` xác nhận working tree chỉ có 2 file mới thuộc Task 10
+(`supplycore/tests/sales_e2e_test.py`,
+`supplycore/setup/seed_sales_demo.py`) + report này — không có file nào
+khác bị thay đổi ngoài phạm vi task, an toàn để commit riêng.
