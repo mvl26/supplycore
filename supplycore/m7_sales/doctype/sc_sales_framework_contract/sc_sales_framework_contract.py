@@ -51,6 +51,11 @@ class SCSalesFrameworkContract(Document):
         SC Sales Order chưa tồn tại ở Task 3 — guard bằng table_exists để
         no-op an toàn (Task 4 sẽ wire lại reduction thật khi SO ra đời).
         """
+        # Chặn portal gọi trực tiếp qua run_doc_method (chỉ check read) — nhất
+        # quán với SC Sales Order.approve/reject. Caller nội bộ (SO submit/cancel)
+        # chạy dưới session nhân viên nên không bị chặn.
+        from supplycore.utils.permissions import block_portal
+        block_portal()
         has_so = frappe.db.table_exists("SC Sales Order")
         for row in self.items:
             sold = 0
