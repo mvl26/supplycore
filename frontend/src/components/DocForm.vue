@@ -129,7 +129,17 @@ async function handleLinkSelected(field, linked) {
 
 function isVisible(field) {
   if (!field.dependOn) return true
-  return !!doc.value[field.dependOn]
+  const dep = field.dependOn
+  // Hỗ trợ biểu thức "eval:<expr>" (truy cập doc.*) bên cạnh tên field đơn.
+  if (typeof dep === 'string' && dep.startsWith('eval:')) {
+    try {
+      // eslint-disable-next-line no-new-func
+      return !!(new Function('doc', `return (${dep.slice(5)})`))(doc.value)
+    } catch (e) {
+      return true
+    }
+  }
+  return !!doc.value[dep]
 }
 
 // Field bị khoá khi field nguồn (readonlyWhenSet) đã có giá trị — vd PO tạo từ

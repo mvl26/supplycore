@@ -132,7 +132,9 @@ export const DETAIL_CONFIGS = {
       if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
       if (d.docstatus === 0) return { label: 'Bản nháp', cls: 'sc-badge-neutral', icon: 'file' }
       if (d.qc_required && d.qc_status === 'Pending') return { label: 'Chờ QC', cls: 'sc-badge-warning', icon: 'shield-alert' }
-      if (d.qc_status === 'Rejected') return { label: 'QC từ chối', cls: 'sc-badge-critical', icon: 'shield-x' }
+      // PR rollup ghi 'Pass' / 'Fail' / 'Partial Pass' (không phải Accepted/Rejected).
+      if (d.qc_status === 'Fail' || d.qc_status === 'Rejected') return { label: 'QC không đạt', cls: 'sc-badge-critical', icon: 'shield-x' }
+      if (d.qc_status === 'Partial Pass') return { label: 'QC đạt một phần', cls: 'sc-badge-warning', icon: 'shield-alert' }
       if (d.is_return) return { label: 'Trả NCC', cls: 'sc-badge-info', icon: 'undo-2' }
       return { label: 'Đã nhập kho', cls: 'sc-badge-success', icon: 'check-circle-2' }
     },
@@ -460,12 +462,17 @@ export const DETAIL_CONFIGS = {
     status: (d) => {
       const sev = d.severity || ''
       if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      // Backend enum = 'Class I (Critical)' / 'Class II (High)' / 'Class III (Low)'
+      // → khớp theo tiền tố Class I/II/III để không phụ thuộc hậu tố.
       const sevMap = {
         'Class I': { label: 'Class I — nguy cấp', cls: 'sc-badge-critical', icon: 'alert-octagon' },
         'Class II': { label: 'Class II', cls: 'sc-badge-warning', icon: 'alert-triangle' },
         'Class III': { label: 'Class III', cls: 'sc-badge-info', icon: 'info' },
       }
-      if (sevMap[sev]) return sevMap[sev]
+      const sevKey = sev.startsWith('Class III') ? 'Class III'
+        : sev.startsWith('Class II') ? 'Class II'
+        : sev.startsWith('Class I') ? 'Class I' : null
+      if (sevKey) return sevMap[sevKey]
       return statusByField(d, {
         'Open': { label: 'Đang thu hồi', cls: 'sc-badge-warning', icon: 'alert-triangle' },
         'In Progress': { label: 'Đang xử lý', cls: 'sc-badge-info', icon: 'loader' },
@@ -653,6 +660,368 @@ export const DETAIL_CONFIGS = {
         { label: '%', accessor: 'variance_pct', align: 'right', fmt: 'pct' },
       ],
       totals: [null, null, null, null, null, 'system_qty', 'actual_qty', 'difference', null],
+    },
+  },
+
+  // ===== M7 Sales: Customer =================================================
+  'SC Customer': {
+    icon: 'building-2',
+    accentLabel: 'Khách hàng',
+    title: (d) => d.customer_name || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'hash', text: (d) => d.tax_code ? `MST ${d.tax_code}` : null },
+      { icon: 'user', text: (d) => d.portal_user ? `Portal ${d.portal_user}` : 'Chưa có tài khoản Portal' },
+    ],
+    status: (d) => statusByField(d, {
+      'Hoạt động': { label: 'Hoạt động', cls: 'sc-badge-success', icon: 'check-circle-2' },
+      'Tạm ngưng': { label: 'Tạm ngưng', cls: 'sc-badge-neutral', icon: 'pause-circle' },
+    }),
+    tiles: [
+      { icon: 'wallet', label: 'Hạn mức nợ', value: (d) => d.credit_limit, fmt: 'moneyShort' },
+      { icon: 'file-text', label: 'Điều khoản TT', value: (d) => d.payment_terms || '—' },
+      { icon: 'user-check', label: 'Tài khoản Portal',
+        value: (d) => d.portal_user ? 'Đã gán' : 'Chưa gán',
+        accent: (d) => d.portal_user ? 'emerald' : 'amber' },
+    ],
+    sections: [
+      { title: 'Thông tin khách hàng', icon: 'info', fields: [
+        { label: 'Mã số thuế', value: (d) => d.tax_code },
+        { label: 'Tài khoản Portal', value: (d) => d.portal_user || 'Chưa gán — không thể kích hoạt (BRU-CUS-001)' },
+        { label: 'Điều khoản TT', value: (d) => d.payment_terms },
+        { label: 'Địa chỉ hoá đơn', value: (d) => d.billing_address, pre: true },
+        { label: 'Địa chỉ giao hàng', value: (d) => d.shipping_address, pre: true },
+      ]},
+    ],
+  },
+
+  // ===== M7 Sales: Sales Framework Contract =================================
+  'SC Sales Framework Contract': {
+    icon: 'file-text',
+    accentLabel: 'HĐ khung bán hàng',
+    title: (d) => d.customer_name || d.customer || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.valid_from ? `Từ ${fmtDate(d.valid_from)}` : null },
+      { icon: 'calendar', text: (d) => d.valid_to ? `Đến ${fmtDate(d.valid_to)}` : null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      return statusByField(d, {
+        'Nháp': { label: 'Nháp', cls: 'sc-badge-neutral', icon: 'file' },
+        'Chờ duyệt': { label: 'Chờ duyệt', cls: 'sc-badge-warning', icon: 'clock' },
+        'Hiệu lực': { label: 'Hiệu lực', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Hết hạn': { label: 'Hết hạn', cls: 'sc-badge-critical', icon: 'alert-circle' },
+        'Thanh lý': { label: 'Thanh lý', cls: 'sc-badge-critical', icon: 'x-circle' },
+      })
+    },
+    tiles: [
+      { icon: 'wallet', label: 'Tổng giá trị', value: (d) => d.total_value, fmt: 'moneyShort' },
+      { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
+    ],
+    sections: [
+      { title: 'Hiệu lực', icon: 'calendar', fields: [
+        { label: 'Khách hàng', value: (d) => d.customer,
+          link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
+        { label: 'Từ ngày', value: (d) => d.valid_from ? fmtDate(d.valid_from) : '—' },
+        { label: 'Đến ngày', value: (d) => d.valid_to ? fmtDate(d.valid_to) : '—' },
+      ]},
+    ],
+    items: {
+      field: 'items',
+      label: 'Danh mục vật tư',
+      icon: 'package',
+      columns: [
+        { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
+        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'SL HĐ', accessor: 'contract_qty', align: 'right', fmt: 'number' },
+        { label: 'Đơn giá', accessor: 'unit_price', align: 'right', fmt: 'money' },
+        { label: 'Đã bán', accessor: 'sold_qty', align: 'right', fmt: 'number' },
+        { label: 'Còn lại', accessor: 'remaining_qty', align: 'right', fmt: 'number', anchor: 'navy' },
+      ],
+      totals: [null, null, 'contract_qty', null, 'sold_qty', 'remaining_qty'],
+    },
+  },
+
+  // ===== M7 Sales: Sales Order (FIX green-badge-on-reject) ==================
+  'SC Sales Order': {
+    icon: 'clipboard-list',
+    accentLabel: 'Đơn bán hàng',
+    title: (d) => d.customer_name || d.customer || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.order_date ? `Đặt ${fmtDate(d.order_date)}` : null },
+      { icon: 'file-text', text: (d) => d.framework_contract ? `HĐ ${d.framework_contract}` : null },
+    ],
+    // Trạng thái lấy theo field `status` (VN) — KHÔNG suy từ docstatus, vì
+    // approve/reject xảy ra ở docstatus=1 (SO bị từ chối vẫn docstatus=1).
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      return statusByField(d, {
+        'Chờ duyệt': { label: 'Chờ duyệt', cls: 'sc-badge-warning', icon: 'clock' },
+        'Đã duyệt': { label: 'Đã duyệt', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Đang xử lý': { label: 'Đang xử lý', cls: 'sc-badge-info', icon: 'loader' },
+        'Đã bàn giao': { label: 'Đã bàn giao', cls: 'sc-badge-info', icon: 'truck' },
+        'Hoàn tất': { label: 'Hoàn tất', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Từ chối': { label: 'Từ chối', cls: 'sc-badge-critical', icon: 'x-circle' },
+      })
+    },
+    tiles: [
+      { icon: 'wallet', label: 'Tổng tiền', value: (d) => d.total_amount, fmt: 'moneyShort' },
+      { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
+      { icon: 'shield-alert', label: 'Khoá tín dụng',
+        value: (d) => d.credit_hold ? 'Có' : '—',
+        accent: (d) => d.credit_hold ? 'critical' : 'default' },
+    ],
+    sections: [
+      { title: 'Tham chiếu', icon: 'link', fields: [
+        { label: 'Khách hàng', value: (d) => d.customer,
+          link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
+        { label: 'HĐ khung', value: (d) => d.framework_contract,
+          link: (d) => d.framework_contract ? `/doc/SC Sales Framework Contract/${d.framework_contract}` : null },
+        { label: 'Người duyệt', value: (d) => d.approval_by },
+      ]},
+    ],
+    items: {
+      field: 'items',
+      label: 'Chi tiết đơn hàng',
+      icon: 'package',
+      columns: [
+        { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
+        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'SL', accessor: 'qty', align: 'right', fmt: 'number' },
+        { label: 'Đơn giá', accessor: 'unit_price', align: 'right', fmt: 'money' },
+        { label: 'Thành tiền', accessor: 'amount', align: 'right', fmt: 'money', anchor: 'navy' },
+      ],
+      totals: [null, null, 'qty', null, 'amount'],
+    },
+  },
+
+  // ===== M7 Sales: Delivery Note ============================================
+  'SC Delivery Note': {
+    icon: 'truck',
+    accentLabel: 'Phiếu giao hàng',
+    title: (d) => d.customer_name || d.customer || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.delivery_date ? `Giao ${fmtDate(d.delivery_date)}` : null },
+      { icon: 'file-text', text: (d) => d.sales_order ? `SO ${d.sales_order}` : null },
+      { icon: 'warehouse', text: (d) => d.from_warehouse ? `Kho ${d.from_warehouse}` : null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      return statusByField(d, {
+        'Nháp': { label: 'Nháp', cls: 'sc-badge-neutral', icon: 'file' },
+        'Đã giao': { label: 'Đã giao', cls: 'sc-badge-info', icon: 'truck' },
+        'Đã nghiệm thu': { label: 'Đã nghiệm thu', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Đã xuất HĐ': { label: 'Đã xuất HĐ', cls: 'sc-badge-success', icon: 'receipt' },
+      })
+    },
+    tiles: [
+      { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
+      { icon: 'boxes', label: 'Tổng SL giao',
+        value: (d) => (d.items || []).reduce((s, r) => s + (Number(r.qty) || 0), 0), fmt: 'number' },
+    ],
+    sections: [
+      { title: 'Tham chiếu', icon: 'link', fields: [
+        { label: 'Sales Order', value: (d) => d.sales_order,
+          link: (d) => d.sales_order ? `/doc/SC Sales Order/${d.sales_order}` : null },
+        { label: 'Khách hàng', value: (d) => d.customer,
+          link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
+        { label: 'Kho xuất', value: (d) => d.from_warehouse },
+      ]},
+    ],
+    items: {
+      field: 'items',
+      label: 'Vật tư giao',
+      icon: 'package',
+      columns: [
+        { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
+        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'SL giao', accessor: 'qty', align: 'right', fmt: 'number' },
+        { label: 'Lô', accessor: 'batch', mono: true },
+        { label: 'Kho', accessor: 'warehouse', mono: true },
+      ],
+      totals: [null, null, 'qty', null, null],
+    },
+  },
+
+  // ===== M7 Sales: Acceptance Record ========================================
+  'SC Acceptance Record': {
+    icon: 'check-circle',
+    accentLabel: 'Biên bản nghiệm thu',
+    title: (d) => d.customer_name || d.customer || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.acceptance_date ? `Nghiệm thu ${fmtDate(d.acceptance_date)}` : null },
+      { icon: 'file-text', text: (d) => d.delivery_note ? `DN ${d.delivery_note}` : null },
+      { icon: 'user', text: (d) => d.accepted_by ? `Người nhận ${d.accepted_by}` : null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      return statusByField(d, {
+        'Nháp': { label: 'Nháp', cls: 'sc-badge-neutral', icon: 'file' },
+        'Đã nghiệm thu': { label: 'Đã nghiệm thu', cls: 'sc-badge-success', icon: 'check-circle-2' },
+      })
+    },
+    tiles: [
+      { icon: 'file-text', label: 'DN tham chiếu', value: (d) => d.delivery_note || '—' },
+      { icon: 'user', label: 'Người nhận', value: (d) => d.accepted_by || '—' },
+    ],
+    sections: [
+      { title: 'Thông tin nghiệm thu', icon: 'info', fields: [
+        { label: 'Delivery Note', value: (d) => d.delivery_note,
+          link: (d) => d.delivery_note ? `/doc/SC Delivery Note/${d.delivery_note}` : null },
+        { label: 'Khách hàng', value: (d) => d.customer,
+          link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
+        { label: 'Người nhận hàng', value: (d) => d.accepted_by },
+        { label: 'Ghi chú', value: (d) => d.note, pre: true },
+      ]},
+    ],
+  },
+
+  // ===== M7/M8: Sales Invoice ===============================================
+  'SC Sales Invoice': {
+    icon: 'receipt',
+    accentLabel: 'Hoá đơn bán hàng',
+    title: (d) => d.customer_name || d.customer || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.invoice_date ? `Ngày HĐ ${fmtDate(d.invoice_date)}` : null },
+      { icon: 'file-text', text: (d) => d.delivery_note ? `DN ${d.delivery_note}` : null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      return statusByField(d, {
+        'Nháp': { label: 'Nháp', cls: 'sc-badge-neutral', icon: 'file' },
+        'Đã phát hành': { label: 'Đã phát hành', cls: 'sc-badge-info', icon: 'send' },
+        'Đã thu một phần': { label: 'Đã thu một phần', cls: 'sc-badge-warning', icon: 'hourglass' },
+        'Đã thu đủ': { label: 'Đã thu đủ', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Hủy': { label: 'Hủy', cls: 'sc-badge-critical', icon: 'x-circle' },
+      })
+    },
+    tiles: [
+      { icon: 'wallet', label: 'Tổng cộng', value: (d) => d.grand_total, fmt: 'moneyShort' },
+      { icon: 'check', label: 'Đã thu',
+        value: (d) => (Number(d.grand_total) || 0) - (Number(d.outstanding_amount) || 0), fmt: 'moneyShort',
+        sublabel: (d) => {
+          const g = Number(d.grand_total) || 0
+          const p = g - (Number(d.outstanding_amount) || 0)
+          return g > 0 ? `${((p / g) * 100).toFixed(1)}% tổng` : null
+        } },
+      { icon: 'hourglass', label: 'Còn phải thu', value: (d) => d.outstanding_amount, fmt: 'moneyShort',
+        accent: (d) => Number(d.outstanding_amount) > 0 ? 'amber' : 'emerald' },
+      { icon: 'percent', label: 'Thuế suất',
+        value: (d) => d.tax_rate != null ? `${d.tax_rate}%` : '—' },
+    ],
+    sections: [
+      { title: 'Tham chiếu', icon: 'link', fields: [
+        { label: 'Delivery Note', value: (d) => d.delivery_note,
+          link: (d) => d.delivery_note ? `/doc/SC Delivery Note/${d.delivery_note}` : null },
+        { label: 'Khách hàng', value: (d) => d.customer,
+          link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
+        { label: 'Tiền thuế', value: (d) => d.tax_amount != null ? fmtVND(d.tax_amount) : '—' },
+      ]},
+    ],
+    items: {
+      field: 'items',
+      label: 'Chi tiết hoá đơn',
+      icon: 'list',
+      columns: [
+        { label: 'Mã VT', accessor: 'item', mono: true, anchor: 'navy' },
+        { label: 'SL', accessor: 'qty', align: 'right', fmt: 'number' },
+        { label: 'Đơn giá', accessor: 'unit_price', align: 'right', fmt: 'money' },
+        { label: 'Thành tiền', accessor: 'amount', align: 'right', fmt: 'money', anchor: 'navy' },
+      ],
+      totals: [null, 'qty', null, 'amount'],
+    },
+  },
+
+  // ===== M7/M8: Sales Receipt (no status field → dùng docstatus) ============
+  'SC Sales Receipt': {
+    icon: 'credit-card',
+    accentLabel: 'Phiếu thu tiền',
+    title: (d) => d.customer_name || d.customer || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.receipt_date ? `Thu ${fmtDate(d.receipt_date)}` : null },
+      { icon: 'file-text', text: (d) => d.sales_invoice ? `SI ${d.sales_invoice}` : null },
+      { icon: 'credit-card', text: (d) => d.mode || null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      if (d.docstatus === 1) return { label: 'Đã thu', cls: 'sc-badge-success', icon: 'check-circle-2' }
+      return { label: 'Bản nháp', cls: 'sc-badge-neutral', icon: 'file' }
+    },
+    tiles: [
+      { icon: 'wallet', label: 'Số tiền thu', value: (d) => d.amount, fmt: 'moneyShort' },
+      { icon: 'credit-card', label: 'Hình thức', value: (d) => d.mode || '—' },
+    ],
+    sections: [
+      { title: 'Tham chiếu', icon: 'link', fields: [
+        { label: 'Hoá đơn bán', value: (d) => d.sales_invoice,
+          link: (d) => d.sales_invoice ? `/doc/SC Sales Invoice/${d.sales_invoice}` : null },
+        { label: 'Khách hàng', value: (d) => d.customer,
+          link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
+        { label: 'Ngày thu', value: (d) => d.receipt_date ? fmtDate(d.receipt_date) : '—' },
+      ]},
+    ],
+  },
+
+  // ===== M3: Quality Inspection (overall_status resolver + readings) ========
+  'SC Quality Inspection': {
+    icon: 'flask-conical',
+    accentLabel: 'Kiểm tra chất lượng',
+    title: (d) => d.item_name || d.item || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.inspection_date ? `Kiểm ${fmtDate(d.inspection_date)}` : null },
+      { icon: 'package-check', text: (d) => d.purchase_receipt ? `PR ${d.purchase_receipt}` : null },
+      { icon: 'building-2', text: (d) => d.supplier ? `NCC ${d.supplier}` : null },
+      { icon: 'layers', text: (d) => d.batch ? `Lô ${d.batch}` : null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      const map = {
+        'Pending': { label: 'Chờ kiểm', cls: 'sc-badge-warning', icon: 'clock' },
+        'Accepted': { label: 'Đạt', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Rejected': { label: 'Không đạt', cls: 'sc-badge-critical', icon: 'x-circle' },
+        'Conditional': { label: 'Đạt có điều kiện', cls: 'sc-badge-warning', icon: 'alert-triangle' },
+        'On Hold': { label: 'Tạm giữ', cls: 'sc-badge-neutral', icon: 'pause-circle' },
+      }
+      return map[d.overall_status] || { label: d.overall_status || '—', cls: 'sc-badge-neutral', icon: 'circle' }
+    },
+    tiles: [
+      { icon: 'boxes', label: 'SL nhận', value: (d) => d.received_qty, fmt: 'number' },
+      { icon: 'list', label: 'Số tiêu chí', value: (d) => (d.readings || []).length, fmt: 'number' },
+      { icon: 'x-octagon', label: 'Tiêu chí không đạt',
+        value: (d) => (d.readings || []).filter(r => r.status === 'Rejected').length, fmt: 'number',
+        accent: (d) => (d.readings || []).filter(r => r.status === 'Rejected').length ? 'critical' : 'default' },
+    ],
+    sections: [
+      { title: 'Thông tin kiểm', icon: 'info', fields: [
+        { label: 'Phiếu nhập', value: (d) => d.purchase_receipt,
+          link: (d) => d.purchase_receipt ? `/doc/SC Purchase Receipt/${d.purchase_receipt}` : null },
+        { label: 'Vật tư', value: (d) => d.item,
+          link: (d) => d.item ? `/doc/SC Item/${d.item}` : null },
+        { label: 'Lô', value: (d) => d.batch },
+        { label: 'Người kiểm', value: (d) => d.inspected_by },
+        { label: 'Hành động', value: (d) => d.action_taken },
+        { label: 'Lý do không đạt', value: (d) => d.failure_reason, pre: true },
+        { label: 'Ghi chú KCS', value: (d) => d.remarks, pre: true },
+      ]},
+    ],
+    items: {
+      field: 'readings',
+      label: 'Tiêu chí kiểm tra',
+      icon: 'list-checks',
+      columns: [
+        { label: 'Tiêu chí', accessor: 'specification', max: true },
+        { label: 'Giá trị đo', accessor: 'value' },
+        { label: 'Kết quả', accessor: 'status', align: 'center' },
+        { label: 'Tới hạn', accessor: 'is_critical', align: 'center', fmt: 'check' },
+        { label: 'Ghi chú', accessor: 'remarks' },
+      ],
     },
   },
 }

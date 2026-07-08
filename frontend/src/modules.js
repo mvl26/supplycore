@@ -36,6 +36,21 @@ const STATUS_BADGE = {
   Conditional: 'sc-badge-warning',
   Open: 'sc-badge-warning', 'On Hold': 'sc-badge-warning',
   High: 'sc-badge-critical', Medium: 'sc-badge-warning', Low: 'sc-badge-info',
+  // Vietnamese status values (M7/M8/M3) — backend lưu trực tiếp tiếng Việt.
+  'Hoạt động': 'sc-badge-success', 'Đã duyệt': 'sc-badge-success',
+  'Đã nghiệm thu': 'sc-badge-success', 'Hoàn tất': 'sc-badge-success',
+  'Hiệu lực': 'sc-badge-success', 'Đã thu đủ': 'sc-badge-success',
+  'Đã ghi sổ': 'sc-badge-success', 'Đã thanh toán': 'sc-badge-success',
+  'Chờ duyệt': 'sc-badge-warning', 'Đã giao': 'sc-badge-info',
+  'Đang xử lý': 'sc-badge-warning', 'Đã bàn giao': 'sc-badge-info',
+  'Đã phát hành': 'sc-badge-info', 'Đã thu một phần': 'sc-badge-warning',
+  'Đã xuất HĐ': 'sc-badge-info', 'Partly Paid': 'sc-badge-warning',
+  Overdue: 'sc-badge-warning',
+  'Từ chối': 'sc-badge-critical', 'Thanh lý': 'sc-badge-critical',
+  'Hết hạn': 'sc-badge-critical', 'Hủy': 'sc-badge-critical',
+  Mismatch: 'sc-badge-critical',
+  'Nháp': 'sc-badge-neutral', 'Tạm ngưng': 'sc-badge-neutral',
+  Match: 'sc-badge-neutral',
 }
 
 // Status / option enum → Vietnamese label mapping. Backend stores English keys;
@@ -52,6 +67,7 @@ export const STATUS_LABEL = {
   // QC outcomes
   Accepted: 'Đạt', Pass: 'Đạt', Fail: 'Không đạt',
   'Partial Pass': 'Đạt một phần', Conditional: 'Có điều kiện',
+  'On Hold': 'Tạm giữ',
   // Severity
   Critical: 'Nghiêm trọng', High: 'Cao', Medium: 'Trung bình',
   Low: 'Thấp', Warning: 'Cảnh báo', Info: 'Thông tin',
@@ -67,8 +83,8 @@ export const STATUS_LABEL = {
   Open: 'Đang mở', Acknowledged: 'Đã ghi nhận', 'Acted Upon': 'Đã xử lý',
   Dismissed: 'Bỏ qua', Escalated: 'Đã đẩy lên',
   // Warehouse types
-  Main: 'Kho chính', Department: 'Kho khoa', Quarantine: 'Cách ly',
-  Damaged: 'Hỏng', Sample: 'Mẫu',
+  Main: 'Kho chính', Sub: 'Kho phụ', Department: 'Kho khoa',
+  Quarantine: 'Cách ly', Transit: 'Kho trung chuyển',
   // Recall severity
   'Class I (Critical)': 'Mức I (Nghiêm trọng)',
   'Class II (High)': 'Mức II (Cao)',
@@ -179,7 +195,7 @@ export const DT = {
     listFields: ['name', 'supplier_name', 'tax_id', 'email_id', 'mobile_no', 'disabled'],
   },
   'SC Warehouse': {
-    module: 'm0', label: 'Kho', icon: 'warehouse',
+    module: 'm0', extraModules: ['m4'], label: 'Kho', icon: 'warehouse',
     listColumns: [
       { key: 'name', label: 'Tên kho' },
       { key: 'warehouse_type', label: 'Loại' },
@@ -252,21 +268,6 @@ export const DT = {
     ],
     listFields: ['name', 'contract_number', 'supplier_name', 'valid_from', 'valid_to',
                   'total_value', 'remaining_value', 'status', 'docstatus'],
-    formSections: [
-      { title: 'Thông tin chung', fields: [
-        ['supplier', 'Link', { required: true, link_to: 'SC Supplier' }],
-        ['contract_number', 'Data', { required: true }],
-        ['contract_date', 'Date', { required: true }],
-        ['valid_from', 'Date', { required: true }],
-        ['valid_to', 'Date', { required: true }],
-      ]},
-      { title: 'Giá trị', fields: [
-        ['total_value', 'Currency', { required: true }],
-        ['remaining_value', 'Currency', { readonly: true }],
-        ['payment_terms', 'Data'],
-      ]},
-    ],
-    actions: ['submit_for_review', 'manager_approve', 'executive_approve', 'reject'],
   },
 
   // === M2 ===
@@ -293,7 +294,6 @@ export const DT = {
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'transaction_date', 'supplier', 'schedule_date', 'grand_total', 'status', 'docstatus'],
-    actions: ['submit', 'cancel', 'send_to_supplier'],
   },
 
   // === M3 ===
@@ -324,16 +324,6 @@ export const DT = {
   },
 
   // === M4 ===
-  'SC Warehouse': {
-    module: 'm4', label: 'Kho', icon: 'warehouse',
-    listColumns: [
-      { key: 'name', label: 'Tên kho' },
-      { key: 'warehouse_type', label: 'Loại' },
-      { key: 'is_group', label: 'Nhóm', type: 'check' },
-      { key: 'disabled', label: 'Vô hiệu', type: 'check' },
-    ],
-    listFields: ['name', 'warehouse_name', 'warehouse_type', 'is_group', 'disabled'],
-  },
   'SC Stock Ledger Entry': {
     module: 'm4', label: 'Sổ kho (SLE)', icon: 'list',
     listColumns: [
