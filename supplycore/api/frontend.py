@@ -91,6 +91,41 @@ def search_framework_contract(q=None, limit=20):
 
 
 @frappe.whitelist()
+def search_sales_framework_contract(q=None, limit=20):
+    """M7 UX: tìm HĐ khung BÁN theo TÊN khách hàng (chính), mã HĐ, mã khách,
+    và mã/tên vật tư trong danh mục (child) — trả kèm customer_name để hiển thị
+    tường minh (SFC không có field tên riêng, chỉ định danh bằng khách + kỳ).
+    Mirror search_framework_contract (chiều mua)."""
+    # SQL thô bỏ qua permission_query_conditions → chặn Portal (nếu không, portal
+    # user thấy HĐ + tên KH của MỌI khách — rò chéo BRU-SEC-001). Nội bộ SPA dùng.
+    block_portal()
+    if not frappe.has_permission("SC Sales Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung bán"), frappe.PermissionError)
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = """WHERE sfc.name LIKE %(like)s
+                  OR sfc.customer LIKE %(like)s
+                  OR cust.customer_name LIKE %(like)s
+                  OR EXISTS (
+                     SELECT 1 FROM `tabSFC Item` sfci
+                     WHERE sfci.parent = sfc.name
+                       AND sfci.item LIKE %(like)s
+                  )"""
+    return frappe.db.sql(f"""
+        SELECT sfc.name, sfc.customer, cust.customer_name,
+               sfc.valid_from, sfc.valid_to, sfc.status
+        FROM `tabSC Sales Framework Contract` sfc
+        LEFT JOIN `tabSC Customer` cust ON cust.name = sfc.customer
+        {cond}
+        ORDER BY sfc.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
+
+
+@frappe.whitelist()
 def get_doc(doctype, name):
     """Get full doc + child tables."""
     if not frappe.has_permission(doctype, "read", doc=name):

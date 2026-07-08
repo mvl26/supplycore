@@ -20,11 +20,31 @@ const NAME_FIELD = {
   'User': 'full_name', 'SC Warehouse': 'warehouse_name', 'SC Department': 'department_name',
   'SC Item Group': 'group_name', 'SC UOM': 'uom_name',
   'Framework Contract': 'contract_number',
+  // M7 Sales: hiện TÊN khách hàng thay vì mã doc.
+  'SC Customer': 'customer_name',
 }
 const nameFieldOf = (dt) => NAME_FIELD[dt] || null
+
+// M7: HĐ khung BÁN không có field tên — định danh bằng khách + kỳ hiệu lực.
+// Dùng endpoint search riêng (join lấy customer_name) + nhãn ghép, mirror
+// cách Framework Contract (mua) đã làm.
+const SALES_FC = 'SC Sales Framework Contract'
+
+// Nhãn tiếng Việt cho nút "+ Tạo mới …" (thay vì tên doctype tiếng Anh).
+const DT_LABEL = {
+  'SC Customer': 'Khách hàng', 'SC Supplier': 'Nhà cung cấp',
+  'SC Item': 'Vật tư', 'SC Warehouse': 'Kho', 'SC Department': 'Khoa/Phòng',
+  'SC Sales Framework Contract': 'HĐ khung bán', 'Framework Contract': 'HĐ khung',
+}
+const dtLabel = (dt) => DT_LABEL[dt] || (dt || '').replace(/^SC /, '')
+
 // Nhãn hiển thị "Tên (mã)" — nếu không có tên thì chỉ mã.
 function fmtLabel(row) {
   if (!row) return ''
+  if (props.linkTo === SALES_FC) {
+    const nm = row.customer_name || row.customer || row.name
+    return row.valid_to ? `${nm} — HĐ đến ${row.valid_to}` : nm
+  }
   const nf = nameFieldOf(props.linkTo)
   const nm = nf ? row[nf] : null
   return (nm && nm !== row.name) ? `${nm} (${row.name})` : row.name
@@ -48,6 +68,27 @@ const dropdownStyle = ref({})
 // Resolve nhãn cho 1 mã (khi load doc hoặc modelValue đổi từ ngoài).
 async function resolveLabel(code) {
   if (!code) { displayLabel.value = ''; if (!typing.value) search.value = ''; return }
+  // HĐ khung bán: fetch khách + kỳ để dựng nhãn tường minh (2 truy vấn nhẹ, chỉ chạy khi load).
+  if (props.linkTo === SALES_FC) {
+    try {
+      const rows = await getList(SALES_FC, {
+        fields: ['name', 'customer', 'valid_from', 'valid_to'],
+        filters: [['name', '=', code]], limit: 1,
+      })
+      if (rows && rows.length) {
+        let cname = rows[0].customer
+        try {
+          const cs = await getList('SC Customer', {
+            fields: ['name', 'customer_name'], filters: [['name', '=', rows[0].customer]], limit: 1,
+          })
+          if (cs && cs.length) cname = cs[0].customer_name
+        } catch (e) {}
+        displayLabel.value = fmtLabel({ ...rows[0], customer_name: cname })
+      } else displayLabel.value = code
+    } catch (e) { displayLabel.value = code }
+    if (!typing.value) search.value = displayLabel.value
+    return
+  }
   const nf = nameFieldOf(props.linkTo)
   if (!nf) { displayLabel.value = code; if (!typing.value) search.value = code; return }
   try {
@@ -106,6 +147,13 @@ async function doSearch(q) {
     // L11: HĐ khung tìm theo mã/số HĐ, mã/tên NCC, mã/tên vật tư (child) — endpoint riêng
     if (props.linkTo === 'Framework Contract') {
       const rows = await call('supplycore.api.frontend.search_framework_contract', { q: q || '', limit: 20 })
+      if (my !== _seq) return
+      results.value = rows || []
+      return
+    }
+    // M7: HĐ khung BÁN tìm theo tên/mã khách, mã HĐ, vật tư — endpoint riêng (join customer_name)
+    if (props.linkTo === SALES_FC) {
+      const rows = await call('supplycore.api.frontend.search_sales_framework_contract', { q: q || '', limit: 20 })
       if (my !== _seq) return
       results.value = rows || []
       return
@@ -182,6 +230,13 @@ const subLabel = (r) => {
   if (props.linkTo === 'Framework Contract') {
     return r.supplier_name || ''
   }
+  // HĐ khung bán: phụ hiện kỳ hiệu lực + trạng thái
+  if (props.linkTo === SALES_FC) {
+    const parts = []
+    if (r.valid_from || r.valid_to) parts.push(`HL: ${r.valid_from || '?'} → ${r.valid_to || '?'}`)
+    if (r.status) parts.push(r.status)
+    return parts.join(' · ')
+  }
   // SC Batch: hiện item + HSD
   if (props.linkTo === 'SC Batch' && (r.item || r.expiry_date)) {
     const parts = []
@@ -193,11 +248,13 @@ const subLabel = (r) => {
 }
 // Tên hiển thị chính trong dropdown (ưu tiên tên)
 const primaryText = (r) => {
+  if (props.linkTo === SALES_FC) return r.customer_name || r.customer || r.name
   const nf = nameFieldOf(props.linkTo)
   const nm = nf ? r[nf] : null
   return nm || r.name
 }
 const hasName = (r) => {
+  if (props.linkTo === SALES_FC) return !!(r.customer_name && r.customer_name !== r.name)
   const nf = nameFieldOf(props.linkTo)
   return !!(nf && r[nf] && r[nf] !== r.name)
 }
@@ -218,7 +275,7 @@ const hasName = (r) => {
         <button v-if="allowCreate" type="button"
           @mousedown.prevent="emit('createNew', { search }); open = false"
           class="w-full text-left px-3 py-2 text-sm font-semibold text-sc-royal hover:bg-sc-bg border-b border-sc-border bg-blue-50">
-          + Tạo mới {{ linkTo.replace(/^SC /, '') }}{{ typing && search ? ` "${search}"` : '' }}
+          + Tạo mới {{ dtLabel(linkTo) }}{{ typing && search ? ` "${search}"` : '' }}
         </button>
         <div v-if="loading" class="px-3 py-2 text-sm text-sc-text-muted">Đang tìm...</div>
         <template v-else-if="results.length === 0">
@@ -229,7 +286,7 @@ const hasName = (r) => {
           <button v-if="typing && search && !allowCreate" type="button"
             @mousedown.prevent="emit('createNew', { search }); open = false"
             class="w-full text-left px-3 py-2 text-sm font-medium text-sc-royal hover:bg-sc-bg border-t border-sc-border bg-blue-50">
-            + Tạo mới {{ linkTo.replace(/^SC /, '') }} "{{ search }}"
+            + Tạo mới {{ dtLabel(linkTo) }} "{{ search }}"
           </button>
         </template>
         <button v-else v-for="r in results" :key="r.name" type="button"

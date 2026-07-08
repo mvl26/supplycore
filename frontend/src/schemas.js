@@ -1128,4 +1128,14 @@ export const QUICK_CREATE = {
       { name: 'department_name', label: 'Tên khoa/phòng', type: 'Data', required: true },
     ],
   },
+  'SC Customer': {
+    title: 'Tạo nhanh Khách hàng',
+    prefillField: 'customer_name',
+    fields: [
+      { name: 'customer_name', label: 'Tên khách hàng', type: 'Data', required: true },
+      { name: 'tax_code', label: 'Mã số thuế', type: 'Data', required: true },
+      { name: 'credit_limit', label: 'Hạn mức nợ (VND)', type: 'Currency' },
+      { name: 'billing_address', label: 'Địa chỉ hoá đơn', type: 'Small Text' },
+    ],
+  },
 }
