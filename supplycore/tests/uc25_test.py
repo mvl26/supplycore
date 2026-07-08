@@ -69,7 +69,8 @@ def _make_submitted_pi(supplier, item, qty=10, rate=1000):
     pr.to_warehouse = wh
     pr.qc_required = 0
     pr.append("items", {"item": item.name, "qty": qty, "uom": _get_uom(),
-                          "rate": rate, "warehouse": wh, "po_qty": qty})
+                          "rate": rate, "warehouse": wh, "po_qty": qty,
+                          "expiry_date": add_days(today(), 365)})
     pr.flags.ignore_permissions = True
     pr.insert()
     pr.submit()

@@ -171,6 +171,7 @@ def test_over_receipt_allowed_with_ack():
     pr.append("items", {
         "item": item.name, "qty": 60, "uom": item.uom,
         "rate": 10_000, "warehouse": _pick_warehouse(), "po_qty": 50,
+        "expiry_date": add_days(today(), 365),
     })
     pr.flags.ignore_permissions = True
     try:
@@ -229,6 +230,7 @@ def test_no_po_with_reason_ok():
     pr.append("items", {
         "item": item.name, "qty": 5, "uom": item.uom,
         "rate": 1000, "warehouse": _pick_warehouse(),
+        "expiry_date": add_days(today(), 365),
     })
     pr.flags.ignore_permissions = True
     try:
@@ -260,6 +262,7 @@ def test_under_receipt_create_backorder():
     pr.append("items", {
         "item": item.name, "qty": 60, "uom": item.uom,  # received 60, short 40
         "rate": 10_000, "warehouse": _pick_warehouse(), "po_qty": 100,
+        "expiry_date": add_days(today(), 365),
     })
     pr.flags.ignore_permissions = True
     try:
@@ -296,6 +299,7 @@ def test_full_receipt_no_backorder():
     pr.append("items", {
         "item": item.name, "qty": 50, "uom": item.uom,
         "rate": 10_000, "warehouse": _pick_warehouse(), "po_qty": 50,
+        "expiry_date": add_days(today(), 365),
     })
     pr.flags.ignore_permissions = True
     try:
@@ -332,6 +336,7 @@ def test_po_status_received_when_full():
     pr.append("items", {
         "item": item.name, "qty": 30, "uom": item.uom,
         "rate": 5_000, "warehouse": _pick_warehouse(), "po_qty": 30,
+        "expiry_date": add_days(today(), 365),
     })
     pr.flags.ignore_permissions = True
     try:

@@ -87,21 +87,25 @@ def _make_po(supplier: str, items: list, **kwargs):
 # ---------- Tests ----------
 
 def test_submit_blocked_when_not_approved():
-    """Submit khi stage=Draft → SC-E-PO-NOT-APPROVED."""
+    """Submit khi stage=Draft (không qua workflow review) → UX đơn giản hoá:
+    auto-approve silent (approval_stage="Approved", manager_approved_by=user)
+    thay vì block. Xem commit c316030 "PO submit thẳng → Sent to Supplier"."""
     sup = _pick_supplier_with_email()
     item = _make_item("NOTAPP")
     po = _make_po(sup, [{"item": item.name, "qty": 5, "uom": item.uom, "rate": 1000}])
     try:
         po.insert()
         po.submit()
+        po.reload()
+        ok = (po.docstatus == 1 and po.approval_stage == "Approved"
+              and po.manager_approved_by == frappe.session.user)
         frappe.db.rollback()
-        return {"pass": False, "msg": "X submit không bị block"}
-    except frappe.ValidationError as e:
-        msg = str(e)
+        if ok:
+            return {"pass": True, "msg": f"OK auto-approved on direct submit stage={po.approval_stage}"}
+        return {"pass": False, "msg": f"X docstatus={po.docstatus} stage={po.approval_stage} mgr={po.manager_approved_by}"}
+    except Exception as e:
         frappe.db.rollback()
-        if "SC-E-PO-NOT-APPROVED" in msg:
-            return {"pass": True, "msg": f"OK: {msg[:120]}"}
-        return {"pass": False, "msg": f"Wrong error: {msg[:120]}"}
+        return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
 
 
 def test_workflow_below_threshold_manager_only():
@@ -267,9 +271,9 @@ def test_fc_exceeded_blocks():
     fc.flags.ignore_permissions = True
     fc.insert()
     fc.submit_for_review(); fc.reload()
-    fc.approve_as_manager(); fc.reload()
+    fc.approve_as_manager(comment="Duyệt hạn mức FC test"); fc.reload()
     if fc.approval_stage == "Executive Review":
-        fc.approve_as_executive(); fc.reload()
+        fc.approve_as_executive(comment="Duyệt hạn mức FC test (Executive)"); fc.reload()
     fc.submit(); fc.reload()
 
     po = _make_po(sup, [{"item": item.name, "qty": 100, "uom": item.uom, "rate": 100_000}],  # 10tr > 1tr
@@ -304,9 +308,9 @@ def test_price_variance_flagged():
     fc.flags.ignore_permissions = True
     fc.insert()
     fc.submit_for_review(); fc.reload()
-    fc.approve_as_manager(); fc.reload()
+    fc.approve_as_manager(comment="Duyệt hạn mức FC test"); fc.reload()
     if fc.approval_stage == "Executive Review":
-        fc.approve_as_executive(); fc.reload()
+        fc.approve_as_executive(comment="Duyệt hạn mức FC test (Executive)"); fc.reload()
     fc.submit(); fc.reload()
 
     # PO với rate 60k (lệch 20% — quá ngưỡng 1%)

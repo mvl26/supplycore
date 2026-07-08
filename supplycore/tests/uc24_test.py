@@ -150,6 +150,7 @@ def _make_submitted_po_and_pr(sup, item, qty, rate):
     pr.append("items", {
         "item": item, "qty": qty, "uom": _get_uom(),
         "rate": rate, "warehouse": wh, "po_qty": qty,
+        "expiry_date": add_days(today(), 365),
     })
     pr.flags.ignore_permissions = True
     pr.insert()

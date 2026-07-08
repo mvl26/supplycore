@@ -43,6 +43,10 @@ def run():
     batch.item = item_code
     batch.expiry_date = add_days(today(), 365)
     batch.manufacturing_date = today()
+    # get_available_qty() chỉ tính batch QC Accepted (loại Pending/Rejected/Blocked)
+    # — smoke test tạo batch trực tiếp (bỏ qua PR→QI thật) nên set Accepted để
+    # mirror kết quả 1 lô đã qua QC pass, mới có thể transfer được.
+    batch.qc_status = "Accepted"
     batch.flags.ignore_permissions = True
     batch.insert()
 
