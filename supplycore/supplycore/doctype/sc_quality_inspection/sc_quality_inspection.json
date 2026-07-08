@@ -243,7 +243,6 @@
    "read": 1,
    "write": 1,
    "create": 1,
-   "submit": 1,
    "report": 1,
    "print": 1
   },
@@ -251,7 +250,6 @@
    "role": "Warehouse Officer",
    "read": 1,
    "write": 1,
-   "submit": 1,
    "report": 1
   },
   {
@@ -268,7 +266,7 @@
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",
- "modified": "2026-05-11 00:00:00",
+ "modified": "2026-07-08 00:00:00",
  "module": "Supplycore",
  "name": "SC Quality Inspection",
  "sort_field": "modified",
