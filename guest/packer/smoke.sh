@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+# guest/packer/smoke.sh — CỔNG TÍCH HỢP (chạy trong CI sau Packer; runner Linux + KVM).
+#
+# Boot HAI PHA để chứng minh dữ liệu BỀN qua update (đây là bug nghiêm trọng được vá):
+#
+#   PHA 1: disk0 overlay MỚI + disk1 TRỐNG MỚI → chờ app lên → assert:
+#            • PULL_POLICY=never boot OFFLINE  (image đã load, base images đã pre-pull)
+#            • tag image khớp ghcr.io/mvl26/supplycore:latest  (compose tìm thấy)
+#            • cổng 80 trong guest map ra host
+#            • /data/sites ghi được bằng uid 1000 → create-site provisioning thành công
+#            • serial: "ensure-data: mounted /dev/vdb at /data"  (disk1 đã mount)
+#            • serial: "first-boot: DB_PASSWORD generated"        (lần đầu)
+#          → tắt máy GRACEFUL (qemu monitor system_powerdown) + chờ tiến trình thoát
+#            để disk1 được flush (KHÔNG kill -9 — mất ghi disk1).
+#
+#   PHA 2: disk0 overlay MỚI (mô phỏng disk0 bị thay khi update) + ĐÚNG disk1 của PHA 1
+#          → chờ app lên → assert:
+#            • serial: "first-boot: DB_PASSWORD reused"  (đọc lại từ disk1)
+#            • serial KHÔNG có "DB_PASSWORD generated"   (nếu có → disk1 KHÔNG bền)
+#          → nếu thấy "generated": FAIL rõ ràng — disk1 không sống qua disk0 swap.
+#
+# CWD BẮT BUỘC: GỐC REPO (đường dẫn guest/cloud-init/... là tương đối).
+# CHỈ chạy được khi có KVM + qemu + genisoimage + python3. Dev box thiếu → defer CI (Task 12).
+set -euxo pipefail
+
+DISK0="${DISK0:-output-disk0/disk0.qcow2}"
+ADMIN_PASSWORD="${SMOKE_ADMIN_PASSWORD:-Smoke12345}"
+HOST_PORT="${HOST_PORT:-8080}"
+
+WORK="$(mktemp -d)"
+SERIAL1="$WORK/serial1.log"
+SERIAL2="$WORK/serial2.log"
+PIDFILE1="$WORK/qemu1.pid"
+PIDFILE2="$WORK/qemu2.pid"
+
+dump_serials() {
+  echo "──────── serial log PHA 1 ────────" >&2
+  cat "$SERIAL1" >&2 2>/dev/null || true
+  echo "──────── serial log PHA 2 ────────" >&2
+  cat "$SERIAL2" >&2 2>/dev/null || true
+}
+
+# fail: dump serial TRƯỚC, in lý do SAU → lý do là dòng CUỐI log (dễ tìm).
+fail() {
+  dump_serials
+  echo "" >&2
+  echo "════════════════════════════════════════════════════════════" >&2
+  echo ">>>>> SMOKE FAIL: $* <<<<<" >&2
+  echo "════════════════════════════════════════════════════════════" >&2
+  exit 1
+}
+
+# Tóm tắt marker persistence để chẩn đoán nhanh (in ở cuối khi fail).
+markers_summary() {
+  echo "PHA1 generated: $(grep -c 'DB_PASSWORD generated' "$SERIAL1" 2>/dev/null || echo 0); reused: $(grep -c 'DB_PASSWORD reused' "$SERIAL1" 2>/dev/null || echo 0)" >&2
+  echo "PHA2 generated: $(grep -c 'DB_PASSWORD generated' "$SERIAL2" 2>/dev/null || echo 0); reused: $(grep -c 'DB_PASSWORD reused' "$SERIAL2" 2>/dev/null || echo 0)" >&2
+}
+
+cleanup() {
+  for pf in "$PIDFILE1" "$PIDFILE2"; do
+    [ -f "$pf" ] && kill "$(cat "$pf")" 2>/dev/null || true
+  done
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
+
+# ── seed cidata: render production user-data + chèn ADMIN_PASSWORD (dựng 1 lần) ──
+SEEDDIR="$WORK/seed"
+mkdir -p "$SEEDDIR"
+sed "s|__ADMIN_PASSWORD__|${ADMIN_PASSWORD}|g" guest/cloud-init/user-data > "$SEEDDIR/user-data"
+cp guest/cloud-init/meta-data "$SEEDDIR/meta-data"
+genisoimage -V cidata -o "$WORK/seed.iso" -J -r "$SEEDDIR"
+
+# ── disk1 TRỐNG, tạo 1 lần, dùng chung CHO CẢ HAI PHA (đây là đĩa bền) ─────────
+DISK1="$WORK/disk1.qcow2"
+qemu-img create -f qcow2 "$DISK1" 30G
+
+# boot_vm <disk0_overlay> <serial> <pidfile> <monitor_sock>
+# Boot VM (virtio: disk0 overlay=vda + disk1=vdb + seed.iso=vdc readonly) rồi
+# poll /supplycore tới ~20 phút. Trả 0 nếu app lên, 1 nếu timeout.
+boot_vm() {
+  local overlay="$1" serial="$2" pidfile="$3" monsock="$4"
+  qemu-system-x86_64 \
+    -accel kvm \
+    -m 4096 -smp 2 \
+    -drive file="$overlay",if=virtio,format=qcow2 \
+    -drive file="$DISK1",if=virtio,format=qcow2,cache=writethrough \
+    -drive file="$WORK/seed.iso",if=virtio,format=raw,readonly=on \
+    -netdev "user,id=n0,hostfwd=tcp:127.0.0.1:${HOST_PORT}-:80" \
+    -device virtio-net-pci,netdev=n0 \
+    -display none \
+    -serial file:"$serial" \
+    -monitor "unix:$monsock,server,nowait" \
+    -daemonize -pidfile "$pidfile"
+
+  local i
+  for i in $(seq 1 240); do
+    if curl -fsS -o /dev/null "http://127.0.0.1:${HOST_PORT}/supplycore"; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
+}
+
+# mon_send <monitor_sock> <hmp_command> — gửi 1 lệnh tới HMP monitor (text).
+mon_send() {
+  python3 - "$1" "$2" <<'PY'
+import socket, sys
+s = socket.socket(socket.AF_UNIX)
+s.connect(sys.argv[1])
+s.sendall((sys.argv[2] + "\n").encode())
+s.close()
+PY
+}
+
+# wait_exit <pid> <tries> <sleep> — trả 0 nếu tiến trình thoát trong thời gian chờ.
+wait_exit() {
+  local pid="$1" tries="$2" slp="$3" i
+  for i in $(seq 1 "$tries"); do kill -0 "$pid" 2>/dev/null || return 0; sleep "$slp"; done
+  return 1
+}
+
+# powerdown_vm <pidfile> <monitor_sock> — tắt VM, KHÔNG fail (disk1 cache=writethrough +
+# guest đã sync .db_password → ghi đã durable trong file qcow2 dù tắt không "sạch"):
+#   1) ACPI graceful (cần acpid trong guest) → chờ 60s.
+#   2) fallback QMP/HMP 'quit' → qemu thoát, flush cache writethrough → chờ 20s.
+#   3) last resort kill/-9. Mọi đường đều để disk1 nguyên vẹn nhờ writethrough.
+powerdown_vm() {
+  local pidfile="$1" monsock="$2" pid
+  pid="$(cat "$pidfile")"
+  mon_send "$monsock" system_powerdown || true
+  wait_exit "$pid" 30 2 && return 0
+  echo "powerdown: ACPI không tắt trong 60s → fallback 'quit'." >&2
+  mon_send "$monsock" quit || true
+  wait_exit "$pid" 10 2 && return 0
+  echo "powerdown: 'quit' không xong → kill." >&2
+  kill "$pid" 2>/dev/null || true
+  wait_exit "$pid" 10 1 && return 0
+  kill -9 "$pid" 2>/dev/null || true
+  return 0
+}
+
+# ════════════════════════════ PHA 1 ══════════════════════════════════════════
+qemu-img create -f qcow2 -b "$(readlink -f "$DISK0")" -F qcow2 "$WORK/disk0-overlay1.qcow2"
+
+if ! boot_vm "$WORK/disk0-overlay1.qcow2" "$SERIAL1" "$PIDFILE1" "$WORK/mon1.sock"; then
+  fail "(PHA 1) /supplycore không trả 200 trong ~20 phút."
+fi
+
+# site root cũng phải phục vụ (frontend nginx + FRAPPE_SITE_NAME_HEADER đúng)
+curl -fsS -o /dev/null "http://127.0.0.1:${HOST_PORT}/" || fail "(PHA 1) site root '/' không trả 2xx."
+
+if ! grep -q "ensure-data: mounted /dev/vdb at /data" "$SERIAL1"; then
+  fail "(PHA 1) không thấy 'ensure-data: mounted /dev/vdb at /data' — disk1 KHÔNG được mount."
+fi
+if ! grep -q "first-boot: DB_PASSWORD generated" "$SERIAL1"; then
+  fail "(PHA 1) không thấy 'DB_PASSWORD generated' — first-boot không chạy đúng trên disk1 trống."
+fi
+echo "SMOKE PHA 1 PASS: app 200, disk1 mounted, DB_PASSWORD generated."
+
+powerdown_vm "$PIDFILE1" "$WORK/mon1.sock"
+sync || true   # flush host page cache → file qcow2 disk1 trước khi PHA 2 mở lại
+rm -f "$PIDFILE1"
+
+# ════════════════════════════ PHA 2 ══════════════════════════════════════════
+# disk0 overlay MỚI off base GỐC (KHÔNG dùng lại overlay PHA 1) = mô phỏng disk0
+# bị thay khi update; disk1 GIỮ NGUYÊN từ PHA 1.
+qemu-img create -f qcow2 -b "$(readlink -f "$DISK0")" -F qcow2 "$WORK/disk0-overlay2.qcow2"
+
+if ! boot_vm "$WORK/disk0-overlay2.qcow2" "$SERIAL2" "$PIDFILE2" "$WORK/mon2.sock"; then
+  markers_summary
+  fail "(PHA 2) /supplycore không trả 200 trong ~20 phút."
+fi
+
+curl -fsS -o /dev/null "http://127.0.0.1:${HOST_PORT}/" || fail "(PHA 2) site root '/' không trả 2xx."
+
+if grep -q "first-boot: DB_PASSWORD generated" "$SERIAL2"; then
+  markers_summary
+  fail "(PHA 2) thấy 'DB_PASSWORD generated' — disk1 KHÔNG bền qua disk0 swap (dữ liệu mất mỗi update)."
+fi
+if ! grep -q "first-boot: DB_PASSWORD reused" "$SERIAL2"; then
+  markers_summary
+  fail "(PHA 2) không thấy 'DB_PASSWORD reused' — first-boot không đọc lại trạng thái từ disk1."
+fi
+
+powerdown_vm "$PIDFILE2" "$WORK/mon2.sock"
+rm -f "$PIDFILE2"
+
+echo "SMOKE PASS: PHA 1 (boot sạch) + PHA 2 (disk0 swap, disk1 GIỮ) đều 200."
+echo "→ CỔNG xác nhận: OFFLINE PULL_POLICY=never, tag image khớp, cổng 80 map,"
+echo "  /data/sites ghi được (uid 1000), VÀ disk1 BỀN qua update (DB_PASSWORD reused)."

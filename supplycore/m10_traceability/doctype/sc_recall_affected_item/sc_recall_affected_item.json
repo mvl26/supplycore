@@ -8,13 +8,13 @@
   "location_type",
   "warehouse",
   "department",
-  "patient",
+  "customer",
   "column_break_1",
   "voucher_type",
   "voucher_no",
   "voucher_date",
   "section_qty",
-  "qty_dispensed",
+  "qty_issued",
   "recovered_qty",
   "destroyed_qty",
   "column_break_qty",
@@ -32,7 +32,7 @@
   {
    "fieldname": "location_type",
    "fieldtype": "Select",
-   "options": "Warehouse\nDepartment\nPatient",
+   "options": "Warehouse\nDepartment\nCustomer",
    "label": "Loại vị trí",
    "reqd": 1,
    "in_list_view": 1,
@@ -55,11 +55,13 @@
    "depends_on": "eval:doc.location_type=='Department'"
   },
   {
-   "fieldname": "patient",
+   "fieldname": "customer",
    "fieldtype": "Link",
-   "options": "SC Patient",
-   "label": "Bệnh nhân",
-   "depends_on": "eval:doc.location_type=='Patient'"
+   "options": "SC Customer",
+   "label": "Khách hàng",
+   "in_list_view": 1,
+   "columns": 2,
+   "depends_on": "eval:doc.location_type=='Customer'"
   },
   {
    "fieldname": "column_break_1",
@@ -93,9 +95,9 @@
    "label": "Số lượng"
   },
   {
-   "fieldname": "qty_dispensed",
+   "fieldname": "qty_issued",
    "fieldtype": "Float",
-   "label": "SL đã cấp/tồn",
+   "label": "SL đã xuất",
    "read_only": 1,
    "in_list_view": 1,
    "columns": 1

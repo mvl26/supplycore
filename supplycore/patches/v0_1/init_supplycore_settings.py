@@ -14,7 +14,6 @@ def execute():
         "default_safety_stock_pct": 20,
         "contract_expiry_alert_days": 30,
         "audit_log_retention_days": 2555,
-        "bhyt_auto_calculate": 1,
     }
     changed = False
     for field, value in defaults.items():

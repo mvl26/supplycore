@@ -18,8 +18,7 @@ export const useAuthStore = defineStore('auth', {
     isStorekeeper: (s) => s.user?.roles?.includes('SupplyCore Storekeeper'),
     primaryRole: (s) => {
       const order = ['SupplyCore Executive', 'SupplyCore Manager',
-        'SupplyCore Accountant', 'SupplyCore Storekeeper',
-        'Pharmacy Officer', 'Warehouse Officer', 'SupplyCore Ward Staff']
+        'SupplyCore Accountant', 'SupplyCore Storekeeper', 'Warehouse Officer']
       return order.find(r => s.user?.roles?.includes(r)) || 'User'
     },
   },

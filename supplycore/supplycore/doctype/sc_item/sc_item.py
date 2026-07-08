@@ -10,8 +10,6 @@ _THRESHOLD_FIELDS = ("safety_stock", "reorder_level", "max_stock",
 class SCItem(Document):
 
     def validate(self):
-        if self.has_bhyt and not self.bhyt_code:
-            frappe.throw(_("Vật tư có BHYT phải nhập mã BHYT"))
         if self.uom_conversion_factor and self.uom_conversion_factor <= 0:
             frappe.throw(_("uom_conversion_factor phải > 0"))
         # Auto-fill use_uom = stock UOM nếu chưa nhập

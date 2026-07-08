@@ -24,7 +24,7 @@
 
 - Thủ kho (Storekeeper, Warehouse Officer) — tạo + submit
 - Quản lý (Manager) — phê duyệt khi cross-tier
-- Pharmacy Officer, Ward Staff — request
+- SupplyCore Storekeeper — request
 
 ## Pre-condition
 

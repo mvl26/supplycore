@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRC — Quy trình AS-IS & TO-BE | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Quy trình AS-IS & TO-BE</h1>
+  <div class="doc-meta">
+    <span>Mã: PRC-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Quy trình AS-IS & TO-BE
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#gioi-thieu">1. Giới thiệu & Nguyên tắc ISO</a></li>
+        <li><a href="#as-is">2. Hiện trạng AS-IS</a></li>
+        <li><a href="#gap">3. Phân tích khoảng trống (Gap)</a></li>
+        <li><a href="#to-be">4. Quy trình TO-BE (15 quy trình)</a></li>
+        <li><a href="#kpi">5. KPI tổng hợp</a></li>
+    </ol>
+  </nav>
+
+<h2 id="gioi-thieu">1. Giới thiệu & Nguyên tắc trình bày (ISO 9001:2015)</h2><p>Chương này mô tả toàn bộ quy trình vận hành TO-BE của SupplyCore MVL theo cách tiếp cận quá trình (process approach) của <b>ISO 9001:2015</b>. Mỗi quy trình được trình bày thống nhất gồm: <b>Mục đích</b>, <b>Phạm vi</b>, <b>Tài liệu/quy tắc tham chiếu</b>, <b>Lưu đồ</b>, <b>Bảng các bước</b> (Bước · Đầu vào · Nội dung thực hiện · Đầu ra · Trách nhiệm · Hồ sơ/Biểu mẫu · UC/US liên kết) và phần <b>Diễn giải từng bước</b>. Cách trình bày này giúp DEV/AI hiểu chính xác luồng nghiệp vụ, dữ liệu vào–ra, người chịu trách nhiệm và ràng buộc để hiện thực hóa code.</p><div class="callout note"><strong>Chú giải cột</strong><table>
+<thead><tr><th>Cột</th><th>Ý nghĩa (theo ISO)</th></tr></thead>
+<tbody>
+<tr><td>Bước</td><td>Thứ tự thực hiện trong quá trình (Sequence).</td></tr>
+<tr><td>Đầu vào</td><td>Thông tin/chứng từ/điều kiện cần có để thực hiện bước (Input).</td></tr>
+<tr><td>Nội dung thực hiện</td><td>Hoạt động cụ thể thực hiện tại bước (Activity).</td></tr>
+<tr><td>Đầu ra</td><td>Kết quả/chứng từ/trạng thái sinh ra (Output).</td></tr>
+<tr><td>Trách nhiệm</td><td>Vai trò/phòng ban chịu trách nhiệm thực hiện (Responsibility).</td></tr>
+<tr><td>Hồ sơ</td><td>Biểu mẫu/bản ghi lưu lại làm bằng chứng (Records).</td></tr>
+<tr><td>UC/US</td><td>Use Case & User Story hiện thực hóa bước này (truy vết sang phần mềm).</td></tr>
+</tbody>
+</table></div><p>Tổng cộng <b>15 quy trình</b> phủ toàn bộ 12 phân hệ, ánh xạ 100% tới 43 Use Case.</p><h2 id="as-is">2. Hiện trạng AS-IS (trước hệ thống)</h2><p>Trước SupplyCore MVL, chuỗi cung ứng & bán hàng vận hành phân tán trên Excel, email và điện thoại, dẫn tới thiếu minh bạch, khó truy xuất và dễ sai lệch giá/hạn mức.</p><table>
+<thead><tr><th>Mảng</th><th>Cách làm AS-IS</th><th>Hạn chế chính</th></tr></thead>
+<tbody>
+<tr><td>Mua sắm</td><td>Đề nghị & PO trên Excel, duyệt qua email</td><td>Chậm, khó kiểm soát hạn mức HĐ khung</td></tr>
+<tr><td>Kho</td><td>Ghi thẻ kho thủ công, không gắn bin/mã vạch chặt</td><td>Sai lệch tồn, khó định vị, khó FEFO</td></tr>
+<tr><td>Bán hàng</td><td>Khách đặt qua điện thoại/email</td><td>Không chuẩn hóa, dễ sai giá, không tự tra cứu</td></tr>
+<tr><td>Bàn giao</td><td>Ký nhận giấy rời rạc</td><td>Khó đối chiếu, thất lạc biên bản</td></tr>
+<tr><td>Kế toán</td><td>Công nợ theo dõi trên Excel</td><td>Thiếu cảnh báo, rủi ro thu hồi vốn</td></tr>
+<tr><td>Truy xuất</td><td>Tra ngược thủ công theo sổ giấy</td><td>Chậm, không đủ dữ liệu khi thu hồi</td></tr>
+</tbody>
+</table><h2 id="gap">3. Phân tích khoảng trống (Gap Analysis)</h2><table>
+<thead><tr><th>Khoảng trống AS-IS</th><th>Hệ quả</th><th>Giải pháp TO-BE</th><th>Quy trình</th></tr></thead>
+<tbody>
+<tr><td>Không có cổng khách hàng</td><td>Khách phụ thuộc nhân viên, chậm</td><td>Portal tự phục vụ, cô lập dữ liệu</td><td>QT-09</td></tr>
+<tr><td>Đặt hàng không ràng HĐ khung</td><td>Sai giá/vượt hạn mức</td><td>Ràng giá & hạn mức theo HĐ khung bán</td><td>QT-08, QT-09</td></tr>
+<tr><td>Xuất kho không ép FEFO</td><td>Hàng hết hạn, thất thoát</td><td>Gợi ý & ép FEFO khi xuất</td><td>QT-06, QT-10</td></tr>
+<tr><td>Công nợ thủ công</td><td>Rủi ro thu hồi vốn</td><td>Sổ cái phải thu + cảnh báo hạn mức</td><td>QT-11, QT-15</td></tr>
+<tr><td>Không truy xuất lô khi bán</td><td>Khó thu hồi</td><td>Batch trace theo khách</td><td>QT-14</td></tr>
+<tr><td>Nhập kho không kiểm soát QC</td><td>Hàng lỗi vào kho</td><td>Chặn nhập khi QC không đạt</td><td>QT-04</td></tr>
+</tbody>
+</table><h2 id="to-be">4. Quy trình TO-BE — 15 quy trình (ISO 9001:2015)</h2><table>
+<thead><tr><th width="80">Mã QT</th><th width="70">Phân hệ</th><th>Tên quy trình</th><th>Số bước</th></tr></thead>
+<tbody>
+<tr><td><code>QT-01</code></td><td>M1</td><td>Quản lý & Đánh giá Nhà cung cấp</td><td>5 bước</td></tr>
+<tr><td><code>QT-02</code></td><td>M1</td><td>Hợp đồng Khung Mua & Lệnh gọi hàng</td><td>5 bước</td></tr>
+<tr><td><code>QT-03</code></td><td>M2</td><td>Kế hoạch & Mua sắm (MR → PO)</td><td>5 bước</td></tr>
+<tr><td><code>QT-04</code></td><td>M3</td><td>Tiếp nhận & Kiểm tra Chất lượng (QC) Nhập kho</td><td>5 bước</td></tr>
+<tr><td><code>QT-05</code></td><td>M4</td><td>Quản lý Vị trí kho, Putaway & Mã vạch</td><td>5 bước</td></tr>
+<tr><td><code>QT-06</code></td><td>M5</td><td>Quản lý Lô, Hạn dùng & Xuất theo FEFO</td><td>5 bước</td></tr>
+<tr><td><code>QT-07</code></td><td>M6</td><td>Luân chuyển Nội bộ giữa các kho</td><td>4 bước</td></tr>
+<tr><td><code>QT-08</code></td><td>M7</td><td>Quản lý Khách hàng & Hợp đồng Khung Bán</td><td>4 bước</td></tr>
+<tr><td><code>QT-09</code></td><td>M7</td><td>Đặt hàng qua Portal & Duyệt đơn</td><td>5 bước</td></tr>
+<tr><td><code>QT-10</code></td><td>M7</td><td>Xuất bán, Bàn giao & Nghiệm thu</td><td>5 bước</td></tr>
+<tr><td><code>QT-11</code></td><td>M8</td><td>Hóa đơn Bán & Thu tiền Khách hàng</td><td>4 bước</td></tr>
+<tr><td><code>QT-12</code></td><td>M8</td><td>Hóa đơn Mua & Thanh toán Nhà cung cấp</td><td>3 bước</td></tr>
+<tr><td><code>QT-13</code></td><td>M9</td><td>Kiểm kê & Đối soát Tồn kho</td><td>4 bước</td></tr>
+<tr><td><code>QT-14</code></td><td>M10</td><td>Truy xuất, Thu hồi & Điều tra Thất thoát</td><td>4 bước</td></tr>
+<tr><td><code>QT-15</code></td><td>M11</td><td>Dashboard & Cảnh báo Điều hành</td><td>3 bước</td></tr>
+</tbody>
+</table><h3 id="qt-01">QT-01 — Quản lý & Đánh giá Nhà cung cấp</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-01</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mục đích</td><td>Chuẩn hóa việc thiết lập, đánh giá và duy trì hồ sơ nhà cung cấp (NCC) nhằm đảm bảo chỉ hợp tác với NCC đủ năng lực, đúng pháp nhân và có lịch sử giao hàng tốt.</td></tr>
+<tr><td>Phạm vi</td><td>Áp dụng cho Phòng Thương Mại khi tìm nguồn, tạo mới, cập nhật, đánh giá định kỳ và vô hiệu hóa NCC vật tư – hóa chất.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-SUP-001, BRU-SUP-002, NFR-SEC-03</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Tìm kiếm & lọc NCC theo nhóm hàng, → <b>[B2]</b> Nhập/cập nhật hồ sơ NCC: pháp nhân → <b>[B3]</b> Rà soát tính đầy đủ & hợp lệ của h → <b>[B4]</b> Chấm điểm đánh giá định kỳ theo ti → <b>[B5]</b> Vô hiệu hóa NCC không đạt / ngừng </div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Nhu cầu tìm nguồn cho nhóm hàng; danh mục vật tư cần mua</td><td><b>Tìm kiếm & lọc NCC theo nhóm hàng, năng lực, điểm đánh giá; lập shortlist</b></td><td>Danh sách NCC tiềm năng (shortlist)</td><td>Phòng Thương Mại</td><td>BM-M1-01 Phiếu tìm nguồn</td><td><code>UC-01</code><br><code>US-01</code></td></tr>
+<tr><td><b>2</b></td><td>Hồ sơ pháp nhân NCC (ĐKKD, MST, tài liệu năng lực)</td><td><b>Nhập/cập nhật hồ sơ NCC: pháp nhân, MST, nhóm hàng cung cấp, điều khoản thanh toán; đính kèm tài liệu</b></td><td>Hồ sơ NCC (trạng thái Nháp)</td><td>Phòng Thương Mại</td><td>BM-M1-02 Hồ sơ NCC</td><td><code>UC-02</code><br><code>US-02</code></td></tr>
+<tr><td><b>3</b></td><td>Hồ sơ NCC ở trạng thái Nháp</td><td><b>Rà soát tính đầy đủ & hợp lệ của hồ sơ; phê duyệt kích hoạt NCC</b></td><td>NCC trạng thái Hoạt động</td><td>Trưởng phòng Thương Mại</td><td>BM-M1-02</td><td><code>UC-02</code><br><code>US-02</code></td></tr>
+<tr><td><b>4</b></td><td>NCC đang hoạt động; dữ liệu giao dịch kỳ</td><td><b>Chấm điểm đánh giá định kỳ theo tiêu chí giá – chất lượng – tiến độ giao</b></td><td>Bảng điểm đánh giá NCC</td><td>Phòng Thương Mại</td><td>BM-M1-03 Bảng đánh giá NCC</td><td><code>UC-01</code><br><code>US-01</code></td></tr>
+<tr><td><b>5</b></td><td>Bảng điểm; quyết định của lãnh đạo</td><td><b>Vô hiệu hóa NCC không đạt / ngừng hợp tác; lưu lý do</b></td><td>NCC trạng thái Vô hiệu; audit log</td><td>Trưởng phòng Thương Mại</td><td>BM-M1-03</td><td><code>UC-02</code><br><code>US-02</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Tìm kiếm & lọc NCC theo nhóm hàng, năng lực, điểm đánh giá; lập shortlist:</b> Nhân viên Thương mại mở danh sách NCC, lọc theo nhóm hàng và điểm đánh giá tối thiểu. Kết quả là shortlist các NCC đạt ngưỡng năng lực. Nếu chưa đủ NCC phù hợp, chuyển Bước 2 để tạo mới.</li><li><b>Bước 2 — Nhập/cập nhật hồ sơ NCC: pháp nhân, MST, nhóm hàng cung cấp, điều khoản thanh toán; đính kèm tài liệu:</b> Hệ thống kiểm tra trùng MST (BRU-SUP-001): nếu trùng sẽ chặn tạo mới. Hồ sơ được lưu ở trạng thái Nháp chờ kiểm tra tính đầy đủ.</li><li><b>Bước 3 — Rà soát tính đầy đủ & hợp lệ của hồ sơ; phê duyệt kích hoạt NCC:</b> Chỉ NCC ở trạng thái Hoạt động mới được đưa vào hợp đồng khung (BRU-SUP-002). Trưởng phòng kiểm tra và kích hoạt.</li><li><b>Bước 4 — Chấm điểm đánh giá định kỳ theo tiêu chí giá – chất lượng – tiến độ giao:</b> Định kỳ (quý/năm), hệ thống tổng hợp lịch sử giao hàng, tỷ lệ QC đạt, độ trễ để tính điểm. Điểm thấp hơn ngưỡng sẽ cảnh báo xem xét vô hiệu hóa.</li><li><b>Bước 5 — Vô hiệu hóa NCC không đạt / ngừng hợp tác; lưu lý do:</b> Vô hiệu hóa được ghi audit trail (NFR-SEC-03). NCC vô hiệu không xuất hiện khi chọn nguồn cho hợp đồng/PO.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Tỷ lệ NCC đạt đánh giá ≥ 80%; thời gian thiết lập NCC mới ≤ 2 ngày làm việc.</div><h3 id="qt-02">QT-02 — Hợp đồng Khung Mua & Lệnh gọi hàng</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-02</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mục đích</td><td>Thiết lập hợp đồng khung mua (Framework Contract) làm căn cứ giá & hạn mức, và phát hành Lệnh gọi hàng (Release Order) theo nhu cầu từng kỳ.</td></tr>
+<tr><td>Phạm vi</td><td>Từ khi lập hợp đồng khung với NCC đến khi phát hành, theo dõi, gia hạn hoặc thanh lý hợp đồng.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-FC-001, BRU-FC-002</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Lập hợp đồng khung mua: mặt hàng,  → <b>[B2]</b> Trình & phê duyệt hợp đồng khung → <b>[B3]</b> Chọn mặt hàng & số lượng → <b>[B4]</b> Phê duyệt Lệnh gọi hàng → <b>[B5]</b> Theo dõi & gia hạn hoặc thanh lý h</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>NCC đã được đánh giá; danh mục mặt hàng & đơn giá đàm phán</td><td><b>Lập hợp đồng khung mua: mặt hàng, đơn giá, hạn mức, hiệu lực, điều khoản</b></td><td>Hợp đồng khung (Nháp)</td><td>Phòng Thương Mại</td><td>BM-M1-04 HĐ khung mua</td><td><code>UC-03</code><br><code>US-03</code></td></tr>
+<tr><td><b>2</b></td><td>Hợp đồng khung (Nháp)</td><td><b>Trình & phê duyệt hợp đồng khung</b></td><td>HĐ khung trạng thái Hiệu lực</td><td>Ban Giám đốc</td><td>BM-M1-04</td><td><code>UC-03</code><br><code>US-03</code></td></tr>
+<tr><td><b>3</b></td><td>HĐ khung Hiệu lực; nhu cầu lấy hàng trong kỳ</td><td><b>Chọn mặt hàng & số lượng; hệ thống kiểm tra hạn mức còn lại; lập Lệnh gọi hàng</b></td><td>Lệnh gọi hàng (Nháp)</td><td>Phòng Thương Mại</td><td>BM-M1-05 Lệnh gọi hàng</td><td><code>UC-05</code><br><code>US-05</code></td></tr>
+<tr><td><b>4</b></td><td>Lệnh gọi hàng (Nháp)</td><td><b>Phê duyệt Lệnh gọi hàng; chuyển mua sắm/nhập kho</b></td><td>Lệnh gọi hàng Đã duyệt</td><td>Trưởng phòng Thương Mại</td><td>BM-M1-05</td><td><code>UC-05</code><br><code>US-05</code></td></tr>
+<tr><td><b>5</b></td><td>HĐ sắp hết hạn (cảnh báo)</td><td><b>Theo dõi & gia hạn hoặc thanh lý hợp đồng</b></td><td>HĐ gia hạn/thanh lý; audit log</td><td>Phòng Thương Mại</td><td>BM-M1-04</td><td><code>UC-04</code><br><code>US-04</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Lập hợp đồng khung mua: mặt hàng, đơn giá, hạn mức, hiệu lực, điều khoản:</b> Nhân viên nhập danh mục mặt hàng cùng đơn giá và hạn mức số lượng vào bảng con FC Item. Lưu Nháp để rà soát trước khi trình duyệt.</li><li><b>Bước 2 — Trình & phê duyệt hợp đồng khung:</b> Ban Giám đốc phê duyệt; hệ thống chuyển trạng thái Hiệu lực. Đơn giá vượt ngân sách sẽ cảnh báo trước khi duyệt.</li><li><b>Bước 3 — Chọn mặt hàng & số lượng; hệ thống kiểm tra hạn mức còn lại; lập Lệnh gọi hàng:</b> Hệ thống chặn nếu số lượng vượt hạn mức còn lại của hợp đồng (BRU-FC-001) hoặc hợp đồng đã hết hạn (BRU-FC-002).</li><li><b>Bước 4 — Phê duyệt Lệnh gọi hàng; chuyển mua sắm/nhập kho:</b> Sau duyệt, lệnh là căn cứ tạo PO hoặc nhận hàng trực tiếp; hạn mức hợp đồng được trừ tương ứng.</li><li><b>Bước 5 — Theo dõi & gia hạn hoặc thanh lý hợp đồng:</b> Hệ thống cảnh báo trước khi hết hạn để gia hạn kịp thời, tránh gián đoạn nguồn cung; thanh lý ghi audit trail.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>100% Lệnh gọi hàng nằm trong hạn mức HĐ; 0 lệnh phát hành trên HĐ hết hạn.</div><h3 id="qt-03">QT-03 — Kế hoạch & Mua sắm (MR → PO)</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-03</code></td></tr>
+<tr><td>Phân hệ</td><td>M2 — Kế hoạch & Mua sắm</td></tr>
+<tr><td>Mục đích</td><td>Chuyển nhu cầu vật tư thành đơn mua hàng (PO) hợp lệ, đúng ngân sách và có phê duyệt.</td></tr>
+<tr><td>Phạm vi</td><td>Từ lập kế hoạch mua định kỳ / đề nghị mua hàng đến khi PO được duyệt và gửi NCC.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-PO-001, BRU-PO-002</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Lập kế hoạch mua hàng định kỳ theo → <b>[B2]</b> Lập Đề nghị Mua hàng (Material Req → <b>[B3]</b> Phê duyệt đề nghị → <b>[B4]</b> Tạo Đơn mua hàng (PO): chọn NCC, m → <b>[B5]</b> Phê duyệt PO</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Định mức tồn, dự báo nhu cầu, điểm đặt hàng lại</td><td><b>Lập kế hoạch mua hàng định kỳ theo nhóm hàng</b></td><td>Kế hoạch mua (kỳ)</td><td>Ban Giám đốc / Thương Mại</td><td>BM-M2-01 Kế hoạch mua</td><td><code>UC-06</code><br><code>US-06</code></td></tr>
+<tr><td><b>2</b></td><td>Nhu cầu phát sinh / cảnh báo tồn tối thiểu</td><td><b>Lập Đề nghị Mua hàng (Material Request): vật tư, số lượng, lý do</b></td><td>Đề nghị mua (Chờ duyệt)</td><td>Phòng Thương Mại</td><td>BM-M2-02 Đề nghị mua</td><td><code>UC-07</code><br><code>US-07</code></td></tr>
+<tr><td><b>3</b></td><td>Đề nghị mua (Chờ duyệt)</td><td><b>Phê duyệt đề nghị; gộp nhu cầu</b></td><td>Đề nghị Đã duyệt</td><td>Trưởng phòng Thương Mại</td><td>BM-M2-02</td><td><code>UC-07</code><br><code>US-07</code></td></tr>
+<tr><td><b>4</b></td><td>Đề nghị Đã duyệt; HĐ khung/giá</td><td><b>Tạo Đơn mua hàng (PO): chọn NCC, mặt hàng, số lượng, giá</b></td><td>PO (Chờ duyệt)</td><td>Phòng Thương Mại</td><td>BM-M2-03 Đơn mua hàng</td><td><code>UC-08</code><br><code>US-08</code></td></tr>
+<tr><td><b>5</b></td><td>PO (Chờ duyệt)</td><td><b>Phê duyệt PO; gửi NCC</b></td><td>PO Đã duyệt gửi NCC</td><td>Ban Giám đốc / Trưởng phòng</td><td>BM-M2-03</td><td><code>UC-08</code><br><code>US-08</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Lập kế hoạch mua hàng định kỳ theo nhóm hàng:</b> Kế hoạch tổng hợp nhu cầu toàn công ty theo kỳ, là khung cho các đề nghị mua hàng.</li><li><b>Bước 2 — Lập Đề nghị Mua hàng (Material Request): vật tư, số lượng, lý do:</b> Có thể tự sinh từ cảnh báo tồn tối thiểu. Hệ thống cảnh báo nếu vật tư ngừng kinh doanh.</li><li><b>Bước 3 — Phê duyệt đề nghị; gộp nhu cầu:</b> Sau duyệt, đề nghị đủ điều kiện chuyển tạo PO.</li><li><b>Bước 4 — Tạo Đơn mua hàng (PO): chọn NCC, mặt hàng, số lượng, giá:</b> Giá lấy theo HĐ khung mua. Số lượng PO không vượt nhu cầu đã duyệt.</li><li><b>Bước 5 — Phê duyệt PO; gửi NCC:</b> PO phải được duyệt trước khi gửi NCC (BRU-PO-002). PO là căn cứ nhập kho (số lượng nhận không vượt PO — BRU-PO-001).</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Thời gian từ đề nghị đến PO duyệt ≤ 2 ngày; 100% PO có phê duyệt.</div><h3 id="qt-04">QT-04 — Tiếp nhận & Kiểm tra Chất lượng (QC) Nhập kho</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-04</code></td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Mục đích</td><td>Đảm bảo hàng nhập đúng PO, đủ số lô/hạn dùng và đạt chất lượng trước khi ghi tăng tồn.</td></tr>
+<tr><td>Phạm vi</td><td>Từ khi hàng về đến khi ghi sổ nhập kho hoặc chuyển trả hàng.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-PO-001, BRU-GRN-001, BRU-QC-001, BRU-QC-002, BRU-INV-001</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Đối chiếu số lượng thực nhận với P → <b>[B2]</b> Thực hiện kiểm tra chất lượng theo → <b>[B3]</b> Xác nhận nhập kho → <b>[B4]</b> Chặn nhập → <b>[B5]</b> Lưu hồ sơ, cập nhật trạng thái, th</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Hàng về kèm PO & chứng từ giao hàng NCC</td><td><b>Đối chiếu số lượng thực nhận với PO; lập Phiếu Nhập kho</b></td><td>Phiếu Nhập (Chờ QC)</td><td>Bộ phận Kho</td><td>BM-M3-01 Phiếu nhập kho</td><td><code>UC-09</code><br><code>US-09</code></td></tr>
+<tr><td><b>2</b></td><td>Phiếu Nhập (Chờ QC)</td><td><b>Thực hiện kiểm tra chất lượng theo checklist template; ghi kết quả từng chỉ tiêu</b></td><td>Phiếu QC (Đạt/Không đạt)</td><td>QC Officer</td><td>BM-M3-02 Phiếu QC</td><td><code>UC-10</code><br><code>US-10</code></td></tr>
+<tr><td><b>3</b></td><td>Phiếu QC Đạt</td><td><b>Xác nhận nhập kho; đề xuất vị trí lưu (bin); ghi sổ kho tăng tồn</b></td><td>Tồn tăng; SC Stock Ledger Entry</td><td>Bộ phận Kho</td><td>BM-M3-01</td><td><code>UC-09</code><br><code>US-09</code></td></tr>
+<tr><td><b>4</b></td><td>Phiếu QC Không đạt</td><td><b>Chặn nhập; lập Phiếu trả hàng NCC</b></td><td>Phiếu trả hàng NCC</td><td>Bộ phận Kho</td><td>BM-M3-03 Phiếu trả hàng</td><td><code>UC-11</code><br><code>US-11</code></td></tr>
+<tr><td><b>5</b></td><td>Phiếu nhập đã ghi sổ</td><td><b>Lưu hồ sơ, cập nhật trạng thái, thông báo bộ phận liên quan</b></td><td>Hồ sơ nhập hoàn tất</td><td>Bộ phận Kho</td><td>BM-M3-01</td><td><code>UC-09</code><br><code>US-09</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Đối chiếu số lượng thực nhận với PO; lập Phiếu Nhập kho:</b> Số lượng nhận không vượt PO (BRU-PO-001). Hàng quản lý theo lô bắt buộc nhập số lô & hạn dùng (BRU-GRN-001).</li><li><b>Bước 2 — Thực hiện kiểm tra chất lượng theo checklist template; ghi kết quả từng chỉ tiêu:</b> Chỉ QC Officer/Manager được kết luận QC (BRU-QC-002). Đính kèm bằng chứng (ảnh/CO/CQ).</li><li><b>Bước 3 — Xác nhận nhập kho; đề xuất vị trí lưu (bin); ghi sổ kho tăng tồn:</b> Ghi sổ kho tự động, không cho tồn âm (BRU-INV-001). Chuyển Bước putaway (QT-06).</li><li><b>Bước 4 — Chặn nhập; lập Phiếu trả hàng NCC:</b> Hàng không đạt bị chặn nhập (BRU-QC-001) và chuyển quy trình trả hàng, ghi lý do.</li><li><b>Bước 5 — Lưu hồ sơ, cập nhật trạng thái, thông báo bộ phận liên quan:</b> Toàn bộ chứng từ lưu vết audit trail phục vụ truy xuất về sau.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Tỷ lệ QC đạt ≥ 98%; thời gian tiếp nhận – nhập kho ≤ 1 ngày.</div><h3 id="qt-05">QT-05 — Quản lý Vị trí kho, Putaway & Mã vạch</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-05</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mục đích</td><td>Sắp xếp hàng vào đúng vị trí (bin) và định danh vật tư bằng mã vạch khổ linh hoạt để truy xuất & thao tác nhanh.</td></tr>
+<tr><td>Phạm vi</td><td>Từ khi hàng đã nhập kho đến khi được đặt vào bin, dán nhãn và sẵn sàng quét.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-BIN-001, BRU-LBL-001</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Khai báo Bin Location & Putaway Ru → <b>[B2]</b> Áp putaway: đề xuất bin & xác nhận → <b>[B3]</b> Cấu hình Mẫu nhãn (khổ, dpi, loại  → <b>[B4]</b> Tạo & in nhãn (in lẻ / in hàng loạ → <b>[B5]</b> Quét mã bằng PDA để phân giải Item</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Cấu trúc kho, quy tắc putaway</td><td><b>Khai báo Bin Location & Putaway Rule theo nhóm hàng/điều kiện bảo quản</b></td><td>Danh mục bin & rule</td><td>Bộ phận Kho</td><td>BM-M4-01 Sơ đồ bin</td><td><code>UC-12</code><br><code>US-12</code></td></tr>
+<tr><td><b>2</b></td><td>Hàng vừa nhập; putaway rule</td><td><b>Áp putaway: đề xuất bin & xác nhận cất hàng</b></td><td>Tồn theo bin cập nhật</td><td>Bộ phận Kho</td><td>BM-M4-02 Phiếu putaway</td><td><code>UC-13</code><br><code>US-13</code></td></tr>
+<tr><td><b>3</b></td><td>Yêu cầu định danh vật tư/lô</td><td><b>Cấu hình Mẫu nhãn (khổ, dpi, loại mã, trường hiển thị)</b></td><td>Mẫu nhãn hợp lệ</td><td>Bộ phận Kho</td><td>BM-M4-03 Mẫu nhãn</td><td><code>UC-15</code><br><code>US-15</code></td></tr>
+<tr><td><b>4</b></td><td>Mẫu nhãn; vật tư/lô</td><td><b>Tạo & in nhãn (in lẻ / in hàng loạt theo lô nhập); gửi ZPL tới máy in</b></td><td>Nhãn đã in; log in</td><td>Bộ phận Kho</td><td>BM-M4-04 Log in nhãn</td><td><code>UC-16</code><br><code>US-16</code></td></tr>
+<tr><td><b>5</b></td><td>Nhãn đã dán trên vật tư</td><td><b>Quét mã bằng PDA để phân giải Item/Lô/Bin và thao tác</b></td><td>Kết quả tra cứu; thao tác kho</td><td>Bộ phận Kho</td><td>—</td><td><code>UC-17</code><br><code>US-17</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Khai báo Bin Location & Putaway Rule theo nhóm hàng/điều kiện bảo quản:</b> Putaway rule xác định bin hợp lệ theo loại hàng (BRU-BIN-001), vd hóa chất để khu riêng.</li><li><b>Bước 2 — Áp putaway: đề xuất bin & xác nhận cất hàng:</b> Hệ thống gợi ý bin theo rule; thủ kho xác nhận, cập nhật tồn theo vị trí.</li><li><b>Bước 3 — Cấu hình Mẫu nhãn (khổ, dpi, loại mã, trường hiển thị):</b> Mẫu nhãn phải hợp lệ trước khi in (BRU-LBL-001); khổ in cấu hình tự do, một máy in dùng nhiều mẫu.</li><li><b>Bước 4 — Tạo & in nhãn (in lẻ / in hàng loạt theo lô nhập); gửi ZPL tới máy in:</b> Máy in offline sẽ báo lỗi và cho tải file ZPL để in sau.</li><li><b>Bước 5 — Quét mã bằng PDA để phân giải Item/Lô/Bin và thao tác:</b> Quét giúp thao tác nhập/xuất/chuyển/kiểm nhanh; mã không nhận dạng sẽ thông báo, mất mạng lưu tạm đồng bộ sau.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Tỷ lệ hàng có nhãn & bin ≥ 99%; thời gian định vị 1 vật tư qua quét ≤ 5 giây.</div><h3 id="qt-06">QT-06 — Quản lý Lô, Hạn dùng & Xuất theo FEFO</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-06</code></td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Mục đích</td><td>Kiểm soát chặt hạn dùng và ép nguyên tắc FEFO khi xuất kho để giảm hàng hết hạn.</td></tr>
+<tr><td>Phạm vi</td><td>Từ khi tạo lô đến khi xuất theo FEFO và cảnh báo hạn dùng.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-FEFO-001, BRU-EXP-001, BRU-INV-001</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Tạo/cập nhật hồ sơ lô hàng → <b>[B2]</b> Hệ thống gợi ý lô theo FEFO (hết h → <b>[B3]</b> Xác nhận lô & xuất kho → <b>[B4]</b> Scheduler quét & phát cảnh báo lô  → <b>[B5]</b> Xử lý lô sắp/đã hết hạn (ưu tiên x</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Thông tin lô khi nhập (số lô, HSD, NCC)</td><td><b>Tạo/cập nhật hồ sơ lô hàng</b></td><td>Hồ sơ lô (Hoạt động)</td><td>Bộ phận Kho</td><td>BM-M5-01 Hồ sơ lô</td><td><code>UC-18</code><br><code>US-18</code></td></tr>
+<tr><td><b>2</b></td><td>Yêu cầu xuất vật tư</td><td><b>Hệ thống gợi ý lô theo FEFO (hết hạn trước xuất trước)</b></td><td>Danh sách lô đề xuất</td><td>Hệ thống / Kho</td><td>—</td><td><code>UC-19</code><br><code>US-19</code></td></tr>
+<tr><td><b>3</b></td><td>Lô đề xuất; số lượng xuất</td><td><b>Xác nhận lô & xuất kho; ghi sổ trừ tồn theo lô</b></td><td>Tồn giảm; SC Stock Ledger</td><td>Bộ phận Kho</td><td>BM-M5-02 Phiếu xuất</td><td><code>UC-19</code><br><code>US-19</code></td></tr>
+<tr><td><b>4</b></td><td>Lô trong kho; ngưỡng cảnh báo</td><td><b>Scheduler quét & phát cảnh báo lô sắp hết hạn</b></td><td>Cảnh báo hạn dùng</td><td>Hệ thống</td><td>BM-M5-03 DS cảnh báo hạn</td><td><code>UC-20</code><br><code>US-20</code></td></tr>
+<tr><td><b>5</b></td><td>Cảnh báo hạn dùng</td><td><b>Xử lý lô sắp/đã hết hạn (ưu tiên xuất, thanh lý)</b></td><td>Trạng thái lô cập nhật</td><td>Bộ phận Kho / Thương Mại</td><td>BM-M5-03</td><td><code>UC-20</code><br><code>US-20</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Tạo/cập nhật hồ sơ lô hàng:</b> Mỗi vật tư quản lý lô có nhiều lô; lô là đơn vị truy xuất nguồn gốc.</li><li><b>Bước 2 — Hệ thống gợi ý lô theo FEFO (hết hạn trước xuất trước):</b> Gợi ý ưu tiên lô có HSD gần nhất; ghi đè thủ công phải nêu lý do (BRU-FEFO-001).</li><li><b>Bước 3 — Xác nhận lô & xuất kho; ghi sổ trừ tồn theo lô:</b> Không xuất lô đã hết hạn (BRU-EXP-001); không cho âm tồn (BRU-INV-001).</li><li><b>Bước 4 — Scheduler quét & phát cảnh báo lô sắp hết hạn:</b> Ngưỡng cấu hình (vd 30/60/90 ngày) theo nhóm hàng; cảnh báo gán người phụ trách xử lý.</li><li><b>Bước 5 — Xử lý lô sắp/đã hết hạn (ưu tiên xuất, thanh lý):</b> Kho & Thương mại phối hợp ưu tiên tiêu thụ lô cận hạn; lô hết hạn chuyển thanh lý có phê duyệt.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Tỷ lệ xuất đúng FEFO ≥ 99%; tỷ lệ hàng hết hạn ≤ 0,5% giá trị tồn.</div><h3 id="qt-07">QT-07 — Luân chuyển Nội bộ giữa các kho</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-07</code></td></tr>
+<tr><td>Phân hệ</td><td>M6 — Luân chuyển Nội bộ</td></tr>
+<tr><td>Mục đích</td><td>Điều chuyển hàng giữa các kho MVL đúng quy trình, có phê duyệt và ghi sổ hai đầu.</td></tr>
+<tr><td>Phạm vi</td><td>Từ đề nghị chuyển kho đến khi kho nhận xác nhận và ghi sổ.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-INV-001, BRU-EXP-001</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Lập yêu cầu chuyển kho: vật tư, lô → <b>[B2]</b> Phê duyệt yêu cầu chuyển → <b>[B3]</b> Xuất kho nguồn → <b>[B4]</b> Kho đích nhận & xác nhận</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Nhu cầu cân đối tồn giữa các kho</td><td><b>Lập yêu cầu chuyển kho: vật tư, lô, số lượng, kho đích</b></td><td>Yêu cầu chuyển (Chờ duyệt)</td><td>Bộ phận Kho</td><td>BM-M6-01 Phiếu chuyển kho</td><td><code>UC-21</code><br><code>US-21</code></td></tr>
+<tr><td><b>2</b></td><td>Yêu cầu chuyển (Chờ duyệt)</td><td><b>Phê duyệt yêu cầu chuyển</b></td><td>Yêu cầu Đã duyệt</td><td>Quản lý kho</td><td>BM-M6-01</td><td><code>UC-21</code><br><code>US-21</code></td></tr>
+<tr><td><b>3</b></td><td>Yêu cầu Đã duyệt</td><td><b>Xuất kho nguồn; ghi sổ giảm tồn kho nguồn</b></td><td>Tồn kho nguồn giảm</td><td>Bộ phận Kho (nguồn)</td><td>BM-M6-01</td><td><code>UC-21</code><br><code>US-21</code></td></tr>
+<tr><td><b>4</b></td><td>Hàng đang chuyển</td><td><b>Kho đích nhận & xác nhận; ghi sổ tăng tồn kho đích</b></td><td>Tồn kho đích tăng; hoàn tất</td><td>Bộ phận Kho (đích)</td><td>BM-M6-01</td><td><code>UC-21</code><br><code>US-21</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Lập yêu cầu chuyển kho: vật tư, lô, số lượng, kho đích:</b> Chọn lô theo FEFO; không chuyển lô hết hạn (BRU-EXP-001).</li><li><b>Bước 2 — Phê duyệt yêu cầu chuyển:</b> Phê duyệt trước khi xuất khỏi kho nguồn.</li><li><b>Bước 3 — Xuất kho nguồn; ghi sổ giảm tồn kho nguồn:</b> Ghi SC Stock Ledger tại kho nguồn; không cho âm tồn (BRU-INV-001).</li><li><b>Bước 4 — Kho đích nhận & xác nhận; ghi sổ tăng tồn kho đích:</b> Chênh lệch khi nhận (nếu có) lập biên bản; hoàn tất khi khớp.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Thời gian hoàn tất chuyển kho ≤ 1 ngày; 0 sai lệch tồn sau chuyển.</div><h3 id="qt-08">QT-08 — Quản lý Khách hàng & Hợp đồng Khung Bán</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-08</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mục đích</td><td>Thiết lập khách hàng doanh nghiệp cùng tài khoản Portal và hợp đồng khung bán làm căn cứ đặt hàng.</td></tr>
+<tr><td>Phạm vi</td><td>Từ tạo hồ sơ khách đến khi HĐ khung bán có hiệu lực & hiển thị trên Portal.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-CUS-001, BRU-CUS-002, BRU-SFC-001, BRU-SFC-002, NFR-SEC-01</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Tạo hồ sơ khách → <b>[B2]</b> Tạo & gắn tài khoản Portal (User)  → <b>[B3]</b> Lập HĐ khung bán: mặt hàng, đơn gi → <b>[B4]</b> Trình & phê duyệt HĐ khung bán</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Hồ sơ pháp nhân khách hàng (MST, địa chỉ, liên hệ)</td><td><b>Tạo hồ sơ khách; thiết lập hạn mức công nợ & điều khoản</b></td><td>Hồ sơ khách (Nháp)</td><td>Phòng Thương Mại</td><td>BM-M7-01 Hồ sơ khách hàng</td><td><code>UC-22</code><br><code>US-22</code></td></tr>
+<tr><td><b>2</b></td><td>Hồ sơ khách (Nháp)</td><td><b>Tạo & gắn tài khoản Portal (User) cho khách; kích hoạt khách hàng</b></td><td>Khách Hoạt động + tài khoản Portal</td><td>Phòng Thương Mại</td><td>BM-M7-01</td><td><code>UC-22</code><br><code>US-22</code></td></tr>
+<tr><td><b>3</b></td><td>Khách Hoạt động; danh mục & giá bán đàm phán</td><td><b>Lập HĐ khung bán: mặt hàng, đơn giá bán, hạn mức, hiệu lực</b></td><td>HĐ khung bán (Nháp)</td><td>Phòng Thương Mại</td><td>BM-M7-02 HĐ khung bán</td><td><code>UC-23</code><br><code>US-23</code></td></tr>
+<tr><td><b>4</b></td><td>HĐ khung bán (Nháp)</td><td><b>Trình & phê duyệt HĐ khung bán</b></td><td>HĐ khung Hiệu lực (hiển thị Portal)</td><td>Ban Giám đốc</td><td>BM-M7-02</td><td><code>UC-23</code><br><code>US-23</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Tạo hồ sơ khách; thiết lập hạn mức công nợ & điều khoản:</b> Trùng MST bị chặn. Hồ sơ Nháp chờ gắn tài khoản Portal.</li><li><b>Bước 2 — Tạo & gắn tài khoản Portal (User) cho khách; kích hoạt khách hàng:</b> Khách bắt buộc có tài khoản Portal trước khi kích hoạt (BRU-CUS-001); mỗi tài khoản gắn đúng một khách (BRU-CUS-002); dữ liệu cô lập (NFR-SEC-01).</li><li><b>Bước 3 — Lập HĐ khung bán: mặt hàng, đơn giá bán, hạn mức, hiệu lực:</b> Đơn giá bán lấy theo HĐ khung, không cho sửa tại đơn khách (BRU-SFC-002). Cảnh báo nếu giá bán thấp hơn giá vốn.</li><li><b>Bước 4 — Trình & phê duyệt HĐ khung bán:</b> Sau duyệt, HĐ khung hiển thị trên Portal của khách; khách chỉ đặt được mặt hàng thuộc HĐ khung còn hiệu lực (BRU-SFC-001).</li></ol><div class="callout note"><strong>KPI của quy trình</strong>100% khách hoạt động có tài khoản Portal; 0 rò rỉ dữ liệu chéo.</div><h3 id="qt-09">QT-09 — Đặt hàng qua Portal & Duyệt đơn</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-09</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mục đích</td><td>Cho phép khách tự đặt hàng theo HĐ khung và nội bộ duyệt đơn nhanh, đúng ràng buộc giá/hạn mức/tồn.</td></tr>
+<tr><td>Phạm vi</td><td>Từ khi khách đăng nhập Portal đặt hàng đến khi đơn được duyệt chuyển kho xử lý.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-SFC-001, BRU-SFC-002, BRU-SO-001, BRU-SO-002, BRU-AR-001, NFR-SEC-01</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Khách đăng nhập Portal → <b>[B2]</b> Khách tra cứu HĐ khung, vật tư & b → <b>[B3]</b> Đặt hàng → <b>[B4]</b> Thương mại kiểm tra hạn mức, công  → <b>[B5]</b> Chuyển kho lập phiếu xuất bán (QT-</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Tài khoản khách; HĐ khung hiệu lực</td><td><b>Khách đăng nhập Portal; hệ thống nạp đúng dữ liệu của khách</b></td><td>Phiên đăng nhập (cô lập)</td><td>Khách hàng</td><td>BM-M7-03 Log đăng nhập</td><td><code>UC-40</code><br><code>US-40</code></td></tr>
+<tr><td><b>2</b></td><td>HĐ khung; danh mục vật tư của khách</td><td><b>Khách tra cứu HĐ khung, vật tư & bảng giá</b></td><td>Thông tin tra cứu</td><td>Khách hàng</td><td>—</td><td><code>UC-41</code><br><code>US-41</code></td></tr>
+<tr><td><b>3</b></td><td>Mặt hàng & số lượng khách chọn</td><td><b>Đặt hàng; hệ thống kiểm tra hạn mức & đơn giá HĐ khung</b></td><td>Đơn hàng (Chờ duyệt)</td><td>Khách hàng</td><td>BM-M7-04 Đơn đặt hàng</td><td><code>UC-42</code><br><code>US-42</code></td></tr>
+<tr><td><b>4</b></td><td>Đơn hàng (Chờ duyệt)</td><td><b>Thương mại kiểm tra hạn mức, công nợ, tồn; phê duyệt/từ chối/điều chỉnh</b></td><td>Đơn Đã duyệt / Từ chối</td><td>Phòng Thương Mại</td><td>BM-M7-04</td><td><code>UC-24</code><br><code>US-24</code></td></tr>
+<tr><td><b>5</b></td><td>Đơn Đã duyệt</td><td><b>Chuyển kho lập phiếu xuất bán (QT-10)</b></td><td>Lệnh xử lý cho kho</td><td>Phòng Thương Mại</td><td>BM-M7-04</td><td><code>UC-24</code><br><code>US-24</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Khách đăng nhập Portal; hệ thống nạp đúng dữ liệu của khách:</b> Xác thực & permission query lọc theo khách (NFR-SEC-01); sai thông tin sẽ khóa tạm sau N lần.</li><li><b>Bước 2 — Khách tra cứu HĐ khung, vật tư & bảng giá:</b> Chỉ hiển thị mặt hàng thuộc HĐ khung còn hiệu lực (BRU-SFC-001).</li><li><b>Bước 3 — Đặt hàng; hệ thống kiểm tra hạn mức & đơn giá HĐ khung:</b> Chặn nếu vượt hạn mức HĐ khung (BRU-SO-001); giá lấy theo HĐ khung (BRU-SFC-002).</li><li><b>Bước 4 — Thương mại kiểm tra hạn mức, công nợ, tồn; phê duyệt/từ chối/điều chỉnh:</b> Vượt hạn mức công nợ sẽ cảnh báo & chờ duyệt cấp cao (BRU-AR-001). Đơn phải duyệt trước khi xuất kho (BRU-SO-002).</li><li><b>Bước 5 — Chuyển kho lập phiếu xuất bán (QT-10):</b> Đơn đã duyệt kích hoạt cột mốc ① Đã đặt trên Portal của khách.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Thời gian duyệt đơn ≤ 4 giờ; ≥ 80% đơn đến từ Portal.</div><h3 id="qt-10">QT-10 — Xuất bán, Bàn giao & Nghiệm thu</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-10</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mục đích</td><td>Chuẩn hóa việc xuất kho bán, giao hàng và nghiệm thu tại khách, cập nhật cột mốc trên Portal.</td></tr>
+<tr><td>Phạm vi</td><td>Từ đơn đã duyệt đến khi nghiệm thu và chuyển kế toán xuất hóa đơn.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-INV-001, BRU-EXP-001, BRU-FEFO-001, BRU-DEL-001</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Chọn đơn → <b>[B2]</b> Lập Phiếu Bàn giao → <b>[B3]</b> Giao hàng & thu ký nhận của khách → <b>[B4]</b> Nghiệm thu tại khách → <b>[B5]</b> Chuyển kế toán xuất hóa đơn (QT-11</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Đơn hàng Đã duyệt</td><td><b>Chọn đơn; hệ thống gợi ý lô theo FEFO; xác nhận số lượng & lô xuất</b></td><td>Danh sách lô xuất</td><td>Bộ phận Kho</td><td>BM-M7-05 Phiếu xuất bán</td><td><code>UC-25</code><br><code>US-25</code></td></tr>
+<tr><td><b>2</b></td><td>Lô xuất xác nhận</td><td><b>Lập Phiếu Bàn giao; ghi sổ xuất bán trừ tồn</b></td><td>Phiếu Bàn giao (Nháp); tồn giảm</td><td>Bộ phận Kho</td><td>BM-M7-06 Phiếu bàn giao</td><td><code>UC-25</code><br><code>US-25</code></td></tr>
+<tr><td><b>3</b></td><td>Phiếu Bàn giao (Nháp); hàng chuẩn bị</td><td><b>Giao hàng & thu ký nhận của khách</b></td><td>Phiếu Bàn giao Đã giao</td><td>Nhân viên Giao nhận</td><td>BM-M7-06</td><td><code>UC-26</code><br><code>US-26</code></td></tr>
+<tr><td><b>4</b></td><td>Phiếu Bàn giao Đã giao</td><td><b>Nghiệm thu tại khách; lập biên bản nghiệm thu</b></td><td>Biên bản nghiệm thu; cột mốc ② Portal</td><td>Nhân viên Giao nhận + Khách</td><td>BM-M7-07 Biên bản nghiệm thu</td><td><code>UC-26</code><br><code>US-26</code></td></tr>
+<tr><td><b>5</b></td><td>Nghiệm thu hoàn tất</td><td><b>Chuyển kế toán xuất hóa đơn (QT-11)</b></td><td>Lệnh xuất hóa đơn</td><td>Bộ phận Kho</td><td>—</td><td><code>UC-26</code><br><code>US-26</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Chọn đơn; hệ thống gợi ý lô theo FEFO; xác nhận số lượng & lô xuất:</b> Ép FEFO (BRU-FEFO-001); chặn lô hết hạn (BRU-EXP-001) và âm tồn (BRU-INV-001).</li><li><b>Bước 2 — Lập Phiếu Bàn giao; ghi sổ xuất bán trừ tồn:</b> Phiếu bàn giao gắn với đơn hàng; in kèm nhãn nếu cần.</li><li><b>Bước 3 — Giao hàng & thu ký nhận của khách:</b> Cập nhật trạng thái Đã giao; đính kèm ảnh/ký nhận.</li><li><b>Bước 4 — Nghiệm thu tại khách; lập biên bản nghiệm thu:</b> Thiếu biên bản nghiệm thu thì chưa cho chuyển xuất hóa đơn (BRU-DEL-001); sai lệch lập biên bản chênh lệch.</li><li><b>Bước 5 — Chuyển kế toán xuất hóa đơn (QT-11):</b> Cột mốc ② Đã bàn giao – nghiệm thu hiển thị trên Portal của khách.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Tỷ lệ giao đúng hạn ≥ 95%; 100% giao hàng có biên bản nghiệm thu.</div><h3 id="qt-11">QT-11 — Hóa đơn Bán & Thu tiền Khách hàng</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-11</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mục đích</td><td>Xuất hóa đơn bán đúng nghiệm thu và ghi nhận thu tiền, kiểm soát công nợ phải thu.</td></tr>
+<tr><td>Phạm vi</td><td>Từ phiếu bàn giao đã nghiệm thu đến khi thu đủ tiền và đóng đơn.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-DEL-001, BRU-INVC-001, BRU-AR-001, BRU-PAY-001</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Lập hóa đơn bán → <b>[B2]</b> Tính thuế, tổng tiền → <b>[B3]</b> Ghi nhận thu tiền → <b>[B4]</b> Đóng đơn</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Phiếu bàn giao Đã nghiệm thu</td><td><b>Lập hóa đơn bán; đối chiếu số lượng & đơn giá HĐ khung</b></td><td>Hóa đơn bán (Nháp)</td><td>Kế Toán</td><td>BM-M8-01 Hóa đơn bán</td><td><code>UC-29</code><br><code>US-29</code></td></tr>
+<tr><td><b>2</b></td><td>Hóa đơn bán (Nháp)</td><td><b>Tính thuế, tổng tiền; phát hành hóa đơn; ghi sổ cái phải thu</b></td><td>Hóa đơn Đã phát hành; cột mốc ③ Portal</td><td>Kế Toán</td><td>BM-M8-01</td><td><code>UC-29</code><br><code>US-29</code></td></tr>
+<tr><td><b>3</b></td><td>Hóa đơn Đã phát hành</td><td><b>Ghi nhận thu tiền; đối chiếu công nợ</b></td><td>Phiếu thu; công nợ cập nhật</td><td>Kế Toán</td><td>BM-M8-02 Phiếu thu</td><td><code>UC-30</code><br><code>US-30</code></td></tr>
+<tr><td><b>4</b></td><td>Đã thu đủ</td><td><b>Đóng đơn; cập nhật cột mốc ④; báo cáo</b></td><td>Đơn Hoàn tất; cột mốc ④ Portal</td><td>Kế Toán</td><td>BM-M8-03 Báo cáo công nợ</td><td><code>UC-30, UC-31</code><br><code>US-30</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Lập hóa đơn bán; đối chiếu số lượng & đơn giá HĐ khung:</b> Giá & số lượng phải khớp phiếu bàn giao nghiệm thu (BRU-INVC-001); chưa nghiệm thu thì không cho xuất (BRU-DEL-001).</li><li><b>Bước 2 — Tính thuế, tổng tiền; phát hành hóa đơn; ghi sổ cái phải thu:</b> Cột mốc ③ Đã cấp hóa đơn hiển thị trên Portal; ghi SC GL Entry phải thu.</li><li><b>Bước 3 — Ghi nhận thu tiền; đối chiếu công nợ:</b> Thu một phần cập nhật công nợ còn lại; không ghi vào kỳ đã chốt (BRU-PAY-001); thu vượt công nợ sẽ cảnh báo.</li><li><b>Bước 4 — Đóng đơn; cập nhật cột mốc ④; báo cáo:</b> Cột mốc ④ Đã thu tiền hiển thị; đơn chuyển Hoàn tất. Công nợ quá hạn cảnh báo theo BRU-AR-001.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Công nợ quá hạn ≤ 5% doanh thu; 100% hóa đơn khớp nghiệm thu.</div><h3 id="qt-12">QT-12 — Hóa đơn Mua & Thanh toán Nhà cung cấp</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-12</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mục đích</td><td>Đối chiếu hóa đơn mua với nhập kho và thực hiện thanh toán NCC đúng công nợ.</td></tr>
+<tr><td>Phạm vi</td><td>Từ hóa đơn NCC đến khi thanh toán và ghi sổ cái phải trả.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-PAY-001, NFR-SEC-03</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Đối chiếu hóa đơn mua với phiếu nh → <b>[B2]</b> Duyệt & ghi sổ cái phải trả → <b>[B3]</b> Lập & thực hiện thanh toán NCC</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Hóa đơn NCC; phiếu nhập kho</td><td><b>Đối chiếu hóa đơn mua với phiếu nhập & PO</b></td><td>Hóa đơn mua (Chờ duyệt)</td><td>Kế Toán</td><td>BM-M8-04 Hóa đơn mua</td><td><code>UC-27</code><br><code>US-27</code></td></tr>
+<tr><td><b>2</b></td><td>Hóa đơn mua (Chờ duyệt)</td><td><b>Duyệt & ghi sổ cái phải trả</b></td><td>Sổ cái phải trả cập nhật</td><td>Kế Toán / Quản lý</td><td>BM-M8-04</td><td><code>UC-27</code><br><code>US-27</code></td></tr>
+<tr><td><b>3</b></td><td>Công nợ phải trả đến hạn</td><td><b>Lập & thực hiện thanh toán NCC</b></td><td>Phiếu thanh toán; công nợ giảm</td><td>Kế Toán</td><td>BM-M8-05 Phiếu thanh toán</td><td><code>UC-28</code><br><code>US-28</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Đối chiếu hóa đơn mua với phiếu nhập & PO:</b> Lệch số lượng/giá so với nhập kho sẽ được đánh dấu để xử lý.</li><li><b>Bước 2 — Duyệt & ghi sổ cái phải trả:</b> Ghi SC GL Entry phải trả; không ghi vào kỳ đã chốt (BRU-PAY-001).</li><li><b>Bước 3 — Lập & thực hiện thanh toán NCC:</b> Thanh toán ghi audit trail (NFR-SEC-03); đối chiếu tham chiếu hóa đơn.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Thanh toán đúng hạn ≥ 95%; 0 sai lệch đối chiếu.</div><h3 id="qt-13">QT-13 — Kiểm kê & Đối soát Tồn kho</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-13</code></td></tr>
+<tr><td>Phân hệ</td><td>M9 — Kiểm kê & Đối soát</td></tr>
+<tr><td>Mục đích</td><td>Định kỳ kiểm kê thực tế và đối soát với sổ kho, điều chỉnh chênh lệch có kiểm soát.</td></tr>
+<tr><td>Phạm vi</td><td>Từ lập kế hoạch kiểm kê đến khi điều chỉnh tồn và lưu biên bản.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-STK-001, BRU-INV-001</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Lập kế hoạch & phiếu kiểm kê → <b>[B2]</b> Kiểm đếm thực tế & nhập số liệu → <b>[B3]</b> Đối soát → <b>[B4]</b> Điều chỉnh tồn (Stock Reconciliati</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Lịch kiểm kê; phạm vi kho/nhóm hàng</td><td><b>Lập kế hoạch & phiếu kiểm kê</b></td><td>Phiếu kiểm kê</td><td>Bộ phận Kho</td><td>BM-M9-01 Phiếu kiểm kê</td><td><code>UC-32</code><br><code>US-32</code></td></tr>
+<tr><td><b>2</b></td><td>Phiếu kiểm kê; tồn sổ sách</td><td><b>Kiểm đếm thực tế & nhập số liệu</b></td><td>Số liệu kiểm kê thực tế</td><td>Bộ phận Kho</td><td>BM-M9-01</td><td><code>UC-32</code><br><code>US-32</code></td></tr>
+<tr><td><b>3</b></td><td>Số thực tế vs sổ sách</td><td><b>Đối soát; hệ thống sinh biên bản chênh lệch</b></td><td>Biên bản chênh lệch</td><td>Bộ phận Kho / Kiểm soát</td><td>BM-M9-02 Biên bản chênh lệch</td><td><code>UC-33</code><br><code>US-33</code></td></tr>
+<tr><td><b>4</b></td><td>Biên bản chênh lệch đã duyệt</td><td><b>Điều chỉnh tồn (Stock Reconciliation); ghi sổ</b></td><td>Tồn điều chỉnh; SC Stock Ledger</td><td>Ban Giám đốc / Kho</td><td>BM-M9-02</td><td><code>UC-33</code><br><code>US-33</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Lập kế hoạch & phiếu kiểm kê:</b> Xác định kho, nhóm hàng, thời điểm kiểm kê.</li><li><b>Bước 2 — Kiểm đếm thực tế & nhập số liệu:</b> Ghi số đếm thực tế theo lô/bin để so sánh.</li><li><b>Bước 3 — Đối soát; hệ thống sinh biên bản chênh lệch:</b> Chênh lệch phải có biên bản & phê duyệt trước khi điều chỉnh (BRU-STK-001).</li><li><b>Bước 4 — Điều chỉnh tồn (Stock Reconciliation); ghi sổ:</b> Điều chỉnh ghi sổ kho, giữ nguyên nguyên tắc không âm tồn (BRU-INV-001).</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Sai lệch kiểm kê ≤ 1%; 100% điều chỉnh có biên bản duyệt.</div><h3 id="qt-14">QT-14 — Truy xuất, Thu hồi & Điều tra Thất thoát</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-14</code></td></tr>
+<tr><td>Phân hệ</td><td>M10 — Truy xuất & Điều tra</td></tr>
+<tr><td>Mục đích</td><td>Truy xuất nguồn gốc lô, thực hiện thu hồi khi cần và điều tra thất thoát có kiểm soát.</td></tr>
+<tr><td>Phạm vi</td><td>Từ yêu cầu truy xuất/thu hồi/điều tra đến khi đóng vụ việc.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-REC-001, BRU-AUD-001, NFR-COMP-02</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Truy xuất nguồn gốc lô: nhập → tồn → <b>[B2]</b> Lập lệnh thu hồi → <b>[B3]</b> Thực hiện thu hồi → <b>[B4]</b> Điều tra thất thoát</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Số lô / vật tư cần truy xuất</td><td><b>Truy xuất nguồn gốc lô: nhập → tồn → xuất bán theo khách</b></td><td>Bản đồ truy xuất lô</td><td>Kiểm soát nội bộ</td><td>BM-M10-01 Báo cáo truy xuất</td><td><code>UC-34</code><br><code>US-34</code></td></tr>
+<tr><td><b>2</b></td><td>Sự cố chất lượng / cảnh báo</td><td><b>Lập lệnh thu hồi; xác định lô & khách bị ảnh hưởng</b></td><td>Lệnh thu hồi</td><td>Ban Giám đốc</td><td>BM-M10-02 Lệnh thu hồi</td><td><code>UC-35</code><br><code>US-35</code></td></tr>
+<tr><td><b>3</b></td><td>Lệnh thu hồi</td><td><b>Thực hiện thu hồi; theo dõi tiến độ & đóng vụ</b></td><td>Kết quả thu hồi</td><td>Kho / Thương Mại</td><td>BM-M10-02</td><td><code>UC-35</code><br><code>US-35</code></td></tr>
+<tr><td><b>4</b></td><td>Nghi vấn thất thoát</td><td><b>Điều tra thất thoát; khóa user nghi vấn nếu cần</b></td><td>Báo cáo điều tra</td><td>Kiểm soát nội bộ</td><td>BM-M10-03 Báo cáo điều tra</td><td><code>UC-36</code><br><code>US-36</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Truy xuất nguồn gốc lô: nhập → tồn → xuất bán theo khách:</b> Truy xuất đầy đủ chuỗi để phục vụ thu hồi (NFR-COMP-02).</li><li><b>Bước 2 — Lập lệnh thu hồi; xác định lô & khách bị ảnh hưởng:</b> Thu hồi phải truy được toàn bộ lô đã bán theo khách (BRU-REC-001).</li><li><b>Bước 3 — Thực hiện thu hồi; theo dõi tiến độ & đóng vụ:</b> Cập nhật trạng thái từng khách; đóng khi hoàn tất.</li><li><b>Bước 4 — Điều tra thất thoát; khóa user nghi vấn nếu cần:</b> Mọi thao tác ghi audit trail (BRU-AUD-001); có thể khóa tài khoản liên quan.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Thời gian truy xuất một lô ≤ 10 phút; 100% lô truy được nguồn gốc.</div><h3 id="qt-15">QT-15 — Dashboard & Cảnh báo Điều hành</h3><table>
+<thead><tr><th>Hạng mục</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã quy trình</td><td><code>QT-15</code></td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Mục đích</td><td>Cung cấp thông tin điều hành thời gian thực và tự động hóa cảnh báo hành động.</td></tr>
+<tr><td>Phạm vi</td><td>Từ cấu hình quy tắc cảnh báo đến khi lãnh đạo theo dõi & xử lý.</td></tr>
+<tr><td>Quy tắc/NFR tham chiếu</td><td><code>BRU-AR-001, NFR-PERF-01</code></td></tr>
+</tbody>
+</table><h4>Lưu đồ</h4><div class="callout"><b>[B1]</b> Cấu hình quy tắc cảnh báo tự động → <b>[B2]</b> Hệ thống tổng hợp KPI & sinh cảnh  → <b>[B3]</b> Lãnh đạo xem & xử lý cảnh báo hành</div><h4>Bảng các bước</h4><table>
+<thead><tr><th width="45">Bước</th><th>Đầu vào</th><th>Nội dung thực hiện công việc</th><th>Đầu ra</th><th width="110">Trách nhiệm</th><th width="110">Hồ sơ</th><th width="80">UC/US</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Ngưỡng nghiệp vụ (hạn dùng, tồn, công nợ)</td><td><b>Cấu hình quy tắc cảnh báo tự động</b></td><td>Bộ quy tắc cảnh báo</td><td>Ban Giám đốc</td><td>BM-M11-01 Cấu hình cảnh báo</td><td><code>UC-38</code><br><code>US-38</code></td></tr>
+<tr><td><b>2</b></td><td>Dữ liệu vận hành</td><td><b>Hệ thống tổng hợp KPI & sinh cảnh báo</b></td><td>Dashboard & cảnh báo</td><td>Hệ thống</td><td>—</td><td><code>UC-37</code><br><code>US-37</code></td></tr>
+<tr><td><b>3</b></td><td>Cảnh báo phát sinh</td><td><b>Lãnh đạo xem & xử lý cảnh báo hành động</b></td><td>Hành động xử lý; log</td><td>Ban Giám đốc</td><td>BM-M11-02 Nhật ký xử lý</td><td><code>UC-39</code><br><code>US-39</code></td></tr>
+</tbody>
+</table><h4>Diễn giải từng bước</h4><ol><li><b>Bước 1 — Cấu hình quy tắc cảnh báo tự động:</b> Quy tắc xác định điều kiện & người nhận cảnh báo.</li><li><b>Bước 2 — Hệ thống tổng hợp KPI & sinh cảnh báo:</b> Dashboard hiển thị KPI mua–bán–tồn–công nợ thời gian thực (NFR-PERF-01).</li><li><b>Bước 3 — Lãnh đạo xem & xử lý cảnh báo hành động:</b> Cảnh báo công nợ vượt hạn mức theo BRU-AR-001 được ưu tiên xử lý.</li></ol><div class="callout note"><strong>KPI của quy trình</strong>Thời gian tải dashboard ≤ 2s; 100% cảnh báo có người xử lý.</div><h2 id="kpi">5. KPI tổng hợp toàn chuỗi</h2><table>
+<thead><tr><th>Nhóm</th><th>KPI</th><th>Mục tiêu</th></tr></thead>
+<tbody>
+<tr><td>Mua sắm</td><td>Thời gian đề nghị → PO duyệt</td><td>≤ 2 ngày</td></tr>
+<tr><td>Kho</td><td>Xuất đúng FEFO</td><td>≥ 99%</td></tr>
+<tr><td>Bán hàng</td><td>Đơn tự đặt qua Portal</td><td>≥ 80%</td></tr>
+<tr><td>Giao hàng</td><td>Giao đúng hạn</td><td>≥ 95%</td></tr>
+<tr><td>Kế toán</td><td>Công nợ quá hạn</td><td>≤ 5% doanh thu</td></tr>
+<tr><td>Truy xuất</td><td>Thời gian truy xuất 1 lô</td><td>≤ 10 phút</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: PRC | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

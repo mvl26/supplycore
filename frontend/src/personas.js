@@ -9,9 +9,14 @@
 // item points to a module/feature the user lacks, it is hidden.
 //
 // Why not add new SC-* Frappe roles? It would force a backend migration
-// + reseed of every test user. The 8 SC-* roles in spec map to existing
-// Frappe roles via `matchRoles` below; admins extend the lookup as new
+// + reseed of every test user. The SC-* roles in spec map to existing
+// Frappe roles via `ROLE_TO_PERSONA` below; admins extend the lookup as new
 // Frappe roles are introduced.
+//
+// GĐ1 (2026-07): bỏ 2 persona thuộc mô hình cũ (điều dưỡng khoa; QC tạm map
+// vào 1 role đã xoá) — cả 2 Frappe role nguồn đã bị xoá khỏi backend, không
+// còn cách nào resolve tới các persona này. GĐ2 đã định nghĩa lại role/persona
+// theo mô hình phân phối MVL.
 //
 // Admin (System Manager / SupplyCore Executive) gets the default flat view
 // — full M0..M11 + every primary feature — which is also the fallback for
@@ -26,8 +31,6 @@ export const ROLE_TO_PERSONA = [
   ['SupplyCore Accountant', 'phong'],
   ['SupplyCore Storekeeper','tam'],
   ['Warehouse Officer',     'tam'],
-  ['Pharmacy Officer',      'quynh'],
-  ['SupplyCore Ward Staff', 'mai'],
 ]
 
 // Persona definitions. Each nav item:
@@ -77,7 +80,6 @@ export const PERSONAS = {
       { group: 'Vận hành' },
       { to: '/m3',  icon: 'truck',     label: 'M3 · Tiếp nhận',       requireModule: 'm3' },
       { to: '/m4',  icon: 'warehouse', label: 'M4 · Quản lý kho',     requireModule: 'm4' },
-      { to: '/m7',  icon: 'syringe',   label: 'M7 · Cấp phát',        requireModule: 'm7' },
       { group: 'Báo cáo & Kiểm soát' },
       { to: '/financial-reports', icon: 'wallet',     label: 'Báo cáo tài chính', requireFeature: 'financial_reports' },
       { to: '/stock-balance',     icon: 'package',    label: 'Tồn kho',           requireFeature: 'stock_balance' },
@@ -142,37 +144,10 @@ export const PERSONAS = {
       { to: '/warehouse-map',     icon: 'map',        label: 'Bản đồ kho',           requireFeature: 'warehouse_map' },
       { to: '/m5',                icon: 'layers',     label: 'M5 · Lô vật tư (FEFO)', requireModule: 'm5' },
       { to: '/stock-balance',     icon: 'package',    label: 'Tồn kho',              requireFeature: 'stock_balance' },
-      { group: 'Cấp phát & Chuyển kho' },
+      { group: 'Chuyển kho' },
       { to: '/m6',                icon: 'arrow-left-right', label: 'M6 · Chuyển kho', requireModule: 'm6' },
-      { to: '/m7',                icon: 'syringe',          label: 'M7 · Cấp phát',   requireModule: 'm7' },
       { group: 'Kiểm kê' },
       { to: '/m9',                icon: 'clipboard-check', label: 'M9 · Kiểm kê',     requireModule: 'm9' },
-    ],
-  },
-
-  // === SC-WARD-NURSE · Mai — Điều dưỡng trưởng / NV khoa ===
-  mai: {
-    id: 'mai',
-    name: 'Điều dưỡng / NV Khoa',
-    title: 'Yêu cầu vật tư · Tồn khoa · Hoàn trả',
-    role: 'SC-WARD-NURSE',
-    avatar: 'M',
-    color: '#E36C09',
-    scope: 'Chỉ khoa được gán (Row-level Security)',
-    twofa: 'Không bắt buộc',
-    goal: 'Yêu cầu đủ vật tư cho khoa, không gián đoạn điều trị',
-    home: '/dashboard',
-    nav: [
-      { group: 'Tổng quan' },
-      { to: '/dashboard',   icon: 'layout-dashboard', label: 'Tổng quan Khoa' },
-      { to: '/alerts',      icon: 'bell',             label: 'Cảnh báo khoa', requireFeature: 'alerts' },
-      { group: 'Yêu cầu vật tư' },
-      { to: '/list/SC Material Request',    icon: 'clipboard-plus', label: 'Yêu cầu vật tư',  requireDoctype: 'SC Material Request' },
-      { to: '/list/SC Dispensing Request',  icon: 'syringe',        label: 'Yêu cầu cấp phát', requireDoctype: 'SC Dispensing Request' },
-      { to: '/list/SC Transfer Request',    icon: 'arrow-left-right', label: 'Yêu cầu luân chuyển', requireDoctype: 'SC Transfer Request' },
-      { group: 'Tồn kho khoa' },
-      { to: '/stock-balance', icon: 'package', label: 'Tồn kho khoa', requireFeature: 'stock_balance' },
-      { to: '/m7',            icon: 'syringe', label: 'M7 · Cấp phát', requireModule: 'm7' },
     ],
   },
 
@@ -201,41 +176,9 @@ export const PERSONAS = {
       { to: '/financial-reports', icon: 'wallet', label: 'Báo cáo tài chính', requireFeature: 'financial_reports' },
     ],
   },
-
-  // === SC-QC · Quỳnh — KCS / Dược sĩ ===
-  // Mapped to Frappe role "Pharmacy Officer" (closest fit — no dedicated QC role yet).
-  quynh: {
-    id: 'quynh',
-    name: 'Kiểm soát Chất lượng',
-    title: 'QC · Quarantine · Truy xuất · Thu hồi',
-    role: 'SC-QC',
-    avatar: 'Q',
-    color: '#C00000',
-    scope: 'Dữ liệu lô hàng, QC toàn hệ thống',
-    twofa: 'Khuyến nghị (TOTP)',
-    goal: 'Đảm bảo chất lượng lô hàng, kiểm soát quarantine & thu hồi',
-    home: '/dashboard',
-    nav: [
-      { group: 'Tổng quan' },
-      { to: '/dashboard', icon: 'layout-dashboard', label: 'Bảng điều khiển QC' },
-      { to: '/alerts',    icon: 'bell',             label: 'Cảnh báo chất lượng', requireFeature: 'alerts' },
-      { group: 'Kiểm tra chất lượng' },
-      { to: '/list/SC Quality Inspection', icon: 'flask-conical', label: 'QC Checklist',           requireDoctype: 'SC Quality Inspection' },
-      { to: '/list/SC Batch',              icon: 'layers',        label: 'Lô hàng & Quarantine',  requireDoctype: 'SC Batch' },
-      { to: '/m5',                         icon: 'layers',        label: 'M5 · Lô vật tư',        requireModule: 'm5' },
-      { group: 'Truy xuất & Thu hồi' },
-      { to: '/m10',                            icon: 'file-search', label: 'M10 · Truy xuất & Thu hồi', requireModule: 'm10' },
-      { to: '/batch-trace',                    icon: 'file-search', label: 'Truy xuất lô',             requireFeature: 'batch_trace' },
-      { to: '/list/SC Recall Notice',          icon: 'siren',       label: 'Thu hồi',                  requireDoctype: 'SC Recall Notice' },
-      { to: '/list/SC Investigation Report',   icon: 'file-search', label: 'Điều tra',                 requireDoctype: 'SC Investigation Report' },
-      { group: 'Hỗ trợ vận hành' },
-      // QC has Read access to dispensing history (sheet 04: M7 "Lịch sử Cấp phát BN" ✓).
-      { to: '/m7',                             icon: 'syringe',     label: 'M7 · Cấp phát',            requireModule: 'm7' },
-    ],
-  },
 }
 
-export const PERSONA_LIST = ['admin', 'lan', 'hung', 'tam', 'mai', 'phong', 'quynh']
+export const PERSONA_LIST = ['admin', 'lan', 'hung', 'tam', 'phong']
 
 // Resolve persona from a user's Frappe roles. Returns persona id ('admin' if no match).
 export function resolvePersona(roles = []) {
@@ -258,9 +201,7 @@ export const PERSONA_WIDGETS = {
   lan:   null,  // Manager sees everything
   hung:  ['pending_pos', 'po_overdue_count', 'contract_expiring_30d', 'monthly_cost'],
   tam:   ['stock_value', 'expiring_soon', 'low_stock_items'],
-  mai:   ['low_stock_items', 'expiring_soon'],
   phong: ['monthly_cost', 'ap_outstanding', 'pending_pos'],
-  quynh: ['expiring_soon', 'low_stock_items'],
 }
 
 // Quick-action chips shown above the KPI grid, persona-specific.
@@ -279,23 +220,13 @@ export const PERSONA_QUICK_ACTIONS = {
   ],
   tam: [
     { to: '/putaway',                  icon: 'package-plus',  label: 'Xếp hàng lên kệ',  variant: 'primary' },
-    { to: '/list/SC Stock Entry',      icon: 'arrow-left-right', label: 'Cấp phát FEFO', variant: 'success' },
+    { to: '/list/SC Stock Entry',      icon: 'arrow-left-right', label: 'Xuất kho FEFO', variant: 'success' },
     { to: '/m9',                       icon: 'clipboard-check', label: 'Kiểm kê',         variant: 'ghost' },
     { to: '/warehouse-map',            icon: 'map',           label: 'Bản đồ kho',       variant: 'ghost' },
-  ],
-  mai: [
-    { to: '/list/SC Material Request',    icon: 'clipboard-plus', label: 'Tạo yêu cầu vật tư', variant: 'primary' },
-    { to: '/list/SC Dispensing Request',  icon: 'syringe',        label: 'Yêu cầu cấp phát',   variant: 'ghost' },
-    { to: '/stock-balance',               icon: 'package',        label: 'Tồn kho khoa',       variant: 'ghost' },
   ],
   phong: [
     { to: '/list/SC Purchase Invoice', icon: 'receipt',     label: 'Hóa đơn mới',     variant: 'primary' },
     { to: '/list/SC Payment Entry',    icon: 'credit-card', label: 'Phiếu thanh toán', variant: 'success' },
     { to: '/financial-reports',        icon: 'wallet',      label: 'Báo cáo tài chính', variant: 'ghost' },
-  ],
-  quynh: [
-    { to: '/list/SC Quality Inspection', icon: 'flask-conical', label: 'QC Checklist',  variant: 'primary' },
-    { to: '/batch-trace',                icon: 'file-search',   label: 'Truy xuất lô',   variant: 'ghost' },
-    { to: '/list/SC Recall Notice',      icon: 'siren',         label: 'Thu hồi',        variant: 'danger' },
   ],
 }

@@ -164,59 +164,6 @@ def test_period_cost_summary():
         return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
 
 
-def test_bhyt_settlement_aggregates_by_group():
-    """2 PD với BHYT khác group → settlement có 2 rows."""
-    from supplycore.m8_accounting.api.financial_reports import bhyt_settlement_report
-
-    # Tạo 2 patients có BHYT
-    patients = []
-    for i, group in enumerate(["N01", "N02"]):
-        p = frappe.new_doc("SC Patient")
-        p.patient_id = f"UC26-PAT-{i}-{random_string(4)}"
-        p.patient_name = f"UC-26 BN {i}"
-        p.bhyt_card_no = f"UC26{random_string(13)}"
-        p.bhyt_payment_rate = 80
-        p.flags.ignore_permissions = True
-        p.insert()
-        patients.append((p, group))
-
-    rows_created = 0
-    for p, group in patients:
-        item = _make_item(f"BHYT{group}")
-        pd = frappe.new_doc("SC Patient Dispensing")
-        pd.patient = p.name
-        pd.dispensing_date = today()
-        # Force bhyt_group via SC BHYT Code Config
-        cfg = frappe.new_doc("SC BHYT Code Config")
-        cfg.bhyt_code = f"UC26-{group}-{random_string(4)}"
-        cfg.bhyt_name = f"UC26 {group}"
-        cfg.bhyt_group = group
-        cfg.payment_rate = 80
-        cfg.item = item.name
-        cfg.effective_from = today()
-        cfg.is_active = 1
-        cfg.flags.ignore_permissions = True
-        cfg.insert()
-
-        pd.append("items", {"item": item.name, "uom": _get_uom(),
-                              "qty": 5, "unit_cost": 10_000})
-        pd.flags.ignore_permissions = True
-        pd.insert()
-        pd.submit()
-        rows_created += 1
-
-    try:
-        res = bhyt_settlement_report(from_date=today(), to_date=today())
-        groups = {r["bhyt_group"] for r in res["rows"]}
-        frappe.db.rollback()
-        if "N01" in groups and "N02" in groups:
-            return {"pass": True, "msg": f"OK groups: {groups}"}
-        return {"pass": False, "msg": f"X groups={groups}"}
-    except Exception as e:
-        frappe.db.rollback()
-        return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
-
-
 def test_get_voucher_details_pi():
     """PI submitted → drill returns header + items."""
     from supplycore.m8_accounting.api.financial_reports import get_voucher_details
@@ -322,7 +269,6 @@ def run():
         test_ap_aging_buckets,
         test_ap_aging_current_bucket,
         test_period_cost_summary,
-        test_bhyt_settlement_aggregates_by_group,
         test_get_voucher_details_pi,
         test_check_period_finalized_draft_present,
     ]

@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtShort, fmtDate } from '../utils'
+import { fmtNumber, fmtVNDShort, fmtDate, fmtVND } from '../utils'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -15,8 +15,8 @@ const toast = useToastStore()
 const TABS = [
   { id: 'inventory', label: 'Tồn kho — giá trị', api: 'inventory_value_report' },
   { id: 'ap_aging',  label: 'Công nợ NCC (Aging)', api: 'ap_aging_report' },
+  { id: 'ar_aging',  label: 'Công nợ phải thu (Aging)', api: 'ar_aging_by_customer' },
   { id: 'period',    label: 'Chi phí vật tư kỳ',  api: 'period_cost_report' },
-  { id: 'bhyt',      label: 'Quyết toán BHYT',     api: 'bhyt_settlement_report' },
 ]
 const active = ref('inventory')
 
@@ -27,8 +27,7 @@ const filters = ref({
   warehouse: '',
   item_group: '',
   supplier: '',
-  department: '',
-  bhyt_group: '',
+  customer: '',
   as_of_date: today,
   from_date: firstDayMonth,
   to_date: today,
@@ -37,7 +36,7 @@ const filters = ref({
 // Suggestions
 const whSuggestions = ref([])
 const supSuggestions = ref([])
-const deptSuggestions = ref([])
+const custSuggestions = ref([])
 
 const loading = ref(false)
 const data = ref(null)
@@ -49,14 +48,14 @@ const drillData = ref(null)
 const API_PREFIX = 'supplycore.m8_accounting.api.financial_reports.'
 
 async function loadSuggestions() {
-  const [whs, sups, depts] = await Promise.all([
+  const [whs, sups, custs] = await Promise.all([
     getList('SC Warehouse', { fields: ['name'], filters: { is_group: 0, disabled: 0 }, limit: 200 }).catch(() => []),
     getList('SC Supplier', { fields: ['name', 'supplier_name'], filters: { disabled: 0 }, limit: 300 }).catch(() => []),
-    getList('SC Department', { fields: ['name'], filters: { disabled: 0 }, limit: 100 }).catch(() => []),
+    getList('SC Customer', { fields: ['name', 'customer_name'], limit: 300 }).catch(() => []),
   ])
   whSuggestions.value = whs
   supSuggestions.value = sups
-  deptSuggestions.value = depts
+  custSuggestions.value = custs
 }
 
 async function runReport() {
@@ -73,16 +72,14 @@ async function runReport() {
     } else if (active.value === 'ap_aging') {
       if (filters.value.supplier) args.supplier = filters.value.supplier
       if (filters.value.as_of_date) args.as_of_date = filters.value.as_of_date
+    } else if (active.value === 'ar_aging') {
+      if (filters.value.customer) args.customer = filters.value.customer
+      if (filters.value.as_of_date) args.as_of_date = filters.value.as_of_date
     } else if (active.value === 'period') {
       args.from_date = filters.value.from_date
       args.to_date = filters.value.to_date
       if (filters.value.item_group) args.item_group = filters.value.item_group
       if (filters.value.warehouse) args.warehouse = filters.value.warehouse
-    } else if (active.value === 'bhyt') {
-      args.from_date = filters.value.from_date
-      args.to_date = filters.value.to_date
-      if (filters.value.department) args.department = filters.value.department
-      if (filters.value.bhyt_group) args.bhyt_group = filters.value.bhyt_group
     }
     data.value = await call(API_PREFIX + tab.api, args)
   } catch (e) {
@@ -117,6 +114,16 @@ function goToDoc(dt, name) {
 function exportCsv() {
   if (!data.value) return
   let rows = data.value.rows || data.value.by_item_group || []
+  // AR aging: bucket là object lồng nhau — làm phẳng trước khi xuất CSV.
+  if (active.value === 'ar_aging') {
+    rows = rows.map(r => ({
+      customer: r.customer, customer_name: r.customer_name,
+      credit_limit: r.credit_limit,
+      bucket_0_30: r.buckets?.['0_30'], bucket_31_60: r.buckets?.['31_60'],
+      bucket_61_90: r.buckets?.['61_90'], bucket_over_90: r.buckets?.over_90,
+      total_outstanding: r.total_outstanding, over_limit: r.over_limit,
+    }))
+  }
   if (!rows.length) {
     toast.warning('Không có dữ liệu để xuất')
     return
@@ -162,6 +169,24 @@ const bucketCls = {
   '61_90': 'bg-orange-50 border-orange-200',
   over_90: 'bg-red-50 border-red-200',
 }
+
+const bucketLabels = {
+  '0_30':  '0–30 ngày',
+  '31_60': '31–60 ngày',
+  '61_90': '61–90 ngày',
+  over_90: '> 90 ngày',
+}
+
+// AR aging (BRU-AR-001): tổng bucket toàn hệ thống (mọi khách) — hiển thị
+// dạng "tile" tương tự AP, cộng dồn từ rows theo khách.
+const arBuckets = computed(() => {
+  if (active.value !== 'ar_aging' || !data.value) return null
+  const totals = { '0_30': 0, '31_60': 0, '61_90': 0, over_90: 0 }
+  for (const r of (data.value.rows || [])) {
+    for (const k of Object.keys(totals)) totals[k] += r.buckets?.[k] || 0
+  }
+  return Object.entries(totals).map(([k, v]) => ({ key: k, label: bucketLabels[k] || k, amount: v }))
+})
 
 onMounted(loadSuggestions)
 </script>
@@ -230,6 +255,21 @@ onMounted(loadSuggestions)
         <input v-model="filters.as_of_date" type="date" class="sc-input" />
       </div>
     </div>
+    <div v-else-if="active === 'ar_aging'" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div>
+        <label class="text-xs text-sc-text-muted block mb-1">Khách hàng</label>
+        <select v-model="filters.customer" class="sc-input">
+          <option value="">— Tất cả —</option>
+          <option v-for="c in custSuggestions" :key="c.name" :value="c.name">
+            {{ c.name }} · {{ c.customer_name }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-sc-text-muted block mb-1">Tại ngày</label>
+        <input v-model="filters.as_of_date" type="date" class="sc-input" />
+      </div>
+    </div>
     <div v-else-if="active === 'period'" class="grid grid-cols-1 md:grid-cols-4 gap-3">
       <div>
         <label class="text-xs text-sc-text-muted block mb-1">Từ ngày <span class="text-red-500">*</span></label>
@@ -251,27 +291,6 @@ onMounted(loadSuggestions)
         </select>
       </div>
     </div>
-    <div v-else-if="active === 'bhyt'" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Từ ngày <span class="text-red-500">*</span></label>
-        <input v-model="filters.from_date" type="date" class="sc-input" />
-      </div>
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Đến ngày <span class="text-red-500">*</span></label>
-        <input v-model="filters.to_date" type="date" class="sc-input" />
-      </div>
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Khoa phòng</label>
-        <select v-model="filters.department" class="sc-input">
-          <option value="">— Tất cả —</option>
-          <option v-for="d in deptSuggestions" :key="d.name" :value="d.name">{{ d.name }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Nhóm BHYT (N01-N09)</label>
-        <input v-model="filters.bhyt_group" class="sc-input" placeholder="VD: N01" />
-      </div>
-    </div>
   </div>
 
   <!-- Period finalization warning -->
@@ -284,8 +303,7 @@ onMounted(loadSuggestions)
         — vẫn còn chứng từ <em>Draft</em> trong kỳ. Số liệu có thể thay đổi:
         <span v-if="data.pending_drafts">
           PI nháp = <strong>{{ data.pending_drafts.purchase_invoice || 0 }}</strong>,
-          PE nháp = <strong>{{ data.pending_drafts.payment_entry || 0 }}</strong>,
-          PD nháp = <strong>{{ data.pending_drafts.patient_dispensing || 0 }}</strong>
+          PE nháp = <strong>{{ data.pending_drafts.payment_entry || 0 }}</strong>
         </span>
       </div>
     </div>
@@ -310,7 +328,7 @@ onMounted(loadSuggestions)
       </div>
       <div class="sc-card p-4">
         <div class="text-xs text-sc-text-muted">Giá trị tồn (VND)</div>
-        <div class="text-2xl font-bold font-mono text-sc-success mt-1">{{ fmtShort(data.total_value) }}</div>
+        <div class="text-2xl font-bold font-mono text-sc-success mt-1">{{ fmtVNDShort(data.total_value) }}</div>
       </div>
     </div>
     <div class="sc-card overflow-hidden">
@@ -333,8 +351,8 @@ onMounted(loadSuggestions)
               <td>{{ r.warehouse }}</td>
               <td class="font-mono text-xs">{{ r.batch || '—' }}</td>
               <td class="text-right font-mono">{{ fmtNumber(r.qty) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.avg_rate) }}</td>
-              <td class="text-right font-mono font-semibold">{{ fmtShort(r.value) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.avg_rate) }}</td>
+              <td class="text-right font-mono font-semibold" :title="fmtVND(r.value)">{{ fmtVND(r.value) }}</td>
             </tr>
           </tbody>
         </table>
@@ -348,11 +366,11 @@ onMounted(loadSuggestions)
       <div v-for="b in apBuckets" :key="b.key"
         :class="['sc-card p-3 border-2', bucketCls[b.key] || '']">
         <div class="text-xs text-sc-text-muted">{{ b.label }}</div>
-        <div class="text-lg font-bold font-mono mt-1">{{ fmtShort(b.amount) }}</div>
+        <div class="text-lg font-bold font-mono mt-1">{{ fmtVNDShort(b.amount) }}</div>
       </div>
     </div>
     <div class="sc-card p-3 text-sm">
-      Tổng công nợ outstanding: <strong class="font-mono text-sc-danger">{{ fmtNumber(data.total_outstanding) }} VND</strong>
+      Tổng công nợ outstanding: <strong class="font-mono text-sc-danger">{{ fmtVND(data.total_outstanding) }}</strong>
       tại ngày {{ fmtDate(data.as_of_date) }}
     </div>
     <div class="sc-card overflow-hidden">
@@ -379,9 +397,9 @@ onMounted(loadSuggestions)
               <td class="font-mono text-xs">{{ r.supplier_invoice_no }}</td>
               <td>{{ fmtDate(r.invoice_date) }}</td>
               <td>{{ fmtDate(r.due_date) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.grand_total) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.paid_amount) }}</td>
-              <td class="text-right font-mono font-semibold text-sc-danger">{{ fmtNumber(r.outstanding_amount) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.grand_total) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.paid_amount) }}</td>
+              <td class="text-right font-mono font-semibold text-sc-danger">{{ fmtVND(r.outstanding_amount) }}</td>
               <td>
                 <span class="text-xs px-2 py-0.5 rounded"
                   :class="bucketCls[r.bucket] || ''">{{ r.bucket }}</span>
@@ -397,11 +415,69 @@ onMounted(loadSuggestions)
     </div>
   </div>
 
+  <!-- TAB: AR Aging (công nợ phải thu — BRU-AR-001) -->
+  <div v-else-if="active === 'ar_aging'" class="space-y-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3" v-if="arBuckets">
+      <div v-for="b in arBuckets" :key="b.key"
+        :class="['sc-card p-3 border-2', bucketCls[b.key] || '']">
+        <div class="text-xs text-sc-text-muted">{{ b.label }}</div>
+        <div class="text-lg font-bold font-mono mt-1">{{ fmtVNDShort(b.amount) }}</div>
+      </div>
+    </div>
+    <div class="sc-card p-3 text-sm">
+      Tổng phải thu: <strong class="font-mono text-sc-danger">{{ fmtVND(data.total_outstanding) }}</strong>
+      tại ngày {{ fmtDate(data.as_of_date) }}
+    </div>
+    <div class="sc-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="sc-table">
+          <thead>
+            <tr>
+              <th>Khách hàng</th>
+              <th class="text-right">Hạn mức nợ</th>
+              <th class="text-right">0–30 ngày</th>
+              <th class="text-right">31–60 ngày</th>
+              <th class="text-right">61–90 ngày</th>
+              <th class="text-right">&gt; 90 ngày</th>
+              <th class="text-right">Tổng còn lại</th>
+              <th>Cảnh báo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in data.rows" :key="r.customer"
+              class="hover:bg-sc-bg cursor-pointer"
+              @click="goToDoc('SC Customer', r.customer)"
+              :class="r.over_limit ? 'bg-red-50' : ''">
+              <td>
+                <span class="text-sc-royal hover:underline">{{ r.customer_name }}</span>
+                <span class="block text-xs text-sc-text-muted font-mono">{{ r.customer }}</span>
+              </td>
+              <td class="text-right font-mono">{{ r.credit_limit ? fmtVND(r.credit_limit) : '—' }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.buckets['0_30']) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.buckets['31_60']) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(r.buckets['61_90']) }}</td>
+              <td class="text-right font-mono" :class="r.buckets.over_90 > 0 ? 'text-sc-danger font-bold' : ''">
+                {{ fmtVND(r.buckets.over_90) }}
+              </td>
+              <td class="text-right font-mono font-semibold text-sc-danger">{{ fmtVND(r.total_outstanding) }}</td>
+              <td>
+                <span v-if="r.over_limit" class="sc-badge sc-badge-critical text-xs">
+                  <Icon name="alert-triangle" :size="12" /> Vượt hạn mức
+                </span>
+                <span v-else class="text-xs text-sc-text-muted">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- TAB 3: Period Cost -->
   <div v-else-if="active === 'period'" class="space-y-4">
     <div class="sc-card p-4">
       <div class="text-xs text-sc-text-muted">Chi phí vật tư kỳ {{ fmtDate(data.from_date) }} → {{ fmtDate(data.to_date) }}</div>
-      <div class="text-3xl font-bold font-mono text-sc-navy mt-2">{{ fmtNumber(data.total_cost) }} VND</div>
+      <div class="text-3xl font-bold font-mono text-sc-navy mt-2">{{ fmtVND(data.total_cost) }}</div>
     </div>
     <div class="sc-card overflow-hidden">
       <div class="overflow-x-auto">
@@ -420,63 +496,10 @@ onMounted(loadSuggestions)
               <td class="font-medium">{{ r.item_group }}</td>
               <td class="text-right font-mono">{{ r.pi_count }}</td>
               <td class="text-right font-mono">{{ fmtNumber(r.total_qty) }}</td>
-              <td class="text-right font-mono font-semibold">{{ fmtNumber(r.subtotal) }}</td>
+              <td class="text-right font-mono font-semibold">{{ fmtVND(r.subtotal) }}</td>
               <td class="text-right font-mono">
                 {{ data.total_cost > 0 ? ((r.subtotal / data.total_cost) * 100).toFixed(1) : '0' }}%
               </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 4: BHYT Settlement -->
-  <div v-else-if="active === 'bhyt'" class="space-y-4">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="sc-card p-4">
-        <div class="text-xs text-sc-text-muted">Tổng chi phí</div>
-        <div class="text-xl font-bold font-mono text-sc-navy">{{ fmtShort(data.summary.total_cost) }}</div>
-      </div>
-      <div class="sc-card p-4 bg-green-50">
-        <div class="text-xs text-sc-text-muted">BHYT chi trả</div>
-        <div class="text-xl font-bold font-mono text-green-700">{{ fmtShort(data.summary.total_bhyt_covered) }}</div>
-      </div>
-      <div class="sc-card p-4 bg-amber-50">
-        <div class="text-xs text-sc-text-muted">BN tự trả</div>
-        <div class="text-xl font-bold font-mono text-amber-700">{{ fmtShort(data.summary.total_patient_pays) }}</div>
-      </div>
-      <div class="sc-card p-4 bg-red-50">
-        <div class="text-xs text-sc-text-muted">Vượt trần</div>
-        <div class="text-xl font-bold font-mono text-red-700">{{ fmtShort(data.summary.total_ceiling_overage) }}</div>
-      </div>
-    </div>
-    <div class="sc-card overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="sc-table">
-          <thead>
-            <tr>
-              <th>Nhóm BHYT</th><th>Khoa</th>
-              <th class="text-right">Số PD</th>
-              <th class="text-right">Số BN</th>
-              <th class="text-right">Tổng SL</th>
-              <th class="text-right">Tổng CP</th>
-              <th class="text-right">BHYT trả</th>
-              <th class="text-right">BN trả</th>
-              <th class="text-right">Vượt trần</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(r, idx) in data.rows" :key="idx" class="hover:bg-sc-bg">
-              <td class="font-medium">{{ r.bhyt_group }}</td>
-              <td>{{ r.ward }}</td>
-              <td class="text-right font-mono">{{ r.pd_count }}</td>
-              <td class="text-right font-mono">{{ r.patient_count }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(r.total_qty) }}</td>
-              <td class="text-right font-mono font-semibold">{{ fmtNumber(r.total_cost) }}</td>
-              <td class="text-right font-mono text-green-700">{{ fmtNumber(r.total_bhyt_covered) }}</td>
-              <td class="text-right font-mono text-amber-700">{{ fmtNumber(r.total_patient_pays) }}</td>
-              <td class="text-right font-mono text-red-700">{{ fmtNumber(r.total_ceiling_overage) }}</td>
             </tr>
           </tbody>
         </table>

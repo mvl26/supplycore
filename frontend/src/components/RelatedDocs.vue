@@ -2,7 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { call } from '../api'
-import { fmtDate, fmtNumber, fmtShort } from '../utils'
+import { fmtDate, fmtNumber, fmtShort, fmtVND } from '../utils'
 import { fieldLabel } from '../i18n'
 import { statusLabel } from '../modules'
 import Icon from './Icon.vue'
@@ -42,14 +42,12 @@ const SECTION_LABELS = {
   recent_movements:     { title: 'Sổ kho gần đây',    icon: 'trending-up', dt: 'SC Stock Ledger Entry' },
   movements:            { title: 'Lịch sử SLE',       icon: 'trending-up', dt: 'SC Stock Ledger Entry' },
   recalls:              { title: 'Recall liên quan',  icon: 'siren', dt: 'SC Recall Notice' },
-  dispensings:          { title: 'Lịch sử cấp phát',  icon: 'syringe', dt: 'SC Patient Dispensing' },
-  patient_dispensings:  { title: 'Cấp phát BN từ DR', icon: 'syringe', dt: 'SC Patient Dispensing' },
   framework_contracts:  { title: 'HĐ khung',           icon: 'file-text', dt: 'Framework Contract' },
   affected_items:       { title: 'Vật tư bị ảnh hưởng', icon: 'alert-triangle', dt: null },
 }
 
 const STATUS_KEYS = new Set(['status', 'qc_status', 'overall_status', 'severity',
-  'request_type', 'warehouse_type', 'entry_type', 'alert_type', 'bhyt_type'])
+  'request_type', 'warehouse_type', 'entry_type', 'alert_type'])
 
 // Per-section item navigation override (vd stock_balance click → batch detail)
 const NAV_OVERRIDE = {
@@ -76,9 +74,10 @@ function fmt(value, key) {
   if (value == null || value === '') return '—'
   if (/_date$/.test(key)) return fmtDate(value)
   if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value, key)
-  if (/total|value|amount|qty|cost|balance|pays/.test(key) && typeof value === 'number') {
-    return fmtShort(value)
+  if (/total|value|amount|cost|balance|pays/.test(key) && typeof value === 'number') {
+    return fmtVND(value)
   }
+  if (/qty/.test(key) && typeof value === 'number') return fmtNumber(value)
   if (value === 1) return 'Có'
   if (value === 0) return '—'
   return value

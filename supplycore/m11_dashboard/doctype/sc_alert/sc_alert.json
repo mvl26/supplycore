@@ -36,7 +36,7 @@
   {"fieldname": "reference_name", "fieldtype": "Dynamic Link", "options": "reference_doctype", "label": "Document"},
   {"fieldname": "column_break_link", "fieldtype": "Column Break"},
   {"fieldname": "due_date", "fieldtype": "Date", "label": "Hạn xử lý"},
-  {"fieldname": "value_amount", "fieldtype": "Currency", "options": "VND", "label": "Giá trị liên quan"},
+  {"fieldname": "value_amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Giá trị liên quan"},
 
   {"fieldname": "section_assign", "fieldtype": "Section Break", "label": "Phân công & Snooze", "collapsible": 1},
   {"fieldname": "assigned_to", "fieldtype": "Link", "options": "User", "label": "Người phụ trách",
@@ -80,8 +80,6 @@
   {"role": "SupplyCore Executive", "read": 1, "write": 1, "report": 1},
   {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "report": 1},
   {"role": "SupplyCore Accountant", "read": 1, "write": 1, "report": 1},
-  {"role": "SupplyCore Ward Staff", "read": 1, "report": 1},
-  {"role": "Pharmacy Officer", "read": 1, "write": 1, "report": 1},
   {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1}
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",

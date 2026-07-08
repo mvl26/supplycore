@@ -14,7 +14,7 @@ const highlights = [
   { icon: 'layers',   title: 'Quản lý lô & hạn dùng', desc: 'Xuất FEFO tự động, cảnh báo cận hạn' },
   { icon: 'shield',   title: 'Truy xuất & thu hồi',   desc: 'Lần vết lô vật tư toàn chuỗi cung ứng' },
   { icon: 'activity', title: 'Vận hành thời gian thực', desc: 'Tồn kho 3 tầng, bản đồ vị trí lưu trữ' },
-  { icon: 'wallet',   title: 'Đối soát 3-way & BHYT',  desc: 'Kiểm soát hóa đơn, thanh toán, chi phí' },
+  { icon: 'wallet',   title: 'Đối soát 3-way',  desc: 'Kiểm soát hóa đơn, thanh toán, chi phí' },
 ]
 
 async function submit() {
@@ -56,7 +56,7 @@ async function submit() {
           </svg>
           <div>
             <div class="text-xl font-extrabold tracking-tight">SupplyCore</div>
-            <div class="text-[11px] uppercase tracking-[0.18em] text-white/50">Cung ứng Bệnh viện</div>
+            <div class="text-[11px] uppercase tracking-[0.18em] text-white/50">Chuỗi cung ứng Phân phối</div>
           </div>
         </div>
 
@@ -66,8 +66,8 @@ async function submit() {
             Quản lý chuỗi cung ứng<br />y tế — chính xác & minh bạch
           </h1>
           <p class="mt-3 text-white/55 text-sm max-w-sm leading-relaxed">
-            Nền tảng vận hành kho bệnh viện: từ hợp đồng, mua sắm, tiếp nhận đến
-            cấp phát và quyết toán BHYT.
+            Nền tảng vận hành kho: từ hợp đồng, mua sắm, tiếp nhận đến
+            chuyển kho và kế toán.
           </p>
         </div>
 
@@ -103,7 +103,7 @@ async function submit() {
             <path d="M20 11v18 M11 20h18" stroke="#fff" stroke-width="3.8" stroke-linecap="round" />
           </svg>
           <div class="text-xl font-extrabold tracking-tight text-sc-navy mt-2.5">SupplyCore</div>
-          <div class="text-[11px] uppercase tracking-[0.16em] text-sc-text-muted">Cung ứng Bệnh viện</div>
+          <div class="text-[11px] uppercase tracking-[0.16em] text-sc-text-muted">Chuỗi cung ứng Phân phối</div>
         </div>
 
         <div class="bg-sc-surface rounded-2xl shadow-sc-lg border border-sc-border p-7 sm:p-8">
@@ -167,7 +167,7 @@ async function submit() {
         </div>
 
         <p class="text-center text-[11px] text-sc-text-muted mt-5 lg:hidden">
-          © 2026 SupplyCore · Chuỗi cung ứng Bệnh viện v0.1
+          © 2026 SupplyCore · Chuỗi cung ứng & Phân phối MVL v0.1
         </p>
       </div>
     </div>

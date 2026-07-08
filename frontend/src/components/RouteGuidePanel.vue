@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { warehouseMap, getList } from '../api'
+import { warehouseMap } from '../api'
 import MapView from './MapView.vue'
 import Icon from './Icon.vue'
 import { useToastStore } from '../stores/toast'
@@ -17,7 +17,7 @@ const mapData = ref(null)
 const caption = ref('')
 
 // Panel chỉ hiện cho doctype có ngữ cảnh đường đi
-const RELEVANT = ['SC Stock Entry', 'SC Patient Dispensing', 'Bin Location', 'SC Transfer Request']
+const RELEVANT = ['SC Stock Entry', 'Bin Location', 'SC Transfer Request']
 const relevant = computed(() => RELEVANT.includes(props.doctype))
 
 async function buildMap() {
@@ -46,22 +46,6 @@ async function buildMap() {
         mapData.value = await warehouseMap.warehouse(props.doc.warehouse, props.doc.name)
         caption.value = `Vị trí ô ${props.doc.bin_code || props.doc.name} trong ${props.doc.warehouse}`
       }
-    } else if (props.doctype === 'SC Patient Dispensing') {
-      // Tìm kho khoa của ward để chỉ đường giao thuốc
-      const ward = props.doc.ward
-      if (ward) {
-        const whList = await getList('SC Warehouse', {
-          fields: ['name'], filters: { department: ward, disabled: 0 }, limit: 1,
-        }).catch(() => [])
-        const wardWh = whList?.[0]?.name
-        if (wardWh) {
-          mapData.value = await warehouseMap.site(wardWh)
-          caption.value = `Chỉ đường giao thuốc tới khoa: ${ward}`
-        } else {
-          mapData.value = await warehouseMap.site()
-          caption.value = `Bản đồ khuôn viên (khoa ${ward} chưa có kho riêng)`
-        }
-      }
     }
   } catch (e) {
     toast.error(`Lỗi tải bản đồ: ${e.message}`)
@@ -71,7 +55,7 @@ async function buildMap() {
 }
 
 watch(() => [props.doctype, props.doc?.name, props.doc?.from_warehouse,
-              props.doc?.to_warehouse, props.doc?.ward, props.doc?.warehouse],
+              props.doc?.to_warehouse, props.doc?.warehouse],
   buildMap, { immediate: true })
 
 const hasMap = computed(() => mapData.value && (mapData.value.cells || []).length > 0)

@@ -66,6 +66,7 @@ def _make_pr_with_qi(item_code: str, supplier: str, qty: float = 10) -> "frappe.
         "rate": 5_000, "warehouse": _pick_warehouse(),
         "expiry_date": add_days(today(), 365),
         "manufacturing_date": today(),
+        "supplier_batch_no": f"SUPB-{random_string(6)}",
     })
     pr.flags.ignore_permissions = True
     pr.insert()
@@ -80,21 +81,22 @@ def _make_pr_with_qi(item_code: str, supplier: str, qty: float = 10) -> "frappe.
 
 # ---------- Tests ----------
 
-def test_default_template_exists_after_migrate():
-    """Patch seed → template 'Default Hospital Supply QC' tồn tại + 5 criteria."""
-    name = frappe.db.get_value("QC Checklist Template", {"title": "Default Hospital Supply QC"}, "name")
-    if not name:
-        return {"pass": False, "msg": "X template chưa được seed"}
-    tpl = frappe.get_doc("QC Checklist Template", name)
-    if len(tpl.criteria) != 5:
-        return {"pass": False, "msg": f"X expected 5 criteria, got {len(tpl.criteria)}"}
-    names = [c.criterion_name for c in tpl.criteria]
-    expected = {"Bao bì nguyên vẹn", "Nhãn mác đúng", "Hạn dùng ≥6 tháng",
-                "Số lô khớp chứng từ", "Quy cách đúng hợp đồng"}
-    missing = expected - set(names)
-    if missing:
-        return {"pass": False, "msg": f"X thiếu criteria: {missing}"}
-    return {"pass": True, "msg": f"OK template {name} có 5 criteria"}
+def test_qi_seeds_default_criteria():
+    """UC-10 5 tiêu chí QC mẫu — LƯU Ý: khái niệm 'QC Checklist Template' đã bị
+    bỏ (commit faac2f7 'feat(qc): bỏ QC Checklist Template + hiện sẵn 5 tiêu chí
+    QC mẫu'). Từ đó, SC Purchase Receipt._auto_create_qi() seed sẵn 5 tiêu chí
+    QC nhập kho mẫu trực tiếp (_DEFAULT_QI_CRITERIA hardcode trong PR) cho mỗi
+    QI auto-tạo, thay vì tra cứu 1 template global. Test này verify cơ chế MỚI:
+    QI auto-created từ PR phải có đúng 5 readings mẫu."""
+    sup = _pick_supplier_with_email()
+    item = _make_item("TPLCHK")
+    pr, qi = _make_pr_with_qi(item.name, sup)
+    frappe.db.rollback()
+    if qi is None:
+        return {"pass": False, "msg": f"X không có QI cho PR {pr.name}"}
+    if len(qi.readings) != 5:
+        return {"pass": False, "msg": f"X expected 5 default readings, got {len(qi.readings)}"}
+    return {"pass": True, "msg": f"OK QI {qi.name} seeded 5 tiêu chí QC mẫu (thay QC Checklist Template)"}
 
 
 def test_qi_auto_created_from_pr():
@@ -260,7 +262,12 @@ def test_qi_conditional_accept_batch_conditional():
 
 
 def test_qi_request_replacement_blocks_batch():
-    """action=Request Replacement → batch.blocked=1."""
+    """action=Request Replacement → batch.blocked=1.
+
+    L17 (SC-E032 QC_RESULT_ACTION_CONFLICT) chặn cặp mâu thuẫn: Đạt (Accepted)
+    KHÔNG được đi kèm action Request Replacement/Return to Supplier — chỉ
+    Không đạt (Rejected) mới hợp lệ với 2 action này. Nên readings phải
+    Rejected để action Request Replacement hợp lệ (mirror test_qi_any_rejected)."""
     sup = _pick_supplier_with_email()
     item = _make_item("REPLA")
     pr, qi = _make_pr_with_qi(item.name, sup)
@@ -271,7 +278,7 @@ def test_qi_request_replacement_blocks_batch():
         frappe.db.rollback()
         return {"pass": False, "msg": "X QI không có batch"}
     for r in qi.readings:
-        r.status = "Accepted"  # all OK nhưng action vẫn Replace
+        r.status = "Rejected"  # Không đạt → action Request Replacement hợp lệ
     qi.action_taken = "Request Replacement"
     qi.failure_reason = "Yêu cầu đổi lô khác chất lượng tốt hơn"
     qi.save()
@@ -382,7 +389,7 @@ def test_fefo_includes_conditional_batch():
 
 def run():
     tests = [
-        test_default_template_exists_after_migrate,
+        test_qi_seeds_default_criteria,
         test_qi_auto_created_from_pr,
         test_qi_all_accepted_sets_pr_pass,
         test_qi_any_rejected_sets_pr_fail,

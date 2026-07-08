@@ -12,6 +12,16 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today, getdate
 
+# 5 tiêu chí QC nhập kho mẫu — seed sẵn cho mỗi SC Quality Inspection auto-tạo (KCS thêm/bớt được).
+# Giữ ĐỒNG BỘ với frontend schemas.js → 'SC Quality Inspection'.items.defaultRows
+_DEFAULT_QI_CRITERIA = [
+    "Bao bì, nhãn mác nguyên vẹn, đầy đủ thông tin",
+    "Số lô khớp chứng từ",
+    "Hạn sử dụng còn đủ theo quy định",
+    "Quy cách, số lượng đúng đặt hàng",
+    "Cảm quan đạt (màu sắc, hình thức, không hư hỏng/biến chất)",
+]
+
 
 class SCPurchaseReceipt(Document):
 
@@ -240,7 +250,7 @@ class SCPurchaseReceipt(Document):
         )
         sup_name = frappe.db.get_value("SC Supplier", self.supplier, "supplier_name") or self.supplier
         msg = (f"<p>Kính gửi {sup_name},</p>"
-               f"<p>Bệnh viện trả hàng theo Phiếu trả <b>{self.name}</b>:</p>"
+               f"<p>Công ty Miyano Việt Nam trả hàng theo Phiếu trả <b>{self.name}</b>:</p>"
                f"<table border='1' cellpadding='6'>"
                f"<tr><th>Mã VT</th><th>SL</th><th>UOM</th></tr>{items_html}</table>"
                f"<p><b>Lý do:</b> {frappe.utils.escape_html(self.return_reason or '—')}</p>"
@@ -449,7 +459,11 @@ class SCPurchaseReceipt(Document):
                 batch=s.batch, bin_location=s.bin_location,
                 remarks=f"Cancel SLE {s.name}",
             )
-            frappe.db.set_value("SC Stock Ledger Entry", s.name, "is_cancelled", 1)
+            # NB: KHÔNG set is_cancelled trên dòng gốc. get_qty/get_available_qty
+            # tính SUM(qty_change) WHERE is_cancelled=0, nên dòng gốc (+qty) và
+            # dòng đối ứng (-qty) tự triệt tiêu → tồn trả về đúng. Nếu vừa set
+            # is_cancelled vừa post đối ứng sẽ đảo KÉP (bug — đã sửa, mirror
+            # SC Delivery Note._reverse_stock_ledger).
 
     def _auto_create_qi(self):
         for r in self.items:
@@ -457,7 +471,6 @@ class SCPurchaseReceipt(Document):
                                          {"purchase_receipt": self.name, "item": r.item, "pr_item_ref": r.name})
             if existing:
                 continue
-            template = _find_checklist_template(r.item)
             qi = frappe.new_doc("SC Quality Inspection")
             qi.inspection_date = today()
             qi.purchase_receipt = self.name
@@ -466,12 +479,11 @@ class SCPurchaseReceipt(Document):
             qi.supplier = self.supplier
             qi.batch = r.batch_no
             qi.received_qty = r.qty
-            qi.checklist_template = template
             qi.inspected_by = frappe.session.user if frappe.session.user not in (None, "Guest") else "Administrator"
-            if template:
-                tpl = frappe.get_doc("QC Checklist Template", template)
-                for crit in sorted(tpl.criteria, key=lambda c: c.sequence or 0):
-                    qi.append("readings", {"specification": crit.criterion_name, "status": ""})
+            # Bỏ QC Checklist Template: seed sẵn 5 tiêu chí QC nhập kho mẫu để KCS tick (thêm/bớt được).
+            # Giữ ĐỒNG BỘ với frontend schemas.js → 'SC Quality Inspection'.items.defaultRows
+            for spec in _DEFAULT_QI_CRITERIA:
+                qi.append("readings", {"specification": spec, "status": ""})
             qi.flags.ignore_permissions = True
             try:
                 qi.insert()

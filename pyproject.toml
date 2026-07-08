@@ -3,7 +3,7 @@ name = "supplycore"
 authors = [
     { name = "SupplyCore Project", email = "info@miyano.com.vn" }
 ]
-description = "Hospital medical supply chain management — custom Frappe/ERPNext v15 app"
+description = "Medical supply distribution management — custom Frappe/ERPNext v15 app"
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]

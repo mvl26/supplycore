@@ -36,30 +36,46 @@ watch(() => props.value, () => nextTick(render))
 onMounted(render)
 
 // In nhãn: render barcode vào SVG tách rời → mở cửa sổ in
+// In nhãn chuẩn 50×30mm: mã vạch (kèm mã barcode) ở trên, dưới là tên vật tư + HSD.
 function printLabel() {
   const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   try {
+    // Barcode nhỏ gọn để vừa nhãn 50×30mm; displayValue hiện mã barcode ngay dưới mã vạch.
     JsBarcode(tmp, String(props.value), {
-      format: props.format, height: 70, width: 2,
-      displayValue: true, fontSize: 16, margin: 8,
+      format: props.format, height: 44, width: 1.6,
+      displayValue: true, fontSize: 13, textMargin: 1, margin: 0,
     })
   } catch (e) {
     return
   }
   const svgStr = new XMLSerializer().serializeToString(tmp)
-  const win = window.open('', '_blank', 'width=480,height=360')
+  const esc = (s) => String(s).replace(/[&<>"]/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+  const win = window.open('', '_blank', 'width=420,height=320')
   if (!win) return
-  win.document.write(`<!doctype html><html><head><title>Nhãn ${props.value}</title>
+  win.document.write(`<!doctype html><html><head><title>Nhãn ${esc(props.value)}</title>
     <style>
-      @page { margin: 6mm; }
-      body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 12px; }
-      .t { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-      .s { font-size: 11px; color: #444; margin-bottom: 8px; }
-      svg { max-width: 100%; }
+      @page { size: 50mm 30mm; margin: 0; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      .label {
+        width: 50mm; height: 30mm; padding: 1.5mm 2mm; gap: 0.5mm;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-family: Arial, sans-serif; text-align: center; overflow: hidden;
+      }
+      .bc { width: 100%; line-height: 0; }
+      .bc svg { width: 100%; height: auto; max-height: 14mm; }
+      .ln { max-width: 46mm; }
+      .name { font-size: 8pt; font-weight: 700; line-height: 1.12;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .exp  { font-size: 8pt; line-height: 1.12;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style></head><body>
-    ${props.title ? `<div class="t">${props.title}</div>` : ''}
-    ${props.subtitle ? `<div class="s">${props.subtitle}</div>` : ''}
-    ${svgStr}
+    <div class="label">
+      <div class="bc">${svgStr}</div>
+      ${props.title ? `<div class="ln name">${esc(props.title)}</div>` : ''}
+      ${props.subtitle ? `<div class="ln exp">${esc(props.subtitle)}</div>` : ''}
+    </div>
     <script>window.onload=function(){window.print();setTimeout(function(){window.close()},300)}<\/script>
     </body></html>`)
   win.document.close()

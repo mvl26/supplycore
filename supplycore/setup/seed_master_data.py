@@ -1,4 +1,4 @@
-"""Seed master data đặc thù bệnh viện Việt Nam.
+"""Seed master data đặc thù nhà phân phối vật tư/hóa chất y tế Việt Nam (MVL).
 
 Idempotent: chạy lại không trùng. Gọi qua patch v0_2 hoặc bench execute thủ công:
   bench --site <site> execute supplycore.setup.seed_master_data.run
@@ -6,8 +6,8 @@ Idempotent: chạy lại không trùng. Gọi qua patch v0_2 hoặc bench execut
 Bao gồm:
   - SC UOM         : 18 đơn vị tính y tế phổ biến
   - SC Item Group  : 6 nhóm gốc + ~20 nhóm con
-  - SC Department  : 30+ khoa/phòng cấp BV quận-huyện
-  - SC Warehouse   : Kho Tổng → 5 kho con + 8 kho khoa (3-tier)
+  - SC Department  : phòng ban công ty phân phối (Kinh doanh, Mua hàng, Kho vận…)
+  - SC Warehouse   : Kho Tổng → 5 kho con + 8 kho phòng ban (3-tier)
   - SC Supplier    : 8 NCC tiêu biểu (đa quốc gia + nội địa)
   - SC Item        : 12 vật tư y tế mẫu mỗi nhóm chính
 """
@@ -78,47 +78,21 @@ ITEM_GROUPS = [
 
 
 # ---------------------------------------------------------------------------
-# 3. SC Department (cấp BV quận/huyện điển hình)
+# 3. SC Department (phòng ban công ty phân phối MVL điển hình)
 # ---------------------------------------------------------------------------
 DEPARTMENTS = [
     # (name, code, type, head, phone)
-    # Lâm sàng
-    ("Khoa Nội tổng hợp",         "KNT", "Clinical", None, None),
-    ("Khoa Ngoại tổng hợp",       "KNG", "Surgical", None, None),
-    ("Khoa Sản",                  "KS",  "Clinical", None, None),
-    ("Khoa Nhi",                  "KN",  "Clinical", None, None),
-    ("Khoa Cấp cứu",              "KCC", "Clinical", None, None),
-    ("Khoa Hồi sức tích cực",     "KHS", "Clinical", None, None),
-    ("Khoa Tim mạch",             "KTM", "Clinical", None, None),
-    ("Khoa Tiêu hóa",             "KTH", "Clinical", None, None),
-    ("Khoa Thần kinh",            "KTK", "Clinical", None, None),
-    ("Khoa Mắt",                  "KM",  "Clinical", None, None),
-    ("Khoa Tai Mũi Họng",         "KTMH","Clinical", None, None),
-    ("Khoa Răng Hàm Mặt",         "KRHM","Surgical", None, None),
-    ("Khoa Da liễu",              "KDL", "Clinical", None, None),
-    ("Khoa Truyền nhiễm",         "KTN", "Clinical", None, None),
-    ("Khoa Y học cổ truyền",      "KYHCT","Clinical", None, None),
-    ("Khoa Chấn thương chỉnh hình","KCTCH","Surgical", None, None),
-    ("Khoa Ung bướu",             "KUB", "Clinical", None, None),
-    ("Khoa Phục hồi chức năng",   "KPHCN","Clinical", None, None),
-    # Cận lâm sàng
-    ("Khoa Chẩn đoán hình ảnh",   "KCDHA","Lab",      None, None),
-    ("Khoa Xét nghiệm",           "KXN", "Lab",       None, None),
-    ("Khoa Vi sinh",              "KVS", "Lab",       None, None),
-    ("Khoa Giải phẫu bệnh",       "KGPB","Lab",       None, None),
-    ("Khoa Thăm dò chức năng",    "KTDCN","Lab",      None, None),
-    # Phòng mổ + dược
-    ("Khoa Gây mê hồi sức",       "KGMHS","Surgical", None, None),
-    ("Phòng Mổ",                  "PM",   "Surgical", None, None),
-    ("Khoa Dược",                 "KD",   "Pharmacy", None, None),
-    ("Phòng Vật tư - TTBYT",      "PVT",  "Admin",    None, None),
-    # Quản lý
-    ("Phòng Khám tổng hợp",       "PKTH", "Clinical", None, None),
-    ("Phòng Kế hoạch tổng hợp",   "PKHTH","Admin",    None, None),
-    ("Phòng Tài chính kế toán",   "PTCKT","Admin",    None, None),
-    ("Phòng Tổ chức cán bộ",      "PTCCB","Admin",    None, None),
-    ("Phòng CNTT",                "PCNTT","Admin",    None, None),
-    ("Ban Giám đốc",              "BGD",  "Admin",    None, None),
+    ("Phòng Kinh doanh",              "PKD",   "Admin", None, None),
+    ("Phòng Mua hàng",                "PMH",   "Admin", None, None),
+    ("Phòng Kho vận",                 "PKV",   "Admin", None, None),
+    ("Phòng Giao nhận",               "PGN",   "Admin", None, None),
+    ("Phòng Kế toán",                 "PKT",   "Admin", None, None),
+    ("Phòng QC - Chất lượng",         "PQC",   "Admin", None, None),
+    ("Phòng Chăm sóc khách hàng",     "PCSKH", "Admin", None, None),
+    ("Phòng Marketing",               "PMKT",  "Admin", None, None),
+    ("Phòng Nhân sự",                 "PNS",   "Admin", None, None),
+    ("Phòng CNTT",                    "PCNTT", "Admin", None, None),
+    ("Ban Giám đốc",                  "BGD",   "Admin", None, None),
 ]
 
 
@@ -128,23 +102,23 @@ DEPARTMENTS = [
 WAREHOUSES = [
     # (name, code, type, parent, is_group, department)
     # Tầng 1: Kho Tổng (group)
-    ("Kho Tổng Bệnh viện",        "KHO-TONG",      "Main",      None,                   1, None),
+    ("Kho Tổng MVL",               "KHO-TONG",      "Main",      None,             1, None),
     # Tầng 2: Kho con
-    ("Kho Vật tư tiêu hao",        "KHO-VTTH",      "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Hóa chất sinh phẩm",     "KHO-HCSP",      "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Vật tư cấy ghép",        "KHO-CG",        "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Dịch truyền",            "KHO-DT",        "Sub",       "Kho Tổng Bệnh viện",   0, None),
-    ("Kho Cách ly QC",             "KHO-QC",        "Quarantine","Kho Tổng Bệnh viện",   0, None),
-    ("Kho Trung chuyển",           "KHO-TC",        "Transit",   "Kho Tổng Bệnh viện",   0, None),
-    # Tầng 3: Kho khoa phòng
-    ("Kho Khoa Cấp cứu",           "KHO-KCC",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Cấp cứu"),
-    ("Kho Khoa ICU",               "KHO-KHS",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Hồi sức tích cực"),
-    ("Kho Khoa Nội tổng hợp",      "KHO-KNT",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Nội tổng hợp"),
-    ("Kho Khoa Ngoại tổng hợp",    "KHO-KNG",       "Department","Kho Tổng Bệnh viện",   0, "Khoa Ngoại tổng hợp"),
-    ("Kho Khoa Sản",               "KHO-KS",        "Department","Kho Tổng Bệnh viện",   0, "Khoa Sản"),
-    ("Kho Khoa Nhi",               "KHO-KN",        "Department","Kho Tổng Bệnh viện",   0, "Khoa Nhi"),
-    ("Kho Phòng Mổ",               "KHO-PM",        "Department","Kho Tổng Bệnh viện",   0, "Phòng Mổ"),
-    ("Kho Khoa Dược",              "KHO-KD",        "Department","Kho Tổng Bệnh viện",   0, "Khoa Dược"),
+    ("Kho Vật tư tiêu hao",        "KHO-VTTH",      "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Hóa chất sinh phẩm",     "KHO-HCSP",      "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Vật tư cấy ghép",        "KHO-CG",        "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Dịch truyền",            "KHO-DT",        "Sub",       "Kho Tổng MVL",   0, None),
+    ("Kho Cách ly QC",             "KHO-QC",        "Quarantine","Kho Tổng MVL",   0, None),
+    ("Kho Trung chuyển",           "KHO-TC",        "Transit",   "Kho Tổng MVL",   0, None),
+    # Tầng 3: Kho phòng ban
+    ("Kho Phòng Kinh doanh",       "KHO-KCC",       "Department","Kho Tổng MVL",   0, "Phòng Kinh doanh"),
+    ("Kho Phòng Mua hàng",         "KHO-KHS",       "Department","Kho Tổng MVL",   0, "Phòng Mua hàng"),
+    ("Kho Phòng Kế toán",          "KHO-KNT",       "Department","Kho Tổng MVL",   0, "Phòng Kế toán"),
+    ("Kho Phòng Marketing",        "KHO-KNG",       "Department","Kho Tổng MVL",   0, "Phòng Marketing"),
+    ("Kho Phòng Nhân sự",          "KHO-KS",        "Department","Kho Tổng MVL",   0, "Phòng Nhân sự"),
+    ("Kho Phòng CSKH",             "KHO-KN",        "Department","Kho Tổng MVL",   0, "Phòng Chăm sóc khách hàng"),
+    ("Kho Phòng QC",               "KHO-PM",        "Department","Kho Tổng MVL",   0, "Phòng QC - Chất lượng"),
+    ("Kho Giao hàng",              "KHO-KD",        "Department","Kho Tổng MVL",   0, "Phòng Giao nhận"),
 ]
 
 
@@ -398,19 +372,19 @@ SUPPLIERS = [
 # 6. SC Item (vật tư mẫu — 12 items đại diện)
 # ---------------------------------------------------------------------------
 ITEMS = [
-    # (code, name, group, uom, has_batch, is_medical, lead_time, min_shelf_life, has_bhyt, bhyt_group, bhyt_rate)
-    ("VTTH-GLOVE-S",   "Găng tay phẫu thuật vô trùng cỡ 7.5", "Găng tay",     "Đôi",  1, 1, 14, 180, 1, "N05", 80),
-    ("VTTH-MASK-3PLY", "Khẩu trang y tế 3 lớp",                "Khẩu trang",   "Cái",  1, 1, 7,  90,  0, None, None),
-    ("VTTH-GAUZE-5",   "Băng gạc y tế cuộn 5cm",               "Băng gạc",     "Cuộn", 1, 1, 14, 180, 1, "N05", 80),
-    ("VTTH-COTTON",    "Bông y tế tiệt trùng 100g",            "Bông y tế",    "Gói",  1, 1, 14, 180, 1, "N05", 80),
-    ("VTTH-NEEDLE-23", "Kim tiêm 23G x 1 inch",                "Kim tiêm",     "Cái",  1, 1, 14, 180, 1, "N05", 100),
-    ("VTTH-SYR-5ML",   "Bơm tiêm 5ml + kim",                   "Bơm tiêm",     "Cái",  1, 1, 14, 180, 1, "N05", 100),
-    ("VTTH-IV-SET",    "Dây truyền dịch tiệt trùng",           "Dây truyền",   "Bộ",   1, 1, 14, 180, 1, "N05", 100),
-    ("DTRC-NACL09",    "Dịch truyền NaCl 0.9% 500ml",          "Nước muối sinh lý", "Chai", 1, 1, 21, 180, 1, "N05", 100),
-    ("DTRC-GLU5",      "Dịch truyền Glucose 5% 500ml",         "Glucose",      "Chai", 1, 1, 21, 180, 1, "N05", 100),
-    ("DTRC-RL",        "Dịch truyền Ringer Lactate 500ml",     "Ringer Lactate","Chai",1, 1, 21, 180, 1, "N05", 100),
-    ("VTPT-COND-70",   "Cồn 70 độ y tế 500ml",                 "Cồn y tế",     "Chai", 1, 1, 14, 365, 0, None, None),
-    ("VTPT-IODINE",    "Povidine iod 10% 500ml",               "Sát khuẩn",    "Chai", 1, 1, 14, 365, 1, "N05", 100),
+    # (code, name, group, uom, has_batch, is_medical, lead_time, min_shelf_life)
+    ("VTTH-GLOVE-S",   "Găng tay phẫu thuật vô trùng cỡ 7.5", "Găng tay",     "Đôi",  1, 1, 14, 180),
+    ("VTTH-MASK-3PLY", "Khẩu trang y tế 3 lớp",                "Khẩu trang",   "Cái",  1, 1, 7,  90),
+    ("VTTH-GAUZE-5",   "Băng gạc y tế cuộn 5cm",               "Băng gạc",     "Cuộn", 1, 1, 14, 180),
+    ("VTTH-COTTON",    "Bông y tế tiệt trùng 100g",            "Bông y tế",    "Gói",  1, 1, 14, 180),
+    ("VTTH-NEEDLE-23", "Kim tiêm 23G x 1 inch",                "Kim tiêm",     "Cái",  1, 1, 14, 180),
+    ("VTTH-SYR-5ML",   "Bơm tiêm 5ml + kim",                   "Bơm tiêm",     "Cái",  1, 1, 14, 180),
+    ("VTTH-IV-SET",    "Dây truyền dịch tiệt trùng",           "Dây truyền",   "Bộ",   1, 1, 14, 180),
+    ("DTRC-NACL09",    "Dịch truyền NaCl 0.9% 500ml",          "Nước muối sinh lý", "Chai", 1, 1, 21, 180),
+    ("DTRC-GLU5",      "Dịch truyền Glucose 5% 500ml",         "Glucose",      "Chai", 1, 1, 21, 180),
+    ("DTRC-RL",        "Dịch truyền Ringer Lactate 500ml",     "Ringer Lactate","Chai",1, 1, 21, 180),
+    ("VTPT-COND-70",   "Cồn 70 độ y tế 500ml",                 "Cồn y tế",     "Chai", 1, 1, 14, 365),
+    ("VTPT-IODINE",    "Povidine iod 10% 500ml",               "Sát khuẩn",    "Chai", 1, 1, 14, 365),
 ]
 
 
@@ -586,7 +560,7 @@ def _apply_supplier_fields(d, sup: dict):
 
 def _seed_items() -> int:
     created = 0
-    for code, name, group, uom, has_batch, is_med, lead, min_shelf, has_bhyt, bhyt_grp, bhyt_rate in ITEMS:
+    for code, name, group, uom, has_batch, is_med, lead, min_shelf in ITEMS:
         if frappe.db.exists("SC Item", code):
             continue
         if not frappe.db.exists("SC UOM", uom):
@@ -609,10 +583,6 @@ def _seed_items() -> int:
         d.lead_time_days = lead
         d.min_shelf_life_days = min_shelf
         d.safety_stock = 50
-        d.has_bhyt = has_bhyt
-        d.bhyt_code = code if has_bhyt else None
-        d.bhyt_group = bhyt_grp
-        d.bhyt_payment_rate = bhyt_rate or 0
         d.flags.ignore_permissions = True
         d.insert()
         created += 1

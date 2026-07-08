@@ -20,8 +20,8 @@
   {"fieldname": "actual_qty", "fieldtype": "Float", "label": "SL thực tế", "reqd": 1, "non_negative": 1, "in_list_view": 1, "columns": 1},
   {"fieldname": "difference", "fieldtype": "Float", "label": "Δ qty", "read_only": 1, "in_list_view": 1, "columns": 1},
   {"fieldname": "column_break_qty", "fieldtype": "Column Break"},
-  {"fieldname": "valuation_rate", "fieldtype": "Currency", "options": "VND", "label": "Đơn giá"},
-  {"fieldname": "amount_change", "fieldtype": "Currency", "options": "VND", "label": "Δ giá trị", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "valuation_rate", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Đơn giá"},
+  {"fieldname": "amount_change", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Δ giá trị", "read_only": 1, "in_list_view": 1, "columns": 1},
 
   {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
   {"fieldname": "reason", "fieldtype": "Select",

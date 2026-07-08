@@ -1,0 +1,29 @@
+{
+ "actions": [],
+ "creation": "2026-07-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "item",
+  "column_break_1",
+  "qty",
+  "unit_price",
+  "amount"
+ ],
+ "fields": [
+  {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Vật tư", "reqd": 1, "in_list_view": 1, "columns": 3},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "qty", "fieldtype": "Float", "label": "SL", "reqd": 1, "non_negative": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "unit_price", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Đơn giá", "read_only": 1, "in_list_view": 1, "columns": 2},
+  {"fieldname": "amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Thành tiền", "read_only": 1, "in_list_view": 1, "columns": 2}
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-07-07 00:00:00",
+ "module": "M7 Sales",
+ "name": "SI Item",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -5,6 +5,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now
 
+from supplycore.utils.permissions import block_portal
+
 
 EXEC_THRESHOLD_DEFAULT = 50_000_000
 
@@ -21,6 +23,12 @@ class SCPaymentEntry(Document):
             self.status = "Draft"
 
     def before_submit(self):
+        # BRU-PAY-001: không được submit PE có payment_date nằm trong kỳ đã
+        # khóa sổ (mirror SC Sales Invoice/SC Sales Receipt — trước fix này
+        # PE KHÔNG có check này, chỉ SI/SR có).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.payment_date)
+
         # UC-25 step 5/5a: enforce role theo approval_level
         user_roles = set(frappe.get_roles(frappe.session.user))
         if self.approval_level == "Executive":
@@ -46,6 +54,12 @@ class SCPaymentEntry(Document):
         self.db_set("approved_by", frappe.session.user
                     if frappe.session.user not in (None, "", "Guest") else "Administrator")
         self.db_set("approved_at", now())
+
+    def before_cancel(self):
+        # BRU-PAY-001: chặn TRƯỚC KHI docstatus bị ghi (before_cancel chạy
+        # trước db_update/on_cancel — xem lý do trong SC Sales Invoice.before_cancel).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.payment_date)
 
     def on_cancel(self):
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
@@ -171,7 +185,14 @@ def _resolve_account(code: str) -> str:
 @frappe.whitelist()
 def auto_load_outstanding_invoices(supplier: str, limit: int = 50) -> list:
     """UC-25 step 2: list PI outstanding của supplier (sorted by due_date ASC).
-    Loại bỏ PI có payment_hold=1."""
+    Loại bỏ PI có payment_hold=1.
+
+    GĐ4 Task 5 (security sweep): hàm module-level, KHÔNG qua `run_doc_method`
+    (không tự động check permission) — không gate sẽ lộ công nợ phải trả NCC
+    (grand_total/outstanding_amount) cho BẤT KỲ supplier nào caller truyền,
+    cùng lớp lỗ hổng với `ap_aging_report` (phát hiện gốc của sweep này).
+    """
+    block_portal()
     rows = frappe.db.sql("""
         SELECT name, supplier_invoice_no, invoice_date, due_date,
                grand_total, paid_amount, outstanding_amount,

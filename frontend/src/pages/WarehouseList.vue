@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Pagination from '../components/Pagination.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtShort } from '../utils'
+import { fmtNumber, fmtShort, fmtVND } from '../utils'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -144,7 +144,7 @@ function newWarehouse() {
   <div v-else-if="!total" class="sc-card p-10 text-center text-sc-text-muted">
     Không có kho khớp với bộ lọc
   </div>
-  <div v-else class="sc-card overflow-hidden">
+  <div v-else class="sc-card overflow-x-auto">
     <table class="sc-table">
       <thead>
         <tr>
@@ -176,7 +176,7 @@ function newWarehouse() {
           </td>
           <td class="text-right font-mono">{{ fmtNumber(r.total_qty) }}</td>
           <td class="text-right font-mono">{{ r.distinct_items || 0 }}</td>
-          <td class="text-right font-mono font-semibold">{{ fmtShort(r.total_value) }}</td>
+          <td class="text-right font-mono font-semibold" :title="fmtVND(r.total_value)">{{ fmtVND(r.total_value) }}</td>
           <td>
             <button @click="openStockBalance(r.name)"
               class="text-xs text-sc-royal hover:underline">
@@ -190,7 +190,7 @@ function newWarehouse() {
           <td colspan="2">Tổng cộng ({{ total }} kho)</td>
           <td class="text-right font-mono">{{ fmtNumber(totals.qty) }}</td>
           <td></td>
-          <td class="text-right font-mono">{{ fmtShort(totals.value) }}</td>
+          <td class="text-right font-mono" :title="fmtVND(totals.value)">{{ fmtVND(totals.value) }}</td>
           <td></td>
         </tr>
       </tfoot>

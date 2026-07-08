@@ -1,0 +1,4 @@
+# guest/packer/cloud-init/meta-data — build VM (KHÁC instance-id với seed prod).
+# instance-id riêng để cloud-init không nhầm build state với lần boot production.
+instance-id: supplycore-build
+local-hostname: supplycore-build

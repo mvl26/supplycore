@@ -9,8 +9,8 @@ cd frontend
 npm test                  # all suites
 npm run test:login        # suite 00 login
 npm run test:m0           # suite 01 M0 master data
-npm run test:modules      # 12 module hubs M0..M11
-npm run test:forms        # 24 form schemas
+npm run test:modules      # 11 module hubs M0..M11
+npm run test:forms        # 20 form schemas
 npm run test:crud         # CRUD: create + list filter
 npm run test:actions      # ActionPanel + Alert filter
 npm run test:headed       # mở browser thấy được
@@ -21,9 +21,9 @@ npm run test:headed       # mở browser thấy được
 | File | Coverage |
 |---|---|
 | `00_login.mjs` | Login flow + Dashboard + Sidebar 12 modules + Logout |
-| `01_m0_master.mjs` | M0 Master Data: Item/UOM/Supplier/Patient/GL Account |
+| `01_m0_master.mjs` | M0 Master Data: Item/UOM/Supplier/GL Account |
 | `02_modules.mjs` | M0..M11 hub titles |
-| `03_forms.mjs` | 24 doctype form schemas (sections + inputs) |
+| `03_forms.mjs` | 20 doctype form schemas (sections + inputs) |
 | `04_crud.mjs` | Tạo UOM/ItemGroup qua UI → cleanup REST |
 | `05_actions.mjs` | ActionPanel, Alert filter, LinkAutocomplete |
 

@@ -50,7 +50,6 @@ const ROLE_WIDGETS = {
                          'expiring_soon','low_stock_items','contract_expiring_30d','po_overdue_count'],
   'SupplyCore Accountant': ['monthly_cost','ap_outstanding','pending_pos'],
   'SupplyCore Storekeeper': ['stock_value','expiring_soon','low_stock_items'],
-  'Pharmacy Officer': ['monthly_cost','expiring_soon'],
 }
 
 const visibleKpiKeys = computed(() => {
@@ -214,7 +213,6 @@ function exportTrend() {
         <option value="SupplyCore Manager">Vai trò Quản lý</option>
         <option value="SupplyCore Accountant">Vai trò Kế toán</option>
         <option value="SupplyCore Storekeeper">Vai trò Thủ kho</option>
-        <option value="Pharmacy Officer">Vai trò Dược viên</option>
       </select>
       <select v-model="warehouse" @change="load(1)"
         class="sc-input max-w-[160px] text-sm" title="Lọc theo kho">
@@ -357,7 +355,7 @@ function exportTrend() {
             <td class="font-mono text-xs">{{ item.item_code }}</td>
             <td>{{ item.item_name }}</td>
             <td class="text-right font-mono">{{ fmtShort(item.qty_used) }}</td>
-            <td class="text-right font-mono">{{ fmtShort(item.cost) }}</td>
+            <td class="text-right font-mono" :title="fmtVND(item.cost)">{{ fmtVND(item.cost) }}</td>
           </tr>
         </tbody>
       </table>
@@ -392,7 +390,7 @@ function exportTrend() {
               <td class="p-1 font-mono">{{ t.item_code }}</td>
               <td class="p-1">{{ t.item_name }}</td>
               <td class="p-1 text-right font-mono">{{ fmtShort(t.qty_used) }}</td>
-              <td class="p-1 text-right font-mono">{{ fmtShort(t.cost) }}</td>
+              <td class="p-1 text-right font-mono" :title="fmtVND(t.cost)">{{ fmtVND(t.cost) }}</td>
             </tr>
           </tbody>
         </table>

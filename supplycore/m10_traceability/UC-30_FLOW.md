@@ -48,7 +48,7 @@
 ### 3a — Một phần đã sử dụng cho BN
 
 Khi `populate_affected_items` phát hiện `location_type=Patient` rows:
-- `notify_clinical_staff()` gửi email/notification đến bác sĩ điều trị + role "Pharmacy Officer"
+- `notify_clinical_staff()` gửi email/notification đến bác sĩ điều trị + role "SupplyCore Manager"
 - `clinical_notified_at` field set timestamp
 - Mỗi row Patient có status mặc định "Used (No Recovery)" nếu BN đã xuất viện
 
@@ -127,7 +127,7 @@ def notify_departments(self):
 
 @frappe.whitelist()
 def notify_clinical_staff(self):
-    """UC-30 3a: gửi alert tới Pharmacy Officer + Patient's prescribing doctor."""
+    """UC-30 3a: gửi alert tới SupplyCore Manager + Patient's prescribing doctor."""
     if self.docstatus != 1:
         frappe.throw(_("Chỉ notify khi Issued"))
     patient_rows = [r for r in self.affected_items if r.location_type == "Patient"]
@@ -137,7 +137,7 @@ def notify_clinical_staff(self):
         filters={"enabled": 1},
         or_filters=[
             ["name", "in", frappe.get_all("Has Role",
-                filters={"role": ["in", ["Pharmacy Officer", "SupplyCore Manager"]]},
+                filters={"role": ["in", ["SupplyCore Manager"]]},
                 pluck="parent")],
         ], pluck="name")
     if recipients:

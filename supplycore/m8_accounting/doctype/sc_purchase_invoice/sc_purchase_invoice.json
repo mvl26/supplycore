@@ -164,6 +164,7 @@
   {
    "fieldname": "subtotal",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng trước thuế",
    "read_only": 1
@@ -177,6 +178,7 @@
   {
    "fieldname": "vat_amount",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tiền VAT",
    "read_only": 1
@@ -188,6 +190,7 @@
   {
    "fieldname": "grand_total",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng cộng",
    "read_only": 1,
@@ -196,6 +199,7 @@
   {
    "fieldname": "outstanding_amount",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Còn phải trả",
    "read_only": 1,
@@ -204,6 +208,7 @@
   {
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Đã thanh toán",
    "read_only": 1,
@@ -227,6 +232,7 @@
   {
    "fieldname": "match_variance_amount",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Sai lệch (VND)",
    "read_only": 1

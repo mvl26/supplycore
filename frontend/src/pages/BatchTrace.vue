@@ -5,7 +5,7 @@ import { call } from '../api'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtDate } from '../utils'
+import { fmtNumber, fmtVND, fmtDate } from '../utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,7 +114,7 @@ const missingLabel = {
 
 <template>
   <PageHeader title="Truy xuất lô — UC-29" icon="file-search" code="M10"
-    subtitle="Tra cứu vòng đời 1 lô vật tư: nguồn gốc → di chuyển → cấp phát → tồn hiện tại" />
+    subtitle="Tra cứu vòng đời 1 lô vật tư: nguồn gốc → di chuyển → xuất bán → tồn hiện tại" />
 
   <!-- Lookup form -->
   <div class="sc-card p-4 mb-4">
@@ -300,6 +300,49 @@ const missingLabel = {
       </div>
     </div>
 
+    <!-- Section 3b: Đã bán cho khách hàng (BRU-REC-001) -->
+    <div v-if="trace.sold_to && trace.sold_to.length" class="sc-card p-5">
+      <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
+        <span class="text-xl"><Icon name="users" :size="18" /></span> Đã bán cho khách hàng
+        <span class="ml-auto font-mono text-sm text-sc-text-muted">
+          {{ trace.sold_to.length }} khách ·
+          <span class="text-sc-danger font-semibold">
+            -{{ fmtNumber(trace.sold_to.reduce((s, r) => s + (Number(r.qty) || 0), 0)) }}
+          </span>
+        </span>
+      </h3>
+      <div class="overflow-x-auto">
+        <table class="sc-table">
+          <thead>
+            <tr>
+              <th>Khách hàng</th>
+              <th class="text-right">SL đã bán</th>
+              <th>Ngày giao</th>
+              <th>Phiếu giao (DN)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(s, idx) in trace.sold_to" :key="idx">
+              <td>
+                <span class="text-sc-royal hover:underline cursor-pointer"
+                  @click="goToDoc('SC Customer', s.customer)">{{ s.customer || '—' }}</span>
+              </td>
+              <td class="text-right font-mono font-semibold text-sc-danger">
+                {{ fmtNumber(s.qty) }}
+              </td>
+              <td class="text-xs">{{ fmtDate(s.delivery_date) || '—' }}</td>
+              <td class="text-xs">
+                <span class="text-sc-royal hover:underline cursor-pointer font-mono"
+                  @click="goToDoc('SC Delivery Note', s.delivery_note)">
+                  {{ s.delivery_note }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Section 4: Movements -->
     <div class="sc-card overflow-hidden">
       <div class="p-5 pb-3">
@@ -337,7 +380,7 @@ const missingLabel = {
                 :class="m.qty_change > 0 ? 'text-sc-success' : 'text-sc-danger'">
                 {{ m.qty_change > 0 ? '+' : '' }}{{ fmtNumber(m.qty_change) }}
               </td>
-              <td class="text-right font-mono">{{ fmtNumber(m.valuation_rate) }}</td>
+              <td class="text-right font-mono">{{ fmtVND(m.valuation_rate) }}</td>
               <td class="text-xs">
                 <span class="text-sc-royal hover:underline cursor-pointer font-mono"
                   @click="voucherLink(m.voucher_type, m.voucher_no)">
@@ -352,46 +395,5 @@ const missingLabel = {
       </div>
     </div>
 
-    <!-- Section 5: Dispensing -->
-    <div class="sc-card overflow-hidden">
-      <div class="p-5 pb-3">
-        <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-          <span class="text-xl"><Icon name="syringe" :size="18" /></span>
-          Cấp phát bệnh nhân ({{ trace.dispensing.length }})
-        </h3>
-      </div>
-      <div v-if="!trace.dispensing.length" class="p-5 text-center text-sc-text-muted">
-        Chưa có ca cấp phát nào dùng lô này.
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="sc-table">
-          <thead>
-            <tr>
-              <th>Ngày</th><th>PD</th><th>Bệnh nhân</th><th>Khoa</th>
-              <th class="text-right">SL</th>
-              <th class="text-right">Đơn giá</th>
-              <th class="text-right">BHYT trả</th>
-              <th class="text-right">BN trả</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(d, idx) in trace.dispensing" :key="idx" class="hover:bg-sc-bg">
-              <td>{{ fmtDate(d.dispensing_date) }}</td>
-              <td class="font-mono text-xs cursor-pointer text-sc-royal hover:underline"
-                @click="goToDoc('SC Patient Dispensing', d.pd)">{{ d.pd }}</td>
-              <td>
-                <div class="text-xs font-mono">{{ d.patient }}</div>
-                <div class="text-xs">{{ d.patient_name }}</div>
-              </td>
-              <td>{{ d.ward }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(d.qty) }}</td>
-              <td class="text-right font-mono">{{ fmtNumber(d.unit_cost) }}</td>
-              <td class="text-right font-mono text-green-700">{{ fmtNumber(d.bhyt_amount) }}</td>
-              <td class="text-right font-mono text-amber-700">{{ fmtNumber(d.patient_pays) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </template>

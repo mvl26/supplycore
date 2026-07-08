@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRD — Tài liệu Yêu cầu Nghiệp vụ | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Tài liệu Yêu cầu Nghiệp vụ</h1>
+  <div class="doc-meta">
+    <span>Mã: BRD-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Tài liệu Yêu cầu Nghiệp vụ
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#boi-canh">1. Bối cảnh nghiệp vụ</a></li>
+        <li><a href="#muc-tieu">2. Mục tiêu nghiệp vụ</a></li>
+        <li><a href="#yeu-cau">3. Yêu cầu nghiệp vụ theo phân hệ</a></li>
+        <li><a href="#rang-buoc">4. Ràng buộc</a></li>
+        <li><a href="#rui-ro">5. Rủi ro</a></li>
+    </ol>
+  </nav>
+
+<h2 id="boi-canh">1. Bối cảnh nghiệp vụ</h2><p>Công ty Miyano Việt Nam (MVL) là doanh nghiệp phân phối vật tư – hóa chất y tế. Khác với bệnh viện dùng nội bộ, MVL vận hành theo chuỗi <b>mua – nhập – QC – lưu kho – bán – bàn giao – xuất hóa đơn – thu tiền</b>, đồng thời mở cổng đặt hàng cho khách hàng doanh nghiệp.</p><h2 id="muc-tieu">2. Mục tiêu nghiệp vụ</h2><ul><li>Rút ngắn thời gian xử lý đơn đặt hàng của khách và tăng minh bạch tiến độ giao hàng.</li><li>Kiểm soát chặt hạn dùng (FEFO) và truy xuất nguồn gốc lô phục vụ thu hồi.</li><li>Quản lý công nợ phải thu theo hạn mức tín dụng khách hàng.</li><li>Tự động hóa cảnh báo (hạn dùng, tồn tối thiểu, công nợ).</li></ul><h2 id="yeu-cau">3. Yêu cầu nghiệp vụ theo phân hệ (BR)</h2><table>
+<thead><tr><th width="80">Mã</th><th>Phân hệ</th><th>Yêu cầu nghiệp vụ</th><th>Đầu mối</th></tr></thead>
+<tbody>
+<tr><td><code>BR-M1</code></td><td>M1 — Hợp đồng & Nhà cung cấp</td><td>Quản lý nhà cung cấp, hợp đồng khung mua, lệnh gọi hàng.</td><td>Phòng Thương Mại</td></tr>
+<tr><td><code>BR-M2</code></td><td>M2 — Kế hoạch & Mua sắm</td><td>Kế hoạch mua định kỳ, đề nghị mua hàng, đơn mua (PO).</td><td>Phòng Thương Mại</td></tr>
+<tr><td><code>BR-M3</code></td><td>M3 — Tiếp nhận & QC</td><td>Nhập kho, phiếu nhập, kiểm tra chất lượng, trả hàng NCC.</td><td>Bộ phận Kho</td></tr>
+<tr><td><code>BR-M4</code></td><td>M4 — WMS, PDA & Mã vạch</td><td>Vị trí kho (bin), putaway, in & quét mã vạch (khổ linh hoạt).</td><td>Bộ phận Kho</td></tr>
+<tr><td><code>BR-M5</code></td><td>M5 — Lô, Hạn dùng & FEFO</td><td>Quản lý lô, cảnh báo hạn dùng, xuất theo FEFO.</td><td>Bộ phận Kho</td></tr>
+<tr><td><code>BR-M6</code></td><td>M6 — Luân chuyển Nội bộ</td><td>Chuyển kho nội bộ giữa các kho MVL.</td><td>Bộ phận Kho</td></tr>
+<tr><td><code>BR-M7</code></td><td>M7 — Bán hàng & Bàn giao Khách hàng</td><td>Khách hàng, HĐ khung bán, đơn đặt hàng, xuất bán, bàn giao – nghiệm thu.</td><td>Phòng Thương Mại + Kho</td></tr>
+<tr><td><code>BR-M8</code></td><td>M8 — Kế toán & Thanh toán</td><td>Hóa đơn mua/bán, thanh toán NCC, thu tiền khách, báo cáo tài chính.</td><td>Kế Toán</td></tr>
+<tr><td><code>BR-M9</code></td><td>M9 — Kiểm kê & Đối soát</td><td>Lập & thực hiện kiểm kê, đối soát tồn, biên bản.</td><td>Bộ phận Kho</td></tr>
+<tr><td><code>BR-M10</code></td><td>M10 — Truy xuất & Điều tra</td><td>Truy xuất nguồn gốc lô, thu hồi, điều tra thất thoát.</td><td>Ban Giám đốc / Kiểm soát</td></tr>
+<tr><td><code>BR-M11</code></td><td>M11 — Dashboard & Cảnh báo</td><td>Dashboard điều hành, cấu hình & xử lý cảnh báo tự động.</td><td>Ban Giám đốc</td></tr>
+<tr><td><code>BR-M12</code></td><td>M12 — Portal Khách hàng</td><td>Cổng đăng nhập độc lập cho khách tra cứu, đặt hàng, theo dõi đơn.</td><td>Khách hàng</td></tr>
+</tbody>
+</table><h2 id="rang-buoc">4. Ràng buộc</h2><ul><li>Nền tảng Frappe/ERPNext v15, giữ prefix DocType SC-.</li><li>Tuân thủ NĐ 13/2023/NĐ-CP về dữ liệu cá nhân (tài khoản khách).</li><li>Khách hàng chỉ thấy dữ liệu của chính mình — cô lập tuyệt đối.</li><li>Không tồn kho âm; không xuất lô hết hạn; không ghi vào kỳ kế toán đã chốt.</li></ul><h2 id="rui-ro">5. Rủi ro</h2><table>
+<thead><tr><th>Mã</th><th>Rủi ro</th><th>Mức</th><th>Giảm thiểu</th></tr></thead>
+<tbody>
+<tr><td>RSK-01</td><td>Rò rỉ dữ liệu chéo giữa khách hàng qua Portal</td><td>Cao</td><td>Permission query + kiểm thử an ninh bắt buộc (TC cô lập).</td></tr>
+<tr><td>RSK-02</td><td>Sai lệch giá đơn khách vs HĐ khung</td><td>TB</td><td>Ràng giá theo HĐ khung, chặn sửa tại đơn.</td></tr>
+<tr><td>RSK-03</td><td>Công nợ vượt hạn mức tín dụng</td><td>TB</td><td>Cảnh báo & chờ duyệt cấp cao.</td></tr>
+<tr><td>RSK-04</td><td>Xuất nhầm lô hết hạn</td><td>Cao</td><td>Ép FEFO, chặn lô hết hạn khi xuất.</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: BRD | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

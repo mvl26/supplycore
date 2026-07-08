@@ -3,6 +3,8 @@
 import frappe
 from frappe.utils import flt, today, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def inventory_value_report(warehouse: str = None, item_group: str = None,
@@ -11,6 +13,7 @@ def inventory_value_report(warehouse: str = None, item_group: str = None,
 
     Returns: {rows: [...], total_qty, total_value, period_finalized}
     """
+    block_portal()
     where = ["sle.is_cancelled = 0"]
     params = {"lim": int(limit)}
     if warehouse:
@@ -54,7 +57,13 @@ def ap_aging_report(supplier: str = None, as_of_date: str = None,
     """Công nợ NCC aging: bucket theo (today - due_date).
 
     Buckets: current (≤0), 0-30, 31-60, 61-90, >90
+
+    Role-gate (GĐ4 Task 5): mirror `ar_aging_by_customer` -- chỉ System
+    Manager/SupplyCore Manager/Executive/Accountant/Auditor mới được xem
+    công nợ NCC. Trước fix: hàm này KHÔNG gate gì -- bất kỳ user đăng nhập
+    nào (kể cả role Portal) gọi thẳng API đều đọc được toàn bộ payables.
     """
+    _require_finance_report_role()
     asof = as_of_date or today()
     where = ["docstatus = 1", "outstanding_amount > 0", "status != 'Cancelled'"]
     params = {"asof": asof, "lim": int(limit)}
@@ -95,11 +104,99 @@ def ap_aging_report(supplier: str = None, as_of_date: str = None,
     }
 
 
+# GĐ4 Task 5 (security sweep) -- gate chung cho báo cáo tài chính nội bộ
+# (AP/AR aging): chỉ Kế toán/Quản lý/Kiểm toán/Executive được xem. Data tổng
+# hợp toàn hệ thống (công nợ NCC, công nợ khách + credit_limit — BRU-AR-001)
+# KHÔNG được lộ qua Portal hay bất kỳ role vận hành khác (Storekeeper,
+# Purchaser...). Dùng allow-list (không phải block_portal) vì đây là báo cáo
+# tài chính nhạy cảm -- chỉ role tài chính/quản lý cụ thể mới được gọi, kể cả
+# nội bộ.
+FINANCE_REPORT_ROLES = (
+    "System Manager", "SupplyCore Manager", "SupplyCore Executive",
+    "SupplyCore Accountant", "SupplyCore Auditor",
+)
+
+
+def _require_finance_report_role():
+    user_roles = set(frappe.get_roles(frappe.session.user))
+    if not user_roles.intersection(FINANCE_REPORT_ROLES):
+        frappe.throw(frappe._("Không có quyền xem báo cáo tài chính này"),
+                      frappe.PermissionError)
+
+
+@frappe.whitelist()
+def ar_aging_by_customer(customer: str = None, as_of_date: str = None,
+                          limit: int = 500) -> dict:
+    """Cong no phai thu theo khach hang: bucket theo (today - invoice_date),
+    canh bao vuot credit_limit (BRU-AR-001).
+
+    Buckets: 0-30, 31-60, 61-90, >90 (tinh tu invoice_date, SC Sales Invoice
+    khong co due_date rieng nhu SC Purchase Invoice).
+
+    Role-gate: chi System Manager/SupplyCore Manager/Executive/Accountant/
+    Auditor -- role Portal (SC Customer Portal) hay cac role noi bo khac
+    (Storekeeper/Purchaser...) KHONG duoc goi.
+    """
+    _require_finance_report_role()
+
+    asof = as_of_date or today()
+    where = ["si.docstatus = 1", "si.outstanding_amount > 0", "si.status != 'Hủy'"]
+    params = {"asof": asof, "lim": int(limit)}
+    if customer:
+        where.append("si.customer = %(cust)s"); params["cust"] = customer
+
+    sql = f"""
+        SELECT si.customer, c.customer_name, c.credit_limit,
+               si.name, si.invoice_date, si.outstanding_amount,
+               DATEDIFF(%(asof)s, si.invoice_date) AS age_days
+        FROM `tabSC Sales Invoice` si
+        JOIN `tabSC Customer` c ON c.name = si.customer
+        WHERE {' AND '.join(where)}
+        ORDER BY si.customer, si.invoice_date ASC LIMIT %(lim)s
+    """
+    invoice_rows = frappe.db.sql(sql, params, as_dict=True)
+
+    by_customer: dict[str, dict] = {}
+    for r in invoice_rows:
+        entry = by_customer.setdefault(r["customer"], {
+            "customer": r["customer"],
+            "customer_name": r["customer_name"],
+            "credit_limit": flt(r["credit_limit"]),
+            "total_outstanding": 0.0,
+            "buckets": {"0_30": 0.0, "31_60": 0.0, "61_90": 0.0, "over_90": 0.0},
+        })
+        age = r.get("age_days") or 0
+        amt = flt(r["outstanding_amount"])
+        if age <= 30:
+            bucket = "0_30"
+        elif age <= 60:
+            bucket = "31_60"
+        elif age <= 90:
+            bucket = "61_90"
+        else:
+            bucket = "over_90"
+        entry["buckets"][bucket] += amt
+        entry["total_outstanding"] += amt
+
+    rows = list(by_customer.values())
+    for entry in rows:
+        entry["over_limit"] = bool(entry["credit_limit"] and
+                                    entry["total_outstanding"] > entry["credit_limit"])
+    rows.sort(key=lambda r: r["total_outstanding"], reverse=True)
+
+    return {
+        "rows": rows,
+        "as_of_date": str(asof),
+        "total_outstanding": sum(r["total_outstanding"] for r in rows),
+    }
+
+
 @frappe.whitelist()
 def period_cost_report(from_date: str, to_date: str,
                        item_group: str = None,
                        warehouse: str = None) -> dict:
     """Chi phí vật tư kỳ: PI grand_total + breakdown per item_group."""
+    block_portal()
     if not (from_date and to_date):
         frappe.throw("from_date và to_date bắt buộc")
 
@@ -142,54 +239,9 @@ def period_cost_report(from_date: str, to_date: str,
 
 
 @frappe.whitelist()
-def bhyt_settlement_report(from_date: str, to_date: str,
-                            department: str = None,
-                            bhyt_group: str = None) -> dict:
-    """Quyết toán BHYT: aggregate SC PD Item theo (bhyt_group, ward)."""
-    if not (from_date and to_date):
-        frappe.throw("from_date và to_date bắt buộc")
-
-    where = ["pd.dispensing_date BETWEEN %(fd)s AND %(td)s",
-             "pd.docstatus = 1"]
-    params = {"fd": from_date, "td": to_date}
-    if department:
-        where.append("pd.ward = %(dept)s"); params["dept"] = department
-    if bhyt_group:
-        where.append("pdi.bhyt_group = %(bg)s"); params["bg"] = bhyt_group
-
-    rows = frappe.db.sql(f"""
-        SELECT COALESCE(pdi.bhyt_group, 'NoBHYT') AS bhyt_group,
-               pd.ward,
-               COUNT(DISTINCT pd.name) AS pd_count,
-               COUNT(DISTINCT pd.patient) AS patient_count,
-               SUM(pdi.qty) AS total_qty,
-               SUM(pdi.total_cost) AS total_cost,
-               SUM(pdi.bhyt_amount) AS total_bhyt_covered,
-               SUM(pdi.patient_pays) AS total_patient_pays,
-               SUM(COALESCE(pdi.ceiling_overage, 0)) AS total_ceiling_overage
-        FROM `tabSC PD Item` pdi
-        JOIN `tabSC Patient Dispensing` pd ON pd.name = pdi.parent
-        WHERE {' AND '.join(where)}
-        GROUP BY pdi.bhyt_group, pd.ward
-        ORDER BY pdi.bhyt_group, pd.ward
-    """, params, as_dict=True)
-
-    return {
-        "from_date": from_date,
-        "to_date": to_date,
-        "rows": rows,
-        "summary": {
-            "total_cost": sum(flt(r["total_cost"]) for r in rows),
-            "total_bhyt_covered": sum(flt(r["total_bhyt_covered"]) for r in rows),
-            "total_patient_pays": sum(flt(r["total_patient_pays"]) for r in rows),
-            "total_ceiling_overage": sum(flt(r["total_ceiling_overage"]) for r in rows),
-        },
-    }
-
-
-@frappe.whitelist()
 def get_voucher_details(voucher_type: str, voucher_no: str) -> dict:
     """UC-26 5a drill-down: header + items + linked vouchers."""
+    block_portal()
     if not frappe.db.exists(voucher_type, voucher_no):
         return {"exists": False}
     doc = frappe.get_doc(voucher_type, voucher_no)
@@ -221,6 +273,7 @@ def get_voucher_details(voucher_type: str, voucher_no: str) -> dict:
 @frappe.whitelist()
 def check_period_finalized(from_date: str, to_date: str) -> dict:
     """UC-26 ngoại lệ: check có Draft document trong kỳ → chưa finalized."""
+    block_portal()
     pending_pi = frappe.db.count("SC Purchase Invoice", {
         "docstatus": 0,
         "invoice_date": ["between", [from_date, to_date]],
@@ -229,17 +282,12 @@ def check_period_finalized(from_date: str, to_date: str) -> dict:
         "docstatus": 0,
         "payment_date": ["between", [from_date, to_date]],
     })
-    pending_pd = frappe.db.count("SC Patient Dispensing", {
-        "docstatus": 0,
-        "dispensing_date": ["between", [from_date, to_date]],
-    })
-    total = pending_pi + pending_pe + pending_pd
+    total = pending_pi + pending_pe
     return {
         "finalized": total == 0,
         "pending": {
             "purchase_invoice": pending_pi,
             "payment_entry": pending_pe,
-            "patient_dispensing": pending_pd,
             "total": total,
         },
     }

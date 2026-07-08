@@ -1,7 +1,7 @@
 """BUG-003: Backfill valuation_rate cho Material Transfer/Issue rows = 0.
 
 Trước fix _source_valuation (3-level fallback), nhiều SE rows submit với
-valuation = 0 → SLE balance value sai → báo cáo tồn kho/BHYT sai.
+valuation = 0 → SLE balance value sai → báo cáo tồn kho sai.
 
 Patch này tìm SE rows valuation=0 đã submit, tra lại theo logic mới,
 update cả row + SLE liên quan. Idempotent: bỏ qua rows đã có valuation > 0.

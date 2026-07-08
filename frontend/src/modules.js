@@ -8,7 +8,7 @@ export const MODULES = [
   { id: 'm4',  code: 'M4',  name: 'Quản lý kho',          icon: 'warehouse',        route: '/m4',  group: 'Vận hành' },
   { id: 'm5',  code: 'M5',  name: 'Quản lý lô vật tư',    icon: 'layers',           route: '/m5',  group: 'Vận hành' },
   { id: 'm6',  code: 'M6',  name: 'Chuyển kho',           icon: 'arrow-left-right', route: '/m6',  group: 'Vận hành' },
-  { id: 'm7',  code: 'M7',  name: 'Cấp phát',             icon: 'syringe',          route: '/m7',  group: 'Vận hành' },
+  { id: 'm7',  code: 'M7',  name: 'Bán hàng & Bàn giao',  icon: 'send',             route: '/m7',  group: 'Kinh doanh' },
   { id: 'm8',  code: 'M8',  name: 'Kế toán',              icon: 'wallet',           route: '/m8',  group: 'Tài chính' },
   { id: 'm9',  code: 'M9',  name: 'Kiểm kê',              icon: 'clipboard-check',  route: '/m9',  group: 'Chất lượng' },
   { id: 'm10', code: 'M10', name: 'Truy xuất & Thu hồi',  icon: 'file-search',      route: '/m10', group: 'Chất lượng' },
@@ -23,6 +23,7 @@ const STATUS_BADGE = {
   Active: 'sc-badge-success', Expired: 'sc-badge-warning', Exhausted: 'sc-badge-critical',
   Terminated: 'sc-badge-critical',
   Issued: 'sc-badge-info', 'In Progress': 'sc-badge-warning',
+  Converted: 'sc-badge-info', Generated: 'sc-badge-info',
   Completed: 'sc-badge-success', Resolved: 'sc-badge-success',
   Investigating: 'sc-badge-warning', Closed: 'sc-badge-neutral',
   Paid: 'sc-badge-success', Unpaid: 'sc-badge-warning',
@@ -36,6 +37,21 @@ const STATUS_BADGE = {
   Conditional: 'sc-badge-warning',
   Open: 'sc-badge-warning', 'On Hold': 'sc-badge-warning',
   High: 'sc-badge-critical', Medium: 'sc-badge-warning', Low: 'sc-badge-info',
+  // Vietnamese status values (M7/M8/M3) — backend lưu trực tiếp tiếng Việt.
+  'Hoạt động': 'sc-badge-success', 'Đã duyệt': 'sc-badge-success',
+  'Đã nghiệm thu': 'sc-badge-success', 'Hoàn tất': 'sc-badge-success',
+  'Hiệu lực': 'sc-badge-success', 'Đã thu đủ': 'sc-badge-success',
+  'Đã ghi sổ': 'sc-badge-success', 'Đã thanh toán': 'sc-badge-success',
+  'Chờ duyệt': 'sc-badge-warning', 'Đã giao': 'sc-badge-info',
+  'Đang xử lý': 'sc-badge-warning', 'Đã bàn giao': 'sc-badge-info',
+  'Đã phát hành': 'sc-badge-info', 'Đã thu một phần': 'sc-badge-warning',
+  'Đã xuất HĐ': 'sc-badge-info', 'Partly Paid': 'sc-badge-warning',
+  Overdue: 'sc-badge-warning',
+  'Từ chối': 'sc-badge-critical', 'Thanh lý': 'sc-badge-critical',
+  'Hết hạn': 'sc-badge-critical', 'Hủy': 'sc-badge-critical',
+  Mismatch: 'sc-badge-critical',
+  'Nháp': 'sc-badge-neutral', 'Tạm ngưng': 'sc-badge-neutral',
+  Match: 'sc-badge-neutral',
 }
 
 // Status / option enum → Vietnamese label mapping. Backend stores English keys;
@@ -46,12 +62,14 @@ export const STATUS_LABEL = {
   Approved: 'Đã duyệt', Rejected: 'Từ chối', Cancelled: 'Đã huỷ',
   Active: 'Hiệu lực', Expired: 'Hết hạn', Exhausted: 'Hết hạn mức', Terminated: 'Kết thúc',
   Issued: 'Đã phát hành', 'In Progress': 'Đang xử lý',
+  Converted: 'Đã tạo PO', Generated: 'Đã tạo MR',
   Completed: 'Hoàn tất', Resolved: 'Đã xử lý',
   Investigating: 'Đang điều tra', Closed: 'Đã đóng',
   Paid: 'Đã thanh toán', Unpaid: 'Chưa thanh toán',
   // QC outcomes
   Accepted: 'Đạt', Pass: 'Đạt', Fail: 'Không đạt',
   'Partial Pass': 'Đạt một phần', Conditional: 'Có điều kiện',
+  'On Hold': 'Tạm giữ',
   // Severity
   Critical: 'Nghiêm trọng', High: 'Cao', Medium: 'Trung bình',
   Low: 'Thấp', Warning: 'Cảnh báo', Info: 'Thông tin',
@@ -67,8 +85,8 @@ export const STATUS_LABEL = {
   Open: 'Đang mở', Acknowledged: 'Đã ghi nhận', 'Acted Upon': 'Đã xử lý',
   Dismissed: 'Bỏ qua', Escalated: 'Đã đẩy lên',
   // Warehouse types
-  Main: 'Kho chính', Department: 'Kho khoa', Quarantine: 'Cách ly',
-  Damaged: 'Hỏng', Sample: 'Mẫu',
+  Main: 'Kho chính', Sub: 'Kho phụ', Department: 'Kho khoa',
+  Quarantine: 'Cách ly', Transit: 'Kho trung chuyển',
   // Recall severity
   'Class I (Critical)': 'Mức I (Nghiêm trọng)',
   'Class II (High)': 'Mức II (Cao)',
@@ -101,10 +119,12 @@ export const SUBMITTABLE_DOCTYPES = new Set([
   'Framework Contract', 'Release Order', 'Procurement Plan',
   'SC Material Request', 'SC Purchase Order', 'SC Purchase Receipt',
   'SC Quality Inspection', 'SC Stock Entry',
-  'SC Transfer Request', 'SC Dispensing Request', 'SC Patient Dispensing',
+  'SC Transfer Request',
   'SC Inventory Count Sheet', 'SC Stock Reconciliation',
   'SC Recall Notice', 'SC Investigation Report',
   'SC Purchase Invoice', 'SC Payment Entry',
+  'SC Sales Framework Contract', 'SC Sales Order', 'SC Delivery Note',
+  'SC Acceptance Record', 'SC Sales Invoice', 'SC Sales Receipt',
 ])
 
 export function isSubmittable(doctype) {
@@ -177,7 +197,7 @@ export const DT = {
     listFields: ['name', 'supplier_name', 'tax_id', 'email_id', 'mobile_no', 'disabled'],
   },
   'SC Warehouse': {
-    module: 'm0', label: 'Kho', icon: 'warehouse',
+    module: 'm0', extraModules: ['m4'], label: 'Kho', icon: 'warehouse',
     listColumns: [
       { key: 'name', label: 'Tên kho' },
       { key: 'warehouse_type', label: 'Loại' },
@@ -219,33 +239,6 @@ export const DT = {
     ],
     listFields: ['name', 'department_name', 'department_code', 'department_type', 'disabled'],
   },
-  'SC Patient': {
-    module: 'm0', label: 'Bệnh nhân', icon: 'heart-pulse',
-    listColumns: [
-      { key: 'name', label: 'Mã BN', mono: true },
-      { key: 'patient_name', label: 'Họ tên' },
-      { key: 'gender', label: 'Giới' },
-      { key: 'bhyt_card_no', label: 'Thẻ BHYT', mono: true },
-      { key: 'bhyt_type', label: 'Loại BHYT' },
-      { key: 'current_department', label: 'Khoa' },
-    ],
-    listFields: ['name', 'patient_name', 'gender', 'dob', 'bhyt_card_no',
-                  'bhyt_type', 'bhyt_payment_rate', 'current_department', 'disabled'],
-  },
-  'SC BHYT Code Config': {
-    module: 'm0', label: 'Mã BHYT', icon: 'tag',
-    listColumns: [
-      { key: 'name', label: 'Mã', mono: true },
-      { key: 'bhyt_code', label: 'BHYT Code' },
-      { key: 'bhyt_name', label: 'Tên BHYT' },
-      { key: 'bhyt_group', label: 'Nhóm' },
-      { key: 'payment_rate', label: 'Tỷ lệ %', type: 'int', align: 'right' },
-      { key: 'ceiling_price', label: 'Giá trần', type: 'currency', align: 'right' },
-      { key: 'is_active', label: 'Hiệu lực', type: 'check' },
-    ],
-    listFields: ['name', 'bhyt_code', 'bhyt_name', 'bhyt_group', 'payment_rate',
-                  'ceiling_price', 'item', 'item_group', 'is_active'],
-  },
   'SC GL Account': {
     module: 'm0', label: 'TK kế toán', icon: 'book',
     listColumns: [
@@ -277,21 +270,19 @@ export const DT = {
     ],
     listFields: ['name', 'contract_number', 'supplier_name', 'valid_from', 'valid_to',
                   'total_value', 'remaining_value', 'status', 'docstatus'],
-    formSections: [
-      { title: 'Thông tin chung', fields: [
-        ['supplier', 'Link', { required: true, link_to: 'SC Supplier' }],
-        ['contract_number', 'Data', { required: true }],
-        ['contract_date', 'Date', { required: true }],
-        ['valid_from', 'Date', { required: true }],
-        ['valid_to', 'Date', { required: true }],
-      ]},
-      { title: 'Giá trị', fields: [
-        ['total_value', 'Currency', { required: true }],
-        ['remaining_value', 'Currency', { readonly: true }],
-        ['payment_terms', 'Data'],
-      ]},
+  },
+  'Release Order': {
+    module: 'm1', label: 'Lệnh gọi hàng', icon: 'clipboard-list',
+    listColumns: [
+      { key: 'name', label: 'Mã RO', mono: true },
+      { key: 'framework_contract', label: 'HĐ khung', mono: true },
+      { key: 'supplier', label: 'NCC' },
+      { key: 'release_date', label: 'Ngày lệnh', type: 'date' },
+      { key: 'total_amount', label: 'Tổng', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    actions: ['submit_for_review', 'manager_approve', 'executive_approve', 'reject'],
+    listFields: ['name', 'framework_contract', 'supplier', 'release_date', 'total_amount',
+                  'status', 'docstatus'],
   },
 
   // === M2 ===
@@ -318,7 +309,19 @@ export const DT = {
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'transaction_date', 'supplier', 'schedule_date', 'grand_total', 'status', 'docstatus'],
-    actions: ['submit', 'cancel', 'send_to_supplier'],
+  },
+  'Procurement Plan': {
+    module: 'm2', label: 'Kế hoạch mua sắm', icon: 'calendar',
+    listColumns: [
+      { key: 'name', label: 'Mã PP', mono: true },
+      { key: 'plan_date', label: 'Ngày lập', type: 'date' },
+      { key: 'period_type', label: 'Kỳ' },
+      { key: 'warehouse', label: 'Kho' },
+      { key: 'total_estimated_cost', label: 'Ước tính', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'plan_date', 'period_type', 'warehouse', 'total_estimated_cost',
+                  'status', 'docstatus'],
   },
 
   // === M3 ===
@@ -349,16 +352,6 @@ export const DT = {
   },
 
   // === M4 ===
-  'SC Warehouse': {
-    module: 'm4', label: 'Kho', icon: 'warehouse',
-    listColumns: [
-      { key: 'name', label: 'Tên kho' },
-      { key: 'warehouse_type', label: 'Loại' },
-      { key: 'is_group', label: 'Nhóm', type: 'check' },
-      { key: 'disabled', label: 'Vô hiệu', type: 'check' },
-    ],
-    listFields: ['name', 'warehouse_name', 'warehouse_type', 'is_group', 'disabled'],
-  },
   'SC Stock Ledger Entry': {
     module: 'm4', label: 'Sổ kho (SLE)', icon: 'list',
     listColumns: [
@@ -420,32 +413,97 @@ export const DT = {
                   'total_qty', 'total_value', 'docstatus'],
   },
 
-  // === M7 ===
-  'SC Dispensing Request': {
-    module: 'm7', label: 'Yêu cầu cấp phát', icon: 'clipboard-plus',
+  // === M7 Sales ===
+  'SC Customer': {
+    module: 'm7', label: 'Khách hàng', icon: 'building-2',
     listColumns: [
-      { key: 'name', label: 'Mã DR', mono: true },
-      { key: 'request_date', label: 'Ngày', type: 'date' },
-      { key: 'department', label: 'Khoa' },
-      { key: 'from_warehouse', label: 'Kho' },
-      { key: 'purpose', label: 'Mục đích' },
+      { key: 'name', label: 'Mã KH', mono: true },
+      { key: 'customer_name', label: 'Tên KH' },
+      { key: 'tax_code', label: 'MST' },
+      { key: 'credit_limit', label: 'Hạn mức nợ', type: 'currency', align: 'right' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'request_date', 'department', 'from_warehouse', 'purpose', 'status', 'docstatus'],
+    listFields: ['name', 'customer_name', 'tax_code', 'credit_limit', 'status'],
   },
-  'SC Patient Dispensing': {
-    module: 'm7', label: 'Cấp phát BN', icon: 'syringe',
+  'SC Sales Framework Contract': {
+    module: 'm7', label: 'HĐ khung bán hàng', icon: 'file-text',
     listColumns: [
-      { key: 'name', label: 'Mã PD', mono: true },
-      { key: 'dispensing_date', label: 'Ngày', type: 'date' },
-      { key: 'patient', label: 'BN', mono: true },
-      { key: 'patient_name', label: 'Tên BN' },
-      { key: 'ward', label: 'Khoa' },
-      { key: 'total_cost', label: 'Tổng', type: 'currency', align: 'right' },
-      { key: 'patient_pays', label: 'BN trả', type: 'currency', align: 'right' },
+      { key: 'name', label: 'Mã HĐ', mono: true },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
+      { key: 'valid_from', label: 'Hiệu lực từ', type: 'date' },
+      { key: 'valid_to', label: 'Hiệu lực đến', type: 'date' },
+      { key: 'total_value', label: 'Tổng giá trị', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
-    listFields: ['name', 'dispensing_date', 'patient', 'patient_name', 'ward',
-                  'total_cost', 'patient_pays', 'docstatus'],
+    listFields: ['name', 'customer', 'valid_from', 'valid_to', 'total_value', 'status', 'docstatus'],
+  },
+  'SC Sales Order': {
+    module: 'm7', label: 'Đơn bán hàng', icon: 'clipboard-list',
+    listColumns: [
+      { key: 'name', label: 'Mã SO', mono: true },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
+      { key: 'framework_contract', label: 'HĐ khung', mono: true },
+      { key: 'order_date', label: 'Ngày đặt', type: 'date' },
+      { key: 'total_amount', label: 'Tổng', type: 'currency', align: 'right' },
+      { key: 'credit_hold', label: 'Khoá tín dụng', type: 'check' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer', 'framework_contract', 'order_date', 'total_amount',
+                  'credit_hold', 'status', 'docstatus'],
+  },
+  'SC Delivery Note': {
+    module: 'm7', label: 'Phiếu giao hàng', icon: 'truck',
+    listColumns: [
+      { key: 'name', label: 'Mã DN', mono: true },
+      { key: 'sales_order', label: 'SO', mono: true },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
+      { key: 'from_warehouse', label: 'Kho xuất' },
+      { key: 'delivery_date', label: 'Ngày giao', type: 'date' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'sales_order', 'customer', 'from_warehouse', 'delivery_date',
+                  'status', 'docstatus'],
+  },
+  'SC Acceptance Record': {
+    module: 'm7', label: 'Biên bản nghiệm thu', icon: 'check-circle',
+    listColumns: [
+      { key: 'name', label: 'Mã BB', mono: true },
+      { key: 'delivery_note', label: 'DN', mono: true },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
+      { key: 'acceptance_date', label: 'Ngày nghiệm thu', type: 'date' },
+      { key: 'accepted_by', label: 'Người nhận' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'delivery_note', 'customer', 'acceptance_date', 'accepted_by',
+                  'status', 'docstatus'],
+  },
+  'SC Sales Invoice': {
+    module: 'm7', extraModules: ['m8'], label: 'Hóa đơn bán hàng', icon: 'receipt',
+    listColumns: [
+      { key: 'name', label: 'Mã SI', mono: true },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
+      { key: 'delivery_note', label: 'DN', mono: true },
+      { key: 'invoice_date', label: 'Ngày HD', type: 'date' },
+      { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
+      { key: 'outstanding_amount', label: 'Còn lại', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer', 'delivery_note', 'invoice_date', 'grand_total',
+                  'outstanding_amount', 'status', 'docstatus'],
+  },
+  'SC Sales Receipt': {
+    module: 'm7', extraModules: ['m8'], label: 'Phiếu thu tiền', icon: 'credit-card',
+    listColumns: [
+      { key: 'name', label: 'Mã PT', mono: true },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
+      { key: 'sales_invoice', label: 'SI', mono: true },
+      { key: 'receipt_date', label: 'Ngày thu', type: 'date' },
+      { key: 'amount', label: 'Số tiền', type: 'currency', align: 'right' },
+      { key: 'mode', label: 'Phương thức' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'customer', 'sales_invoice', 'receipt_date', 'amount', 'mode',
+                  'status', 'docstatus'],
   },
 
   // === M8 ===

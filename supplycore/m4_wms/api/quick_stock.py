@@ -7,12 +7,15 @@ Mục tiêu: biết hàng nào / lô nào / số lượng / bin nào — qua for
 import frappe
 from frappe.utils import flt, today
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def quick_putaway(item: str, qty, uom: str, warehouse: str,
                    bin_location: str, batch: str = None,
                    valuation_rate=0, remarks: str = None) -> dict:
     """Xếp hàng vào bin — tạo SC Stock Entry Material Receipt + submit."""
+    block_portal()
     se = frappe.new_doc("SC Stock Entry")
     se.entry_type = "Material Receipt"
     se.posting_date = today()
@@ -39,6 +42,7 @@ def quick_picking(item: str, qty, uom: str, warehouse: str,
                    bin_location: str, batch: str = None,
                    remarks: str = None) -> dict:
     """Lấy hàng từ bin — tạo SC Stock Entry Material Issue + submit."""
+    block_portal()
     se = frappe.new_doc("SC Stock Entry")
     se.entry_type = "Material Issue"
     se.posting_date = today()
@@ -66,6 +70,7 @@ def quick_picking(item: str, qty, uom: str, warehouse: str,
 @frappe.whitelist()
 def lookup_item(text: str, limit: int = 10) -> list:
     """Search SC Item theo item_code OR item_name LIKE."""
+    block_portal()
     return frappe.db.sql("""
         SELECT name AS item_code, item_name, uom, has_batch_no
         FROM `tabSC Item`
@@ -79,6 +84,7 @@ def lookup_item(text: str, limit: int = 10) -> list:
 def lookup_batch(item: str, text: str = "", limit: int = 10) -> list:
     """Search SC Batch của item theo batch_id OR supplier_batch_no LIKE.
     Sort theo expiry_date ASC (FEFO hint)."""
+    block_portal()
     return frappe.db.sql("""
         SELECT name AS batch_no, batch_id, expiry_date,
                manufacturing_date, supplier_batch_no, qc_status
@@ -93,6 +99,7 @@ def lookup_batch(item: str, text: str = "", limit: int = 10) -> list:
 @frappe.whitelist()
 def lookup_bin(text: str, warehouse: str = None, limit: int = 10) -> list:
     """Search Bin Location theo bin_code OR barcode LIKE."""
+    block_portal()
     cond = "AND warehouse = %(warehouse)s" if warehouse else ""
     sql = f"""
         SELECT name, bin_code, warehouse, barcode, zone,
@@ -128,6 +135,7 @@ def get_stock_balance(item: str = None, item_group: str = None,
       item, item_name, item_group, uom, warehouse, bin_location, bin_code,
       batch, batch_id, expiry_date, qc_status, qty, avg_rate, value, is_negative
     """
+    block_portal()
     where = ["sle.is_cancelled = 0"]
     params = {"lim": int(limit)}
     if item:
@@ -176,6 +184,7 @@ def get_stock_balance(item: str = None, item_group: str = None,
 @frappe.whitelist()
 def get_bin_history(bin_location: str, limit: int = 20) -> list:
     """UC-14 bước 4: 20 SLE gần nhất tại bin (newest first)."""
+    block_portal()
     return frappe.db.sql("""
         SELECT sle.posting_date, sle.posting_time,
                sle.item, i.item_name,
@@ -194,12 +203,14 @@ def get_bin_history(bin_location: str, limit: int = 20) -> list:
 @frappe.whitelist()
 def reconcile_bin(bin_name: str) -> dict:
     """UC-14 ngoại lệ: recompute current_qty + status của 1 bin từ SLE."""
+    block_portal()
     return frappe.get_doc("Bin Location", bin_name).recompute_occupancy()
 
 
 @frappe.whitelist()
 def reconcile_all_bins(warehouse: str = None) -> dict:
     """UC-14 ngoại lệ: recompute tất cả Bin Location active."""
+    block_portal()
     filters = {"enabled": 1}
     if warehouse:
         filters["warehouse"] = warehouse
@@ -229,6 +240,7 @@ def query_stock_position(item: str = None, warehouse: str = None,
       item, item_name, uom, warehouse, bin_location, bin_code,
       batch, batch_id, expiry_date, qc_status, qty
     """
+    block_portal()
     where = ["sle.is_cancelled = 0"]
     params = {"lim": int(limit)}
     if item:

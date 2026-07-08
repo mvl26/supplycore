@@ -22,7 +22,7 @@
 ## Actor
 
 - Hệ thống — scheduler daily
-- Thủ kho / Quản lý / Pharmacy Officer — review + action
+- Thủ kho / Quản lý — review + action
 
 ## Pre-condition
 

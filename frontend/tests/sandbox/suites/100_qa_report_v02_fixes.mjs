@@ -193,84 +193,9 @@ export const tests = [
   },
 
   // ---------------------------------------------------------------------
-  // BUG-001 (PD path): Patient Dispensing vượt tồn → throw SC-E010
+  // BUG-001 (PD path) / BUG-009 (DR path): bỏ — SC Patient Dispensing +
+  // SC Dispensing Request đã bị xoá khỏi backend (GĐ1, M7 Dispensing dropped).
   // ---------------------------------------------------------------------
-  {
-    name: 'BUG-001 PD: Patient Dispensing vượt tồn → throw SC-E010',
-    run: async ({ page }) => {
-      const csrf = await page.evaluate(() => window.sc_csrf)
-      const sample = await page.evaluate(async ({ csrf }) => {
-        const r = await fetch('/api/method/frappe.client.get_list?doctype=SC Stock Ledger Entry&fields=["item","warehouse"]&limit=1', {
-          credentials: 'include', headers: { 'X-Frappe-CSRF-Token': csrf },
-        })
-        const d = await r.json()
-        return (d.message || [])[0] || null
-      }, { csrf })
-      if (!sample) return { ok: 'skip', detail: 'No SLE sample' }
-
-      const result = await page.evaluate(async ({ item, warehouse, csrf }) => {
-        // PD doctype có thể không cho tạo via REST raw — dùng frappe.client.insert
-        const payload = {
-          doctype: 'SC Patient Dispensing',
-          patient: 'TEST-PATIENT-NONEXIST',
-          dispensing_date: new Date().toISOString().slice(0, 10),
-          items: [{ item, qty: 99999, warehouse, unit_cost: 100 }],
-        }
-        const r = await fetch('/api/resource/SC Patient Dispensing', {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': csrf },
-          body: JSON.stringify(payload),
-        })
-        const d = await r.json()
-        return { status: r.status, exc: d.exception || '', msg: (d._server_messages || '').slice(0, 300) }
-      }, { item: sample.item, warehouse: sample.warehouse, csrf })
-      // Có thể fail vì patient invalid TRƯỚC khi đến qty check; chấp nhận
-      // cả 2 dấu hiệu: NEGATIVE_STOCK hoặc patient required (validator chạy
-      // sau patient validation — nếu thấy SC-E010 nghĩa là negative check OK)
-      const ok = result.status >= 400 && (
-        result.exc.includes('SC-E010') || result.msg.includes('SC-E010') ||
-        result.exc.includes('tồn khả dụng') || result.msg.includes('tồn khả dụng')
-        || result.exc.includes('NEGATIVE_STOCK') || result.msg.includes('NEGATIVE_STOCK')
-      )
-      // Nếu PD validator chưa chạy được do patient bị block → skip không fail
-      if (result.status >= 400 && !ok &&
-          (result.exc.includes('Patient') || result.msg.includes('Patient') ||
-           result.exc.includes('patient'))) {
-        return { ok: 'skip', detail: 'PD reject ở patient check trước qty (test phụ thuộc fixture)' }
-      }
-      return ok
-        ? { ok: true, detail: 'PD reject với negative stock (SC-E010)' }
-        : { ok: false, detail: `status=${result.status} exc="${result.exc.slice(0, 80)}"` }
-    },
-  },
-
-  // ---------------------------------------------------------------------
-  // BUG-009 (DR path): Dispensing Request approved_qty vượt tồn → SC-E010
-  // ---------------------------------------------------------------------
-  {
-    name: 'BUG-009 DR: DR submit vượt tồn → throw SC-E010',
-    run: async ({ page }) => {
-      const csrf = await page.evaluate(() => window.sc_csrf)
-      // Tìm DR Draft hiện có
-      const draftDRs = await page.evaluate(async ({ csrf }) => {
-        const r = await fetch('/api/method/supplycore.api.frontend.list_docs', {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': csrf },
-          body: JSON.stringify({
-            doctype: 'SC Dispensing Request',
-            fields: ['name'], filters: { docstatus: 0 }, limit: 5,
-          }),
-        })
-        const d = await r.json()
-        return d.message || []
-      }, { csrf })
-      if (!draftDRs.length) {
-        return { ok: 'skip', detail: 'Không có DR Draft để test BUG-009' }
-      }
-      // Việc test submit với fixture sẵn có rủi ro vì có thể tồn đủ — chấp nhận skip
-      return { ok: 'skip', detail: `${draftDRs.length} DR Draft tồn tại; manual test BUG-009 path` }
-    },
-  },
 
   // ---------------------------------------------------------------------
   // BUG-012: Alert không còn duplicate

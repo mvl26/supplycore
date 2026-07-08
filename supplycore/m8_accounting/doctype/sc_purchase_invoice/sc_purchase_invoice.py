@@ -5,6 +5,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today, now, add_days, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 # Tolerance & threshold (sẽ đọc từ SupplyCore Settings)
 DEFAULT_MATCH_TOLERANCE_PCT = 1.0
@@ -27,6 +29,12 @@ class SCPurchaseInvoice(Document):
             self.status = "Draft"
 
     def before_submit(self):
+        # BRU-PAY-001: không được submit hóa đơn mua có invoice_date nằm
+        # trong kỳ đã khóa sổ (mirror SC Sales Invoice/SC Sales Receipt —
+        # trước fix này PI KHÔNG có check này, chỉ SI/SR có).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.invoice_date)
+
         # UC-24 step 6: mismatch/force approved → require explanation
         if self.three_way_match_status in ("Mismatch", "Force Approved"):
             if not (self.mismatch_explanation and str(self.mismatch_explanation).strip()):
@@ -34,13 +42,16 @@ class SCPurchaseInvoice(Document):
                     "SC-E-PI-MISMATCH-EXPLANATION: Phải nhập 'Giải trình chênh lệch' "
                     "khi 3-way match không khớp"
                 ))
-        # BUG-006: chặn submit Hóa đơn mua có grand_total = 0 (trừ credit note).
-        # Hóa đơn 0đ tạo dữ liệu rác trong báo cáo công nợ NCC.
-        if not self.get("is_return") and flt(self.grand_total) <= 0:
+        # BUG-006: chặn submit Hóa đơn mua có grand_total = 0 (trừ debit/credit note
+        # trả hàng). Hóa đơn 0đ tạo dữ liệu rác trong báo cáo công nợ NCC.
+        # (SC Purchase Invoice không có field is_return — cờ trả hàng là
+        #  is_debit_note / is_credit_note.)
+        is_return_note = bool(self.get("is_debit_note") or self.get("is_credit_note"))
+        if not is_return_note and flt(self.grand_total) <= 0:
             frappe.throw(_(
                 "SC-E015 ZERO_INVOICE_TOTAL: Hóa đơn mua phải có Tổng > 0 "
                 "(hiện {0}). Kiểm tra lại các dòng vật tư + đơn giá. "
-                "Nếu là Credit Note, đánh dấu 'Là phiếu trả' (is_return)."
+                "Nếu là phiếu trả hàng, đánh dấu 'Debit Note' hoặc 'Credit Note'."
             ).format(self.grand_total), title="SC-E015 ZERO_INVOICE_TOTAL")
 
     def _validate_duplicate_invoice(self):
@@ -72,6 +83,12 @@ class SCPurchaseInvoice(Document):
                     if frappe.session.user not in (None, "", "Guest") else "Administrator")
         self.db_set("approved_at", now())
 
+    def before_cancel(self):
+        # BRU-PAY-001: chặn TRƯỚC KHI docstatus bị ghi (before_cancel chạy
+        # trước db_update/on_cancel — xem lý do trong SC Sales Invoice.before_cancel).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.invoice_date)
+
     def on_cancel(self):
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
         SCGLEntry.cancel_voucher("SC Purchase Invoice", self.name)
@@ -79,13 +96,16 @@ class SCPurchaseInvoice(Document):
 
     # ------------------------------------------------------------------
     def _compute_totals(self):
+        # Làm tròn VND (precision 0) NGAY tại tính toán để field lưu DB và GL
+        # nhất quán từ 1 nguồn — tránh lệch 1 VND do mỗi Currency field làm tròn
+        # độc lập khi qty lẻ (mirror SC Sales Invoice._compute_totals).
         subtotal = 0
         for r in self.items:
-            r.amount = flt(r.qty) * flt(r.rate)
+            r.amount = flt(flt(r.qty) * flt(r.rate), 0)
             subtotal += flt(r.amount)
-        self.subtotal = subtotal
-        self.vat_amount = flt(subtotal) * flt(self.vat_rate or 0) / 100
-        self.grand_total = self.subtotal + self.vat_amount
+        self.subtotal = flt(subtotal, 0)
+        self.vat_amount = flt(flt(self.subtotal) * flt(self.vat_rate or 0) / 100, 0)
+        self.grand_total = flt(self.subtotal) + flt(self.vat_amount)
         # outstanding = grand_total - paid_amount
         self.outstanding_amount = flt(self.grand_total) - flt(self.paid_amount or 0)
 
@@ -172,9 +192,16 @@ class SCPurchaseInvoice(Document):
     # ------------------------------------------------------------------
     def _post_gl_entries(self):
         """
-          Dr 152  Hàng tồn kho       subtotal
-          Dr 1331 Thuế GTGT khấu trừ vat_amount  (nếu vat>0)
-             Cr 331 Phải trả NCC      grand_total
+          Hóa đơn mua thường:
+            Dr 152  Hàng tồn kho       subtotal
+            Dr 1331 Thuế GTGT khấu trừ vat_amount  (nếu vat>0)
+               Cr 331 Phải trả NCC      grand_total
+
+          Debit/Credit Note trả hàng NCC (is_debit_note/is_credit_note=1):
+          hàng đi NGƯỢC trở lại NCC → GL đảo chiều so với hóa đơn mua thường:
+            Dr 331 Phải trả NCC        grand_total  (giảm công nợ phải trả)
+               Cr 152 Hàng tồn kho       subtotal      (giảm tồn kho)
+               Cr 1331 Thuế GTGT khấu trừ vat_amount (nếu vat>0, giảm khấu trừ)
         """
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
 
@@ -187,18 +214,34 @@ class SCPurchaseInvoice(Document):
                              indicator="orange", alert=True)
             return
 
-        entries = [
-            {"account": acc_inventory, "debit": flt(self.subtotal),
-             "remarks": f"PI {self.name} — hàng tồn kho"},
-        ]
-        if flt(self.vat_amount) > 0 and acc_vat:
-            entries.append({"account": acc_vat, "debit": flt(self.vat_amount),
-                             "remarks": f"PI {self.name} — VAT khấu trừ"})
-        entries.append({
-            "account": acc_payable, "credit": flt(self.grand_total),
-            "party_type": "SC Supplier", "party": self.supplier,
-            "remarks": f"PI {self.name} — phải trả NCC",
-        })
+        is_return_note = bool(self.get("is_debit_note") or self.get("is_credit_note"))
+
+        if is_return_note:
+            # Trả hàng NCC: đảo ngược bút toán mua hàng thường — payable
+            # GIẢM (Dr 331), tồn kho GIẢM (Cr 152), VAT khấu trừ GIẢM (Cr 1331).
+            entries = [
+                {"account": acc_payable, "debit": flt(self.grand_total),
+                 "party_type": "SC Supplier", "party": self.supplier,
+                 "remarks": f"PI {self.name} — trả hàng NCC, giảm phải trả"},
+                {"account": acc_inventory, "credit": flt(self.subtotal),
+                 "remarks": f"PI {self.name} — giảm hàng tồn kho (trả hàng)"},
+            ]
+            if flt(self.vat_amount) > 0 and acc_vat:
+                entries.append({"account": acc_vat, "credit": flt(self.vat_amount),
+                                 "remarks": f"PI {self.name} — giảm VAT khấu trừ (trả hàng)"})
+        else:
+            entries = [
+                {"account": acc_inventory, "debit": flt(self.subtotal),
+                 "remarks": f"PI {self.name} — hàng tồn kho"},
+            ]
+            if flt(self.vat_amount) > 0 and acc_vat:
+                entries.append({"account": acc_vat, "debit": flt(self.vat_amount),
+                                 "remarks": f"PI {self.name} — VAT khấu trừ"})
+            entries.append({
+                "account": acc_payable, "credit": flt(self.grand_total),
+                "party_type": "SC Supplier", "party": self.supplier,
+                "remarks": f"PI {self.name} — phải trả NCC",
+            })
 
         SCGLEntry.post_journal(
             entries=entries,
@@ -241,7 +284,14 @@ def make_invoice_from_pr(pr_name: str) -> str:
       - pr_item_ref (=PR Item.name), po_item_ref (=PR Item.po_item_ref)
 
     Returns: tên PI draft (chưa submit — user review rồi submit để post GL).
+
+    GĐ4 Task 5 (security sweep): hàm module-level WRITE (tạo PI draft với
+    `ignore_permissions=True`) — KHÔNG qua `run_doc_method` nên không tự động
+    check permission gì. Không gate thì bất kỳ user đăng nhập nào (kể cả
+    Portal) truyền `pr_name` bất kỳ sẽ đọc được PR nội bộ + TẠO ĐƯỢC hóa đơn
+    NCC thật trong hệ thống — vừa lộ dữ liệu vừa ghi dữ liệu trái phép.
     """
+    block_portal()
     pr = frappe.get_doc("SC Purchase Receipt", pr_name)
     if pr.docstatus != 1:
         frappe.throw(_("PR {0} chưa submit").format(pr_name), title="SC-E-PR")

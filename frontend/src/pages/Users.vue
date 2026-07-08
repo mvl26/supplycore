@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { users as usersApi } from '../api'
 import { useAuthStore } from '../stores/auth'
+import { useAccessStore } from '../stores/access'
 import { useToastStore } from '../stores/toast'
 import PageHeader from '../components/PageHeader.vue'
 import Modal from '../components/Modal.vue'
@@ -10,10 +11,19 @@ import FieldInput from '../components/FieldInput.vue'
 import Icon from '../components/Icon.vue'
 
 const auth = useAuthStore()
+const access = useAccessStore()
 const toast = useToastStore()
 const router = useRouter()
 
+// L01: chỉ quyết định quyền SAU khi đã biết roles. Access store (access.menu)
+// là source of truth (load ở router guard). Tránh hiện banner "cấm" lúc chưa
+// boot xong rồi phải F5.
+const accessReady = computed(() => access.loaded || auth.booted)
 const isAdmin = computed(() => {
+  if (access.loaded) {
+    if (access.is_admin) return true
+    return (access.roles || []).some(r => ['System Manager', 'SupplyCore Manager'].includes(r))
+  }
   const r = (auth.user?.roles || []).map(x => x.role || x)
   return r.includes('System Manager') || r.includes('SupplyCore Manager')
 })
@@ -50,7 +60,17 @@ watch(search, () => {
   searchTimer = setTimeout(loadAll, 300)
 })
 
-onMounted(loadAll)
+onMounted(async () => {
+  // Đợi access store (source of truth) trước khi quyết định quyền & gọi API admin
+  if (!access.loaded) { try { await access.load() } catch (e) {} }
+  if (isAdmin.value) loadAll()
+})
+
+// Nếu access.load() đang chạy từ router guard (load() early-return khi đang
+// loading) → onMounted có thể chưa thấy loaded. Khi loaded xong thì nạp danh sách.
+watch(() => access.loaded, (v) => {
+  if (v && isAdmin.value && !userList.value.length && !loading.value) loadAll()
+})
 
 // === Modal ===
 function openCreate() {
@@ -136,7 +156,12 @@ const tickedRoleInfo = computed(() =>
 </script>
 
 <template>
-  <div v-if="!isAdmin" class="sc-card p-10 text-center">
+  <div v-if="!accessReady" class="sc-card p-10 text-center text-sc-text-muted">
+    <div class="text-4xl mb-3 animate-spin inline-block"><Icon name="rotate-cw" :size="40" /></div>
+    Đang kiểm tra quyền…
+  </div>
+
+  <div v-else-if="!isAdmin" class="sc-card p-10 text-center">
     <div class="text-4xl mb-3"><Icon name="shield" :size="40" /></div>
     <h2 class="text-lg font-bold text-sc-navy mb-2">Cần quyền quản lý user</h2>
     <p class="text-sm text-sc-text-muted">

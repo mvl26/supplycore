@@ -7,6 +7,7 @@ import { useToastStore } from '../stores/toast'
 import Modal from './Modal.vue'
 import FieldInput from './FieldInput.vue'
 import Icon from './Icon.vue'
+import { fmtVND } from '../utils'
 
 const router = useRouter()
 
@@ -33,7 +34,6 @@ const RESULT_ACTIONS = new Set([
   'run_audit_trail',
   'compare_stock',
   'detect_anomalies',
-  'audit_dispensings_in_period',
   'verify_audit_integrity',
   'create_purchase_orders',
   'get_po_suggestion',
@@ -266,7 +266,7 @@ const btnClass = {
             <div class="text-xs text-sc-text-muted">Chênh lệch giá trị</div>
             <div class="text-lg font-mono font-bold"
               :class="result.variance_value != 0 ? 'text-red-700' : ''">
-              {{ Number(result.variance_value || 0).toLocaleString('vi-VN') }} VND
+              {{ fmtVND(result.variance_value || 0) }}
             </div>
           </div>
         </div>
@@ -301,7 +301,7 @@ const btnClass = {
         </div>
       </div>
 
-      <!-- Recovery / Dispensing audit summary -->
+      <!-- Recovery / audit summary -->
       <div v-else-if="result.audited != null || result.notified != null || result.recipients != null">
         <div class="font-semibold mb-2 flex items-center gap-2"><Icon name="bar-chart" :size="16" /> Tổng hợp</div>
         <div class="grid grid-cols-2 gap-2">
@@ -343,7 +343,7 @@ const btnClass = {
                 </span>
               </div>
               <span class="text-xs font-mono">
-                {{ Number(g.subtotal || 0).toLocaleString('vi-VN') }} đ
+                {{ fmtVND(g.subtotal || 0) }}
               </span>
             </div>
             <table class="text-xs w-full">
@@ -360,7 +360,7 @@ const btnClass = {
                   <td class="p-1.5 font-mono">{{ it.item }}</td>
                   <td class="p-1.5 text-right">{{ it.qty }}</td>
                   <td class="p-1.5">{{ it.uom }}</td>
-                  <td class="p-1.5 text-right">{{ Number(it.rate || 0).toLocaleString('vi-VN') }}</td>
+                  <td class="p-1.5 text-right">{{ fmtVND(it.rate || 0) }}</td>
                 </tr>
               </tbody>
             </table>

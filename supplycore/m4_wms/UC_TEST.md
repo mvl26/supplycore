@@ -62,7 +62,7 @@
 
 ## UC-14 — Truy vấn tồn kho theo Location
 
-**Actor:** Storekeeper / Manager / Ward Staff
+**Actor:** Storekeeper / Manager
 **Status:** ✅ OK
 **Pre-condition:** SLE có data.
 

@@ -19,14 +19,13 @@ export const FORM_SCHEMAS = {
       { title: 'Cấu hình', fields: [
         { name: 'is_stock_item', label: 'Quản lý tồn kho', type: 'Check', default: 1 },
         { name: 'has_batch_no', label: 'Có quản lý lô', type: 'Check' },
-        { name: 'has_bhyt', label: 'Có BHYT', type: 'Check' },
         { name: 'safety_stock', label: 'Tồn kho an toàn', type: 'Float' },
         { name: 'reorder_level', label: 'Mức tái đặt', type: 'Float' },
         { name: 'disabled', label: 'Vô hiệu hoá', type: 'Check' },
       ]},
       { title: 'Đơn vị kép (BR-BH-03)', fields: [
         { name: 'buy_uom', label: 'Đơn vị mua (hộp/thùng)', type: 'Link', linkTo: 'SC UOM' },
-        { name: 'use_uom', label: 'Đơn vị sử dụng/BHYT', type: 'Link', linkTo: 'SC UOM' },
+        { name: 'use_uom', label: 'Đơn vị sử dụng', type: 'Link', linkTo: 'SC UOM' },
         { name: 'uom_conversion_factor', label: 'Hệ số quy đổi', type: 'Float' },
       ]},
     ],
@@ -106,10 +105,10 @@ export const FORM_SCHEMAS = {
         { name: 'warehouse_type', label: 'Loại kho', type: 'Select',
           options: [
             { value: 'Main', label: 'Kho chính' },
+            { value: 'Sub', label: 'Kho phụ' },
             { value: 'Department', label: 'Kho khoa phòng' },
             { value: 'Quarantine', label: 'Kho cách ly' },
-            { value: 'Damaged', label: 'Kho hư hỏng' },
-            { value: 'Sample', label: 'Kho mẫu' },
+            { value: 'Transit', label: 'Kho trung chuyển' },
           ] },
         { name: 'parent_warehouse', label: 'Kho cha', type: 'Link', linkTo: 'SC Warehouse' },
         { name: 'is_group', label: 'Là nhóm', type: 'Check' },
@@ -118,7 +117,6 @@ export const FORM_SCHEMAS = {
       { title: 'Thông tin liên hệ', fields: [
         { name: 'address', label: 'Địa chỉ', type: 'Small Text' },
         { name: 'phone', label: 'Điện thoại', type: 'Data' },
-        { name: 'in_charge', label: 'Phụ trách', type: 'Link', linkTo: 'User' },
       ]},
     ],
   },
@@ -184,50 +182,6 @@ export const FORM_SCHEMAS = {
       ]},
     ],
   },
-  'SC Patient': {
-    sections: [
-      { title: 'Thông tin BN', fields: [
-        { name: 'patient_id', label: 'Mã BN', type: 'Data', required: true },
-        { name: 'patient_name', label: 'Họ tên', type: 'Data', required: true },
-        { name: 'gender', label: 'Giới tính', type: 'Select', options: ['Nam', 'Nữ', 'Khác'] },
-        { name: 'dob', label: 'Ngày sinh', type: 'Date' },
-        { name: 'phone', label: 'Điện thoại', type: 'Data' },
-        { name: 'address', label: 'Địa chỉ', type: 'Small Text' },
-      ]},
-      { title: 'BHYT', fields: [
-        { name: 'bhyt_card_no', label: 'Số thẻ BHYT', type: 'Data' },
-        { name: 'bhyt_type', label: 'Loại BHYT', type: 'Select',
-          options: ['Đúng tuyến', 'Trái tuyến', 'Không có BHYT'] },
-        { name: 'bhyt_payment_rate', label: 'Tỷ lệ BHYT (%)', type: 'Percent', default: 80 },
-        { name: 'bhyt_valid_to', label: 'Thẻ BHYT hết hạn', type: 'Date' },
-      ]},
-      { title: 'Nhập viện', fields: [
-        { name: 'current_department', label: 'Khoa hiện tại', type: 'Link', linkTo: 'SC Department' },
-        { name: 'current_bed', label: 'Giường', type: 'Data' },
-        { name: 'admission_date', label: 'Ngày nhập viện', type: 'Date' },
-        { name: 'discharge_date', label: 'Ngày xuất viện', type: 'Date' },
-      ]},
-    ],
-  },
-  'SC BHYT Code Config': {
-    sections: [
-      { title: 'Mã BHYT', fields: [
-        { name: 'bhyt_code', label: 'Mã BHYT', type: 'Data', required: true },
-        { name: 'bhyt_name', label: 'Tên BHYT', type: 'Data', required: true },
-        { name: 'bhyt_group', label: 'Nhóm BHYT', type: 'Select',
-          options: ['N01', 'N02', 'N03', 'N04', 'N05', 'N06', 'N07', 'N08', 'N09'] },
-        { name: 'payment_rate', label: 'Tỷ lệ thanh toán (%)', type: 'Percent', required: true, default: 80 },
-        { name: 'ceiling_price', label: 'Giá trần', type: 'Currency' },
-      ]},
-      { title: 'Phạm vi áp dụng', fields: [
-        { name: 'item', label: 'Vật tư', type: 'Link', linkTo: 'SC Item' },
-        { name: 'item_group', label: 'Nhóm vật tư', type: 'Link', linkTo: 'SC Item Group' },
-        { name: 'effective_from', label: 'Hiệu lực từ', type: 'Date', required: true, default: 'today' },
-        { name: 'effective_to', label: 'Hết hiệu lực', type: 'Date', hint: 'Để trống = chưa kết thúc' },
-        { name: 'is_active', label: 'Đang áp dụng', type: 'Check', default: 1 },
-      ]},
-    ],
-  },
   'SC GL Account': {
     sections: [
       { title: 'Tài khoản kế toán', fields: [
@@ -258,7 +212,9 @@ export const FORM_SCHEMAS = {
         { name: 'supplier', label: 'Nhà cung cấp', type: 'Link', linkTo: 'SC Supplier', required: true },
         { name: 'contract_number', label: 'Tên / Số hợp đồng', type: 'Data', required: true,
           hint: 'Tên hoặc số hợp đồng (vd: HĐ-2026-NCC-A001)' },
-        { name: 'contract_date', label: 'Ngày ký', type: 'Date', required: true },
+        { name: 'contract_date', label: 'Ngày ký', type: 'Date', required: true,
+          hint: 'Chọn ngày ký → tự điền Hiệu lực từ = ngày ký, Hết hạn = +1 năm (vẫn sửa được)',
+          derive: [{ target: 'valid_from', op: 'copy' }, { target: 'valid_to', op: 'plus1year' }] },
         { name: 'valid_from', label: 'Hiệu lực từ', type: 'Date', required: true },
         { name: 'valid_to', label: 'Hết hạn', type: 'Date', required: true },
       ]},
@@ -269,8 +225,8 @@ export const FORM_SCHEMAS = {
         { name: 'delivery_terms', label: 'Điều khoản giao hàng', type: 'Small Text' },
       ]},
       { title: 'Tệp đính kèm & người tạo', fields: [
-        { name: 'attachment', label: 'Bản mềm hợp đồng (PDF)', type: 'Attach',
-          hint: 'Đính kèm file PDF bản mềm hợp đồng đã ký' },
+        { name: 'attachments', label: 'Tài liệu hợp đồng (1 hoặc nhiều tệp)', type: 'AttachMultiple',
+          hint: 'Có thể chọn nhiều tệp cùng lúc hoặc thêm dần (PDF/ảnh/Word)' },
         { name: 'owner', label: 'Người tạo', type: 'Data', readonly: true,
           hint: 'Tự động ghi user tạo HĐ — không sửa được' },
         { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
@@ -291,9 +247,93 @@ export const FORM_SCHEMAS = {
     },
   },
 
+  'Release Order': {
+    sections: [
+      { title: 'Thông tin chung', fields: [
+        { name: 'framework_contract', label: 'Hợp đồng khung', type: 'Link', linkTo: 'Framework Contract', required: true,
+          fetchFrom: { target_doctype: 'Framework Contract', target_field: 'supplier' },
+          hint: 'Chọn HĐ khung Active — NCC tự điền theo hợp đồng. Để trống items để backend tự nạp vật tư còn hạn mức.' },
+        { name: 'supplier', label: 'Nhà cung cấp', type: 'Link', linkTo: 'SC Supplier', readonly: true,
+          hint: 'Tự lấy theo HĐ khung' },
+        { name: 'release_date', label: 'Ngày lệnh', type: 'Date', required: true, default: 'today' },
+        { name: 'required_by', label: 'Ngày cần giao', type: 'Date', required: true,
+          hint: 'Không được trước ngày lệnh' },
+        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
+      ]},
+    ],
+    items: {
+      field: 'items', label: 'Danh mục vật tư cần gọi',
+      columns: [
+        { name: 'item_code', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '25%' },
+        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
+          scope: { itemField: 'item_code' },
+          fetchFrom: { source: 'item_code', target_doctype: 'SC Item', target_field: 'uom' } },
+        { name: 'qty', label: 'SL gọi', type: 'Float', required: true, width: '15%' },
+        { name: 'available_qty', label: 'Còn theo HĐK', type: 'Float', readonly: true, width: '15%' },
+        { name: 'unit_price', label: 'Đơn giá HĐK', type: 'Currency', readonly: true, width: '18%',
+          hint: 'Lấy theo hợp đồng khung — không sửa tay' },
+        { name: 'amount', label: 'Thành tiền', type: 'Currency', readonly: true, width: '15%',
+          compute: { from: ['qty', 'unit_price'], op: 'mul' } },
+      ],
+    },
+  },
+
   // ============================================================
   // M2 Planning
   // ============================================================
+  'Procurement Plan': {
+    sections: [
+      { title: 'Thông tin chung', fields: [
+        { name: 'plan_date', label: 'Ngày lập kế hoạch', type: 'Date', required: true, default: 'today' },
+        { name: 'period_type', label: 'Kỳ kế hoạch', type: 'Select', required: true,
+          options: [
+            { value: 'Monthly', label: 'Hàng tháng' },
+            { value: 'Quarterly', label: 'Hàng quý' },
+            { value: 'Yearly', label: 'Hàng năm' },
+            { value: 'Adhoc', label: 'Đột xuất' },
+          ], default: 'Monthly' },
+        { name: 'from_date', label: 'Từ ngày', type: 'Date', required: true },
+        { name: 'to_date', label: 'Đến ngày', type: 'Date', required: true },
+        { name: 'required_by', label: 'Ngày cần hàng', type: 'Date',
+          hint: 'Sẽ truyền sang Material Request khi tạo' },
+      ]},
+      { title: 'Phạm vi & tham số tính', fields: [
+        { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', required: true },
+        { name: 'consumption_lookback_months', label: 'Số tháng lịch sử tính bình quân', type: 'Int', default: 3,
+          hint: 'Lấy bình quân tiêu thụ N tháng gần nhất' },
+        { name: 'safety_stock_factor', label: 'Hệ số safety stock (%)', type: 'Percent', default: 20,
+          hint: '% bổ sung trên nhu cầu cơ bản' },
+      ]},
+      { title: 'Ngân sách', fields: [
+        { name: 'budget', label: 'Ngân sách dự kiến (VND)', type: 'Currency',
+          hint: 'Để 0 nếu không kiểm soát ngân sách' },
+        { name: 'total_estimated_cost', label: 'Tổng chi phí ước tính (VND)', type: 'Currency', readonly: true,
+          hint: 'Tự tính = Σ thành tiền các dòng' },
+        { name: 'budget_acknowledged', label: 'Xác nhận vượt ngân sách', type: 'Check',
+          hint: 'Bắt buộc tick nếu tổng chi phí vượt ngân sách mới submit được' },
+        { name: 'auto_create_mr', label: 'Tự tạo Material Request sau Submit', type: 'Check' },
+        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
+      ]},
+    ],
+    items: {
+      field: 'items', label: 'Danh mục vật tư cần mua',
+      columns: [
+        { name: 'item_code', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '18%' },
+        { name: 'item_name', label: 'Tên', type: 'Data', readonly: true, width: '15%',
+          fetchFrom: { source: 'item_code', target_doctype: 'SC Item', target_field: 'item_name' } },
+        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', width: '8%',
+          scope: { itemField: 'item_code' },
+          fetchFrom: { source: 'item_code', target_doctype: 'SC Item', target_field: 'uom' } },
+        { name: 'current_stock', label: 'Tồn hiện tại', type: 'Float', readonly: true, width: '10%' },
+        { name: 'avg_monthly_consumption', label: 'Tiêu thụ/tháng', type: 'Float', readonly: true, width: '10%' },
+        { name: 'planned_qty', label: 'SL dự kiến mua', type: 'Float', required: true, width: '11%' },
+        { name: 'estimated_unit_cost', label: 'Đơn giá ƯT', type: 'Currency', width: '13%' },
+        { name: 'estimated_amount', label: 'Thành tiền', type: 'Currency', readonly: true, width: '13%',
+          compute: { from: ['planned_qty', 'estimated_unit_cost'], op: 'mul' } },
+      ],
+    },
+  },
+
   'SC Material Request': {
     sections: [
       { title: 'Thông tin chung', fields: [
@@ -304,8 +344,9 @@ export const FORM_SCHEMAS = {
             { value: 'Material Issue', label: 'Xuất kho' },
           ], default: 'Purchase' },
         { name: 'transaction_date', label: 'Ngày tạo', type: 'Date', required: true, default: 'today' },
-        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', required: true },
+        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', required: true, warnPastDate: true },
         { name: 'warehouse', label: 'Kho nhận', type: 'Link', linkTo: 'SC Warehouse', required: true },
+        { name: 'department', label: 'Khoa yêu cầu', type: 'Link', linkTo: 'SC Department' },
         { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
       ]},
     ],
@@ -320,7 +361,8 @@ export const FORM_SCHEMAS = {
         { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract', width: '18%',
           scope: { itemField: 'item' } },
         { name: 'estimated_unit_cost', label: 'Đơn giá ƯT', type: 'Currency', width: '18%' },
-        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', width: '15%' },
+        { name: 'schedule_date', label: 'Ngày cần', type: 'Date', width: '15%',
+          inheritFrom: 'schedule_date', warnPastDate: true },
       ],
     },
   },
@@ -328,10 +370,15 @@ export const FORM_SCHEMAS = {
   'SC Purchase Order': {
     sections: [
       { title: 'Thông tin chung', fields: [
-        { name: 'supplier', label: 'NCC', type: 'Link', linkTo: 'SC Supplier', required: true },
+        { name: 'supplier', label: 'NCC', type: 'Link', linkTo: 'SC Supplier', required: true,
+          readonlyWhenSet: 'framework_contract',
+          hint: 'Khi đã chọn HĐ khung, NCC bị khoá theo hợp đồng — bấm "Đặt lại" để chọn NCC khác' },
         { name: 'transaction_date', label: 'Ngày PO', type: 'Date', required: true, default: 'today' },
         { name: 'schedule_date', label: 'Ngày giao DK', type: 'Date', required: true },
-        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract' },
+        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'Framework Contract',
+          readonlyWhenSet: 'framework_contract',
+          fetchFrom: { target_doctype: 'Framework Contract', target_field: 'supplier' },
+          hint: 'Chọn HĐ khung sẽ tự điền & khoá NCC. Bấm "Đặt lại" để chọn HĐ khung khác' },
         { name: 'delivery_terms', label: 'Điều khoản giao', type: 'Small Text' },
       ]},
     ],
@@ -362,6 +409,12 @@ export const FORM_SCHEMAS = {
         { name: 'to_warehouse', label: 'Kho đích', type: 'Link', linkTo: 'SC Warehouse', required: true },
         { name: 'is_return', label: 'Phiếu trả NCC', type: 'Check' },
         { name: 'return_reason', label: 'Lý do trả', type: 'Small Text', dependOn: 'is_return' },
+        { name: 'no_po_reason', label: 'Lý do nhập không PO', type: 'Small Text',
+          dependOn: 'eval:!doc.purchase_order && !doc.is_return',
+          hint: 'Bắt buộc khi nhập kho không có PO tham chiếu' },
+        { name: 'over_receipt_acknowledged', label: 'Manager xác nhận nhận vượt', type: 'Check',
+          dependOn: 'eval:doc.has_over_receipt',
+          hint: 'Bắt buộc xác nhận khi SL nhận vượt SL đặt trên PO' },
         { name: 'qc_required', label: 'Yêu cầu QC', type: 'Check', default: 1 },
       ]},
     ],
@@ -376,7 +429,7 @@ export const FORM_SCHEMAS = {
         { name: 'rate', label: 'Đơn giá', type: 'Currency', width: '15%' },
         { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', width: '15%' },
         { name: 'supplier_batch_no', label: 'Số lô NCC', type: 'Data', width: '13%' },
-        { name: 'expiry_date', label: 'HD', type: 'Date', width: '15%' },
+        { name: 'expiry_date', label: 'HD', type: 'Date', width: '15%', required: true },
       ],
     },
   },
@@ -389,18 +442,19 @@ export const FORM_SCHEMAS = {
       { title: 'Thông tin kiểm', fields: [
         { name: 'inspection_date', label: 'Ngày kiểm', type: 'Date', required: true, default: 'today' },
         { name: 'purchase_receipt', label: 'Phiếu nhập', type: 'Link', linkTo: 'SC Purchase Receipt', required: true,
+          readonly: true, hint: 'Phiếu QC tạo tự động từ phiếu nhập — không sửa',
           fetchFrom: { target_doctype: 'SC Purchase Receipt', target_field: 'supplier' } },
         { name: 'supplier', label: 'Nhà cung cấp', type: 'Link', linkTo: 'SC Supplier', readonly: true,
           hint: 'Tự fetch từ Phiếu nhập' },
-        { name: 'item', label: 'Vật tư', type: 'Link', linkTo: 'SC Item', required: true,
+        { name: 'item', label: 'Vật tư', type: 'Link', linkTo: 'SC Item', required: true, readonly: true,
           fetchFrom: { target_doctype: 'SC Item', target_field: 'item_name' } },
         { name: 'item_name', label: 'Tên vật tư', type: 'Data', readonly: true },
-        { name: 'batch', label: 'Lô', type: 'Link', linkTo: 'SC Batch', canCreateNew: true,
-          scope: { itemField: 'item' },
-          hint: 'Chỉ hiển thị lô của item đang chọn. "+ Tạo mới Batch" để tạo lô mới và quay lại' },
-        { name: 'received_qty', label: 'SL nhận', type: 'Float' },
-        { name: 'inspected_by', label: 'Người kiểm', type: 'Link', linkTo: 'User' },
-        { name: 'checklist_template', label: 'Bộ tiêu chuẩn', type: 'Link', linkTo: 'QC Checklist Template' },
+        { name: 'batch', label: 'Lô', type: 'Link', linkTo: 'SC Batch', readonly: true,
+          hint: 'Lấy theo phiếu nhập — QC không đổi lô' },
+        { name: 'received_qty', label: 'SL nhận', type: 'Float', readonly: true,
+          hint: 'Lấy từ phiếu nhập — QC chỉ kết luận Đạt/Không đạt' },
+        { name: 'inspected_by', label: 'Người kiểm', type: 'Link', linkTo: 'User', readonly: true,
+          hint: 'Tự ghi nhận theo người kết luận QC' },
       ]},
       { title: 'Kết quả', fields: [
         { name: 'manual_inspection', label: 'Kiểm thủ công', type: 'Check' },
@@ -426,6 +480,15 @@ export const FORM_SCHEMAS = {
     ],
     items: {
       field: 'readings', label: 'Tiêu chí kiểm tra',
+      // Bỏ QC Checklist Template: hiện sẵn 5 tiêu chí QC nhập kho mẫu để KCS tick (thêm/bớt được).
+      // Giữ ĐỒNG BỘ với backend sc_purchase_receipt.py::_DEFAULT_QI_CRITERIA.
+      defaultRows: [
+        { specification: 'Bao bì, nhãn mác nguyên vẹn, đầy đủ thông tin', status: '' },
+        { specification: 'Số lô khớp chứng từ', status: '' },
+        { specification: 'Hạn sử dụng còn đủ theo quy định', status: '' },
+        { specification: 'Quy cách, số lượng đúng đặt hàng', status: '' },
+        { specification: 'Cảm quan đạt (màu sắc, hình thức, không hư hỏng/biến chất)', status: '' },
+      ],
       bulkActions: [
         { label: 'Accept tất cả', variant: 'success', set: { status: 'Accepted' } },
         { label: 'Reject tất cả', variant: 'danger',  set: { status: 'Rejected' } },
@@ -469,7 +532,7 @@ export const FORM_SCHEMAS = {
             { value: 'Accepted', label: 'Đạt' },
             { value: 'Rejected', label: 'Không đạt' },
           ], default: 'Pending' },
-        { name: 'short_expiry_ack', label: 'Xác nhận nhập lô hạn ngắn', type: 'Check' },
+        { name: 'expiry_warning_ack', label: 'Xác nhận nhập lô hạn ngắn', type: 'Check' },
       ]},
     ],
   },
@@ -534,7 +597,8 @@ export const FORM_SCHEMAS = {
     items: {
       field: 'items', label: 'Chi tiết',
       columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%' },
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%',
+          scope: { warehouseField: 'from_warehouse', warehouseFromParent: true } },
         { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
@@ -548,69 +612,145 @@ export const FORM_SCHEMAS = {
   },
 
   // ============================================================
-  // M7 Dispensing
+  // M7 Sales
   // ============================================================
-  'SC Dispensing Request': {
+  'SC Customer': {
     sections: [
-      { title: 'Thông tin', fields: [
-        { name: 'request_date', label: 'Ngày YC', type: 'Date', required: true, default: 'today' },
-        { name: 'purpose', label: 'Mục đích', type: 'Select',
+      { title: 'Thông tin khách hàng', fields: [
+        { name: 'customer_name', label: 'Tên khách hàng', type: 'Data', required: true },
+        { name: 'tax_code', label: 'Mã số thuế', type: 'Data', required: true },
+        { name: 'status', label: 'Trạng thái', type: 'Select', required: true,
           options: [
-            { value: 'Routine', label: 'Thường quy' },
-            { value: 'Patient-Specific', label: 'Theo bệnh nhân' },
-            { value: 'Emergency', label: 'Cấp cứu' },
-          ], default: 'Routine' },
-        { name: 'required_by', label: 'Cần trước', type: 'Date' },
-        { name: 'department', label: 'Khoa yêu cầu', type: 'Link', linkTo: 'SC Department', required: true },
-        { name: 'patient', label: 'Bệnh nhân (Patient-Specific)', type: 'Link', linkTo: 'SC Patient',
-          dependOn: 'purpose' },
-        { name: 'from_warehouse', label: 'Kho cấp', type: 'Link', linkTo: 'SC Warehouse' },
-        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
+            { value: 'Tạm ngưng', label: 'Tạm ngưng' },
+            { value: 'Hoạt động', label: 'Hoạt động' },
+          ], default: 'Tạm ngưng',
+          hint: 'Khách hàng mới mặc định Tạm ngưng — chỉ chuyển Hoạt động sau khi có tài khoản Portal' },
+        { name: 'credit_limit', label: 'Hạn mức nợ (VND)', type: 'Currency' },
+        { name: 'payment_terms', label: 'Điều khoản thanh toán', type: 'Data' },
+        { name: 'portal_user', label: 'Tài khoản Portal', type: 'Link', linkTo: 'User',
+          hint: 'Bắt buộc có trước khi chuyển trạng thái sang Hoạt động (BRU-CUS-001)' },
+      ]},
+      { title: 'Địa chỉ', fields: [
+        { name: 'billing_address', label: 'Địa chỉ hoá đơn', type: 'Small Text' },
+        { name: 'shipping_address', label: 'Địa chỉ giao hàng', type: 'Small Text' },
+      ]},
+    ],
+  },
+  'SC Sales Framework Contract': {
+    sections: [
+      { title: 'Thông tin HĐ khung', fields: [
+        { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer', required: true },
+        { name: 'valid_from', label: 'Hiệu lực từ', type: 'Date', required: true, default: 'today' },
+        { name: 'valid_to', label: 'Hiệu lực đến', type: 'Date', required: true },
       ]},
     ],
     items: {
       field: 'items', label: 'Chi tiết',
       columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '32%' },
-        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '15%',
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%' },
+        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
           scope: { itemField: 'item' },
           fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
-        { name: 'requested_qty', label: 'SL YC', type: 'Float', required: true, width: '18%' },
-        { name: 'approved_qty', label: 'SL duyệt', type: 'Float', width: '18%' },
-        { name: 'remarks', label: 'Ghi chú', type: 'Data', width: '17%' },
+        { name: 'contract_qty', label: 'SL hợp đồng', type: 'Float', required: true, width: '15%' },
+        { name: 'unit_price', label: 'Đơn giá', type: 'Currency', required: true, width: '18%' },
+        { name: 'sold_qty', label: 'Đã bán', type: 'Float', width: '15%' },
+        { name: 'remaining_qty', label: 'Còn lại', type: 'Float', width: '15%' },
       ],
     },
   },
-
-  'SC Patient Dispensing': {
+  'SC Sales Order': {
     sections: [
-      { title: 'Thông tin', fields: [
-        { name: 'dispensing_date', label: 'Ngày cấp', type: 'Date', required: true, default: 'today' },
-        { name: 'patient', label: 'Bệnh nhân', type: 'Link', linkTo: 'SC Patient', required: true },
-        { name: 'ward', label: 'Khoa', type: 'Link', linkTo: 'SC Department' },
-        { name: 'dispensing_request', label: 'DR liên quan', type: 'Link', linkTo: 'SC Dispensing Request' },
-        { name: 'bhyt_card_no', label: 'Số thẻ BHYT', type: 'Data',
-          fetchFrom: { source: 'patient', target_doctype: 'SC Patient', target_field: 'bhyt_card_no' } },
-        { name: 'bhyt_payment_rate', label: 'Tỷ lệ BHYT (%)', type: 'Percent', default: 80 },
+      { title: 'Thông tin đơn bán', fields: [
+        { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer', required: true,
+          readonlyWhenSet: 'framework_contract' },
+        { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'SC Sales Framework Contract',
+          readonlyWhenSet: 'framework_contract',
+          fetchFrom: { target_doctype: 'SC Sales Framework Contract', target_field: 'customer' },
+          hint: 'Chọn HĐ khung sẽ tự điền & khoá khách hàng — giá lấy theo HĐ khung (BRU-SFC-002)' },
+        { name: 'order_date', label: 'Ngày đặt', type: 'Date', required: true, default: 'today' },
       ]},
     ],
     items: {
-      field: 'items', label: 'Vật tư cấp phát',
-      autoFetch: {
-        on: ['item', 'warehouse'],
-        api: 'supplycore.api.frontend.pd_item_autofetch',
-      },
+      field: 'items', label: 'Chi tiết',
       columns: [
-        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '24%' },
-        { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', required: true, width: '18%' },
-        { name: 'uom', label: 'ĐVT', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
-          scope: { itemField: 'item' } },
-        { name: 'qty', label: 'SL', type: 'Float', required: true, width: '10%' },
-        { name: 'unit_cost', label: 'Đơn giá', type: 'Currency', required: true, width: '14%' },
-        { name: 'batch', label: 'Lô (FEFO)', type: 'Link', linkTo: 'SC Batch', width: '18%',
-          scope: { itemField: 'item' } },
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '25%' },
+        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
+          scope: { itemField: 'item' },
+          fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
+        { name: 'qty', label: 'SL', type: 'Float', required: true, width: '15%' },
+        { name: 'unit_price', label: 'Đơn giá', type: 'Currency', width: '18%', readonly: true,
+          hint: 'Lấy theo HĐ khung (SFC) — không sửa tay' },
+        { name: 'amount', label: 'Thành tiền', type: 'Currency', width: '18%', readonly: true },
       ],
     },
+  },
+  'SC Delivery Note': {
+    sections: [
+      { title: 'Thông tin giao hàng', fields: [
+        { name: 'sales_order', label: 'SO tham chiếu', type: 'Link', linkTo: 'SC Sales Order', required: true },
+        { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer' },
+        { name: 'from_warehouse', label: 'Kho xuất', type: 'Link', linkTo: 'SC Warehouse', required: true },
+        { name: 'delivery_date', label: 'Ngày giao', type: 'Date', required: true, default: 'today' },
+      ]},
+    ],
+    items: {
+      field: 'items', label: 'Chi tiết',
+      columns: [
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '22%' },
+        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '10%',
+          scope: { itemField: 'item' },
+          fetchFrom: { source: 'item', target_doctype: 'SC Item', target_field: 'uom' } },
+        { name: 'qty', label: 'SL giao', type: 'Float', required: true, width: '15%' },
+        { name: 'batch', label: 'Lô', type: 'Link', linkTo: 'SC Batch', width: '18%' },
+        { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', width: '18%' },
+      ],
+    },
+  },
+  'SC Acceptance Record': {
+    sections: [
+      { title: 'Thông tin nghiệm thu', fields: [
+        { name: 'delivery_note', label: 'DN tham chiếu', type: 'Link', linkTo: 'SC Delivery Note', required: true },
+        { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer' },
+        { name: 'acceptance_date', label: 'Ngày nghiệm thu', type: 'Date', required: true, default: 'today' },
+        { name: 'accepted_by', label: 'Người nhận hàng', type: 'Data', required: true },
+        { name: 'note', label: 'Ghi chú', type: 'Small Text' },
+      ]},
+    ],
+  },
+
+  'SC Sales Invoice': {
+    sections: [
+      { title: 'Thông tin HD bán hàng', fields: [
+        { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer', required: true },
+        { name: 'delivery_note', label: 'DN tham chiếu (đã nghiệm thu)', type: 'Link', linkTo: 'SC Delivery Note', required: true },
+        { name: 'invoice_date', label: 'Ngày HD', type: 'Date', required: true, default: 'today' },
+        { name: 'tax_rate', label: 'Thuế suất (%)', type: 'Percent' },
+      ]},
+    ],
+    items: {
+      field: 'items', label: 'Chi tiết',
+      columns: [
+        { name: 'item', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '30%' },
+        { name: 'qty', label: 'SL', type: 'Float', required: true, width: '20%' },
+        { name: 'unit_price', label: 'Đơn giá', type: 'Currency', required: true, width: '25%' },
+        { name: 'amount', label: 'Thành tiền', type: 'Currency', width: '25%' },
+      ],
+    },
+  },
+  'SC Sales Receipt': {
+    sections: [
+      { title: 'Thông tin thu tiền', fields: [
+        { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer', required: true },
+        { name: 'sales_invoice', label: 'SI tham chiếu', type: 'Link', linkTo: 'SC Sales Invoice', required: true },
+        { name: 'receipt_date', label: 'Ngày thu', type: 'Date', required: true, default: 'today' },
+        { name: 'amount', label: 'Số tiền', type: 'Currency', required: true },
+        { name: 'mode', label: 'Hình thức thu', type: 'Select',
+          options: [
+            { value: 'Chuyển khoản', label: 'Chuyển khoản' },
+            { value: 'Tiền mặt', label: 'Tiền mặt' },
+          ], default: 'Chuyển khoản' },
+      ]},
+    ],
   },
 
   // ============================================================
@@ -817,7 +957,7 @@ export const FORM_SCHEMAS = {
         { name: 'department', label: 'Khoa', type: 'Link', linkTo: 'SC Department', width: '12%' },
         { name: 'voucher_type', label: 'Chứng từ', type: 'Data', width: '10%' },
         { name: 'voucher_no', label: 'Mã CT', type: 'Data', width: '12%' },
-        { name: 'qty_dispensed', label: 'SL', type: 'Float', width: '8%' },
+        { name: 'qty_issued', label: 'SL', type: 'Float', width: '8%' },
         { name: 'recovered_qty', label: 'Đã thu', type: 'Float', width: '8%' },
         { name: 'destroyed_qty', label: 'Đã huỷ', type: 'Float', width: '8%' },
         { name: 'outstanding_qty', label: 'Còn', type: 'Float', width: '8%' },
@@ -937,6 +1077,65 @@ export const FORM_SCHEMAS = {
         { name: 'recipient_roles', label: 'Roles (phẩy)', type: 'Small Text' },
         { name: 'extra_emails', label: 'Email bổ sung (phẩy)', type: 'Small Text' },
       ]},
+    ],
+  },
+}
+
+// ============================================================
+// CR-03 · Quick-create — cấu hình "Tạo nhanh" trong droplist.
+// Mọi Link field có linkTo nằm trong registry này sẽ tự hiện
+// nút "➕ Tạo mới" + mở QuickCreateModal (không rời trang).
+// Field tối thiểu = field bắt buộc của doctype (để insert thành công).
+// ============================================================
+export const QUICK_CREATE = {
+  'SC Supplier': {
+    title: 'Tạo nhanh Nhà cung cấp',
+    prefillField: 'supplier_name',
+    fields: [
+      { name: 'supplier_name', label: 'Tên NCC', type: 'Data', required: true },
+      { name: 'supplier_type', label: 'Loại NCC', type: 'Select', required: true, options: [
+        { value: 'Nhà sản xuất', label: 'Nhà sản xuất' },
+        { value: 'Nhà phân phối', label: 'Nhà phân phối' },
+        { value: 'Đại lý', label: 'Đại lý' },
+        { value: 'Khác', label: 'Khác' },
+      ] },
+      { name: 'tax_id', label: 'Mã số thuế', type: 'Data', required: true },
+      { name: 'email_id', label: 'Email', type: 'Data', required: true },
+      { name: 'mobile_no', label: 'Điện thoại', type: 'Data', required: true },
+      { name: 'address', label: 'Địa chỉ', type: 'Small Text', required: true },
+    ],
+  },
+  'SC Item': {
+    title: 'Tạo nhanh Vật tư',
+    prefillField: 'item_name',
+    fields: [
+      { name: 'item_code', label: 'Mã VT', type: 'Data', required: true },
+      { name: 'item_name', label: 'Tên vật tư', type: 'Data', required: true },
+      { name: 'uom', label: 'Đơn vị tồn (UOM)', type: 'Link', linkTo: 'SC UOM', required: true },
+    ],
+  },
+  'SC Warehouse': {
+    title: 'Tạo nhanh Kho',
+    prefillField: 'warehouse_name',
+    fields: [
+      { name: 'warehouse_name', label: 'Tên kho', type: 'Data', required: true },
+    ],
+  },
+  'SC Department': {
+    title: 'Tạo nhanh Khoa/Phòng',
+    prefillField: 'department_name',
+    fields: [
+      { name: 'department_name', label: 'Tên khoa/phòng', type: 'Data', required: true },
+    ],
+  },
+  'SC Customer': {
+    title: 'Tạo nhanh Khách hàng',
+    prefillField: 'customer_name',
+    fields: [
+      { name: 'customer_name', label: 'Tên khách hàng', type: 'Data', required: true },
+      { name: 'tax_code', label: 'Mã số thuế', type: 'Data', required: true },
+      { name: 'credit_limit', label: 'Hạn mức nợ (VND)', type: 'Currency' },
+      { name: 'billing_address', label: 'Địa chỉ hoá đơn', type: 'Small Text' },
     ],
   },
 }

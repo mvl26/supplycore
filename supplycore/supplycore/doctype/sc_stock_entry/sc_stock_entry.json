@@ -133,6 +133,7 @@
   {
    "fieldname": "total_value",
    "fieldtype": "Currency",
+   "precision": "0",
    "label": "Tổng giá trị",
    "options": "VND",
    "read_only": 1
@@ -203,19 +204,6 @@
    "submit": 1,
    "report": 1,
    "print": 1
-  },
-  {
-   "role": "Pharmacy Officer",
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "submit": 1,
-   "report": 1
-  },
-  {
-   "role": "SupplyCore Ward Staff",
-   "read": 1,
-   "report": 1
   },
   {
    "role": "SupplyCore Auditor",

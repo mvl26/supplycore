@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>US — User Story & Acceptance Criteria | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>User Story & Acceptance Criteria</h1>
+  <div class="doc-meta">
+    <span>Mã: US-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; User Story & Acceptance Criteria
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#danh-sach">1. Danh sách User Story</a></li>
+        <li><a href="#chi-tiet">2. Chi tiết từng US</a></li>
+        <li><a href="#backlog">3. Product Backlog</a></li>
+    </ol>
+  </nav>
+
+<h2 id="danh-sach">1. Danh sách 43 User Story</h2><table>
+<thead><tr><th width="70">Mã US</th><th width="70">UC</th><th width="150">Persona</th><th>Mục tiêu</th></tr></thead>
+<tbody>
+<tr><td><code>US-01</code></td><td><code>UC-01</code></td><td>Nhân viên Thương mại</td><td>Tìm kiếm & Đánh giá Nhà cung cấp</td></tr>
+<tr><td><code>US-02</code></td><td><code>UC-02</code></td><td>Nhân viên Thương mại</td><td>Tạo / Cập nhật Nhà cung cấp</td></tr>
+<tr><td><code>US-03</code></td><td><code>UC-03</code></td><td>Quản lý</td><td>Tạo & Quản lý Hợp đồng Khung Mua (FC)</td></tr>
+<tr><td><code>US-04</code></td><td><code>UC-04</code></td><td>Quản lý</td><td>Theo dõi & Gia hạn / Thanh lý Hợp đồng</td></tr>
+<tr><td><code>US-05</code></td><td><code>UC-05</code></td><td>Nhân viên Thương mại</td><td>Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</td></tr>
+<tr><td><code>US-06</code></td><td><code>UC-06</code></td><td>Quản lý</td><td>Lập Kế hoạch Mua hàng Định kỳ</td></tr>
+<tr><td><code>US-07</code></td><td><code>UC-07</code></td><td>Nhân viên Thương mại</td><td>Tạo Đề nghị Mua hàng (Material Request)</td></tr>
+<tr><td><code>US-08</code></td><td><code>UC-08</code></td><td>Nhân viên Thương mại</td><td>Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</td></tr>
+<tr><td><code>US-09</code></td><td><code>UC-09</code></td><td>Thủ kho</td><td>Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</td></tr>
+<tr><td><code>US-10</code></td><td><code>UC-10</code></td><td>QC Officer</td><td>Kiểm tra Chất lượng (QC) Hàng nhập</td></tr>
+<tr><td><code>US-11</code></td><td><code>UC-11</code></td><td>Thủ kho</td><td>Xử lý hàng trả lại Nhà cung cấp</td></tr>
+<tr><td><code>US-12</code></td><td><code>UC-12</code></td><td>Thủ kho</td><td>Quản lý Bin Location & Putaway Rules</td></tr>
+<tr><td><code>US-13</code></td><td><code>UC-13</code></td><td>Thủ kho</td><td>Nhập / Xuất kho thủ công (Batch + Bin)</td></tr>
+<tr><td><code>US-14</code></td><td><code>UC-14</code></td><td>Thủ kho</td><td>Tra cứu tồn kho theo vị trí</td></tr>
+<tr><td><code>US-15</code></td><td><code>UC-15</code></td><td>Thủ kho</td><td>Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</td></tr>
+<tr><td><code>US-16</code></td><td><code>UC-16</code></td><td>Thủ kho</td><td>Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</td></tr>
+<tr><td><code>US-17</code></td><td><code>UC-17</code></td><td>Thủ kho</td><td>Quét mã vạch để tra cứu & thao tác</td></tr>
+<tr><td><code>US-18</code></td><td><code>UC-18</code></td><td>Thủ kho</td><td>Quản lý Thông tin Lô hàng (Batch)</td></tr>
+<tr><td><code>US-19</code></td><td><code>UC-19</code></td><td>Thủ kho</td><td>Xuất kho theo FEFO</td></tr>
+<tr><td><code>US-20</code></td><td><code>UC-20</code></td><td>Hệ thống</td><td>Cảnh báo sắp hết hạn</td></tr>
+<tr><td><code>US-21</code></td><td><code>UC-21</code></td><td>Thủ kho</td><td>Chuyển kho nội bộ (Stock Transfer)</td></tr>
+<tr><td><code>US-22</code></td><td><code>UC-22</code></td><td>Nhân viên Thương mại</td><td>Quản lý Khách hàng & Tài khoản đăng nhập</td></tr>
+<tr><td><code>US-23</code></td><td><code>UC-23</code></td><td>Nhân viên Thương mại</td><td>Tạo & Quản lý Hợp đồng Khung Bán hàng</td></tr>
+<tr><td><code>US-24</code></td><td><code>UC-24</code></td><td>Nhân viên Thương mại</td><td>Tiếp nhận & Duyệt Đơn đặt hàng của Khách</td></tr>
+<tr><td><code>US-25</code></td><td><code>UC-25</code></td><td>Nhân viên Bán hàng</td><td>Xuất kho bán & Lập Phiếu Bàn giao</td></tr>
+<tr><td><code>US-26</code></td><td><code>UC-26</code></td><td>Nhân viên Bán hàng</td><td>Bàn giao & Nghiệm thu tại Khách hàng</td></tr>
+<tr><td><code>US-27</code></td><td><code>UC-27</code></td><td>Kế toán</td><td>Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</td></tr>
+<tr><td><code>US-28</code></td><td><code>UC-28</code></td><td>Kế toán</td><td>Thanh toán Nhà cung cấp (Payment Entry)</td></tr>
+<tr><td><code>US-29</code></td><td><code>UC-29</code></td><td>Kế toán</td><td>Xuất Hóa đơn Bán cho Khách hàng</td></tr>
+<tr><td><code>US-30</code></td><td><code>UC-30</code></td><td>Kế toán</td><td>Ghi nhận Thu tiền từ Khách hàng</td></tr>
+<tr><td><code>US-31</code></td><td><code>UC-31</code></td><td>Kế toán</td><td>Báo cáo Tài chính Vật tư</td></tr>
+<tr><td><code>US-32</code></td><td><code>UC-32</code></td><td>Quản lý</td><td>Lập kế hoạch & thực hiện kiểm kê</td></tr>
+<tr><td><code>US-33</code></td><td><code>UC-33</code></td><td>Quản lý</td><td>Đối soát kho & Biên bản (Stock Reconciliation)</td></tr>
+<tr><td><code>US-34</code></td><td><code>UC-34</code></td><td>Quản lý</td><td>Truy xuất nguồn gốc lô (Batch Trace)</td></tr>
+<tr><td><code>US-35</code></td><td><code>UC-35</code></td><td>Quản lý</td><td>Thu hồi Vật tư (Recall Management)</td></tr>
+<tr><td><code>US-36</code></td><td><code>UC-36</code></td><td>Quản lý</td><td>Điều tra Thất thoát Vật tư (Investigation)</td></tr>
+<tr><td><code>US-37</code></td><td><code>UC-37</code></td><td>Quản lý</td><td>Dashboard Điều hành Tổng thể</td></tr>
+<tr><td><code>US-38</code></td><td><code>UC-38</code></td><td>Quản lý</td><td>Cấu hình & Quản lý Cảnh báo Tự động</td></tr>
+<tr><td><code>US-39</code></td><td><code>UC-39</code></td><td>Quản lý</td><td>Xem & Xử lý Cảnh báo Hành động</td></tr>
+<tr><td><code>US-40</code></td><td><code>UC-40</code></td><td>Khách hàng</td><td>Khách hàng Đăng nhập Portal</td></tr>
+<tr><td><code>US-41</code></td><td><code>UC-41</code></td><td>Khách hàng</td><td>Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</td></tr>
+<tr><td><code>US-42</code></td><td><code>UC-42</code></td><td>Khách hàng</td><td>Đặt hàng theo HĐ khung (Portal)</td></tr>
+<tr><td><code>US-43</code></td><td><code>UC-43</code></td><td>Khách hàng</td><td>Theo dõi Đơn hàng & Lịch sử (Portal)</td></tr>
+</tbody>
+</table><h2 id="chi-tiet">2. Chi tiết từng User Story (AC)</h2><h3 id="us-01">US-01 — M1</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m1, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-01</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-01</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-02">US-02 — M1</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m1, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-02</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-02</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-03">US-03 — M1</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m1, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-03</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-03</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-04">US-04 — M1</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m1, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-04</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-04</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-05">US-05 — M1</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m1, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-05</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-05</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-06">US-06 — M2</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m2, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-06</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-06</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-07">US-07 — M2</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m2, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-07</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-07</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-08">US-08 — M2</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m2, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-08</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-08</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-09">US-09 — M3</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m3, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-09</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-09</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-10">US-10 — M3</h3><p><b>Là</b> QC Officer, <b>tôi muốn</b> m3, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-10</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-10</code></td></tr>
+<tr><td>Persona</td><td>QC Officer</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-11">US-11 — M3</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m3, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-11</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-11</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-12">US-12 — M4</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m4, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-12</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-12</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-13">US-13 — M4</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m4, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-13</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-13</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-14">US-14 — M4</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m4, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-14</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-14</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-15">US-15 — M4</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m4, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-15</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-15</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-16">US-16 — M4</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m4, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-16</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-16</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-17">US-17 — M4</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m4, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-17</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-17</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-18">US-18 — M5</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m5, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-18</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-18</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-19">US-19 — M5</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m5, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-19</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-19</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-20">US-20 — M5</h3><p><b>Là</b> Hệ thống, <b>tôi muốn</b> m5, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-20</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-20</code></td></tr>
+<tr><td>Persona</td><td>Hệ thống</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-21">US-21 — M6</h3><p><b>Là</b> Thủ kho, <b>tôi muốn</b> m6, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-21</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-21</code></td></tr>
+<tr><td>Persona</td><td>Thủ kho</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-22">US-22 — M7</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m7, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-22</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-22</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-23">US-23 — M7</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m7, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-23</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-23</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-24">US-24 — M7</h3><p><b>Là</b> Nhân viên Thương mại, <b>tôi muốn</b> m7, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-24</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-24</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Thương mại</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-25">US-25 — M7</h3><p><b>Là</b> Nhân viên Bán hàng, <b>tôi muốn</b> m7, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-25</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-25</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Bán hàng</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-26">US-26 — M7</h3><p><b>Là</b> Nhân viên Bán hàng, <b>tôi muốn</b> m7, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-26</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-26</code></td></tr>
+<tr><td>Persona</td><td>Nhân viên Bán hàng</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-27">US-27 — M8</h3><p><b>Là</b> Kế toán, <b>tôi muốn</b> m8, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-27</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-27</code></td></tr>
+<tr><td>Persona</td><td>Kế toán</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-28">US-28 — M8</h3><p><b>Là</b> Kế toán, <b>tôi muốn</b> m8, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-28</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-28</code></td></tr>
+<tr><td>Persona</td><td>Kế toán</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-29">US-29 — M8</h3><p><b>Là</b> Kế toán, <b>tôi muốn</b> m8, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-29</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-29</code></td></tr>
+<tr><td>Persona</td><td>Kế toán</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-30">US-30 — M8</h3><p><b>Là</b> Kế toán, <b>tôi muốn</b> m8, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-30</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-30</code></td></tr>
+<tr><td>Persona</td><td>Kế toán</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-31">US-31 — M8</h3><p><b>Là</b> Kế toán, <b>tôi muốn</b> m8, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-31</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-31</code></td></tr>
+<tr><td>Persona</td><td>Kế toán</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-32">US-32 — M9</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m9, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-32</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-32</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-33">US-33 — M9</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m9, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-33</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-33</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-34">US-34 — M10</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m10, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-34</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-34</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-35">US-35 — M10</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m10, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-35</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-35</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-36">US-36 — M10</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m10, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-36</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-36</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-37">US-37 — M11</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m11, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-37</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-37</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-38">US-38 — M11</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m11, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-38</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-38</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-39">US-39 — M11</h3><p><b>Là</b> Quản lý, <b>tôi muốn</b> m11, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-39</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-39</code></td></tr>
+<tr><td>Persona</td><td>Quản lý</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-40">US-40 — M12</h3><p><b>Là</b> Khách hàng, <b>tôi muốn</b> m12, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-40</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-40</code></td></tr>
+<tr><td>Persona</td><td>Khách hàng</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-41">US-41 — M12</h3><p><b>Là</b> Khách hàng, <b>tôi muốn</b> m12, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-41</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-41</code></td></tr>
+<tr><td>Persona</td><td>Khách hàng</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-42">US-42 — M12</h3><p><b>Là</b> Khách hàng, <b>tôi muốn</b> m12, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-42</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-42</code></td></tr>
+<tr><td>Persona</td><td>Khách hàng</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h3 id="us-43">US-43 — M12</h3><p><b>Là</b> Khách hàng, <b>tôi muốn</b> m12, <b>để</b> hoàn thành nghiệp vụ đúng quy trình & quy tắc.</p><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã</td><td><code>US-43</code></td></tr>
+<tr><td>UC liên quan</td><td><code>UC-43</code></td></tr>
+<tr><td>Persona</td><td>Khách hàng</td></tr>
+<tr><td>Ưu tiên (MoSCoW)</td><td>Must</td></tr>
+<tr><td>Story Point</td><td>3</td></tr>
+<tr><td>Acceptance Criteria</td><td>1) Thao tác đúng luồng chính; 2) Hệ thống chặn khi vi phạm quy tắc; 3) Ghi audit trail & cập nhật trạng thái</td></tr>
+</tbody>
+</table><h2 id="backlog">3. Product Backlog (theo phân hệ)</h2><table>
+<thead><tr><th width="80">Phân hệ</th><th>Tên</th><th>Số US/UC</th></tr></thead>
+<tbody>
+<tr><td>M1</td><td>Hợp đồng & Nhà cung cấp</td><td>5</td></tr>
+<tr><td>M2</td><td>Kế hoạch & Mua sắm</td><td>3</td></tr>
+<tr><td>M3</td><td>Tiếp nhận & QC</td><td>3</td></tr>
+<tr><td>M4</td><td>WMS, PDA & Mã vạch</td><td>6</td></tr>
+<tr><td>M5</td><td>Lô, Hạn dùng & FEFO</td><td>3</td></tr>
+<tr><td>M6</td><td>Luân chuyển Nội bộ</td><td>1</td></tr>
+<tr><td>M7</td><td>Bán hàng & Bàn giao Khách hàng</td><td>5</td></tr>
+<tr><td>M8</td><td>Kế toán & Thanh toán</td><td>5</td></tr>
+<tr><td>M9</td><td>Kiểm kê & Đối soát</td><td>2</td></tr>
+<tr><td>M10</td><td>Truy xuất & Điều tra</td><td>3</td></tr>
+<tr><td>M11</td><td>Dashboard & Cảnh báo</td><td>3</td></tr>
+<tr><td>M12</td><td>Portal Khách hàng</td><td>4</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: US | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

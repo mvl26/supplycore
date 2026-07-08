@@ -8,6 +8,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def get_batch_trace(batch_no: str) -> dict:
@@ -19,11 +21,13 @@ def get_batch_trace(batch_no: str) -> dict:
           source: {supplier, purchase_receipt, received_date, qc_status},
           movements: [{type, voucher_type, voucher_no, date, qty,
                        from_warehouse, to_warehouse, party}],
-          patient_dispensings: [{pd_name, patient, ward, date, qty, bhyt_amount}],
           current_qty_per_warehouse: [{warehouse, qty}],
           remaining_qty: total
         }
+
+    # TODO GĐ2: bổ sung trace/recall theo SC Delivery Note → SC Customer (chuỗi bán)
     """
+    block_portal()
     if not frappe.db.exists("SC Batch", batch_no):
         frappe.throw(_("Batch {0} không tồn tại").format(batch_no))
 
@@ -53,17 +57,6 @@ def get_batch_trace(batch_no: str) -> dict:
         ORDER BY posting_date ASC, posting_time ASC
     """, batch_no, as_dict=True)
 
-    # Patient Dispensings (BN cụ thể đã dùng)
-    pds = frappe.db.sql("""
-        SELECT pd.name AS pd_name, pd.patient, pd.patient_name,
-               pd.ward, pd.dispensing_date,
-               pdi.qty, pdi.bhyt_amount, pdi.bhyt_code
-        FROM `tabSC PD Item` pdi
-        JOIN `tabSC Patient Dispensing` pd ON pd.name = pdi.parent
-        WHERE pdi.batch = %s AND pd.docstatus = 1
-        ORDER BY pd.dispensing_date ASC
-    """, batch_no, as_dict=True)
-
     # Current qty per warehouse
     qty_wh = frappe.db.sql("""
         SELECT warehouse, SUM(qty_change) AS qty
@@ -88,11 +81,9 @@ def get_batch_trace(batch_no: str) -> dict:
         "block_reason": batch.block_reason,
         "source": source[0] if source else None,
         "movements": [_serialize_row(m) for m in movements],
-        "patient_dispensings": [_serialize_row(p) for p in pds],
         "current_qty_per_warehouse": [_serialize_row(q) for q in qty_wh],
         "remaining_qty": flt(remaining),
         "total_movements": len(movements),
-        "total_patient_uses": len(pds),
     }
 
 
@@ -103,6 +94,7 @@ def get_audit_trail(item: str, warehouse: str = None,
 
     Returns full transaction history with user, voucher, qty change.
     """
+    block_portal()
     if not frappe.db.exists("SC Item", item):
         frappe.throw(_("Item {0} không tồn tại").format(item))
 

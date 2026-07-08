@@ -50,7 +50,6 @@
 - **SupplyCore Manager**: KPI + alerts (skip ap_outstanding nếu không có Accountant role)
 - **SupplyCore Accountant**: ap_outstanding + monthly_cost + invoices breakdown
 - **SupplyCore Storekeeper**: per-warehouse view (`get_warehouse_dashboard()`)
-- **Pharmacy Officer**: dispensing-focused widgets
 - Default (role không match): basic KPIs
 
 ### 6a — Export PDF Snapshot
@@ -121,8 +120,7 @@ def get_dashboard_for_role(role: str = None) -> dict:
     if not role:
         user_roles = set(frappe.get_roles(frappe.session.user))
         for r in ("SupplyCore Executive", "SupplyCore Manager",
-                   "SupplyCore Accountant", "SupplyCore Storekeeper",
-                   "Pharmacy Officer"):
+                   "SupplyCore Accountant", "SupplyCore Storekeeper"):
             if r in user_roles:
                 role = r; break
     ...

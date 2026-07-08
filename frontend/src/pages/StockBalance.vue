@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Pagination from '../components/Pagination.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
-import { fmtNumber, fmtShort, fmtVND, fmtDate } from '../utils'
+import { fmtNumber, fmtVNDShort, fmtVND, fmtDate } from '../utils'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -51,11 +51,16 @@ onMounted(async () => {
 })
 
 const totals = computed(() => {
-  const totalQty = rows.value.reduce((s, r) => s + (r.qty || 0), 0)
-  const totalValue = rows.value.reduce((s, r) => s + (r.value || 0), 0)
+  // L21/T09: chỉ cộng tồn KHẢ DỤNG (đã QC Đạt, không khoá). Lô chưa QC / từ
+  // chối / khoá gộp riêng vào "tồn chờ xử lý" để không thổi phồng số liệu.
+  let availQty = 0, availValue = 0, heldQty = 0
+  for (const r of rows.value) {
+    if (r.available) { availQty += (r.qty || 0); availValue += (r.value || 0) }
+    else heldQty += (r.qty || 0)
+  }
   const distinctItems = new Set(rows.value.map(r => r.item)).size
   const distinctBatches = new Set(rows.value.map(r => r.batch).filter(Boolean)).size
-  return { totalQty, totalValue, distinctItems, distinctBatches }
+  return { availQty, availValue, heldQty, distinctItems, distinctBatches }
 })
 
 const sortedRows = computed(() => {
@@ -146,20 +151,20 @@ const qcLabel = (s) => ({
   <!-- KPI summary -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
     <div class="sc-card p-4">
-      <div class="text-xs text-sc-text-muted">Tổng số lượng tồn</div>
-      <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ fmtNumber(totals.totalQty) }}</div>
+      <div class="text-xs text-sc-text-muted">Tồn khả dụng (QC Đạt)</div>
+      <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ fmtNumber(totals.availQty) }}</div>
     </div>
     <div class="sc-card p-4">
-      <div class="text-xs text-sc-text-muted">Tổng giá trị</div>
-      <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ fmtShort(totals.totalValue) }} VND</div>
+      <div class="text-xs text-sc-text-muted">Giá trị khả dụng</div>
+      <div class="text-2xl font-bold font-mono text-sc-navy mt-1" :title="fmtVND(totals.availValue)">{{ fmtVNDShort(totals.availValue) }}</div>
     </div>
     <div class="sc-card p-4">
-      <div class="text-xs text-sc-text-muted">Số vật tư</div>
-      <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ totals.distinctItems }}</div>
+      <div class="text-xs text-sc-text-muted">Tồn chờ xử lý (chưa QC / từ chối / khoá)</div>
+      <div class="text-2xl font-bold font-mono mt-1" :class="totals.heldQty > 0 ? 'text-sc-warning' : 'text-sc-navy'">{{ fmtNumber(totals.heldQty) }}</div>
     </div>
     <div class="sc-card p-4">
-      <div class="text-xs text-sc-text-muted">Số lô</div>
-      <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ totals.distinctBatches }}</div>
+      <div class="text-xs text-sc-text-muted">Số vật tư · lô</div>
+      <div class="text-2xl font-bold font-mono text-sc-navy mt-1">{{ totals.distinctItems }} · {{ totals.distinctBatches }}</div>
     </div>
   </div>
 
@@ -220,7 +225,7 @@ const qcLabel = (s) => ({
               </span>
             </td>
             <td class="text-right font-mono font-semibold">{{ fmtNumber(r.qty) }}</td>
-            <td class="text-right font-mono">{{ fmtShort(r.value) }}</td>
+            <td class="text-right font-mono" :title="fmtVND(r.value)">{{ fmtVND(r.value) }}</td>
           </tr>
         </tbody>
       </table>

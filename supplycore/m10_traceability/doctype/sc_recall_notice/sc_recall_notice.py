@@ -49,8 +49,8 @@ class SCRecallNotice(Document):
         outstanding = 0
         missing_destruction_audit = []
         for r in self.affected_items:
-            r.outstanding_qty = flt(r.qty_dispensed) - flt(r.recovered_qty or 0) - flt(r.destroyed_qty or 0)
-            total_affected += flt(r.qty_dispensed)
+            r.outstanding_qty = flt(r.qty_issued) - flt(r.recovered_qty or 0) - flt(r.destroyed_qty or 0)
+            total_affected += flt(r.qty_issued)
             outstanding += flt(r.outstanding_qty)
             # BUG-007: SL hủy > 0 → phải có audit trail (reason + witness + date)
             if flt(r.destroyed_qty) > 0:
@@ -85,8 +85,8 @@ class SCRecallNotice(Document):
 
         Query SC SLE để tìm tất cả vị trí batch đã đến:
           - Còn ở warehouse → tồn kho hiện tại
-          - Đã cấp phát qua SC Patient Dispensing → BN-specific
-          - Đã chuyển qua SC Stock Entry Material Transfer → khoa khác
+          - Đã bán ra ngoài qua SC Delivery Note → SC Customer (BRU-REC-001:
+            thu hồi phải truy được toàn bộ lô đã bán ra theo khách hàng)
         """
         if self.docstatus != 0:
             frappe.throw(_("Chỉ populate khi Draft"))
@@ -109,28 +109,35 @@ class SCRecallNotice(Document):
                 "warehouse": row.warehouse,
                 "voucher_type": "Stock Balance",
                 "voucher_no": "—",
-                "qty_dispensed": flt(row.qty),
+                "qty_issued": flt(row.qty),
                 "recovered_qty": 0,
                 "status": "Notified",
             })
 
-        # 2. Đã cấp phát cho BN qua SC Patient Dispensing
-        patient_dispensings = frappe.db.sql("""
-            SELECT pd.name AS pd_name, pd.patient, pd.dispensing_date,
-                   pd.ward, pdi.qty
-            FROM `tabSC PD Item` pdi
-            JOIN `tabSC Patient Dispensing` pd ON pd.name = pdi.parent
-            WHERE pdi.batch = %s AND pd.docstatus = 1
+        # 2. Đã bán ra cho khách hàng qua SC Delivery Note (docstatus=1 —
+        # loại DN đã hủy: cancel post SLE đối ứng cùng voucher_no chứ KHÔNG
+        # set is_cancelled, nên phải lọc theo docstatus của DN, không thể
+        # chỉ lọc qty_change<0).
+        cust_qty = frappe.db.sql("""
+            SELECT dn.name AS voucher_no, dn.customer AS customer,
+                   dn.delivery_date AS voucher_date,
+                   SUM(sle.qty_change) AS qty
+            FROM `tabSC Stock Ledger Entry` sle
+            JOIN `tabSC Delivery Note` dn ON dn.name = sle.voucher_no
+            WHERE sle.voucher_type = 'SC Delivery Note'
+              AND sle.batch = %s
+              AND dn.docstatus = 1
+            GROUP BY dn.name, dn.customer, dn.delivery_date
+            HAVING qty < 0
         """, self.batch_no, as_dict=True)
-        for pd in patient_dispensings:
+        for row in cust_qty:
             self.append("affected_items", {
-                "location_type": "Patient",
-                "patient": pd.patient,
-                "department": pd.ward,
-                "voucher_type": "SC Patient Dispensing",
-                "voucher_no": pd.pd_name,
-                "voucher_date": pd.dispensing_date,
-                "qty_dispensed": flt(pd.qty),
+                "location_type": "Customer",
+                "customer": row.customer,
+                "voucher_type": "SC Delivery Note",
+                "voucher_no": row.voucher_no,
+                "voucher_date": row.voucher_date,
+                "qty_issued": abs(flt(row.qty)),
                 "recovered_qty": 0,
                 "status": "Notified",
             })
@@ -157,7 +164,7 @@ class SCRecallNotice(Document):
                 "voucher_type": r.voucher_type,
                 "voucher_no": r.voucher_no,
                 "voucher_date": str(r.voucher_date) if r.voucher_date else None,
-                "qty_dispensed": flt(r.qty_dispensed),
+                "qty_issued": flt(r.qty_issued),
                 "outstanding": flt(r.outstanding_qty),
                 "status": r.status,
             })
@@ -171,46 +178,33 @@ class SCRecallNotice(Document):
         }
 
     @frappe.whitelist()
-    def notify_clinical_staff(self):
-        """UC-30 3a: gửi alert Pharmacy Officer + SupplyCore Manager khi có BN bị ảnh hưởng."""
+    def notify_customers(self):
+        """BRU-REC-001: group affected_items theo KHÁCH HÀNG đã mua lô bị thu hồi —
+        1 recall letter / customer (song song notify_departments cho kho nội bộ
+        cũ, giữ nguyên notify_departments vì frontend còn gọi trực tiếp)."""
         if self.docstatus != 1:
-            frappe.throw(_("SC-E-RCL-NOT-ISSUED: Chỉ notify khi Issued"))
-        patient_rows = [r for r in self.affected_items if r.location_type == "Patient"]
-        if not patient_rows:
-            return {"notified": 0, "msg": "Không có BN bị ảnh hưởng"}
-        role_users = frappe.get_all(
-            "Has Role",
-            filters={"role": ["in", ["Pharmacy Officer", "SupplyCore Manager"]]},
-            pluck="parent",
-        )
-        recipients = []
-        if role_users:
-            recipients = frappe.get_all(
-                "User",
-                filters={"enabled": 1, "name": ["in", role_users]},
-                pluck="name",
-            )
-        if recipients:
-            try:
-                frappe.sendmail(
-                    recipients=recipients,
-                    subject=f"[RECALL] {self.name} — {len(patient_rows)} BN bị ảnh hưởng",
-                    message=(
-                        f"Recall Notice <b>{self.name}</b> (batch {self.batch_no}) "
-                        f"đã ảnh hưởng <b>{len(patient_rows)}</b> bệnh nhân.<br>"
-                        f"Lý do: {self.recall_reason}<br>"
-                        f"Chi tiết: /app/sc-recall-notice/{self.name}"
-                    ),
-                    now=False,
-                )
-            except Exception:
-                # Email config có thể chưa setup — vẫn cho flag clinical_notified=1
-                pass
-        for r in patient_rows:
-            r.clinical_notified = 1
-            r.db_update()
-        self.db_set("clinical_notified_at", frappe.utils.now())
-        return {"notified": len(patient_rows), "recipients": len(recipients)}
+            frappe.throw(_("SC-E-RCL-NOT-ISSUED: Chỉ gửi phiếu khi Recall Notice đã Issued"))
+        by_customer = {}
+        for r in self.affected_items:
+            if r.location_type != "Customer" or not r.customer:
+                continue
+            by_customer.setdefault(r.customer, []).append({
+                "row_name": r.name,
+                "voucher_type": r.voucher_type,
+                "voucher_no": r.voucher_no,
+                "voucher_date": str(r.voucher_date) if r.voucher_date else None,
+                "qty_issued": flt(r.qty_issued),
+                "outstanding": flt(r.outstanding_qty),
+                "status": r.status,
+            })
+        return {
+            "recall_notice": self.name,
+            "batch_no": self.batch_no,
+            "item": self.item,
+            "recall_reason": self.recall_reason,
+            "by_customer": by_customer,
+            "letter_count": len(by_customer),
+        }
 
     @frappe.whitelist()
     def update_recovery(self, row_name, recovered_qty=0, destroyed_qty=0,
@@ -228,7 +222,7 @@ class SCRecallNotice(Document):
         row.recovered_by = frappe.session.user
         if remarks:
             row.remarks = remarks
-        row.outstanding_qty = flt(row.qty_dispensed) - flt(row.recovered_qty) - flt(row.destroyed_qty)
+        row.outstanding_qty = flt(row.qty_issued) - flt(row.recovered_qty) - flt(row.destroyed_qty)
         row.db_update()
         # Recompute aggregate on parent
         self.reload()
@@ -319,27 +313,3 @@ class SCRecallNotice(Document):
         self.db_set("resolution", "Destroy")
         self.db_set("resolution_date", frappe.utils.today())
         return {"write_off_entry": se.name, "url": f"/app/sc-stock-entry/{se.name}"}
-
-    @frappe.whitelist()
-    def audit_dispensings_in_period(self, start_date=None, end_date=None):
-        """UC-30 ngoại lệ: list cấp phát giai đoạn recall để xử lý case
-        không xác định khoa phòng đã nhận."""
-        start_date = start_date or frappe.utils.add_days(frappe.utils.today(), -90)
-        end_date = end_date or frappe.utils.today()
-        rows = frappe.db.sql("""
-            SELECT pd.name AS pd, pd.dispensing_date, pd.patient, pd.ward,
-                   pdi.batch, pdi.item, pdi.qty,
-                   CASE WHEN pdi.batch IS NOT NULL THEN 1 ELSE 0 END AS has_batch_link
-            FROM `tabSC PD Item` pdi
-            JOIN `tabSC Patient Dispensing` pd ON pd.name = pdi.parent
-            WHERE pd.docstatus = 1
-              AND pdi.item = %(item)s
-              AND pd.dispensing_date BETWEEN %(start)s AND %(end)s
-            ORDER BY pd.dispensing_date DESC
-        """, {"item": self.item, "start": start_date, "end": end_date}, as_dict=True)
-        return {
-            "dispensings": rows,
-            "count": len(rows),
-            "period": f"{start_date} → {end_date}",
-            "item": self.item,
-        }

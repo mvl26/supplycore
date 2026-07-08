@@ -1,12 +1,18 @@
 <script setup>
+import { onMounted, onBeforeUnmount } from 'vue'
 import Icon from './Icon.vue'
 
-defineProps({
+const props = defineProps({
   open: Boolean,
   title: String,
   size: { type: String, default: 'md' }, // sm/md/lg/xl
 })
 const emit = defineEmits(['close'])
+
+// Đóng modal bằng phím Esc (finding từ probe CR-03)
+function onKey(e) { if (e.key === 'Escape' && props.open) emit('close') }
+onMounted(() => window.addEventListener('keydown', onKey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 const sizeClass = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' }
 </script>

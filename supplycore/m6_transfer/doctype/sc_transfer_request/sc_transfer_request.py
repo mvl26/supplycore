@@ -24,7 +24,7 @@ class SCTransferRequest(Document):
             self.status = "Draft"
 
     def on_submit(self):
-        # UC-18 step 5: cross-tier → enforce Manager role
+        # UC-18 step 5: cross-tier → enforce Manager role.
         if self.requires_manager_approval:
             user_roles = set(frappe.get_roles(frappe.session.user))
             if not (user_roles & {"SupplyCore Manager", "System Manager"}):

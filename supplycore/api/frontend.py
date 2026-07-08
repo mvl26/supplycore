@@ -9,13 +9,27 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
-def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start=0):
+def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start=0, or_filters=None):
     """List docs với fields linh hoạt — bypass Frappe.client.get_list whitelist.
 
     Vẫn check role permission qua frappe.has_permission.
+    or_filters: list điều kiện OR (vd tìm theo mã HOẶC tên) — L11/T05.
+
+    RSK-01 (phát hiện task-5 completeness sweep, sibling gap của data_io.py):
+    dù truyền `ignore_permissions=False`, `frappe.db.get_all` → `frappe.get_all`
+    LUÔN ghi đè `kwargs["ignore_permissions"] = True` (frappe/__init__.py) trước
+    khi gọi `get_list` — nghĩa là `permission_query_conditions` (cơ chế cô lập
+    khách hàng cho 5 doctype bán hàng, xem utils/permissions.py) KHÔNG BAO GIỜ
+    được áp dụng ở đây, bất kể tham số truyền vào. Chỉ còn lại
+    `frappe.has_permission(doctype, "read")` doctype-level — mà role
+    "SC Customer Portal" có read=1 trên cả 5 doctype đó. Phải `block_portal()`
+    giống hệt `count_docs` bên dưới (cùng lý do, cùng doctype phạm vi).
     """
+    block_portal()
     if not frappe.has_permission(doctype, "read"):
         frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
 
@@ -24,13 +38,14 @@ def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start
         fields = json.loads(fields)
     if isinstance(filters, str):
         filters = json.loads(filters)
+    if isinstance(or_filters, str):
+        or_filters = json.loads(or_filters)
 
     fields = fields or ["name"]
     filters = filters or {}
 
     try:
-        return frappe.db.get_all(
-            doctype,
+        kwargs = dict(
             fields=fields,
             filters=filters,
             order_by=order_by or "modified desc",
@@ -38,9 +53,143 @@ def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start
             start=int(start) if start else 0,
             ignore_permissions=False,
         )
+        if or_filters:
+            kwargs["or_filters"] = or_filters
+        rows = frappe.db.get_all(doctype, **kwargs)
+        _attach_list_customer_names(doctype, rows)
+        return rows
     except Exception as e:
         frappe.log_error(message=f"list_docs({doctype}): {e}", title="frontend.list_docs")
         frappe.throw(_("Lỗi truy vấn {0}: {1}").format(doctype, str(e)[:200]))
+
+
+# Doctype bán hàng hiện cột "Khách hàng" — cần TÊN thay vì mã (không lưu
+# customer_name, chỉ có link customer). displayKey='customer_name' ở modules.js.
+_LIST_CUSTOMER_NAME_DTS = {
+    "SC Sales Order", "SC Delivery Note", "SC Sales Invoice", "SC Sales Receipt",
+    "SC Acceptance Record", "SC Sales Framework Contract",
+}
+
+
+def _attach_list_customer_names(doctype, rows):
+    """Đính kèm customer_name cho mỗi dòng list bán hàng (1 truy vấn batch)."""
+    if doctype not in _LIST_CUSTOMER_NAME_DTS or not rows:
+        return
+    codes = {r.get("customer") for r in rows if r.get("customer")}
+    if not codes:
+        return
+    names = dict(frappe.db.get_all(
+        "SC Customer", filters={"name": ["in", list(codes)]},
+        fields=["name", "customer_name"], as_list=True))
+    for r in rows:
+        c = r.get("customer")
+        if c:
+            r["customer_name"] = names.get(c) or c
+
+
+@frappe.whitelist()
+def search_framework_contract(q=None, limit=20):
+    """L11: tìm HĐ khung theo mã HĐ, số HĐ, mã NCC, tên NCC, và MÃ/TÊN VẬT TƯ
+    trong danh mục (child) — điều mà or_filters đơn giản không làm được."""
+    if not frappe.has_permission("Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung"), frappe.PermissionError)
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = """WHERE fc.name LIKE %(like)s
+                  OR fc.supplier LIKE %(like)s
+                  OR fc.supplier_name LIKE %(like)s
+                  OR fc.contract_number LIKE %(like)s
+                  OR EXISTS (
+                     SELECT 1 FROM `tabFC Item` fci
+                     WHERE fci.parent = fc.name
+                       AND (fci.item_code LIKE %(like)s OR fci.item_name LIKE %(like)s)
+                  )"""
+    return frappe.db.sql(f"""
+        SELECT fc.name, fc.contract_number, fc.supplier_name
+        FROM `tabFramework Contract` fc
+        {cond}
+        ORDER BY fc.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
+
+
+@frappe.whitelist()
+def search_sales_framework_contract(q=None, limit=20):
+    """M7 UX: tìm HĐ khung BÁN theo TÊN khách hàng (chính), mã HĐ, mã khách,
+    và mã/tên vật tư trong danh mục (child) — trả kèm customer_name để hiển thị
+    tường minh (SFC không có field tên riêng, chỉ định danh bằng khách + kỳ).
+    Mirror search_framework_contract (chiều mua)."""
+    # SQL thô bỏ qua permission_query_conditions → chặn Portal (nếu không, portal
+    # user thấy HĐ + tên KH của MỌI khách — rò chéo BRU-SEC-001). Nội bộ SPA dùng.
+    block_portal()
+    if not frappe.has_permission("SC Sales Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung bán"), frappe.PermissionError)
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = """WHERE sfc.name LIKE %(like)s
+                  OR sfc.customer LIKE %(like)s
+                  OR cust.customer_name LIKE %(like)s
+                  OR EXISTS (
+                     SELECT 1 FROM `tabSFC Item` sfci
+                     WHERE sfci.parent = sfc.name
+                       AND sfci.item LIKE %(like)s
+                  )"""
+    return frappe.db.sql(f"""
+        SELECT sfc.name, sfc.customer, cust.customer_name,
+               sfc.valid_from, sfc.valid_to, sfc.status
+        FROM `tabSC Sales Framework Contract` sfc
+        LEFT JOIN `tabSC Customer` cust ON cust.name = sfc.customer
+        {cond}
+        ORDER BY sfc.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
+
+
+# M7 UX: các chứng từ bán hàng tham chiếu (SO/DN/SI) — hiện TÊN khách + ngày
+# thay vì chỉ mã doc. field (date, amount) lấy từ whitelist này (an toàn khỏi
+# SQL injection vì doctype + field đều từ config server-side, không từ client).
+_SALES_DOC_SEARCH = {
+    "SC Sales Order":   ("order_date",   "total_amount"),
+    "SC Delivery Note": ("delivery_date", None),
+    "SC Sales Invoice": ("invoice_date", "grand_total"),
+}
+
+
+@frappe.whitelist()
+def search_sales_doc(doctype, q=None, limit=20):
+    """Tìm chứng từ bán hàng (SO/DN/SI) theo mã, mã khách, hoặc TÊN khách —
+    trả kèm customer_name + ngày + số tiền để hiển thị tường minh trong droplist."""
+    cfg = _SALES_DOC_SEARCH.get(doctype)
+    if not cfg:
+        frappe.throw(_("Doctype {0} không hỗ trợ tìm kiếm bán hàng").format(doctype))
+    # SQL thô bỏ qua permission_query → chặn Portal (rò chéo khách, BRU-SEC-001).
+    block_portal()
+    if not frappe.has_permission(doctype, "read"):
+        frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
+    date_field, amount_field = cfg
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = ("WHERE d.name LIKE %(like)s OR d.customer LIKE %(like)s "
+                "OR cust.customer_name LIKE %(like)s")
+    amount_sel = f"d.`{amount_field}` AS amount" if amount_field else "NULL AS amount"
+    return frappe.db.sql(f"""
+        SELECT d.name, d.customer, cust.customer_name,
+               d.`{date_field}` AS ref_date, {amount_sel}, d.status
+        FROM `tab{doctype}` d
+        LEFT JOIN `tabSC Customer` cust ON cust.name = d.customer
+        {cond}
+        ORDER BY d.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
 
 
 @frappe.whitelist()
@@ -48,12 +197,43 @@ def get_doc(doctype, name):
     """Get full doc + child tables."""
     if not frappe.has_permission(doctype, "read", doc=name):
         frappe.throw(_("Không có quyền đọc {0} {1}").format(doctype, name), frappe.PermissionError)
-    return frappe.get_doc(doctype, name).as_dict()
+    d = frappe.get_doc(doctype, name).as_dict()
+    _attach_display_names(doctype, d)
+    return d
+
+
+def _attach_display_names(doctype, d):
+    """M7 UX: đính kèm TÊN hiển thị cho các link chính (khách hàng, HĐ khung bán)
+    để MÀN CHI TIẾT hiện tên thay vì mã doc. SO/DN/SI/SR không lưu customer_name
+    (chỉ có link customer) nên phải resolve tại đây. Chỉ 1-2 truy vấn nhẹ khi mở
+    chi tiết; không đụng doctype mua (framework_contract của bên mua trỏ
+    'Framework Contract' khác — exists() bên dưới trả False nên bỏ qua)."""
+    if doctype != "SC Customer" and d.get("customer") and not d.get("customer_name"):
+        d["customer_name"] = frappe.db.get_value("SC Customer", d["customer"], "customer_name")
+    fc = d.get("framework_contract")
+    if fc and frappe.db.exists("SC Sales Framework Contract", fc):
+        row = frappe.db.get_value(
+            "SC Sales Framework Contract", fc, ["customer", "valid_to"], as_dict=True)
+        if row:
+            cn = frappe.db.get_value("SC Customer", row.customer, "customer_name") or row.customer
+            d["framework_contract_display"] = (
+                f"{cn} — HĐ đến {row.valid_to}" if row.valid_to else cn)
 
 
 @frappe.whitelist()
 def count_docs(doctype, filters=None):
-    """Count docs."""
+    """Count docs.
+
+    GĐ4 Task 5 (security sweep): `frappe.db.count()` KHÔNG áp
+    `permission_query_conditions` (khác `frappe.db.get_all`/`list_docs` ở
+    trên) — chỉ check quyền doctype-level. Với 5 doctype bán hàng, role
+    Portal CÓ read=1 doctype-level (bị lọc theo khách hàng chỉ ở list-query),
+    nên nếu không chặn riêng, portal user gọi thẳng count_docs sẽ đếm được
+    TỔNG số đơn/hoá đơn... của TOÀN BỘ khách hàng (rò rỉ quy mô kinh doanh
+    liên khách hàng). Hàm này chỉ dùng nội bộ (SPA `frontend/src/api.js`),
+    Portal khách không cần và không được gọi.
+    """
+    block_portal()
     if not frappe.has_permission(doctype, "read"):
         frappe.throw(_("Không có quyền").format(doctype), frappe.PermissionError)
     import json
@@ -100,9 +280,8 @@ def related_docs(doctype, name):
     - SC Quality Inspection → PR + Item
     - SC Item → Batches + recent SLE
     - SC Batch → SLE + Recall + Trace movements
-    - SC Patient → recent PDs
-    - SC Dispensing Request → PD generated
     """
+    block_portal()
     out = {}
     if not frappe.has_permission(doctype, "read", doc=name):
         frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
@@ -183,18 +362,6 @@ def related_docs(doctype, name):
             HAVING qty > 0
         """, name, as_dict=True)
 
-    elif doctype == "SC Patient":
-        out["dispensings"] = frappe.db.get_all("SC Patient Dispensing",
-            filters={"patient": name, "docstatus": 1},
-            fields=["name", "dispensing_date", "ward", "total_cost", "patient_pays"],
-            order_by="dispensing_date desc", limit=20)
-
-    elif doctype == "SC Dispensing Request":
-        out["patient_dispensings"] = frappe.db.get_all("SC Patient Dispensing",
-            filters={"dispensing_request": name},
-            fields=["name", "dispensing_date", "patient", "patient_name", "total_cost"],
-            limit=10)
-
     elif doctype == "SC Supplier":
         out["framework_contracts"] = frappe.db.get_all("Framework Contract",
             filters={"supplier": name},
@@ -230,7 +397,7 @@ def related_docs(doctype, name):
     elif doctype == "SC Recall Notice":
         out["affected_items"] = frappe.db.get_all("SC Recall Affected Item",
             filters={"parent": name},
-            fields=["name", "warehouse", "department", "patient", "qty_dispensed",
+            fields=["name", "warehouse", "department", "qty_issued",
                      "recovered_qty", "destroyed_qty", "status"],
             limit=50)
 
@@ -240,6 +407,7 @@ def related_docs(doctype, name):
 @frappe.whitelist()
 def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
     """UC-16: tồn kho per item/warehouse/batch. Aggregate SLE."""
+    block_portal()
     conds = ["sle.is_cancelled = 0"]
     params = {}
     if item:
@@ -265,7 +433,31 @@ def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
         ORDER BY i.item_name, sle.warehouse, b.expiry_date ASC
         LIMIT 500
     """, params, as_dict=True)
+    # L21/T09: đánh dấu tồn KHẢ DỤNG = đã QC Đạt và KHÔNG bị khoá. Lô chưa QC
+    # (Pending/NULL), Không đạt (Rejected), Có điều kiện (Conditional) hoặc bị
+    # khoá KHÔNG tính vào tồn khả dụng — frontend cộng riêng để không thổi phồng
+    # tồn. Vẫn trả về mọi dòng để hiển thị nhóm riêng kèm badge trạng thái.
+    for r in rows:
+        r["available"] = 1 if (r.get("qc_status") == "Accepted" and not r.get("blocked")) else 0
     return rows
+
+
+@frappe.whitelist()
+def items_in_warehouse(warehouse=None):
+    """Danh sách MÃ vật tư CÓ TỒN (>0) trong 1 kho — để giới hạn dropdown vật tư
+    ở phiếu chuyển kho / cấp phát chỉ hiện VT thực sự đang có trong kho nguồn.
+    Trả list[str] mã item; rỗng nếu kho không truyền hoặc không có tồn."""
+    block_portal()
+    if not warehouse:
+        return []
+    rows = frappe.db.sql("""
+        SELECT sle.item
+        FROM `tabSC Stock Ledger Entry` sle
+        WHERE sle.warehouse = %(wh)s AND sle.is_cancelled = 0
+        GROUP BY sle.item
+        HAVING COALESCE(SUM(sle.qty_change), 0) > 0
+    """, {"wh": warehouse})
+    return [r[0] for r in rows]
 
 
 @frappe.whitelist()
@@ -273,6 +465,7 @@ def warehouse_stock_for_item(warehouse, item=None):
     """List batches của item (hoặc tất cả) trong warehouse với bin + qty.
     UC-18: hỗ trợ TR form khi user chọn item → hiện tồn + bin.
     """
+    block_portal()
     if not warehouse:
         return []
     conds = ["sle.warehouse = %(wh)s", "sle.is_cancelled = 0"]
@@ -301,6 +494,7 @@ def check_safety_after_transfer(warehouse, item, qty):
     """Kiểm tra nếu chuyển qty từ warehouse → tồn còn lại có dưới safety_stock không.
     Trả {current, after, safety_stock, below_safety, warning_msg}.
     """
+    block_portal()
     current = flt(frappe.db.sql("""
         SELECT COALESCE(SUM(qty_change), 0)
         FROM `tabSC Stock Ledger Entry`
@@ -327,6 +521,7 @@ def fefo_pick_guide(item, warehouse, qty_needed):
     Sort batches by expiry_date ASC (first-expired-first-out).
     Skip blocked batches. Skip batches HD đã hết.
     """
+    block_portal()
     qty_needed = flt(qty_needed)
     if qty_needed <= 0:
         return {"error": "qty_needed phải > 0", "picks": [], "total_picked": 0}
@@ -387,6 +582,7 @@ def pending_putaway(warehouse=None, limit=50):
     """List SLE recent (PR/SE Material Receipt) chưa có bin_location.
     UC: phiếu xếp hàng lên kệ.
     """
+    block_portal()
     conds = ["sle.qty_change > 0", "sle.is_cancelled = 0",
               "(sle.bin_location IS NULL OR sle.bin_location = '')",
               "sle.voucher_type IN ('SC Purchase Receipt', 'SC Stock Entry')"]
@@ -414,6 +610,7 @@ def assign_bin(assignments):
     """Bulk assign bin_location cho list SLE rows.
     Args: assignments = [{sle_name, bin_location}]
     """
+    block_portal()
     import json
     if isinstance(assignments, str):
         assignments = json.loads(assignments)
@@ -444,10 +641,11 @@ def assign_bin(assignments):
 def item_eligible_uoms(item=None):
     """Trả về danh sách UOM hợp lệ cho 1 vật tư.
 
-    SC Item có 3 trường UOM: uom (tồn kho), buy_uom (mua), use_uom (sử dụng/BHYT).
+    SC Item có 3 trường UOM: uom (tồn kho), buy_uom (mua), use_uom (sử dụng).
     Frontend dùng để filter dropdown UOM trong child table — chỉ hiển thị các UOM
     của item đang chọn, không phải toàn bộ SC UOM.
     """
+    block_portal()
     if not item:
         return []
     row = frappe.db.get_value("SC Item", item,
@@ -464,6 +662,7 @@ def framework_contracts_for_item(item=None):
     Frontend dùng để filter dropdown 'HĐ khung' trong bảng chi tiết Yêu cầu mua —
     chỉ gợi ý HĐ khung nào thực sự có vật tư đang chọn ở dòng đó (scope theo mã VT).
     """
+    block_portal()
     if not item:
         return []
     rows = frappe.db.sql("""
@@ -482,6 +681,7 @@ def pd_item_autofetch(item=None, warehouse=None):
     tại 1 kho. Lô được chọn = lô có qty > 0 trong kho, QC Accepted (hoặc
     chưa gắn QC), không blocked, sort expiry_date ASC (FEFO).
     """
+    block_portal()
     if not item or not warehouse:
         return {}
 
@@ -536,6 +736,7 @@ def pd_item_autofetch(item=None, warehouse=None):
 def bins_for_warehouse(warehouse=None):
     """List bins. Nếu warehouse=None → trả tất cả bins kèm warehouse
     để frontend có thể group + lọc theo từng row Putaway."""
+    block_portal()
     filters = {"warehouse": warehouse} if warehouse else {}
     return frappe.db.get_all("Bin Location",
         filters=filters,
@@ -546,6 +747,7 @@ def bins_for_warehouse(warehouse=None):
 @frappe.whitelist()
 def warehouse_summary():
     """Liệt kê tất cả warehouse + tổng SL + tổng giá trị + số items."""
+    block_portal()
     return frappe.db.sql("""
         SELECT
             w.name AS name,
@@ -617,7 +819,7 @@ def get_audit_trail(
                                                "M1 Contract", "M2 Planning",
                                                "M3 Receiving", "M4 Wms",
                                                "M5 Fefo", "M6 Transfer",
-                                               "M7 Dispensing", "M8 Accounting",
+                                               "M8 Accounting",
                                                "M9 Stocktake", "M10 Traceability",
                                                "M11 Dashboard"))},
                     pluck="name",
@@ -675,6 +877,7 @@ def get_doc_versions(doctype, name, limit=50):
     Mỗi record là 1 lần save. data là JSON {changed: [[field, old, new], ...]}.
     Frontend hiển thị thành bảng "ai-sửa-gì-khi-nào".
     """
+    block_portal()
     if not frappe.has_permission(doctype, "read", doc=name):
         frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
 

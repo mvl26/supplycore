@@ -1,6 +1,6 @@
 """SupplyCore — Fetch dữ liệu từ doc upstream để tạo doc downstream.
 
-Khi tạo MR, PO, PR, PI, QI, SE, PD, SR... user có thể "Lấy từ" doc upstream để
+Khi tạo MR, PO, PR, PI, QI, SE, SR... user có thể "Lấy từ" doc upstream để
 auto-prefill header + items. Tránh nhập tay 2 lần — giống ERPNext "Get Items From".
 
 Mapping được khai báo trong `MAPPINGS` dưới đây. Mỗi cặp (source_dt, target_dt)
@@ -179,28 +179,6 @@ MAPPINGS: dict[tuple[str, str], dict] = {
         },
     },
 
-    # ===== M7 DR → M7 PD =====
-    ("SC Dispensing Request", "SC Patient Dispensing"): {
-        "description": "Cấp phát cho BN từ Yêu cầu cấp phát — pull items đã duyệt",
-        "source_link_field": "dispensing_request",
-        "header_map": {
-            "patient": "patient",
-            "department": "ward",
-        },
-        "items": {
-            "source_child_field": "items",
-            "row_filter": lambda r: flt(r.get("approved_qty") or r.get("requested_qty")) > 0,
-            "row_map": {
-                "item": "item",
-                "uom": "uom",
-                "batch": "batch",
-                "warehouse": "warehouse",
-            },
-            "qty_logic": lambda r: flt(r.get("approved_qty") or r.get("requested_qty")),
-            "qty_target": "qty",
-        },
-    },
-
     # ===== M9 ICS → M9 Stock Reconciliation =====
     ("SC Inventory Count Sheet", "SC Stock Reconciliation"): {
         "description": "Tạo phiếu điều chỉnh từ kiểm kê — lấy dòng có chênh lệch",
@@ -210,15 +188,15 @@ MAPPINGS: dict[tuple[str, str], dict] = {
         },
         "items": {
             "source_child_field": "items",
-            "row_filter": lambda r: abs(flt(r.get("counted_qty") or 0) - flt(r.get("system_qty") or 0)) > 0.001,
+            "row_filter": lambda r: abs(flt(r.get("actual_qty") or 0) - flt(r.get("system_qty") or 0)) > 0.001,
             "row_map": {
                 "item": "item",
                 "batch": "batch",
                 "system_qty": "system_qty",
-                "counted_qty": "counted_qty",
+                "actual_qty": "actual_qty",
             },
-            "qty_logic": lambda r: flt(r.get("counted_qty") or 0) - flt(r.get("system_qty") or 0),
-            "qty_target": "variance_qty",
+            "qty_logic": lambda r: flt(r.get("actual_qty") or 0) - flt(r.get("system_qty") or 0),
+            "qty_target": "difference",
         },
     },
 }
@@ -395,7 +373,6 @@ def list_candidates(source_doctype: str, target_doctype: str,
         "SC Purchase Order": ["transaction_date", "supplier", "grand_total", "status"],
         "SC Purchase Receipt": ["posting_date", "supplier", "to_warehouse"],
         "SC Transfer Request": ["request_date", "from_warehouse", "to_warehouse"],
-        "SC Dispensing Request": ["request_date", "department", "from_warehouse"],
         "SC Inventory Count Sheet": ["posting_date", "warehouse", "count_type"],
     }.get(source_doctype, [])
 

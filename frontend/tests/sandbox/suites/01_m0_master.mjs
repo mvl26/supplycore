@@ -8,7 +8,7 @@ export const tests = [
       await page.waitForTimeout(1500)
       await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
       const title = await page.locator('h1').first().textContent()
-      const cards = await page.locator('.sc-card').filter({ hasText: /Vật tư|UOM|NCC|Kho|BHYT/ }).count()
+      const cards = await page.locator('.sc-card').filter({ hasText: /Vật tư|UOM|NCC|Kho/ }).count()
       return title?.includes('Dữ liệu nền') && cards >= 5
         ? { ok: true, detail: `Title="${title}", ${cards} doctype cards` }
         : { ok: false, detail: `Title="${title}", ${cards} cards` }
@@ -42,16 +42,6 @@ export const tests = [
       await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
       const inputs = await page.locator('input').count()
       return inputs >= 2 ? { ok: true, detail: `${inputs} inputs` } : { ok: false, detail: `Only ${inputs}` }
-    },
-  },
-  {
-    name: 'Form tạo SC Patient — có 3 sections',
-    run: async ({ page, BASE, OUT, name }) => {
-      await page.goto(`${BASE}/supplycore/doc/SC%20Patient/new`)
-      await page.waitForTimeout(1500)
-      await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
-      const sections = await page.locator('h3').count()
-      return sections >= 3 ? { ok: true, detail: `${sections} sections` } : { ok: false, detail: `Only ${sections}` }
     },
   },
   {

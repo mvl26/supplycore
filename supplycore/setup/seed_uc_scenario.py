@@ -5,8 +5,8 @@ Usage:
 
 Three phases:
     1. wipe_all()       — xóa transactional + master (giữ User/Role/Settings/Alert Rule)
-    2. seed_master()    — UOM, Warehouses, Suppliers, Items, BHYT, Patients, FC, GL, Alert Rules
-    3. seed_scenario()  — 11 phase transactional UC-05..34
+    2. seed_master()    — UOM, Warehouses, Suppliers, Items, FC, GL, Alert Rules
+    3. seed_scenario()  — 10 phase transactional UC-05..34
 
 See MAIN_FLOW.md cùng folder cho mô tả flow đầy đủ.
 """
@@ -35,9 +35,6 @@ WIPE_TABLES = [
     # === Stocktake ===
     "SC SR Item", "SC Stock Reconciliation",
     "SC ICS Item", "SC Inventory Count Sheet",
-    # === Dispensing ===
-    "SC PD Item", "SC Patient Dispensing",
-    "SC DR Item", "SC Dispensing Request",
     # === Transfer ===
     "SC Stock Entry Item", "SC Stock Entry",
     "SC Transfer Request Item", "SC Transfer Request",
@@ -52,8 +49,6 @@ WIPE_TABLES = [
     # === Master — batches first then items ===
     "SC Batch",
     "FC Renewal History", "FC Item", "Framework Contract",
-    "SC BHYT Code Config",
-    "SC Patient",
     # GL accounts
     "SC GL Account",
     # Supplier
@@ -83,8 +78,8 @@ def wipe_all() -> dict:
     # Reset naming series counters cho clean numbering
     naming_series_prefixes = [
         "SC-FC-", "SC-RO-", "SC-PP-", "SC-MR-", "SC-PO-", "SC-PR-",
-        "SC-QI-", "SC-SE-", "SC-TR-", "SC-DR-", "SC-PD-", "SC-PI-",
-        "SC-PE-", "SC-SR-", "SC-ICS-", "SC-BHYT-", "SC-ALR-", "SC-RCL-",
+        "SC-QI-", "SC-SE-", "SC-TR-", "SC-PI-",
+        "SC-PE-", "SC-SR-", "SC-ICS-", "SC-ALR-", "SC-RCL-",
         "SC-INV-", "SC-AR-",
     ]
     for prefix in naming_series_prefixes:
@@ -102,99 +97,17 @@ def wipe_all() -> dict:
 # =====================================================================
 def seed_master() -> dict:
     """Master data: UOM, ItemGroup, Warehouse, Department, Supplier, Item,
-    GLAccount, BHYT, Patient, Framework Contract, Alert Rules."""
+    GLAccount, Framework Contract, Alert Rules."""
     # Reuse existing seed_master_data cho UOM/Groups/Warehouses/Suppliers/Items/GL
     from supplycore.setup import seed_master_data
     base_counts = seed_master_data.run()
 
     counts = dict(base_counts)
-    counts["bhyt_configs"] = _seed_bhyt_configs()
-    counts["patients"] = _seed_patients()
     counts["framework_contracts"] = _seed_framework_contracts()
     counts["alert_rules"] = _seed_alert_rules()
     counts["item_safety_stock"] = _set_safety_stock_on_items()
     frappe.db.commit()
     return counts
-
-
-def _seed_bhyt_configs() -> int:
-    """5 BHYT configs cho thuốc kê đơn — đại diện 5 nhóm N01-N05."""
-    items_with_bhyt = frappe.get_all("SC Item",
-        filters={"has_bhyt": 1, "disabled": 0},
-        pluck="name", limit=8)
-    if not items_with_bhyt:
-        # fallback: lấy 5 items đầu
-        items_with_bhyt = frappe.get_all("SC Item",
-            filters={"disabled": 0, "is_stock_item": 1},
-            pluck="name", limit=5)
-
-    bhyt_specs = [
-        ("N01", "BHYT Hộ gia đình", "N01", 80, 0),
-        ("N02", "BHYT Hưu trí", "N02", 95, 50000),
-        ("N03", "BHYT Trẻ em <6 tuổi", "N03", 100, 0),
-        ("N04", "BHYT Người nghèo", "N04", 100, 0),
-        ("N05", "BHYT Đối tượng đặc biệt", "N05", 100, 100000),
-    ]
-    count = 0
-    for i, (code, name, group, rate, ceiling) in enumerate(bhyt_specs):
-        if i >= len(items_with_bhyt):
-            break
-        if frappe.db.exists("SC BHYT Code Config", {"bhyt_code": code,
-                                                      "item": items_with_bhyt[i]}):
-            continue
-        b = frappe.new_doc("SC BHYT Code Config")
-        b.bhyt_code = code
-        b.bhyt_name = name
-        b.bhyt_group = group
-        b.payment_rate = rate
-        b.ceiling_price = ceiling
-        b.item = items_with_bhyt[i]
-        b.effective_from = add_days(today(), -90)
-        b.is_active = 1
-        b.flags.ignore_permissions = True
-        b.insert()
-        count += 1
-    return count
-
-
-def _seed_patients() -> int:
-    """10 bệnh nhân với BHYT cards."""
-    depts = frappe.get_all("SC Department", filters={"disabled": 0},
-                            pluck="name", limit=6)
-    if not depts:
-        depts = [None]
-    # bhyt_type options: Đúng tuyến / Trái tuyến / Không có BHYT
-    patients = [
-        ("BN001", "Nguyễn Văn An", "Nam", "1965-04-12", "DN4-001-12345-678", "Đúng tuyến", 95, depts[0]),
-        ("BN002", "Trần Thị Bình", "Nữ", "1980-08-25", "GD4-079-23456-789", "Đúng tuyến", 80, depts[1 % len(depts)]),
-        ("BN003", "Lê Hoàng Cường", "Nam", "2020-01-15", "TE4-079-34567-890", "Đúng tuyến", 100, depts[2 % len(depts)]),
-        ("BN004", "Phạm Thị Dung", "Nữ", "1955-11-30", "DN4-079-45678-901", "Đúng tuyến", 95, depts[0]),
-        ("BN005", "Hoàng Văn Em", "Nam", "1992-06-18", "GD4-079-56789-012", "Đúng tuyến", 80, depts[3 % len(depts)]),
-        ("BN006", "Đặng Thị Phượng", "Nữ", "1973-03-22", "GD4-079-67890-123", "Đúng tuyến", 80, depts[4 % len(depts)]),
-        ("BN007", "Bùi Minh Giang", "Nam", "1988-09-10", None, "Không có BHYT", 0, depts[1 % len(depts)]),
-        ("BN008", "Vũ Thị Hà", "Nữ", "2015-12-05", "TE4-079-89012-345", "Đúng tuyến", 100, depts[2 % len(depts)]),
-        ("BN009", "Đỗ Văn Inh", "Nam", "1948-07-20", "DN4-079-90123-456", "Đúng tuyến", 95, depts[0]),
-        ("BN010", "Trương Thị Kim", "Nữ", "1995-02-14", "TT4-079-01234-567", "Trái tuyến", 60, depts[5 % len(depts)]),
-    ]
-    count = 0
-    for pid, name, gender, dob, card, btype, rate, dept in patients:
-        if frappe.db.exists("SC Patient", pid):
-            continue
-        p = frappe.new_doc("SC Patient")
-        p.patient_id = pid
-        p.patient_name = name
-        p.gender = gender
-        p.dob = dob
-        p.bhyt_card_no = card
-        p.bhyt_type = btype
-        p.bhyt_payment_rate = rate
-        p.bhyt_valid_to = add_days(today(), 365)
-        p.current_department = dept
-        p.admission_date = add_days(today(), -10)
-        p.flags.ignore_permissions = True
-        p.insert()
-        count += 1
-    return count
 
 
 def _seed_framework_contracts() -> int:
@@ -316,7 +229,7 @@ def _set_safety_stock_on_items() -> int:
 # SEED SCENARIO — 11 phases mapped to UCs
 # =====================================================================
 def seed_scenario() -> dict:
-    """11 phases: Procurement → Receiving → Storage → Dispensing → Accounting
+    """10 phases: Procurement → Receiving → Storage → Accounting
     → Stocktake → Recall → Investigation → Dashboard."""
     log = []
     ctx = {}  # context — pass docs across phases
@@ -326,12 +239,11 @@ def seed_scenario() -> dict:
     log.append(("Phase 3: PO + Approval (UC-08)", _phase3_purchase_orders(ctx)))
     log.append(("Phase 4: PR + QI + Return (UC-09-14)", _phase4_receiving(ctx)))
     log.append(("Phase 5: Initial stock + Transfer (UC-15-18)", _phase5_initial_stock(ctx)))
-    log.append(("Phase 6: DR + Dispensing + BHYT (UC-19-23)", _phase6_dispensing(ctx)))
-    log.append(("Phase 7: PI + 3-way + PE (UC-24-27)", _phase7_accounting(ctx)))
-    log.append(("Phase 8: Stocktake (UC-28)", _phase8_stocktake(ctx)))
-    log.append(("Phase 9: Recall (UC-30)", _phase9_recall(ctx)))
-    log.append(("Phase 10: Investigation (UC-31)", _phase10_investigation(ctx)))
-    log.append(("Phase 11: Scan alerts + lifecycle (UC-33-34)", _phase11_alerts(ctx)))
+    log.append(("Phase 6: PI + 3-way + PE (UC-24-27)", _phase7_accounting(ctx)))
+    log.append(("Phase 7: Stocktake (UC-28)", _phase8_stocktake(ctx)))
+    log.append(("Phase 8: Recall (UC-30)", _phase9_recall(ctx)))
+    log.append(("Phase 9: Investigation (UC-31)", _phase10_investigation(ctx)))
+    log.append(("Phase 10: Scan alerts + lifecycle (UC-33-34)", _phase11_alerts(ctx)))
 
     frappe.db.commit()
     return {"phases": log, "ctx_keys": list(ctx.keys())}
@@ -364,10 +276,8 @@ def _pick_supplier(idx=0):
     return rows[idx] if idx < len(rows) else (rows[0] if rows else None)
 
 
-def _pick_items(n=5, with_bhyt_only=False):
+def _pick_items(n=5):
     filters = {"disabled": 0, "is_stock_item": 1}
-    if with_bhyt_only:
-        filters["has_bhyt"] = 1
     return frappe.get_all("SC Item", filters=filters,
                           pluck="name", order_by="name", limit=n)
 
@@ -449,18 +359,30 @@ def _phase3_purchase_orders(ctx):
         po.transaction_date = add_days(today(), -5 + i)
         po.schedule_date = add_days(today(), 10)
         if i < len(fcs):
+            # PO gắn HĐ khung PHẢI đặt đúng NCC + vật tư trong HĐK và không vượt
+            # SL còn lại (ràng buộc L12/L14). Lấy thẳng từ HĐK cho nhất quán.
             po.framework_contract = fcs[i].name
-        # Use items[0:3], [3:6], [6:9] — only first 9 items
-        slice_start = i * 3
-        for j, item in enumerate(items[slice_start:slice_start + 3]):
-            uom = frappe.db.get_value("SC Item", item, "uom")
-            po.append("items", {
-                "item": item, "uom": uom,
-                "qty": 50 + (j * 25),
-                "rate": 15000 + (j * 5000),
-                "warehouse": wh,
-                "schedule_date": add_days(today(), 10),
-            })
+            for fci in fcs[i].items[:3]:
+                cap = flt(getattr(fci, "remaining_qty", None) or fci.contract_qty)
+                po.append("items", {
+                    "item": fci.item_code, "uom": fci.uom,
+                    "qty": min(50.0, cap) if cap > 0 else 1.0,
+                    "rate": flt(fci.unit_price) or 15000,
+                    "warehouse": wh,
+                    "schedule_date": add_days(today(), 10),
+                })
+        else:
+            # PO không gắn HĐK — item tự do, không bị ràng buộc HĐK
+            slice_start = i * 3
+            for j, item in enumerate(items[slice_start:slice_start + 3]):
+                uom = frappe.db.get_value("SC Item", item, "uom")
+                po.append("items", {
+                    "item": item, "uom": uom,
+                    "qty": 50 + (j * 25),
+                    "rate": 15000 + (j * 5000),
+                    "warehouse": wh,
+                    "schedule_date": add_days(today(), 10),
+                })
         # Bypass 2-tier approval
         po.approval_stage = "Approved"
         po.flags.ignore_permissions = True
@@ -590,7 +512,7 @@ def _phase4_receiving(ctx):
 def _phase5_initial_stock(ctx):
     """Tạo:
     - SLE seed cho 5 items chưa qua PR (initial stock direct)
-    - 1 SE Material Transfer (Kho Tổng → Kho Khoa Dược)
+    - 1 SE Material Transfer (Kho Tổng → Kho Giao hàng)
     - 1 batch short-expiry với ack (UC-15a)
     - 1 batch blocked manual (cho UC-30)
     """
@@ -652,7 +574,7 @@ def _phase5_initial_stock(ctx):
             se.posting_date = today()
             se.from_warehouse = wh_main
             se.to_warehouse = wh_dept
-            se.purpose = "Phân kho từ Kho Tổng xuống Kho Khoa Dược"
+            se.purpose = "Phân kho từ Kho Tổng xuống Kho Giao hàng"
             for item in items_no_batch[:3]:
                 uom = frappe.db.get_value("SC Item", item, "uom")
                 se.append("items", {
@@ -675,90 +597,7 @@ def _phase5_initial_stock(ctx):
 
 
 # ---------------------------------------------------------------------
-# PHASE 6 — DR + Patient Dispensing + BHYT (UC-19..23)
-# ---------------------------------------------------------------------
-def _phase6_dispensing(ctx):
-    patients = frappe.get_all("SC Patient", filters={"disabled": 0},
-                                pluck="name", limit=5)
-    items_bhyt = _pick_items(3, with_bhyt_only=True)
-    if not items_bhyt:
-        items_bhyt = _pick_items(3)
-    # Phase 6: dispense FROM where stock exists (= wh_main where PR + Transfer landed)
-    wh_dept = ctx.get("wh_main") or _pick_warehouse()
-    depts = frappe.get_all("SC Department", filters={"disabled": 0},
-                            pluck="name", limit=3)
-
-    drs = []
-    pds = []
-
-    # 3 Dispensing Requests
-    for i in range(3):
-        try:
-            dr = frappe.new_doc("SC Dispensing Request")
-            dr.request_date = add_days(today(), -1)
-            dr.from_warehouse = wh_dept
-            dr.department = depts[i % len(depts)] if depts else None
-            dr.priority = "Normal"
-            for item in items_bhyt[:2]:
-                uom = frappe.db.get_value("SC Item", item, "uom")
-                dr.append("items", {
-                    "item": item, "uom": uom,
-                    "requested_qty": 10,
-                })
-            dr.flags.ignore_permissions = True
-            dr.insert()
-            dr.submit()
-            drs.append(dr.name)
-        except Exception as e:
-            frappe.log_error(message=f"DR {i}: {str(e)[:300]}",
-                              title="seed_uc phase6 dr")
-
-    # 4 PD: 3 with BHYT, 1 alt (no card)
-    for i, p in enumerate(patients[:4]):
-        try:
-            pd = frappe.new_doc("SC Patient Dispensing")
-            pd.dispensing_date = today()
-            pd.patient = p
-            patient_doc = frappe.db.get_value("SC Patient", p,
-                ["bhyt_card_no", "bhyt_payment_rate", "current_department"],
-                as_dict=True)
-            pd.bhyt_card_no = patient_doc.bhyt_card_no if i < 3 else None
-            pd.bhyt_payment_rate = patient_doc.bhyt_payment_rate or 80
-            pd.ward = patient_doc.current_department or (depts[0] if depts else None)
-            # Find item with stock available
-            for item in items_bhyt[:2]:
-                qty_available = flt(frappe.db.sql("""
-                    SELECT COALESCE(SUM(qty_change), 0)
-                    FROM `tabSC Stock Ledger Entry`
-                    WHERE item = %s AND warehouse = %s AND is_cancelled = 0
-                """, (item, wh_dept))[0][0])
-                if qty_available < 2:
-                    continue
-                uom = frappe.db.get_value("SC Item", item, "uom")
-                pd.append("items", {
-                    "item": item,
-                    "uom": uom,
-                    "qty": 2,
-                    "unit_cost": 25000,
-                    "warehouse": wh_dept,
-                })
-            if not pd.items:
-                continue
-            pd.flags.ignore_permissions = True
-            pd.insert()
-            pd.submit()
-            pds.append(pd.name)
-        except Exception as e:
-            frappe.log_error(message=f"PD {i}: {str(e)[:300]}",
-                              title="seed_uc phase6 pd")
-
-    ctx["drs"] = drs
-    ctx["pds"] = pds
-    return {"drs": len(drs), "pds": len(pds)}
-
-
-# ---------------------------------------------------------------------
-# PHASE 7 — PI + 3-way match + PE (UC-24..27)
+# PHASE 6 — PI + 3-way match + PE (UC-24..27)
 # ---------------------------------------------------------------------
 def _phase7_accounting(ctx):
     prs = ctx.get("prs", [])
@@ -817,10 +656,10 @@ def _phase7_accounting(ctx):
 
 
 # ---------------------------------------------------------------------
-# PHASE 8 — Stocktake (UC-28)
+# PHASE 7 — Stocktake (UC-28)
 # ---------------------------------------------------------------------
 def _phase8_stocktake(ctx):
-    wh = _pick_warehouse("Khoa Dược") or _pick_warehouse()
+    wh = _pick_warehouse("Giao hàng") or _pick_warehouse()
     items = _pick_items(3)
     ics_count = 0
     sr_count = 0
@@ -879,7 +718,7 @@ def _phase8_stocktake(ctx):
 
 
 # ---------------------------------------------------------------------
-# PHASE 9 — Recall (UC-30)
+# PHASE 8 — Recall (UC-30)
 # ---------------------------------------------------------------------
 def _phase9_recall(ctx):
     short_batches = ctx.get("short_batches", [])
@@ -914,7 +753,7 @@ def _phase9_recall(ctx):
 
 
 # ---------------------------------------------------------------------
-# PHASE 10 — Investigation (UC-31)
+# PHASE 9 — Investigation (UC-31)
 # ---------------------------------------------------------------------
 def _phase10_investigation(ctx):
     items = _pick_items(1)
@@ -952,7 +791,7 @@ def _phase10_investigation(ctx):
 
 
 # ---------------------------------------------------------------------
-# PHASE 11 — Scan alerts + lifecycle (UC-33, UC-34)
+# PHASE 10 — Scan alerts + lifecycle (UC-33, UC-34)
 # ---------------------------------------------------------------------
 def _phase11_alerts(ctx):
     from supplycore.m11_dashboard.tasks import scan_alerts

@@ -1,4 +1,5 @@
-// Suite 28: Verify wipe M1/M2/M3/M6/M7 — transactional rỗng, master nguyên vẹn
+// Suite 28: Verify wipe M1/M2/M3/M6 — transactional rỗng, master nguyên vẹn
+// (M7 Dispensing đã bỏ khỏi backend GĐ1 — không còn doctype để check)
 import { apiCall, navigateTo } from '../helpers.mjs'
 
 const EXPECTED_EMPTY = [
@@ -6,15 +7,12 @@ const EXPECTED_EMPTY = [
   'SC Material Request',
   'SC Quality Inspection',
   'SC Transfer Request',
-  'SC Patient Dispensing',
-  'SC Dispensing Request',
 ]
 
 const EXPECTED_MASTER = {
   'SC Item': 12,
   'SC Supplier': 12,
   'SC Warehouse': 15,
-  'SC Patient': 13,
   'SC UOM': 18,
   'SC Department': 33,
   'SC Item Group': 23,
@@ -25,7 +23,6 @@ const PAGE_TITLES_TO_CHECK = [
   { dt: 'SC Material Request', path: '/list/SC%20Material%20Request' },
   { dt: 'SC Quality Inspection', path: '/list/SC%20Quality%20Inspection' },
   { dt: 'SC Transfer Request', path: '/list/SC%20Transfer%20Request' },
-  { dt: 'SC Patient Dispensing', path: '/list/SC%20Patient%20Dispensing' },
 ]
 
 export const tests = [

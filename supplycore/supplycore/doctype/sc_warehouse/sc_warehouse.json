@@ -29,8 +29,8 @@
    "description": "Set nếu warehouse_type=Department"},
 
   {"fieldname": "section_map", "fieldtype": "Section Break", "label": "Bản đồ khuôn viên & Sơ đồ kho", "collapsible": 1},
-  {"fieldname": "site_row", "fieldtype": "Int", "label": "Toạ độ hàng (khuôn viên BV)", "description": "Vị trí kho trên bản đồ khuôn viên bệnh viện"},
-  {"fieldname": "site_col", "fieldtype": "Int", "label": "Toạ độ cột (khuôn viên BV)"},
+  {"fieldname": "site_row", "fieldtype": "Int", "label": "Toạ độ hàng (khuôn viên kho)", "description": "Vị trí kho trên bản đồ khuôn viên kho phân phối"},
+  {"fieldname": "site_col", "fieldtype": "Int", "label": "Toạ độ cột (khuôn viên kho)"},
   {"fieldname": "site_block", "fieldtype": "Data", "label": "Toà nhà / khối", "description": "VD: Nhà A, Tầng 1"},
   {"fieldname": "column_break_map", "fieldtype": "Column Break"},
   {"fieldname": "map_rows", "fieldtype": "Int", "label": "Số hàng sơ đồ kho", "description": "Kích thước lưới bin trong kho — số hàng (aisle)"},
@@ -50,9 +50,7 @@
   {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1},
   {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "report": 1},
   {"role": "SupplyCore Storekeeper", "read": 1, "report": 1},
-  {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1},
-  {"role": "SupplyCore Ward Staff", "read": 1, "report": 1},
-  {"role": "Pharmacy Officer", "read": 1, "report": 1}
+  {"role": "Warehouse Officer", "read": 1, "write": 1, "report": 1}
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
  "module": "Supplycore", "name": "SC Warehouse", "title_field": "warehouse_name",

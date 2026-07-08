@@ -26,7 +26,7 @@ const target = computed(() => route.query.from || '')
     <div class="text-xs text-left bg-sc-bg rounded-lg p-3 mb-4 border border-sc-border">
       <div class="font-semibold mb-1">Role hiện tại:</div>
       <div class="flex flex-wrap gap-1">
-        <span v-for="r in access.roles.filter(x => x.startsWith('SupplyCore') || ['QC Officer','Pharmacy Officer','Warehouse Officer','BHYT Officer','Department Requester','System Manager'].includes(x))"
+        <span v-for="r in access.roles.filter(x => x.startsWith('SupplyCore') || ['QC Officer','Warehouse Officer','System Manager'].includes(x))"
           :key="r"
           class="px-1.5 py-0.5 rounded bg-sc-royal/10 text-sc-royal font-medium">
           {{ r }}

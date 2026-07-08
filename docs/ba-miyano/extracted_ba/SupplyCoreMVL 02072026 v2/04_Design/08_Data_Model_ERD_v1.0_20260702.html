@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DM — Mô hình Dữ liệu / ERD & Từ điển Dữ liệu | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Mô hình Dữ liệu / ERD & Từ điển Dữ liệu</h1>
+  <div class="doc-meta">
+    <span>Mã: DM-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Mô hình Dữ liệu / ERD & Từ điển Dữ liệu
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#entity-list">1. Danh sách Entity</a></li>
+        <li><a href="#chi-tiet">2. Chi tiết Entity & Attributes</a></li>
+        <li><a href="#erd">3. Sơ đồ quan hệ (ERD)</a></li>
+        <li><a href="#tu-dien">4. Từ điển dữ liệu</a></li>
+    </ol>
+  </nav>
+
+<h2 id="entity-list">1. Danh sách Entity / DocType</h2><p>Hệ thống có 40 DocType chính + 20 child table (kiến trúc lai SC-* tự quản sổ kho & sổ cái, mở rộng ERPNext). Mỗi DocType chính dưới đây được liệt kê đầy đủ trường, kiểu, khóa và mô tả để DEV/AI dựng schema.</p><h3>1.1 DocType chính (40)</h3><table>
+<thead><tr><th width="110">Mã</th><th>DocType</th><th>Phân hệ</th></tr></thead>
+<tbody>
+<tr><td><code>DT-ITEM</code></td><td>SC Item</td><td>Lõi</td></tr>
+<tr><td><code>DT-ITEMGRP</code></td><td>SC Item Group</td><td>Lõi</td></tr>
+<tr><td><code>DT-UOM</code></td><td>SC UOM</td><td>Lõi</td></tr>
+<tr><td><code>DT-SUP</code></td><td>SC Supplier</td><td>M1</td></tr>
+<tr><td><code>DT-WH</code></td><td>SC Warehouse</td><td>Lõi</td></tr>
+<tr><td><code>DT-DEPT</code></td><td>SC Department</td><td>Lõi</td></tr>
+<tr><td><code>DT-BATCH</code></td><td>SC Batch</td><td>M5</td></tr>
+<tr><td><code>DT-FC</code></td><td>SC Framework Contract</td><td>M1</td></tr>
+<tr><td><code>DT-RO</code></td><td>Release Order</td><td>M1</td></tr>
+<tr><td><code>DT-PPLAN</code></td><td>Procurement Plan</td><td>M2</td></tr>
+<tr><td><code>DT-MR</code></td><td>SC Material Request</td><td>M2</td></tr>
+<tr><td><code>DT-PO</code></td><td>SC Purchase Order</td><td>M2</td></tr>
+<tr><td><code>DT-PR</code></td><td>SC Purchase Receipt</td><td>M3</td></tr>
+<tr><td><code>DT-QI</code></td><td>SC Quality Inspection</td><td>M3</td></tr>
+<tr><td><code>DT-QCT</code></td><td>QC Checklist Template</td><td>M3</td></tr>
+<tr><td><code>DT-BIN</code></td><td>Bin Location</td><td>M4</td></tr>
+<tr><td><code>DT-PUT</code></td><td>Putaway Rule</td><td>M4</td></tr>
+<tr><td><code>DT-LBL</code></td><td>SC Label Template</td><td>M4</td></tr>
+<tr><td><code>DT-SE</code></td><td>SC Stock Entry</td><td>M4</td></tr>
+<tr><td><code>DT-SLE</code></td><td>SC Stock Ledger Entry</td><td>Lõi</td></tr>
+<tr><td><code>DT-EXPALERT</code></td><td>Batch Expiry Alert</td><td>M5</td></tr>
+<tr><td><code>DT-FEFO</code></td><td>FEFO Picker Rule</td><td>M5</td></tr>
+<tr><td><code>DT-TR</code></td><td>SC Transfer Request</td><td>M6</td></tr>
+<tr><td><code>DT-CUS</code></td><td>SC Customer</td><td>M7</td></tr>
+<tr><td><code>DT-SFC</code></td><td>SC Sales Framework Contract</td><td>M7</td></tr>
+<tr><td><code>DT-SO</code></td><td>SC Sales Order</td><td>M7</td></tr>
+<tr><td><code>DT-DN</code></td><td>SC Delivery Note</td><td>M7</td></tr>
+<tr><td><code>DT-ACC</code></td><td>SC Acceptance Record</td><td>M7</td></tr>
+<tr><td><code>DT-PI</code></td><td>SC Purchase Invoice</td><td>M8</td></tr>
+<tr><td><code>DT-SI</code></td><td>SC Sales Invoice</td><td>M8</td></tr>
+<tr><td><code>DT-PAY</code></td><td>SC Payment Entry</td><td>M8</td></tr>
+<tr><td><code>DT-RCPT</code></td><td>SC Sales Receipt</td><td>M8</td></tr>
+<tr><td><code>DT-GLA</code></td><td>SC GL Account</td><td>M8</td></tr>
+<tr><td><code>DT-GLE</code></td><td>SC GL Entry</td><td>M8</td></tr>
+<tr><td><code>DT-ICS</code></td><td>SC Inventory Count Sheet</td><td>M9</td></tr>
+<tr><td><code>DT-SR</code></td><td>SC Stock Reconciliation</td><td>M9</td></tr>
+<tr><td><code>DT-RECALL</code></td><td>SC Recall Notice</td><td>M10</td></tr>
+<tr><td><code>DT-INV</code></td><td>SC Investigation Report</td><td>M10</td></tr>
+<tr><td><code>DT-ALERT</code></td><td>SC Alert</td><td>M11</td></tr>
+<tr><td><code>DT-SETTING</code></td><td>SupplyCore MVL Settings</td><td>Lõi</td></tr>
+</tbody>
+</table><h3>1.2 Child table (20)</h3><table>
+<thead><tr><th>Child table</th><th width="150">Thuộc DocType</th></tr></thead>
+<tbody>
+<tr><td>SC Item Barcode</td><td><code>DT-ITEM</code></td></tr>
+<tr><td>SC Supplier Item Group</td><td><code>DT-SUP</code></td></tr>
+<tr><td>FC Item</td><td><code>DT-FC</code></td></tr>
+<tr><td>RO Item</td><td><code>DT-RO</code></td></tr>
+<tr><td>Procurement Plan Item</td><td><code>DT-PPLAN</code></td></tr>
+<tr><td>SC Material Request Item</td><td><code>DT-MR</code></td></tr>
+<tr><td>SC Purchase Order Item</td><td><code>DT-PO</code></td></tr>
+<tr><td>SC Purchase Receipt Item</td><td><code>DT-PR</code></td></tr>
+<tr><td>SC QI Reading</td><td><code>DT-QI</code></td></tr>
+<tr><td>QC Checklist Item</td><td><code>DT-QCT</code></td></tr>
+<tr><td>SC Stock Entry Item</td><td><code>DT-SE</code></td></tr>
+<tr><td>SC Transfer Request Item</td><td><code>DT-TR</code></td></tr>
+<tr><td>SFC Item</td><td><code>DT-SFC</code></td></tr>
+<tr><td>SC Sales Order Item</td><td><code>DT-SO</code></td></tr>
+<tr><td>SC Delivery Note Item</td><td><code>DT-DN</code></td></tr>
+<tr><td>SC Purchase Invoice Item</td><td><code>DT-PI</code></td></tr>
+<tr><td>SC Sales Invoice Item</td><td><code>DT-SI</code></td></tr>
+<tr><td>SC Payment Reference</td><td><code>DT-PAY</code></td></tr>
+<tr><td>SC ICS Item</td><td><code>DT-ICS</code></td></tr>
+<tr><td>SC Recall Affected Item</td><td><code>DT-RECALL</code></td></tr>
+</tbody>
+</table><h2 id="chi-tiet">2. Chi tiết Entity & Attributes (đầy đủ trường)</h2><h3 id="dt-item">DT-ITEM — SC Item</h3><p>SC Item — DocType phân hệ Lõi.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>item_code</code></td><td>Data</td><td>PK</td><td>Mã vật tư</td></tr>
+<tr><td><code>item_name</code></td><td>Data</td><td>—</td><td>Tên vật tư</td></tr>
+<tr><td><code>item_group</code></td><td>Link</td><td>FK</td><td>Nhóm hàng</td></tr>
+<tr><td><code>uom</code></td><td>Link</td><td>FK</td><td>Đơn vị tính</td></tr>
+<tr><td><code>is_batch</code></td><td>Check</td><td>—</td><td>Quản lý theo lô</td></tr>
+<tr><td><code>min_qty</code></td><td>Float</td><td>—</td><td>Tồn tối thiểu</td></tr>
+<tr><td><code>max_qty</code></td><td>Float</td><td>—</td><td>Tồn tối đa</td></tr>
+<tr><td><code>barcodes</code></td><td>Table</td><td>—</td><td>Child SC Item Barcode</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Kinh doanh/Ngừng</td></tr>
+</tbody>
+</table><h3 id="dt-itemgrp">DT-ITEMGRP — SC Item Group</h3><p>SC Item Group — DocType phân hệ Lõi.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>group_code</code></td><td>Data</td><td>PK</td><td>Mã nhóm</td></tr>
+<tr><td><code>group_name</code></td><td>Data</td><td>—</td><td>Tên nhóm</td></tr>
+<tr><td><code>parent_group</code></td><td>Link</td><td>FK</td><td>Nhóm cha</td></tr>
+<tr><td><code>storage_condition</code></td><td>Select</td><td>—</td><td>Điều kiện bảo quản</td></tr>
+</tbody>
+</table><h3 id="dt-uom">DT-UOM — SC UOM</h3><p>SC UOM — DocType phân hệ Lõi.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>uom_code</code></td><td>Data</td><td>PK</td><td>Mã ĐVT</td></tr>
+<tr><td><code>uom_name</code></td><td>Data</td><td>—</td><td>Tên ĐVT</td></tr>
+<tr><td><code>conversion</code></td><td>Float</td><td>—</td><td>Hệ số quy đổi cơ sở</td></tr>
+</tbody>
+</table><h3 id="dt-sup">DT-SUP — SC Supplier</h3><p>Nhà cung cấp vật tư – hóa chất cho MVL.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>supplier_code</code></td><td>Data</td><td>PK</td><td>Mã NCC</td></tr>
+<tr><td><code>supplier_name</code></td><td>Data</td><td>—</td><td>Tên NCC</td></tr>
+<tr><td><code>tax_code</code></td><td>Data</td><td>UQ</td><td>Mã số thuế</td></tr>
+<tr><td><code>item_groups</code></td><td>Table</td><td>—</td><td>Nhóm hàng cung cấp</td></tr>
+<tr><td><code>rating</code></td><td>Float</td><td>—</td><td>Điểm đánh giá</td></tr>
+<tr><td><code>payment_term</code></td><td>Data</td><td>—</td><td>Điều khoản thanh toán</td></tr>
+<tr><td><code>contact</code></td><td>Data</td><td>—</td><td>Liên hệ</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Hoạt động/Vô hiệu</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>supplier_code</th><th>supplier_name</th><th>tax_code</th><th>item_groups</th><th>rating</th></tr></thead>
+<tbody>
+<tr><td>NCC-001</td><td>B.Braun Việt Nam</td><td>0301000111</td><td>4.6</td><td>Hoạt động</td></tr>
+<tr><td>NCC-002</td><td>Công ty Nipro VN</td><td>0302000222</td><td>4.4</td><td>Hoạt động</td></tr>
+<tr><td>NCC-003</td><td>Hitec Medical</td><td>0303000333</td><td>3.9</td><td>Vô hiệu</td></tr>
+</tbody>
+</table><h3 id="dt-wh">DT-WH — SC Warehouse</h3><p>SC Warehouse — DocType phân hệ Lõi.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>wh_code</code></td><td>Data</td><td>PK</td><td>Mã kho</td></tr>
+<tr><td><code>wh_name</code></td><td>Data</td><td>—</td><td>Tên kho</td></tr>
+<tr><td><code>address</code></td><td>Small Text</td><td>—</td><td>Địa chỉ</td></tr>
+<tr><td><code>manager</code></td><td>Link(User)</td><td>FK</td><td>Thủ kho phụ trách</td></tr>
+<tr><td><code>is_active</code></td><td>Check</td><td>—</td><td>Đang hoạt động</td></tr>
+</tbody>
+</table><h3 id="dt-dept">DT-DEPT — SC Department</h3><p>SC Department — DocType phân hệ Lõi.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>dept_code</code></td><td>Data</td><td>PK</td><td>Mã phòng ban</td></tr>
+<tr><td><code>dept_name</code></td><td>Data</td><td>—</td><td>Tên phòng ban (Thương Mại/Kho/Kế Toán)</td></tr>
+<tr><td><code>head</code></td><td>Link(User)</td><td>FK</td><td>Trưởng phòng</td></tr>
+</tbody>
+</table><h3 id="dt-batch">DT-BATCH — SC Batch</h3><p>Lô hàng vật tư – hóa chất, quản lý hạn dùng & truy xuất nguồn gốc.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>batch_no</code></td><td>Data</td><td>PK</td><td>Số lô</td></tr>
+<tr><td><code>item</code></td><td>Link(SC Item)</td><td>FK</td><td>Vật tư thuộc lô</td></tr>
+<tr><td><code>mfg_date</code></td><td>Date</td><td>—</td><td>Ngày sản xuất</td></tr>
+<tr><td><code>expiry_date</code></td><td>Date</td><td>—</td><td>Hạn dùng</td></tr>
+<tr><td><code>supplier</code></td><td>Link(SC Supplier)</td><td>FK</td><td>NCC cung cấp lô</td></tr>
+<tr><td><code>qty_available</code></td><td>Float</td><td>—</td><td>Số lượng còn khả dụng</td></tr>
+<tr><td><code>bin</code></td><td>Link(Bin Location)</td><td>FK</td><td>Vị trí lưu</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Hoạt động/Sắp hết hạn/Hết hạn/Thu hồi/Thanh lý</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>batch_no</th><th>item</th><th>mfg_date</th><th>expiry_date</th><th>supplier</th></tr></thead>
+<tbody>
+<tr><td>LOT-A1023</td><td>Cồn 90 độ 500ml</td><td>01/2028</td><td>Hoạt động</td><td>1.240</td></tr>
+<tr><td>LOT-B7781</td><td>Găng tay nitrile M</td><td>03/2029</td><td>Hoạt động</td><td>8.900</td></tr>
+<tr><td>LOT-C0442</td><td>Test nhanh Glucose</td><td>08/2026</td><td>Sắp hết hạn</td><td>320</td></tr>
+</tbody>
+</table><h3 id="dt-fc">DT-FC — SC Framework Contract</h3><p>SC Framework Contract — DocType phân hệ M1 — Hợp đồng & Nhà cung cấp.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>fc_no</code></td><td>Data</td><td>PK</td><td>Số HĐ khung mua</td></tr>
+<tr><td><code>supplier</code></td><td>Link(SC Supplier)</td><td>FK</td><td>NCC</td></tr>
+<tr><td><code>valid_from</code></td><td>Date</td><td>—</td><td>Hiệu lực từ</td></tr>
+<tr><td><code>valid_to</code></td><td>Date</td><td>—</td><td>Hiệu lực đến</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Hiệu lực/Hết hạn/Thanh lý</td></tr>
+<tr><td><code>items</code></td><td>Table(FC Item)</td><td>—</td><td>Mặt hàng, giá, hạn mức</td></tr>
+<tr><td><code>approved_by</code></td><td>Link(User)</td><td>FK</td><td>Người duyệt</td></tr>
+</tbody>
+</table><h3 id="dt-ro">DT-RO — Release Order</h3><p>Release Order — DocType phân hệ M1 — Hợp đồng & Nhà cung cấp.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>ro_no</code></td><td>Data</td><td>PK</td><td>Số lệnh gọi hàng</td></tr>
+<tr><td><code>framework_contract</code></td><td>Link(SC FC)</td><td>FK</td><td>HĐ khung mua</td></tr>
+<tr><td><code>ro_date</code></td><td>Date</td><td>—</td><td>Ngày lệnh</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ duyệt/Đã duyệt/Đã nhập/Hủy</td></tr>
+<tr><td><code>items</code></td><td>Table(RO Item)</td><td>—</td><td>Mặt hàng & số lượng gọi</td></tr>
+</tbody>
+</table><h3 id="dt-pplan">DT-PPLAN — Procurement Plan</h3><p>Procurement Plan — DocType phân hệ M2 — Kế hoạch & Mua sắm.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>plan_no</code></td><td>Data</td><td>PK</td><td>Số kế hoạch</td></tr>
+<tr><td><code>period</code></td><td>Data</td><td>—</td><td>Kỳ kế hoạch</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Duyệt</td></tr>
+<tr><td><code>items</code></td><td>Table(Procurement Plan Item)</td><td>—</td><td>Nhu cầu theo mặt hàng</td></tr>
+</tbody>
+</table><h3 id="dt-mr">DT-MR — SC Material Request</h3><p>SC Material Request — DocType phân hệ M2 — Kế hoạch & Mua sắm.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>mr_no</code></td><td>Data</td><td>PK</td><td>Số đề nghị mua</td></tr>
+<tr><td><code>department</code></td><td>Link(SC Department)</td><td>FK</td><td>Phòng ban đề nghị</td></tr>
+<tr><td><code>mr_date</code></td><td>Date</td><td>—</td><td>Ngày đề nghị</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ duyệt/Đã duyệt/Đã tạo PO/Hủy</td></tr>
+<tr><td><code>reason</code></td><td>Small Text</td><td>—</td><td>Lý do</td></tr>
+<tr><td><code>items</code></td><td>Table(SC Material Request Item)</td><td>—</td><td>Vật tư & số lượng</td></tr>
+</tbody>
+</table><h3 id="dt-po">DT-PO — SC Purchase Order</h3><p>Đơn mua hàng gửi nhà cung cấp.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>po_no</code></td><td>Data</td><td>PK</td><td>Số PO</td></tr>
+<tr><td><code>supplier</code></td><td>Link(SC Supplier)</td><td>FK</td><td>NCC</td></tr>
+<tr><td><code>framework_contract</code></td><td>Link(SC FC)</td><td>FK</td><td>HĐ khung mua</td></tr>
+<tr><td><code>po_date</code></td><td>Date</td><td>—</td><td>Ngày PO</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ duyệt/Đã duyệt/Đã nhận một phần/Hoàn tất/Hủy</td></tr>
+<tr><td><code>total_amount</code></td><td>Currency</td><td>—</td><td>Tổng tiền</td></tr>
+<tr><td><code>approved_by</code></td><td>Link(User)</td><td>FK</td><td>Người duyệt</td></tr>
+<tr><td><code>items</code></td><td>Table(PO Item)</td><td>—</td><td>Dòng vật tư mua</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>po_no</th><th>supplier</th><th>framework_contract</th><th>po_date</th><th>status</th></tr></thead>
+<tbody>
+<tr><td>PO-20260620-001</td><td>NCC-001</td><td>FC-2026-01</td><td>Hoàn tất</td><td>210 triệu</td></tr>
+<tr><td>PO-20260701-006</td><td>NCC-002</td><td>FC-2026-03</td><td>Đã duyệt</td><td>88 triệu</td></tr>
+<tr><td>PO-20260702-009</td><td>NCC-001</td><td>FC-2026-01</td><td>Chờ duyệt</td><td>64 triệu</td></tr>
+</tbody>
+</table><h3 id="dt-pr">DT-PR — SC Purchase Receipt</h3><p>SC Purchase Receipt — DocType phân hệ M3 — Tiếp nhận & QC.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>pr_no</code></td><td>Data</td><td>PK</td><td>Số phiếu nhập</td></tr>
+<tr><td><code>purchase_order</code></td><td>Link(SC Purchase Order)</td><td>FK</td><td>PO nguồn</td></tr>
+<tr><td><code>supplier</code></td><td>Link(SC Supplier)</td><td>FK</td><td>NCC</td></tr>
+<tr><td><code>pr_date</code></td><td>Date</td><td>—</td><td>Ngày nhập</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ QC/Đã ghi sổ/Hủy</td></tr>
+<tr><td><code>items</code></td><td>Table(SC Purchase Receipt Item)</td><td>—</td><td>Dòng nhập: vật tư/lô/HSD/SL/bin</td></tr>
+</tbody>
+</table><h3 id="dt-qi">DT-QI — SC Quality Inspection</h3><p>SC Quality Inspection — DocType phân hệ M3 — Tiếp nhận & QC.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>qi_no</code></td><td>Data</td><td>PK</td><td>Số phiếu QC</td></tr>
+<tr><td><code>purchase_receipt</code></td><td>Link(SC Purchase Receipt)</td><td>FK</td><td>Phiếu nhập</td></tr>
+<tr><td><code>checklist</code></td><td>Link(QC Checklist Template)</td><td>FK</td><td>Bộ chỉ tiêu</td></tr>
+<tr><td><code>result</code></td><td>Select</td><td>—</td><td>Đạt/Không đạt</td></tr>
+<tr><td><code>inspector</code></td><td>Link(User)</td><td>FK</td><td>QC Officer</td></tr>
+<tr><td><code>readings</code></td><td>Table(SC QI Reading)</td><td>—</td><td>Kết quả từng chỉ tiêu</td></tr>
+<tr><td><code>evidence</code></td><td>Attach</td><td>—</td><td>Bằng chứng</td></tr>
+</tbody>
+</table><h3 id="dt-qct">DT-QCT — QC Checklist Template</h3><p>QC Checklist Template — DocType phân hệ M3 — Tiếp nhận & QC.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>template_name</code></td><td>Data</td><td>PK</td><td>Tên bộ chỉ tiêu</td></tr>
+<tr><td><code>item_group</code></td><td>Link</td><td>FK</td><td>Áp dụng nhóm hàng</td></tr>
+<tr><td><code>items</code></td><td>Table(QC Checklist Item)</td><td>—</td><td>Danh mục chỉ tiêu</td></tr>
+</tbody>
+</table><h3 id="dt-bin">DT-BIN — Bin Location</h3><p>Bin Location — DocType phân hệ M4 — WMS, PDA & Mã vạch.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>bin_code</code></td><td>Data</td><td>PK</td><td>Mã vị trí</td></tr>
+<tr><td><code>warehouse</code></td><td>Link(SC Warehouse)</td><td>FK</td><td>Thuộc kho</td></tr>
+<tr><td><code>zone</code></td><td>Data</td><td>—</td><td>Khu/dãy/tầng</td></tr>
+<tr><td><code>bin_type</code></td><td>Select</td><td>—</td><td>Thường/Hóa chất/Lạnh</td></tr>
+<tr><td><code>capacity</code></td><td>Float</td><td>—</td><td>Sức chứa</td></tr>
+</tbody>
+</table><h3 id="dt-put">DT-PUT — Putaway Rule</h3><p>Putaway Rule — DocType phân hệ M4 — WMS, PDA & Mã vạch.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>rule_name</code></td><td>Data</td><td>PK</td><td>Tên quy tắc</td></tr>
+<tr><td><code>item_group</code></td><td>Link</td><td>FK</td><td>Nhóm hàng</td></tr>
+<tr><td><code>bin_type</code></td><td>Select</td><td>—</td><td>Loại bin hợp lệ</td></tr>
+<tr><td><code>priority</code></td><td>Int</td><td>—</td><td>Ưu tiên</td></tr>
+</tbody>
+</table><h3 id="dt-lbl">DT-LBL — SC Label Template</h3><p>SC Label Template — DocType phân hệ M4 — WMS, PDA & Mã vạch.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>template_name</code></td><td>Data</td><td>PK</td><td>Tên mẫu nhãn</td></tr>
+<tr><td><code>width_mm</code></td><td>Float</td><td>—</td><td>Rộng (mm)</td></tr>
+<tr><td><code>height_mm</code></td><td>Float</td><td>—</td><td>Cao (mm)</td></tr>
+<tr><td><code>dpi</code></td><td>Select</td><td>—</td><td>203/300</td></tr>
+<tr><td><code>symbology</code></td><td>Select</td><td>—</td><td>Code128/QR/GS1/DataMatrix</td></tr>
+<tr><td><code>orientation</code></td><td>Select</td><td>—</td><td>Portrait/Landscape</td></tr>
+<tr><td><code>fields_shown</code></td><td>Small Text</td><td>—</td><td>Trường hiển thị</td></tr>
+<tr><td><code>zpl_body</code></td><td>Code</td><td>—</td><td>Thân ZPL có placeholder</td></tr>
+<tr><td><code>printer_target</code></td><td>Link</td><td>FK</td><td>Máy in đích (IP:9100)</td></tr>
+<tr><td><code>is_default</code></td><td>Check</td><td>—</td><td>Mặc định</td></tr>
+</tbody>
+</table><h3 id="dt-se">DT-SE — SC Stock Entry</h3><p>SC Stock Entry — DocType phân hệ M4 — WMS, PDA & Mã vạch.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>se_no</code></td><td>Data</td><td>PK</td><td>Số phiếu kho</td></tr>
+<tr><td><code>type</code></td><td>Select</td><td>—</td><td>Nhập/Xuất/Chuyển</td></tr>
+<tr><td><code>warehouse</code></td><td>Link(SC Warehouse)</td><td>FK</td><td>Kho</td></tr>
+<tr><td><code>posting_dt</code></td><td>Datetime</td><td>—</td><td>Thời điểm ghi sổ</td></tr>
+<tr><td><code>items</code></td><td>Table(SC Stock Entry Item)</td><td>—</td><td>Dòng vật tư/lô/bin/SL</td></tr>
+</tbody>
+</table><h3 id="dt-sle">DT-SLE — SC Stock Ledger Entry</h3><p>SC Stock Ledger Entry — DocType phân hệ Lõi.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>sle_id</code></td><td>Data</td><td>PK</td><td>ID bút toán kho</td></tr>
+<tr><td><code>item</code></td><td>Link(SC Item)</td><td>FK</td><td>Vật tư</td></tr>
+<tr><td><code>batch</code></td><td>Link(SC Batch)</td><td>FK</td><td>Lô</td></tr>
+<tr><td><code>warehouse</code></td><td>Link(SC Warehouse)</td><td>FK</td><td>Kho</td></tr>
+<tr><td><code>bin</code></td><td>Link(Bin Location)</td><td>FK</td><td>Vị trí</td></tr>
+<tr><td><code>qty_change</code></td><td>Float</td><td>—</td><td>Biến động (±)</td></tr>
+<tr><td><code>balance</code></td><td>Float</td><td>—</td><td>Tồn sau</td></tr>
+<tr><td><code>voucher</code></td><td>Dynamic Link</td><td>FK</td><td>Chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="dt-expalert">DT-EXPALERT — Batch Expiry Alert</h3><p>Batch Expiry Alert — DocType phân hệ M5 — Lô, Hạn dùng & FEFO.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>alert_id</code></td><td>Data</td><td>PK</td><td>ID cảnh báo hạn</td></tr>
+<tr><td><code>batch</code></td><td>Link(SC Batch)</td><td>FK</td><td>Lô</td></tr>
+<tr><td><code>days_left</code></td><td>Int</td><td>—</td><td>Số ngày còn lại</td></tr>
+<tr><td><code>assignee</code></td><td>Link(User)</td><td>FK</td><td>Người phụ trách</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Mới/Đang xử lý/Đã xử lý</td></tr>
+</tbody>
+</table><h3 id="dt-fefo">DT-FEFO — FEFO Picker Rule</h3><p>FEFO Picker Rule — DocType phân hệ M5 — Lô, Hạn dùng & FEFO.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>rule_name</code></td><td>Data</td><td>PK</td><td>Tên quy tắc FEFO</td></tr>
+<tr><td><code>item_group</code></td><td>Link</td><td>FK</td><td>Nhóm hàng</td></tr>
+<tr><td><code>allow_override</code></td><td>Check</td><td>—</td><td>Cho ghi đè có lý do</td></tr>
+</tbody>
+</table><h3 id="dt-tr">DT-TR — SC Transfer Request</h3><p>SC Transfer Request — DocType phân hệ M6 — Luân chuyển Nội bộ.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>tr_no</code></td><td>Data</td><td>PK</td><td>Số chuyển kho</td></tr>
+<tr><td><code>from_wh</code></td><td>Link(SC Warehouse)</td><td>FK</td><td>Kho nguồn</td></tr>
+<tr><td><code>to_wh</code></td><td>Link(SC Warehouse)</td><td>FK</td><td>Kho đích</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ duyệt/Đang chuyển/Hoàn tất/Hủy</td></tr>
+<tr><td><code>items</code></td><td>Table(SC Transfer Request Item)</td><td>—</td><td>Vật tư/lô/SL</td></tr>
+</tbody>
+</table><h3 id="dt-cus">DT-CUS — SC Customer</h3><p>Khách hàng doanh nghiệp mua vật tư – hóa chất từ MVL; bắt buộc có tài khoản Portal.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>customer_code</code></td><td>Data</td><td>PK</td><td>Mã khách hàng, duy nhất</td></tr>
+<tr><td><code>customer_name</code></td><td>Data</td><td>—</td><td>Tên công ty khách hàng</td></tr>
+<tr><td><code>tax_code</code></td><td>Data</td><td>UQ</td><td>Mã số thuế, duy nhất</td></tr>
+<tr><td><code>billing_address</code></td><td>Small Text</td><td>—</td><td>Địa chỉ xuất hóa đơn</td></tr>
+<tr><td><code>shipping_address</code></td><td>Small Text</td><td>—</td><td>Địa chỉ giao hàng</td></tr>
+<tr><td><code>contact_person</code></td><td>Data</td><td>—</td><td>Người liên hệ</td></tr>
+<tr><td><code>phone</code></td><td>Data</td><td>—</td><td>Điện thoại liên hệ</td></tr>
+<tr><td><code>email</code></td><td>Data</td><td>—</td><td>Email liên hệ</td></tr>
+<tr><td><code>portal_user</code></td><td>Link(User)</td><td>FK</td><td>Tài khoản đăng nhập Portal (bắt buộc)</td></tr>
+<tr><td><code>credit_limit</code></td><td>Currency</td><td>—</td><td>Hạn mức công nợ</td></tr>
+<tr><td><code>payment_term</code></td><td>Data</td><td>—</td><td>Điều khoản thanh toán</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Hoạt động / Tạm ngưng</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>customer_code</th><th>customer_name</th><th>tax_code</th><th>billing_address</th><th>shipping_address</th></tr></thead>
+<tbody>
+<tr><td>KH-0001</td><td>Bệnh viện Đa khoa An Sinh</td><td>0312345678</td><td>ansinh@portal</td><td>Hoạt động</td></tr>
+<tr><td>KH-0002</td><td>Công ty CP Dược Minh Long</td><td>0301122334</td><td>minhlong@portal</td><td>Hoạt động</td></tr>
+<tr><td>KH-0003</td><td>Phòng khám Quốc tế Việt Pháp</td><td>0309988776</td><td>vietphap@portal</td><td>Tạm ngưng</td></tr>
+</tbody>
+</table><h3 id="dt-sfc">DT-SFC — SC Sales Framework Contract</h3><p>Hợp đồng khung bán hàng ký với khách hàng — căn cứ đặt hàng qua Portal.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>contract_no</code></td><td>Data</td><td>PK</td><td>Số hợp đồng khung bán</td></tr>
+<tr><td><code>customer</code></td><td>Link(SC Customer)</td><td>FK</td><td>Khách hàng ký hợp đồng</td></tr>
+<tr><td><code>valid_from</code></td><td>Date</td><td>—</td><td>Ngày hiệu lực</td></tr>
+<tr><td><code>valid_to</code></td><td>Date</td><td>—</td><td>Ngày hết hiệu lực</td></tr>
+<tr><td><code>total_value</code></td><td>Currency</td><td>—</td><td>Tổng giá trị hợp đồng</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ duyệt/Hiệu lực/Hết hạn/Thanh lý</td></tr>
+<tr><td><code>items</code></td><td>Table(SFC Item)</td><td>—</td><td>Danh mục mặt hàng, giá bán, hạn mức</td></tr>
+<tr><td><code>approved_by</code></td><td>Link(User)</td><td>FK</td><td>Người phê duyệt</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>contract_no</th><th>customer</th><th>valid_from</th><th>valid_to</th><th>total_value</th></tr></thead>
+<tbody>
+<tr><td>SFC-2026-001</td><td>KH-0001</td><td>01/2026-12/2026</td><td>Hiệu lực</td><td>1,2 tỷ</td></tr>
+<tr><td>SFC-2026-002</td><td>KH-0002</td><td>03/2026-02/2027</td><td>Hiệu lực</td><td>800 triệu</td></tr>
+<tr><td>SFC-2026-003</td><td>KH-0003</td><td>02/2026-01/2027</td><td>Hết hạn</td><td>500 triệu</td></tr>
+</tbody>
+</table><h3 id="dt-so">DT-SO — SC Sales Order</h3><p>Đơn đặt hàng do khách gửi từ Portal, ràng theo HĐ khung bán.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>order_no</code></td><td>Data</td><td>PK</td><td>Số đơn hàng</td></tr>
+<tr><td><code>customer</code></td><td>Link(SC Customer)</td><td>FK</td><td>Khách hàng đặt</td></tr>
+<tr><td><code>framework_contract</code></td><td>Link(SC SFC)</td><td>FK</td><td>HĐ khung bán áp dụng</td></tr>
+<tr><td><code>order_date</code></td><td>Datetime</td><td>—</td><td>Thời điểm đặt</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Chờ duyệt/Đã duyệt/Đang xử lý/Đã bàn giao/Hoàn tất/Từ chối</td></tr>
+<tr><td><code>total_amount</code></td><td>Currency</td><td>—</td><td>Tổng tiền đơn</td></tr>
+<tr><td><code>approved_by</code></td><td>Link(User)</td><td>FK</td><td>Người duyệt nội bộ</td></tr>
+<tr><td><code>items</code></td><td>Table(SO Item)</td><td>—</td><td>Dòng vật tư đặt</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>order_no</th><th>customer</th><th>framework_contract</th><th>order_date</th><th>status</th></tr></thead>
+<tbody>
+<tr><td>SO-20260702-001</td><td>KH-0001</td><td>SFC-2026-001</td><td>Chờ duyệt</td><td>45,2 triệu</td></tr>
+<tr><td>SO-20260701-004</td><td>KH-0002</td><td>SFC-2026-002</td><td>Đã bàn giao</td><td>120 triệu</td></tr>
+<tr><td>SO-20260628-010</td><td>KH-0001</td><td>SFC-2026-001</td><td>Hoàn tất</td><td>78,5 triệu</td></tr>
+</tbody>
+</table><h3 id="dt-dn">DT-DN — SC Delivery Note</h3><p>Phiếu bàn giao hàng cho khách; theo dõi nghiệm thu.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>dn_no</code></td><td>Data</td><td>PK</td><td>Số phiếu bàn giao</td></tr>
+<tr><td><code>sales_order</code></td><td>Link(SC Sales Order)</td><td>FK</td><td>Đơn hàng nguồn</td></tr>
+<tr><td><code>customer</code></td><td>Link(SC Customer)</td><td>FK</td><td>Khách nhận hàng</td></tr>
+<tr><td><code>delivery_date</code></td><td>Datetime</td><td>—</td><td>Thời điểm giao</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Đã giao/Đã nghiệm thu/Đã xuất HĐ</td></tr>
+<tr><td><code>acceptance_ref</code></td><td>Link(SC Acceptance)</td><td>FK</td><td>Biên bản nghiệm thu</td></tr>
+<tr><td><code>delivered_by</code></td><td>Link(User)</td><td>FK</td><td>Người giao</td></tr>
+<tr><td><code>items</code></td><td>Table(DN Item)</td><td>—</td><td>Dòng vật tư + lô giao</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>dn_no</th><th>sales_order</th><th>customer</th><th>delivery_date</th><th>status</th></tr></thead>
+<tbody>
+<tr><td>DN-20260701-001</td><td>SO-20260701-004</td><td>KH-0002</td><td>Đã nghiệm thu</td><td>—</td></tr>
+<tr><td>DN-20260630-002</td><td>SO-20260628-010</td><td>KH-0001</td><td>Đã xuất HĐ</td><td>BBNT-0021</td></tr>
+<tr><td>DN-20260702-003</td><td>SO-20260702-001</td><td>KH-0001</td><td>Nháp</td><td>—</td></tr>
+</tbody>
+</table><h3 id="dt-acc">DT-ACC — SC Acceptance Record</h3><p>SC Acceptance Record — DocType phân hệ M7 — Bán hàng & Bàn giao Khách hàng.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>acc_no</code></td><td>Data</td><td>PK</td><td>Số biên bản nghiệm thu</td></tr>
+<tr><td><code>delivery_note</code></td><td>Link(SC Delivery Note)</td><td>FK</td><td>Phiếu bàn giao</td></tr>
+<tr><td><code>customer</code></td><td>Link(SC Customer)</td><td>FK</td><td>Khách hàng</td></tr>
+<tr><td><code>accept_date</code></td><td>Datetime</td><td>—</td><td>Ngày nghiệm thu</td></tr>
+<tr><td><code>signed_by</code></td><td>Data</td><td>—</td><td>Người ký nhận</td></tr>
+<tr><td><code>evidence</code></td><td>Attach</td><td>—</td><td>Ảnh/ký nhận</td></tr>
+<tr><td><code>note</code></td><td>Small Text</td><td>—</td><td>Ghi chú chênh lệch</td></tr>
+</tbody>
+</table><h3 id="dt-pi">DT-PI — SC Purchase Invoice</h3><p>SC Purchase Invoice — DocType phân hệ M8 — Kế toán & Thanh toán.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>pi_no</code></td><td>Data</td><td>PK</td><td>Số hóa đơn mua</td></tr>
+<tr><td><code>supplier</code></td><td>Link(SC Supplier)</td><td>FK</td><td>NCC</td></tr>
+<tr><td><code>purchase_receipt</code></td><td>Link(SC Purchase Receipt)</td><td>FK</td><td>Phiếu nhập</td></tr>
+<tr><td><code>pi_date</code></td><td>Date</td><td>—</td><td>Ngày HĐ</td></tr>
+<tr><td><code>total_amount</code></td><td>Currency</td><td>—</td><td>Tổng tiền</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ duyệt/Đã ghi sổ/Đã thanh toán/Hủy</td></tr>
+</tbody>
+</table><h3 id="dt-si">DT-SI — SC Sales Invoice</h3><p>Hóa đơn bán cho khách hàng; cập nhật cột mốc 'Đã cấp hóa đơn'.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>invoice_no</code></td><td>Data</td><td>PK</td><td>Số hóa đơn bán</td></tr>
+<tr><td><code>customer</code></td><td>Link(SC Customer)</td><td>FK</td><td>Khách hàng</td></tr>
+<tr><td><code>delivery_note</code></td><td>Link(SC Delivery Note)</td><td>FK</td><td>Phiếu bàn giao nguồn</td></tr>
+<tr><td><code>invoice_date</code></td><td>Date</td><td>—</td><td>Ngày hóa đơn</td></tr>
+<tr><td><code>total_amount</code></td><td>Currency</td><td>—</td><td>Tổng tiền trước thuế</td></tr>
+<tr><td><code>tax_amount</code></td><td>Currency</td><td>—</td><td>Tiền thuế</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Đã phát hành/Đã thu một phần/Đã thu đủ/Hủy</td></tr>
+<tr><td><code>outstanding</code></td><td>Currency</td><td>—</td><td>Công nợ còn lại</td></tr>
+</tbody>
+</table><h4>Dữ liệu mẫu</h4><table>
+<thead><tr><th>invoice_no</th><th>customer</th><th>delivery_note</th><th>invoice_date</th><th>total_amount</th></tr></thead>
+<tbody>
+<tr><td>SI-20260630-001</td><td>KH-0001</td><td>DN-20260630-002</td><td>78,5 triệu</td><td>Đã thu đủ</td></tr>
+<tr><td>SI-20260701-002</td><td>KH-0002</td><td>DN-20260701-001</td><td>120 triệu</td><td>Đã thu một phần</td></tr>
+<tr><td>SI-20260629-003</td><td>KH-0003</td><td>DN-20260629-005</td><td>33 triệu</td><td>Đã phát hành</td></tr>
+</tbody>
+</table><h3 id="dt-pay">DT-PAY — SC Payment Entry</h3><p>SC Payment Entry — DocType phân hệ M8 — Kế toán & Thanh toán.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>pay_no</code></td><td>Data</td><td>PK</td><td>Số phiếu thanh toán</td></tr>
+<tr><td><code>supplier</code></td><td>Link(SC Supplier)</td><td>FK</td><td>NCC</td></tr>
+<tr><td><code>pay_date</code></td><td>Date</td><td>—</td><td>Ngày TT</td></tr>
+<tr><td><code>amount</code></td><td>Currency</td><td>—</td><td>Số tiền</td></tr>
+<tr><td><code>references</code></td><td>Table(SC Payment Reference)</td><td>—</td><td>Hóa đơn tham chiếu</td></tr>
+</tbody>
+</table><h3 id="dt-rcpt">DT-RCPT — SC Sales Receipt</h3><p>SC Sales Receipt — DocType phân hệ M8 — Kế toán & Thanh toán.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>rcpt_no</code></td><td>Data</td><td>PK</td><td>Số phiếu thu</td></tr>
+<tr><td><code>customer</code></td><td>Link(SC Customer)</td><td>FK</td><td>Khách hàng</td></tr>
+<tr><td><code>sales_invoice</code></td><td>Link(SC Sales Invoice)</td><td>FK</td><td>Hóa đơn bán</td></tr>
+<tr><td><code>rcpt_date</code></td><td>Date</td><td>—</td><td>Ngày thu</td></tr>
+<tr><td><code>amount</code></td><td>Currency</td><td>—</td><td>Số tiền thu</td></tr>
+<tr><td><code>method</code></td><td>Select</td><td>—</td><td>CK/Tiền mặt</td></tr>
+</tbody>
+</table><h3 id="dt-gla">DT-GLA — SC GL Account</h3><p>SC GL Account — DocType phân hệ M8 — Kế toán & Thanh toán.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>account_code</code></td><td>Data</td><td>PK</td><td>Mã tài khoản</td></tr>
+<tr><td><code>account_name</code></td><td>Data</td><td>—</td><td>Tên tài khoản</td></tr>
+<tr><td><code>type</code></td><td>Select</td><td>—</td><td>Phải thu/Phải trả/Kho/Doanh thu</td></tr>
+</tbody>
+</table><h3 id="dt-gle">DT-GLE — SC GL Entry</h3><p>SC GL Entry — DocType phân hệ M8 — Kế toán & Thanh toán.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>gle_id</code></td><td>Data</td><td>PK</td><td>ID bút toán sổ cái</td></tr>
+<tr><td><code>account</code></td><td>Link(SC GL Account)</td><td>FK</td><td>Tài khoản</td></tr>
+<tr><td><code>debit</code></td><td>Currency</td><td>—</td><td>Nợ</td></tr>
+<tr><td><code>credit</code></td><td>Currency</td><td>—</td><td>Có</td></tr>
+<tr><td><code>voucher</code></td><td>Dynamic Link</td><td>FK</td><td>Chứng từ nguồn</td></tr>
+<tr><td><code>posting_date</code></td><td>Date</td><td>—</td><td>Ngày ghi sổ</td></tr>
+</tbody>
+</table><h3 id="dt-ics">DT-ICS — SC Inventory Count Sheet</h3><p>SC Inventory Count Sheet — DocType phân hệ M9 — Kiểm kê & Đối soát.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>ics_no</code></td><td>Data</td><td>PK</td><td>Số phiếu kiểm kê</td></tr>
+<tr><td><code>warehouse</code></td><td>Link(SC Warehouse)</td><td>FK</td><td>Kho</td></tr>
+<tr><td><code>count_date</code></td><td>Date</td><td>—</td><td>Ngày kiểm</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Hoàn tất</td></tr>
+<tr><td><code>items</code></td><td>Table(SC ICS Item)</td><td>—</td><td>Đếm thực tế theo lô/bin</td></tr>
+</tbody>
+</table><h3 id="dt-sr">DT-SR — SC Stock Reconciliation</h3><p>SC Stock Reconciliation — DocType phân hệ M9 — Kiểm kê & Đối soát.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>sr_no</code></td><td>Data</td><td>PK</td><td>Số đối soát</td></tr>
+<tr><td><code>ics</code></td><td>Link(SC Inventory Count Sheet)</td><td>FK</td><td>Phiếu kiểm kê</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Chờ duyệt/Đã điều chỉnh/Hủy</td></tr>
+<tr><td><code>diff_items</code></td><td>Table</td><td>—</td><td>Dòng chênh lệch</td></tr>
+<tr><td><code>approved_by</code></td><td>Link(User)</td><td>FK</td><td>Người duyệt</td></tr>
+</tbody>
+</table><h3 id="dt-recall">DT-RECALL — SC Recall Notice</h3><p>SC Recall Notice — DocType phân hệ M10 — Truy xuất & Điều tra.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>recall_no</code></td><td>Data</td><td>PK</td><td>Số lệnh thu hồi</td></tr>
+<tr><td><code>batch</code></td><td>Link(SC Batch)</td><td>FK</td><td>Lô thu hồi</td></tr>
+<tr><td><code>reason</code></td><td>Small Text</td><td>—</td><td>Lý do</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Nháp/Đang thu hồi/Hoàn tất/Đóng</td></tr>
+<tr><td><code>affected</code></td><td>Table(SC Recall Affected Item)</td><td>—</td><td>Khách & SL bị ảnh hưởng</td></tr>
+</tbody>
+</table><h3 id="dt-inv">DT-INV — SC Investigation Report</h3><p>SC Investigation Report — DocType phân hệ M10 — Truy xuất & Điều tra.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>inv_no</code></td><td>Data</td><td>PK</td><td>Số báo cáo điều tra</td></tr>
+<tr><td><code>subject</code></td><td>Data</td><td>—</td><td>Đối tượng điều tra</td></tr>
+<tr><td><code>findings</code></td><td>Table(SC Investigation Finding)</td><td>—</td><td>Phát hiện</td></tr>
+<tr><td><code>locked_user</code></td><td>Link(User)</td><td>FK</td><td>User bị khóa (nếu có)</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Mở/Đóng</td></tr>
+</tbody>
+</table><h3 id="dt-alert">DT-ALERT — SC Alert</h3><p>SC Alert — DocType phân hệ M11 — Dashboard & Cảnh báo.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>alert_no</code></td><td>Data</td><td>PK</td><td>Số cảnh báo</td></tr>
+<tr><td><code>rule</code></td><td>Link(SC Alert Rule)</td><td>FK</td><td>Quy tắc</td></tr>
+<tr><td><code>severity</code></td><td>Select</td><td>—</td><td>Cao/TB/Thấp</td></tr>
+<tr><td><code>assignee</code></td><td>Link(User)</td><td>FK</td><td>Người xử lý</td></tr>
+<tr><td><code>status</code></td><td>Select</td><td>—</td><td>Mới/Đang xử lý/Đã xử lý</td></tr>
+</tbody>
+</table><h3 id="dt-setting">DT-SETTING — SupplyCore MVL Settings</h3><p>SupplyCore MVL Settings — DocType phân hệ Lõi.</p><table>
+<thead><tr><th width="190">Thuộc tính</th><th width="130">Kiểu</th><th width="60">Khóa</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>company_name</code></td><td>Data</td><td>—</td><td>Tên công ty MVL</td></tr>
+<tr><td><code>fiscal_lock_date</code></td><td>Date</td><td>—</td><td>Ngày khóa kỳ kế toán</td></tr>
+<tr><td><code>expiry_thresholds</code></td><td>Small Text</td><td>—</td><td>Ngưỡng cảnh báo hạn (30/60/90)</td></tr>
+<tr><td><code>default_label</code></td><td>Link(SC Label Template)</td><td>FK</td><td>Mẫu nhãn mặc định</td></tr>
+</tbody>
+</table><h2 id="erd">3. Sơ đồ quan hệ (ERD) — quan hệ chính</h2><table>
+<thead><tr><th>Quan hệ</th><th>Diễn giải</th></tr></thead>
+<tbody>
+<tr><td>SC Supplier 1—N SC Framework Contract</td><td>Một NCC nhiều HĐ khung mua</td></tr>
+<tr><td>SC Framework Contract 1—N Release Order / PO</td><td>HĐ khung sinh nhiều lệnh gọi/PO</td></tr>
+<tr><td>SC Purchase Order 1—N SC Purchase Receipt</td><td>Một PO nhận nhiều phiếu nhập</td></tr>
+<tr><td>SC Purchase Receipt 1—1 SC Quality Inspection</td><td>Mỗi phiếu nhập một phiếu QC</td></tr>
+<tr><td>SC Item 1—N SC Batch</td><td>Một vật tư nhiều lô</td></tr>
+<tr><td>SC Batch 1—N SC Stock Ledger Entry</td><td>Mỗi lô nhiều bút toán kho</td></tr>
+<tr><td>SC Customer 1—1 User</td><td>Mỗi khách một tài khoản Portal</td></tr>
+<tr><td>SC Customer 1—N SC Sales Framework Contract</td><td>Một khách nhiều HĐ khung bán</td></tr>
+<tr><td>SC Sales Framework Contract 1—N SC Sales Order</td><td>HĐ khung bán sinh nhiều đơn</td></tr>
+<tr><td>SC Sales Order 1—N SC Delivery Note</td><td>Một đơn giao nhiều đợt</td></tr>
+<tr><td>SC Delivery Note 1—1 SC Acceptance Record</td><td>Bàn giao gắn biên bản nghiệm thu</td></tr>
+<tr><td>SC Delivery Note 1—1 SC Sales Invoice</td><td>Nghiệm thu → hóa đơn bán</td></tr>
+<tr><td>SC Sales Invoice 1—N SC Sales Receipt</td><td>Một hóa đơn thu nhiều lần</td></tr>
+</tbody>
+</table><h2 id="tu-dien">4. Từ điển dữ liệu (trích)</h2><table>
+<thead><tr><th>Thuật ngữ</th><th>Định nghĩa</th></tr></thead>
+<tbody>
+<tr><td>FEFO</td><td>First Expired First Out — hết hạn trước xuất trước</td></tr>
+<tr><td>HĐ khung bán</td><td>Hợp đồng khung ràng giá & hạn mức khách được đặt</td></tr>
+<tr><td>Cột mốc đơn</td><td>4 trạng thái khách theo dõi: đặt/bàn giao/hóa đơn/thu tiền</td></tr>
+<tr><td>Sổ kho</td><td>SC Stock Ledger Entry — ghi mọi biến động tồn</td></tr>
+<tr><td>Sổ cái</td><td>SC GL Entry — ghi công nợ phải trả/phải thu</td></tr>
+<tr><td>Bin</td><td>Vị trí lưu trữ chi tiết trong kho</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: DM | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

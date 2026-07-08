@@ -4,10 +4,12 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, today, date_diff, now
 from supplycore.api.fefo import get_suggested_batches
+from supplycore.utils.permissions import block_portal
 
 
 @frappe.whitelist()
 def suggest_batches(item_code: str, warehouse: str, qty: float = 0):
+    block_portal()
     return get_suggested_batches(item_code, warehouse, qty)
 
 
@@ -119,7 +121,7 @@ def _send_expiry_email(rows, critical_days):
         recipients = frappe.db.sql_list("""
             SELECT DISTINCT u.email FROM `tabUser` u
             JOIN `tabHas Role` r ON r.parent = u.name
-            WHERE r.role IN ('SupplyCore Storekeeper', 'SupplyCore Manager', 'Pharmacy Officer')
+            WHERE r.role IN ('SupplyCore Storekeeper', 'SupplyCore Manager')
               AND u.enabled = 1 AND u.email IS NOT NULL AND u.email != ''
         """) or []
     if not recipients:

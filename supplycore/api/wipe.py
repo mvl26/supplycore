@@ -16,7 +16,7 @@ PARENT_CHILDREN = {
 # Bảng leaf không có child
 LEAVES = ["SC Stock Ledger Entry", "SC Batch"]
 
-# M1/M2/M3/M6/M7 transactional doctypes — child auto-detect qua frappe.get_meta()
+# M1/M2/M3/M6 transactional doctypes — child auto-detect qua frappe.get_meta()
 MODULE_TRANSACTIONALS = (
     # M1 Hợp đồng
     "Framework Contract",
@@ -26,9 +26,6 @@ MODULE_TRANSACTIONALS = (
     "SC Quality Inspection",
     # M6 Chuyển kho (SE đã wipe)
     "SC Transfer Request",
-    # M7 Cấp phát
-    "SC Patient Dispensing",
-    "SC Dispensing Request",
 )
 
 # M8/M9/M10 transactional doctypes
@@ -60,7 +57,7 @@ def count_targets():
 def count_masters():
     """Đếm master — verify KHÔNG bị động sau khi wipe."""
     out = {}
-    for dt in ("SC Item", "SC Supplier", "SC Warehouse", "SC Patient", "SC UOM",
+    for dt in ("SC Item", "SC Supplier", "SC Warehouse", "SC UOM",
                "SC Department", "SC Item Group"):
         try:
             out[dt] = frappe.db.count(dt)
@@ -126,7 +123,7 @@ def wipe_transactions(confirm: str = ""):
 
 
 def count_modules():
-    """Đếm record các transactional M1/M2/M3/M6/M7."""
+    """Đếm record các transactional M1/M2/M3/M6."""
     out = {}
     for dt in MODULE_TRANSACTIONALS:
         try:
@@ -158,14 +155,14 @@ def _child_tables_of(parent_dt: str):
 
 
 def wipe_modules(confirm: str = ""):
-    """Xóa transactional M1/M2/M3/M6/M7 (giữ nguyên master).
+    """Xóa transactional M1/M2/M3/M6 (giữ nguyên master).
 
-    Yêu cầu confirm == 'YES-WIPE-MODULES-1-2-3-6-7'.
+    Yêu cầu confirm == 'YES-WIPE-MODULES-1-2-3-6'.
 
     Tự dò child tables qua frappe.get_meta. Bypass docstatus + hook.
     """
-    if confirm != "YES-WIPE-MODULES-1-2-3-6-7":
-        return {"error": "Pass confirm='YES-WIPE-MODULES-1-2-3-6-7' to proceed."}
+    if confirm != "YES-WIPE-MODULES-1-2-3-6":
+        return {"error": "Pass confirm='YES-WIPE-MODULES-1-2-3-6' to proceed."}
 
     before = count_modules()
     masters_before = count_masters()
@@ -196,7 +193,7 @@ def wipe_modules(confirm: str = ""):
 
     # Naming series reset cho các series có thể có
     series_to_reset = (
-        "FC-%", "SC-MR-%", "SC-QI-%", "SC-TR-%", "SC-PD-%", "SC-DR-%",
+        "FC-%", "SC-MR-%", "SC-QI-%", "SC-TR-%",
     )
     for pat in series_to_reset:
         try:

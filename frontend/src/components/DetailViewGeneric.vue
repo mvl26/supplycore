@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import Icon from './Icon.vue'
-import { fmtNumber, fmtDate, fmtDateTime } from '../utils'
+import { fmtNumber, fmtVND, fmtVNDShort, fmtDate, fmtDateTime } from '../utils'
 import { DETAIL_CONFIGS } from '../detail-configs'
 
 const props = defineProps({
@@ -23,15 +23,12 @@ function fmt(value, kind) {
   if (kind === 'money' || kind === 'number') {
     // Nếu value không phải số → trả raw (vd: '—' đã handle ở trên)
     if (typeof value === 'string' && isNaN(Number(value))) return value
-    return fmtNumber(value)
+    return kind === 'money' ? fmtVND(value) : fmtNumber(value)
   }
   if (kind === 'moneyShort') {
     const n = Number(value)
     if (!Number.isFinite(n)) return value
-    if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.00$/, '') + ' tỷ'
-    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + ' tr'
-    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'k'
-    return fmtNumber(n)
+    return fmtVNDShort(n)
   }
   if (kind === 'pct') {
     const n = Number(value); if (!Number.isFinite(n)) return value

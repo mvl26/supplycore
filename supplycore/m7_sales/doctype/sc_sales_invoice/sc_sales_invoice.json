@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "autoname": "format:SC-SI-{YYYY}-{#####}",
+ "creation": "2026-07-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "field_order": [
+  "section_main",
+  "customer",
+  "delivery_note",
+  "column_break_1",
+  "invoice_date",
+  "status",
+  "section_totals",
+  "total_amount",
+  "tax_rate",
+  "column_break_2",
+  "tax_amount",
+  "grand_total",
+  "outstanding_amount",
+  "section_items",
+  "items",
+  "amended_from"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Hóa đơn bán hàng"},
+  {"fieldname": "customer", "fieldtype": "Link", "options": "SC Customer", "label": "Khách hàng", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "delivery_note", "fieldtype": "Link", "options": "SC Delivery Note", "label": "Phiếu giao hàng", "reqd": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "invoice_date", "fieldtype": "Date", "label": "Ngày hóa đơn", "default": "Today"},
+  {"fieldname": "status", "fieldtype": "Select", "options": "Nháp\nĐã phát hành\nĐã thu một phần\nĐã thu đủ\nHủy", "label": "Trạng thái", "default": "Nháp", "in_list_view": 1, "in_standard_filter": 1, "read_only": 1, "search_index": 1},
+
+  {"fieldname": "section_totals", "fieldtype": "Section Break", "label": "Tổng tiền"},
+  {"fieldname": "total_amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Tổng tiền hàng", "read_only": 1},
+  {"fieldname": "tax_rate", "fieldtype": "Percent", "label": "Thuế suất (%)", "default": 0},
+  {"fieldname": "column_break_2", "fieldtype": "Column Break"},
+  {"fieldname": "tax_amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Tiền thuế", "read_only": 1},
+  {"fieldname": "grand_total", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Tổng cộng", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "outstanding_amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Còn phải thu", "read_only": 1},
+
+  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Danh mục vật tư"},
+  {"fieldname": "items", "fieldtype": "Table", "options": "SI Item", "label": "Items", "reqd": 1},
+
+  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Sales Invoice", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1, "share": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
+  {"role": "SupplyCore Purchaser", "read": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1},
+  {"role": "SC Customer Portal", "read": 1, "report": 1, "print": 1, "email": 1}
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-07-07 00:00:00",
+ "module": "M7 Sales",
+ "name": "SC Sales Invoice",
+ "title_field": "customer",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

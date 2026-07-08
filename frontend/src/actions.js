@@ -26,6 +26,25 @@ export const ACTIONS = {
       ]},
   ],
 
+  // === M1 Release Order — UC-05 (Lệnh gọi hàng → PO) ===
+  'Release Order': [
+    { method: 'make_purchase_order', label: 'Tạo đơn mua (PO)', icon: 'shopping-cart', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Approved' && !d.purchase_order,
+      navigateOnSuccess: { type: 'doc', dt: 'SC Purchase Order', from: 'result' } },
+  ],
+
+  // === M2 Procurement Plan — UC-06 (Kế hoạch mua → MR) ===
+  'Procurement Plan': [
+    { method: 'auto_load_items', label: 'Tự nạp theo tiêu thụ', icon: 'clipboard-list', variant: 'primary',
+      when: (d) => d.docstatus === 0 && d.warehouse,
+      args: [{ key: 'item_filter', label: 'Lọc theo nhóm VT (tuỳ chọn)', type: 'text' }] },
+    { method: 'auto_load_reorder_items', label: 'Tự nạp theo tồn tối thiểu', icon: 'download', variant: 'secondary',
+      when: (d) => d.docstatus === 0 && d.warehouse },
+    { method: 'make_material_request', label: 'Tạo Yêu cầu mua (MR)', icon: 'file-text', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Approved' && !d.material_request,
+      navigateOnSuccess: { type: 'doc', dt: 'SC Material Request', from: 'result' } },
+  ],
+
   // === M2 Purchase Order — UC-08 (workflow đơn giản hoá) ===
   'SC Purchase Order': [
     { method: 'make_purchase_receipt', label: 'Tạo Phiếu nhập (PR)', icon: 'package', variant: 'primary',
@@ -62,7 +81,7 @@ export const ACTIONS = {
   // QC nếu qc_required=1 cũng được tự tạo (_auto_create_qi). User không cần
   // bấm tay 3 nút "Tạo Phiếu KCS / Tạo Lô / Xem Lô đã tạo".
   //
-  // Sau khi QC hoàn tất (qc_status='Accepted' hoặc không cần QC) → 2 hành
+  // Sau khi QC hoàn tất (qc_status='Pass' hoặc không cần QC) → 2 hành
   // động chính: tạo Hoá đơn mua + Xếp hàng lên kệ.
   'SC Purchase Receipt': [
     // UC-24 step 1: Tạo Hoá đơn mua từ PR
@@ -70,22 +89,64 @@ export const ACTIONS = {
       apiNameArg: 'pr_name',
       label: 'Tạo Hoá đơn mua (PI)', icon: 'receipt', variant: 'primary',
       when: (d) => d.docstatus === 1 && d.is_return === 0
-        && (!d.qc_required || d.qc_status === 'Accepted'),
+        && (!d.qc_required || d.qc_status === 'Pass'),
       navigateOnSuccess: { type: 'doc', dt: 'SC Purchase Invoice', from: 'result' } },
     // Xếp hàng lên kệ — chỉ hiện khi QC đã xong (hoặc không cần QC)
     { route: (d) => `/putaway?warehouse=${encodeURIComponent(d.to_warehouse || '')}`,
       label: 'Xếp hàng lên kệ', icon: 'package-plus', variant: 'success',
       when: (d) => d.docstatus === 1 && d.is_return === 0
-        && (!d.qc_required || d.qc_status === 'Accepted') },
+        && (!d.qc_required || d.qc_status === 'Pass') },
     { method: 'make_debit_note',     label: 'Tạo Debit Note',          icon: 'file-text', variant: 'primary',
       when: (d) => d.is_return === 1 && d.docstatus === 1 && !d.debit_note },
     { method: 'make_credit_note',    label: 'Tạo Credit Note',         icon: 'banknote', variant: 'success',
-      when: (d) => d.is_return === 1 && d.docstatus === 1 },
+      when: (d) => d.is_return === 1 && d.docstatus === 1 && !d.credit_note },
     { method: 'send_return_notification', label: 'Gửi NCC',            icon: 'mail', variant: 'primary',
       when: (d) => d.is_return === 1 && d.docstatus === 1 && !d.notification_sent_at },
     { method: 'link_replacement',    label: 'Liên kết PR đổi hàng',   icon: 'link', variant: 'secondary',
       when: (d) => d.is_return === 1 && d.docstatus === 1,
       args: [{ key: 'replacement_pr_name', label: 'Mã PR đổi hàng', type: 'text', required: true }] },
+  ],
+
+  // === M7 Sales — O2C (SO duyệt → DN → nghiệm thu → SI → thu tiền) ===
+  'SC Sales Order': [
+    { method: 'approve', label: 'Duyệt', icon: 'check', variant: 'success',
+      when: (d) => d.docstatus === 1 && d.status === 'Chờ duyệt' },
+    { method: 'reject',  label: 'Từ chối', icon: 'x', variant: 'danger',
+      when: (d) => d.docstatus === 1 && d.status === 'Chờ duyệt' },
+  ],
+  'SC Delivery Note': [
+    // Lập biên bản nghiệm thu (create+submit qua sales API) — param: delivery_note
+    { apiMethod: 'supplycore.api.sales.delivery_accept',
+      apiNameArg: 'delivery_note',
+      label: 'Lập nghiệm thu', icon: 'clipboard-check', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Đã giao',
+      args: [
+        { key: 'accepted_by', label: 'Người nhận hàng', type: 'text' },
+        { key: 'note', label: 'Ghi chú', type: 'textarea' },
+      ],
+      navigateOnSuccess: { type: 'doc', dt: 'SC Acceptance Record', from: 'result' } },
+    // Xuất hóa đơn bán từ DN đã nghiệm thu — param: delivery_note
+    { apiMethod: 'supplycore.api.sales.sales_invoice_create',
+      apiNameArg: 'delivery_note',
+      label: 'Xuất hóa đơn', icon: 'receipt', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Đã nghiệm thu',
+      args: [
+        { key: 'tax_rate', label: 'Thuế suất (%)', type: 'number', default: 0 },
+      ],
+      navigateOnSuccess: { type: 'doc', dt: 'SC Sales Invoice', from: 'name' } },
+  ],
+  'SC Sales Invoice': [
+    // Thu tiền (create+submit SC Sales Receipt) — param: sales_invoice
+    { apiMethod: 'supplycore.api.sales.receipt_collect',
+      apiNameArg: 'sales_invoice',
+      label: 'Thu tiền', icon: 'banknote', variant: 'success',
+      when: (d) => d.docstatus === 1 && Number(d.outstanding_amount) > 0,
+      args: [
+        { key: 'amount', label: 'Số tiền thu', type: 'number', required: true },
+        { key: 'mode', label: 'Hình thức', type: 'select',
+          options: ['Chuyển khoản', 'Tiền mặt'], default: 'Chuyển khoản' },
+      ],
+      navigateOnSuccess: { type: 'doc', dt: 'SC Sales Receipt', from: 'name' } },
   ],
 
   // === M8 Purchase Invoice — UC-24 (3-way match indicator) ===
@@ -157,12 +218,6 @@ export const ACTIONS = {
       when: (d) => d.docstatus === 1 && !d.return_pr },
     { method: 'create_write_off',    label: 'Tạo Phiếu hủy',       icon: 'trash', variant: 'danger',
       when: (d) => d.docstatus === 1 && !d.write_off_entry },
-    { method: 'audit_dispensings_in_period', label: 'Audit cấp phát', icon: 'clipboard-list', variant: 'secondary',
-      when: () => true,
-      args: [
-        { key: 'start_date', label: 'Từ ngày', type: 'date' },
-        { key: 'end_date',   label: 'Đến ngày', type: 'date' },
-      ]},
     // UC-30 step 6: cập nhật thu hồi 1 dòng affected_item
     { method: 'update_recovery', label: 'Cập nhật thu hồi (dòng)', icon: 'file-text', variant: 'secondary',
       when: (d) => d.docstatus === 1 && d.status !== 'Closed',
@@ -234,11 +289,6 @@ export const ACTIONS = {
       label: 'Tạo Yêu cầu mua (MR)', icon: 'file-text', variant: 'secondary',
       when: (d) => !d.resolved && d.alert_type === 'low_stock',
       navigateOnSuccess: { type: 'doc', dt: 'SC Material Request', from: 'mr' } },
-    // Expiring → ưu tiên cấp phát lô gần hết hạn
-    { method: 'action_priority_dispense',
-      label: 'Ưu tiên cấp phát', icon: 'zap', variant: 'warning',
-      when: (d) => !d.resolved && (d.alert_type === 'expiring' || d.alert_type === 'expiring_soon'),
-      args: [{ key: 'note', label: 'Ghi chú dispense', type: 'textarea' }] },
     // PO overdue / supplier issue → liên hệ NCC
     { method: 'action_contact_supplier',
       label: 'Liên hệ NCC', icon: 'mail', variant: 'primary',

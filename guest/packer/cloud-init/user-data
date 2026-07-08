@@ -1,0 +1,23 @@
+#cloud-config
+# guest/packer/cloud-init/user-data — CHỈ dùng cho Packer BUILD VM.
+# Mục đích duy nhất: tạo user SSH để Packer kết nối chạy provisioner install.sh.
+#
+# KHÁC HẲN guest/cloud-init/user-data (seed production):
+#   - production tắt SSH (không user) và bật first-boot.service ngay → KHÔNG hợp
+#     với build (Packer cần SSH; first-boot không được chạy lúc build vì image
+#     + compose chưa tồn tại).
+#   - build dùng instance-id riêng (xem meta-data) + install.sh chạy
+#     `cloud-init clean` ở cuối → disk0 sẽ re-provision bằng SEED THẬT ở first boot.
+ssh_pwauth: true
+chpasswd:
+  expire: false
+users:
+  - name: packer
+    groups: [sudo]
+    shell: /bin/bash
+    lock_passwd: false
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    # mật khẩu plaintext "packer" — chỉ tồn tại trong build VM phù du. User +
+    # drop-in bị gỡ TƯỜNG MINH ở cuối install.sh (userdel + rm sudoers/sshd);
+    # cloud-init clean KHÔNG undo được. Khớp ssh_password trong supplycore.pkr.hcl.
+    plain_text_passwd: packer

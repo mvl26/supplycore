@@ -117,7 +117,7 @@
    "fieldtype": "Datetime",
    "label": "Đã nhập kho chính thức lúc",
    "read_only": 1,
-   "description": "Set khi QC Pass — hàng được FEFO/Dispense pick"
+   "description": "Set khi QC Pass — hàng được FEFO/xuất kho pick"
   },
   {
    "fieldname": "section_return",
@@ -242,6 +242,7 @@
   {
    "fieldname": "total_value",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng giá trị",
    "read_only": 1,

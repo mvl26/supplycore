@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API — Đặc tả API | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Đặc tả API</h1>
+  <div class="doc-meta">
+    <span>Mã: API-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Đặc tả API
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#overview">1. Tổng quan API</a></li>
+        <li><a href="#auth">2. Xác thực</a></li>
+        <li><a href="#endpoints">3. Danh sách Endpoint</a></li>
+        <li><a href="#schemas">4. Data Schemas</a></li>
+        <li><a href="#errors">5. Mã lỗi</a></li>
+    </ol>
+  </nav>
+
+<h2 id="overview">1. Tổng quan API</h2><p>Hệ thống cung cấp 46 endpoint theo chuẩn Frappe (/api/method/...), nhóm theo 12 phân hệ. Nhóm Portal (M12) tách riêng và áp cô lập dữ liệu.</p><h2 id="auth">2. Xác thực</h2><p>Nội bộ: session hoặc API Key/Secret trong header <code>Authorization: token key:secret</code>. Portal: đăng nhập tài khoản khách, session gắn role <code>SC Customer Portal</code>, mọi truy vấn tự lọc theo khách (permission query). Mọi request nội bộ bị chặn với role Portal (403).</p><h2 id="endpoints">3. Danh sách Endpoint (46)</h2><table>
+<thead><tr><th width="100">Mã</th><th width="60">Phân hệ</th><th width="60">Method</th><th>Đường dẫn</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td><code>API-M1-01</code></td><td>M1</td><td><b>GET</b></td><td><code>/api/method/scm.suppliers.list</code></td><td>Danh sách NCC + lọc & đánh giá</td></tr>
+<tr><td><code>API-M1-02</code></td><td>M1</td><td><b>POST</b></td><td><code>/api/method/scm.suppliers.upsert</code></td><td>Tạo/cập nhật NCC</td></tr>
+<tr><td><code>API-M1-03</code></td><td>M1</td><td><b>POST</b></td><td><code>/api/method/scm.framework.create</code></td><td>Tạo HĐ khung mua</td></tr>
+<tr><td><code>API-M1-04</code></td><td>M1</td><td><b>POST</b></td><td><code>/api/method/scm.release_order.submit</code></td><td>Phát hành lệnh gọi hàng</td></tr>
+<tr><td><code>API-M2-01</code></td><td>M2</td><td><b>POST</b></td><td><code>/api/method/scm.plan.create</code></td><td>Lập kế hoạch mua định kỳ</td></tr>
+<tr><td><code>API-M2-02</code></td><td>M2</td><td><b>POST</b></td><td><code>/api/method/scm.material_request.create</code></td><td>Tạo đề nghị mua hàng</td></tr>
+<tr><td><code>API-M2-03</code></td><td>M2</td><td><b>POST</b></td><td><code>/api/method/scm.po.create</code></td><td>Tạo đơn mua hàng</td></tr>
+<tr><td><code>API-M2-04</code></td><td>M2</td><td><b>POST</b></td><td><code>/api/method/scm.po.approve</code></td><td>Phê duyệt đơn mua hàng</td></tr>
+<tr><td><code>API-M3-01</code></td><td>M3</td><td><b>POST</b></td><td><code>/api/method/scm.receipt.create</code></td><td>Tạo phiếu nhập kho</td></tr>
+<tr><td><code>API-M3-02</code></td><td>M3</td><td><b>POST</b></td><td><code>/api/method/scm.qc.submit</code></td><td>Ghi kết quả QC</td></tr>
+<tr><td><code>API-M3-03</code></td><td>M3</td><td><b>POST</b></td><td><code>/api/method/scm.return.create</code></td><td>Tạo phiếu trả hàng NCC</td></tr>
+<tr><td><code>API-M4-01</code></td><td>M4</td><td><b>GET</b></td><td><code>/api/method/scm.wms.stock_by_bin</code></td><td>Tra cứu tồn theo vị trí</td></tr>
+<tr><td><code>API-M4-02</code></td><td>M4</td><td><b>POST</b></td><td><code>/api/method/scm.wms.putaway</code></td><td>Áp putaway rule</td></tr>
+<tr><td><code>API-M4-03</code></td><td>M4</td><td><b>POST</b></td><td><code>/api/method/scm.label.render</code></td><td>Render nhãn theo mẫu (ZPL)</td></tr>
+<tr><td><code>API-M4-04</code></td><td>M4</td><td><b>POST</b></td><td><code>/api/method/scm.label.print</code></td><td>Gửi lệnh in nhãn</td></tr>
+<tr><td><code>API-M4-05</code></td><td>M4</td><td><b>GET</b></td><td><code>/api/method/scm.barcode.resolve</code></td><td>Phân giải mã vạch (Item/Lô/Bin)</td></tr>
+<tr><td><code>API-M5-01</code></td><td>M5</td><td><b>GET</b></td><td><code>/api/method/scm.batch.list</code></td><td>Danh sách lô & hạn dùng</td></tr>
+<tr><td><code>API-M5-02</code></td><td>M5</td><td><b>POST</b></td><td><code>/api/method/scm.fefo.suggest</code></td><td>Gợi ý lô theo FEFO</td></tr>
+<tr><td><code>API-M5-03</code></td><td>M5</td><td><b>GET</b></td><td><code>/api/method/scm.batch.expiry_alerts</code></td><td>Cảnh báo sắp hết hạn</td></tr>
+<tr><td><code>API-M6-01</code></td><td>M6</td><td><b>POST</b></td><td><code>/api/method/scm.transfer.create</code></td><td>Tạo chuyển kho nội bộ</td></tr>
+<tr><td><code>API-M7-01</code></td><td>M7</td><td><b>POST</b></td><td><code>/api/method/scm.customer.upsert</code></td><td>Tạo/cập nhật khách hàng</td></tr>
+<tr><td><code>API-M7-02</code></td><td>M7</td><td><b>POST</b></td><td><code>/api/method/scm.customer.create_portal_user</code></td><td>Tạo tài khoản Portal cho khách</td></tr>
+<tr><td><code>API-M7-03</code></td><td>M7</td><td><b>POST</b></td><td><code>/api/method/scm.sales_framework.create</code></td><td>Tạo HĐ khung bán</td></tr>
+<tr><td><code>API-M7-04</code></td><td>M7</td><td><b>POST</b></td><td><code>/api/method/scm.sales_order.approve</code></td><td>Duyệt đơn khách</td></tr>
+<tr><td><code>API-M7-05</code></td><td>M7</td><td><b>POST</b></td><td><code>/api/method/scm.delivery.create</code></td><td>Lập phiếu bàn giao</td></tr>
+<tr><td><code>API-M7-06</code></td><td>M7</td><td><b>POST</b></td><td><code>/api/method/scm.delivery.accept</code></td><td>Ghi nhận nghiệm thu</td></tr>
+<tr><td><code>API-M8-01</code></td><td>M8</td><td><b>POST</b></td><td><code>/api/method/scm.purchase_invoice.create</code></td><td>Tạo hóa đơn mua</td></tr>
+<tr><td><code>API-M8-02</code></td><td>M8</td><td><b>POST</b></td><td><code>/api/method/scm.payment.pay_supplier</code></td><td>Thanh toán NCC</td></tr>
+<tr><td><code>API-M8-03</code></td><td>M8</td><td><b>POST</b></td><td><code>/api/method/scm.sales_invoice.create</code></td><td>Xuất hóa đơn bán</td></tr>
+<tr><td><code>API-M8-04</code></td><td>M8</td><td><b>POST</b></td><td><code>/api/method/scm.receipt.collect</code></td><td>Ghi nhận thu tiền khách</td></tr>
+<tr><td><code>API-M8-05</code></td><td>M8</td><td><b>GET</b></td><td><code>/api/method/scm.finance.report</code></td><td>Báo cáo tài chính vật tư</td></tr>
+<tr><td><code>API-M9-01</code></td><td>M9</td><td><b>POST</b></td><td><code>/api/method/scm.count.create</code></td><td>Tạo phiếu kiểm kê</td></tr>
+<tr><td><code>API-M9-02</code></td><td>M9</td><td><b>POST</b></td><td><code>/api/method/scm.reconcile.submit</code></td><td>Đối soát & điều chỉnh tồn</td></tr>
+<tr><td><code>API-M10-01</code></td><td>M10</td><td><b>GET</b></td><td><code>/api/method/scm.trace.batch</code></td><td>Truy xuất nguồn gốc lô</td></tr>
+<tr><td><code>API-M10-02</code></td><td>M10</td><td><b>POST</b></td><td><code>/api/method/scm.recall.create</code></td><td>Tạo thu hồi vật tư</td></tr>
+<tr><td><code>API-M10-03</code></td><td>M10</td><td><b>POST</b></td><td><code>/api/method/scm.investigation.create</code></td><td>Tạo điều tra thất thoát</td></tr>
+<tr><td><code>API-M11-01</code></td><td>M11</td><td><b>GET</b></td><td><code>/api/method/scm.dashboard.kpi</code></td><td>Số liệu KPI dashboard</td></tr>
+<tr><td><code>API-M11-02</code></td><td>M11</td><td><b>POST</b></td><td><code>/api/method/scm.alert.rule.upsert</code></td><td>Cấu hình quy tắc cảnh báo</td></tr>
+<tr><td><code>API-M11-03</code></td><td>M11</td><td><b>GET</b></td><td><code>/api/method/scm.alert.list</code></td><td>Danh sách cảnh báo hành động</td></tr>
+<tr><td><code>API-M12-01</code></td><td>M12</td><td><b>POST</b></td><td><code>/api/method/portal.login</code></td><td>Đăng nhập Portal khách hàng</td></tr>
+<tr><td><code>API-M12-02</code></td><td>M12</td><td><b>GET</b></td><td><code>/api/method/portal.contracts</code></td><td>Tra cứu HĐ khung của khách</td></tr>
+<tr><td><code>API-M12-03</code></td><td>M12</td><td><b>GET</b></td><td><code>/api/method/portal.catalog</code></td><td>Danh mục vật tư & bảng giá của khách</td></tr>
+<tr><td><code>API-M12-04</code></td><td>M12</td><td><b>POST</b></td><td><code>/api/method/portal.order.place</code></td><td>Đặt hàng theo HĐ khung</td></tr>
+<tr><td><code>API-M12-05</code></td><td>M12</td><td><b>GET</b></td><td><code>/api/method/portal.order.track</code></td><td>Theo dõi đơn theo 4 cột mốc</td></tr>
+<tr><td><code>API-M12-06</code></td><td>M12</td><td><b>GET</b></td><td><code>/api/method/portal.order.history</code></td><td>Lịch sử đặt hàng</td></tr>
+<tr><td><code>API-M12-07</code></td><td>M12</td><td><b>GET</b></td><td><code>/api/method/portal.document.download</code></td><td>Tải chứng từ được phép</td></tr>
+</tbody>
+</table><h2 id="schemas">4. Data Schemas (trích)</h2><h3>portal.order.place (Request)</h3><pre>{
+  "framework_contract": "SFC-2026-001",
+  "items": [
+    {"item": "VT-001", "qty": 50}
+  ]
+}</pre><h3>portal.order.track (Response)</h3><pre>{
+  "order_no": "SO-20260702-001",
+  "milestones": {
+    "ordered": true, "delivered": false,
+    "invoiced": false, "paid": false
+  }
+}</pre><h2 id="errors">5. Mã lỗi</h2><table>
+<thead><tr><th>Mã</th><th>Ý nghĩa</th></tr></thead>
+<tbody>
+<tr><td>400</td><td>Dữ liệu không hợp lệ / vi phạm business rule</td></tr>
+<tr><td>401</td><td>Chưa xác thực</td></tr>
+<tr><td>403</td><td>Không đủ quyền / Portal truy cập route nội bộ</td></tr>
+<tr><td>409</td><td>Xung đột (trùng khóa, vượt hạn mức, âm tồn)</td></tr>
+<tr><td>500</td><td>Lỗi hệ thống</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: API | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

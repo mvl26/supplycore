@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
 import Icon from './Icon.vue'
 import Modal from './Modal.vue'
+import OfflineBanner from './OfflineBanner.vue'
 import { APP_VERSION, BUILD_DATE, RELEASE_NOTES } from '../version'
 
 const showVersionModal = ref(false)
@@ -37,13 +38,14 @@ const primaryNav = computed(() => [
   { to: '/putaway',          icon: 'package-plus',     label: 'Xếp hàng lên kệ',    show: access.canFeature('putaway') },
   { to: '/batch-trace',      icon: 'file-search',      label: 'Truy xuất lô',       show: access.canFeature('batch_trace') },
   { to: '/warehouse-map',    icon: 'map',              label: 'Bản đồ kho',         show: access.canFeature('warehouse_map') },
+  { to: '/map-editor',       icon: 'map-pinned',       label: 'Thiết kế bản đồ',    show: access.canFeature('map_editor') },
   { to: '/financial-reports',icon: 'wallet',           label: 'Báo cáo tài chính',  show: access.canFeature('financial_reports') },
   { to: '/users',            icon: 'users',            label: 'Người dùng & Quyền', show: access.canFeature('users') },
 ].filter(i => i.show))
 
 // Module groups in deliberate operational order (admin/fallback view)
 const moduleGroups = computed(() => {
-  const order = ['Thiết lập', 'Chiến lược', 'Vận hành', 'Tài chính', 'Chất lượng', 'Báo cáo']
+  const order = ['Thiết lập', 'Chiến lược', 'Kinh doanh', 'Vận hành', 'Tài chính', 'Chất lượng', 'Báo cáo']
   const g = {}
   MODULES.filter(m => access.canModule(m.id)).forEach(m => { (g[m.group] ||= []).push(m) })
   return order.filter(k => g[k]).map(k => ({ label: k, items: g[k] }))
@@ -101,6 +103,7 @@ async function logout() {
 
 <template>
   <div class="min-h-screen flex sc-app-bg">
+    <OfflineBanner />
     <!-- Mobile backdrop -->
     <Transition name="route">
       <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-sc-navy-900/55 backdrop-blur-[2px] md:hidden"
@@ -137,7 +140,7 @@ async function logout() {
         <div v-if="!collapsed" class="min-w-0 overflow-hidden">
           <div class="text-[15px] font-extrabold tracking-tight leading-tight">SupplyCore</div>
           <div class="text-[10.5px] uppercase tracking-[0.14em] text-white/45 leading-tight mt-0.5">
-            Cung ứng Bệnh viện
+            Chuỗi cung ứng Phân phối
           </div>
         </div>
       </div>

@@ -1,0 +1,154 @@
+name: Build & push SupplyCore image
+
+# Builds a custom Frappe v15 image that bundles the SupplyCore app (incl. the
+# Vue SPA), smoke-tests it with the deploy compose stack, then pushes to GHCR.
+#
+# Required repo secret:
+#   APP_GH_TOKEN  — fine-grained PAT with read access to mvl26/supplycore
+#                   (used only to clone the private app during the image build;
+#                    passed via a buildx secret mount, never baked into a layer).
+#
+# Triggers on a version tag (vX.Y.Z) or manually.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to push (default: 'manual')"
+        required: false
+        default: "manual"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/supplycore
+  # Pinned frappe_docker ref — provides the build context (resources/core/*).
+  FRAPPE_DOCKER_REF: 1e3d40fa65347209418e70a451d5b266e1a75b92
+  # Frappe v15 toolchain (override of frappe_docker main defaults).
+  FRAPPE_BRANCH: version-15
+  PYTHON_VERSION: 3.11.9
+  NODE_VERSION: 18.20.4
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Determine image tag
+        id: tag
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout SupplyCore
+        uses: actions/checkout@v4
+        with:
+          path: supplycore
+
+      - name: Checkout frappe_docker (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: frappe/frappe_docker
+          ref: ${{ env.FRAPPE_DOCKER_REF }}
+          path: frappe_docker
+
+      - name: Inject SupplyCore Containerfile
+        run: |
+          cp supplycore/docker/Containerfile frappe_docker/images/custom/Containerfile
+
+      - name: Render apps.json (token via secret file)
+        run: |
+          sed "s|__TOKEN__|${{ secrets.APP_GH_TOKEN }}|" \
+            supplycore/docker/apps.json.template > "${RUNNER_TEMP}/apps.json"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (load locally, amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: frappe_docker
+          file: frappe_docker/images/custom/Containerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          secret-files: |
+            apps_json=${{ runner.temp }}/apps.json
+          build-args: |
+            FRAPPE_BRANCH=${{ env.FRAPPE_BRANCH }}
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
+            INSTALL_CHROMIUM=false
+
+      - name: Smoke test (bring up stack, curl the SPA)
+        working-directory: supplycore/deploy
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          IMAGE_TAG: ${{ steps.tag.outputs.value }}
+          SITE_NAME: smoke.localhost
+          ADMIN_PASSWORD: admin
+          DB_PASSWORD: admin
+          HTTP_PORT: "8080"
+        run: |
+          set -euo pipefail
+          docker compose up -d
+
+          echo "Waiting for create-site to finish (installs supplycore)…"
+          for i in $(seq 1 60); do
+            state=$(docker compose ps -a --format '{{.Service}} {{.State}} {{.ExitCode}}' | awk '$1=="create-site"{print $2" "$3}')
+            echo "create-site: ${state:-pending} (${i}/60)"
+            case "$state" in
+              "exited 0") break ;;
+              "exited "*) echo "::error::create-site failed"; docker compose logs create-site; exit 1 ;;
+            esac
+            sleep 10
+          done
+
+          echo "Asserting supplycore is installed…"
+          docker compose exec -T backend bash -c "grep -qx supplycore sites/apps.txt"
+          docker compose exec -T backend bash -c "bench --site smoke.localhost list-apps | grep -q supplycore"
+
+          echo "Curling site root and /supplycore SPA route…"
+          ok=0
+          for i in $(seq 1 30); do
+            code_root=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: smoke.localhost' http://localhost:8080/ || true)
+            code_spa=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: smoke.localhost' http://localhost:8080/supplycore || true)
+            echo "root=$code_root spa=$code_spa (${i}/30)"
+            if [ "$code_root" = "200" ] && { [ "$code_spa" = "200" ] || [ "$code_spa" = "302" ]; }; then ok=1; break; fi
+            sleep 5
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::SPA did not serve"; docker compose logs frontend backend; exit 1
+          fi
+
+          echo "Asserting the built Vue assets exist…"
+          curl -fsS -H 'Host: smoke.localhost' http://localhost:8080/assets/supplycore/frontend/index.js -o /dev/null
+
+          echo "Smoke test passed."
+
+      - name: Tear down stack
+        if: always()
+        working-directory: supplycore/deploy
+        run: docker compose down -v || true
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest

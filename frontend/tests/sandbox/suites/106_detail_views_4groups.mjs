@@ -1,6 +1,7 @@
 // Suite 106: Detail-view redesign smoke cho 4 nhóm doctype (PO, PR, PI, MR,
-// SE, TR, DR, PD, Recall, IR, ICS). Verify mỗi doctype có 1 doc submitted
+// SE, TR, Recall, IR, ICS). Verify mỗi doctype có 1 doc submitted
 // để render được hero + tiles + items table (nếu có).
+// (DR/PD — M7 Dispensing — đã bỏ khỏi backend GĐ1)
 
 const TARGETS = [
   { dt: 'SC Purchase Order',        path: 'SC Purchase Order',        needs: ['hero', 'tiles', 'items'] },
@@ -9,8 +10,6 @@ const TARGETS = [
   { dt: 'SC Material Request',      path: 'SC Material Request',      needs: ['hero', 'tiles', 'items'] },
   { dt: 'SC Stock Entry',           path: 'SC Stock Entry',           needs: ['hero', 'tiles', 'items'] },
   { dt: 'SC Transfer Request',      path: 'SC Transfer Request',      needs: ['hero', 'tiles', 'items'] },
-  { dt: 'SC Dispensing Request',    path: 'SC Dispensing Request',    needs: ['hero', 'tiles', 'items'] },
-  { dt: 'SC Patient Dispensing',    path: 'SC Patient Dispensing',    needs: ['hero', 'tiles', 'items'] },
   { dt: 'SC Recall Notice',         path: 'SC Recall Notice',         needs: ['hero', 'tiles'] },
   { dt: 'SC Investigation Report',  path: 'SC Investigation Report',  needs: ['hero', 'tiles'] },
   { dt: 'SC Inventory Count Sheet', path: 'SC Inventory Count Sheet', needs: ['hero', 'tiles'] },

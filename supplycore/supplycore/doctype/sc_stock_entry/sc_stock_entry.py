@@ -4,7 +4,8 @@ Submit → ghi SC Stock Ledger Entry (1 entry per item-warehouse-batch-bin).
 Material Receipt: tạo +qty ở to_warehouse.
 Material Issue: tạo -qty ở from_warehouse.
 Material Transfer: tạo cả -qty (from) và +qty (to).
-Cancel → tạo SLE đối ứng + đánh dấu is_cancelled.
+Cancel → tạo SLE đối ứng (append-only, KHÔNG đánh dấu is_cancelled trên dòng
+gốc — xem _reverse_stock_ledger để tránh đảo KÉP).
 """
 
 import frappe
@@ -293,7 +294,7 @@ class SCStockEntry(Document):
                 )
 
     def _reverse_stock_ledger(self):
-        """Cancel: insert SLE đối ứng + đánh dấu original is_cancelled."""
+        """Cancel: insert SLE đối ứng (append-only, KHÔNG đánh dấu original is_cancelled)."""
         sles = frappe.get_all(
             "SC Stock Ledger Entry",
             filters={"voucher_type": "SC Stock Entry", "voucher_no": self.name, "is_cancelled": 0},
@@ -310,7 +311,11 @@ class SCStockEntry(Document):
                 batch=s.batch, bin_location=s.bin_location,
                 remarks=f"Cancel của SLE {s.name}",
             )
-            frappe.db.set_value("SC Stock Ledger Entry", s.name, "is_cancelled", 1)
+            # NB: KHÔNG set is_cancelled trên dòng gốc. get_qty/get_available_qty
+            # tính SUM(qty_change) WHERE is_cancelled=0, nên dòng gốc và dòng đối
+            # ứng tự triệt tiêu → tồn trả về đúng. Nếu vừa set is_cancelled vừa
+            # post đối ứng sẽ đảo KÉP (bug — đã sửa, mirror
+            # SC Delivery Note._reverse_stock_ledger).
 
 
     # ------------------------------------------------------------------

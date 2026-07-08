@@ -1,7 +1,7 @@
-"""Seed toạ độ bản đồ — Bệnh viện Y học cổ truyền Bộ Công an (Hà Đông, Hà Nội).
+"""Seed toạ độ bản đồ — Công ty Miyano Việt Nam (MVL), Hà Nội.
 
 Hai cấp bản đồ:
-  1. Bản đồ khuôn viên BV — vị trí từng kho (site_row, site_col).
+  1. Bản đồ khuôn viên kho phân phối — vị trí từng kho (site_row, site_col).
   2. Sơ đồ trong kho — vị trí từng bin (map_row, map_col) auto từ aisle/zone.
 
 Chạy: bench --site supplycore execute supplycore.setup.seed_warehouse_map.run
@@ -12,25 +12,25 @@ import frappe
 
 # ---------------------------------------------------------------------------
 # 1. Bản đồ khuôn viên — lưới 6 hàng × 7 cột.
-#    Cổng chính ở (5,3). Kho Tổng trung tâm. Khoa phòng bố trí xung quanh.
+#    Cổng chính ở (5,3). Kho Tổng trung tâm. Phòng ban bố trí xung quanh.
 #    (row, col, block)
 # ---------------------------------------------------------------------------
 SITE_LAYOUT = {
-    "Kho Tổng Bệnh viện":      (2, 3, "Nhà A — Trung tâm"),
+    "Kho Tổng MVL":            (2, 3, "Nhà A — Trung tâm"),
     "Kho Trung chuyển":        (2, 2, "Nhà A — Tầng 1"),
     "Kho Cách ly QC":          (2, 4, "Nhà A — Khu cách ly"),
     "Kho Dịch truyền":         (1, 2, "Nhà A — Tầng 2"),
     "Kho Hóa chất sinh phẩm":  (1, 4, "Nhà A — Tầng 2"),
     "Kho Vật tư tiêu hao":     (1, 3, "Nhà A — Tầng 2"),
     "Kho Vật tư cấy ghép":     (1, 5, "Nhà A — Tầng 3"),
-    "Kho Khoa Dược":           (3, 3, "Nhà B — Tầng 1"),
-    "Kho Khoa Nội tổng hợp":   (3, 1, "Nhà B — Tầng 2"),
-    "Kho Khoa Ngoại tổng hợp": (3, 5, "Nhà B — Tầng 2"),
-    "Kho Khoa Cấp cứu":        (4, 2, "Nhà C — Tầng 1"),
-    "Kho Khoa ICU":            (4, 4, "Nhà C — Tầng 1"),
-    "Kho Phòng Mổ":            (4, 3, "Nhà C — Tầng 2"),
-    "Kho Khoa Nhi":            (3, 6, "Nhà D — Tầng 1"),
-    "Kho Khoa Sản":            (4, 5, "Nhà D — Tầng 1"),
+    "Kho Giao hàng":           (3, 3, "Nhà B — Tầng 1"),
+    "Kho Phòng Kế toán":       (3, 1, "Nhà B — Tầng 2"),
+    "Kho Phòng Marketing":     (3, 5, "Nhà B — Tầng 2"),
+    "Kho Phòng Kinh doanh":    (4, 2, "Nhà C — Tầng 1"),
+    "Kho Phòng Mua hàng":      (4, 4, "Nhà C — Tầng 1"),
+    "Kho Phòng QC":            (4, 3, "Nhà C — Tầng 2"),
+    "Kho Phòng CSKH":          (3, 6, "Nhà D — Tầng 1"),
+    "Kho Phòng Nhân sự":       (4, 5, "Nhà D — Tầng 1"),
 }
 # Cổng chính khuôn viên — điểm bắt đầu chỉ đường
 SITE_ENTRANCE = (5, 3)

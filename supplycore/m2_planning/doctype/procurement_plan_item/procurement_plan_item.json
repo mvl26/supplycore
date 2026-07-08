@@ -34,8 +34,8 @@
   {"fieldname": "safety_stock_qty", "fieldtype": "Float", "label": "Safety stock", "read_only": 1},
   {"fieldname": "planned_qty", "fieldtype": "Float", "label": "SL kế hoạch mua", "reqd": 1, "non_negative": 1, "in_list_view": 1, "columns": 1, "description": "User có thể điều chỉnh; mặc định = system suggest"},
   {"fieldname": "section_cost", "fieldtype": "Section Break"},
-  {"fieldname": "estimated_unit_cost", "fieldtype": "Currency", "label": "Đơn giá ước tính", "options": "VND", "description": "Lấy từ PO mới nhất của vật tư"},
-  {"fieldname": "estimated_amount", "fieldtype": "Currency", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "estimated_unit_cost", "fieldtype": "Currency", "precision": "0", "label": "Đơn giá ước tính", "options": "VND", "description": "Lấy từ PO mới nhất của vật tư"},
+  {"fieldname": "estimated_amount", "fieldtype": "Currency", "precision": "0", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1},
   {"fieldname": "preferred_supplier", "fieldtype": "Link", "options": "SC Supplier", "label": "NCC ưu tiên", "description": "Suggest từ lịch sử PO"}
  ],
  "owner": "Administrator",

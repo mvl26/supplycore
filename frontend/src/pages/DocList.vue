@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getList, count } from '../api'
+import { getList, count, VOUCHER_IO_DOCTYPES as VIO_LIST } from '../api'
 import { DT } from '../modules'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
@@ -9,6 +9,10 @@ import DataTable from '../components/DataTable.vue'
 import FieldInput from '../components/FieldInput.vue'
 import Pagination from '../components/Pagination.vue'
 import ListImportExport from '../components/ListImportExport.vue'
+import VoucherIO from '../components/VoucherIO.vue'
+
+// Doctype hỗ trợ xuất/nhập Excel 2 sheet (phiếu cha-con) — khớp voucher_io.CONFIGS
+const VOUCHER_IO_DOCTYPES = new Set(VIO_LIST)
 import { useAccessStore } from '../stores/access'
 import { useToastStore } from '../stores/toast'
 
@@ -319,7 +323,12 @@ onMounted(() => {
       :subtitle="`${total.toLocaleString('vi-VN')} bản ghi${search || activeFilterCount() ? ' (đã lọc)' : ''}`">
       <template #actions>
         <button @click="load" class="sc-btn-secondary text-sm" title="Tải lại"><Icon name="rotate-cw" :size="14" /></button>
-        <ListImportExport :doctype="doctype" :list-columns="columns"
+        <VoucherIO v-if="VOUCHER_IO_DOCTYPES.has(doctype)"
+          :doctype="doctype" :label="cfg.label"
+          :filters="buildFilters()" :order-by="buildOrderBy()"
+          :can-import="access.canDoctype(doctype, 'create')"
+          @imported="load" />
+        <ListImportExport v-else :doctype="doctype" :list-columns="columns"
           :filters="buildFilters()" :order-by="buildOrderBy()"
           :can-import="access.canDoctype(doctype, 'create')"
           @imported="load" />

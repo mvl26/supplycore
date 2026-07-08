@@ -8,6 +8,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, today, date_diff
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def get_suggested_batches(item_code: str, warehouse: str, qty: float = 0, uom: str = None) -> dict:
@@ -27,6 +29,7 @@ def get_suggested_batches(item_code: str, warehouse: str, qty: float = 0, uom: s
           "shortfall": float
         }
     """
+    block_portal()
     if not item_code or not warehouse:
         frappe.throw(_("item_code và warehouse bắt buộc"))
 
@@ -99,6 +102,7 @@ def auto_pick_fefo(item_code: str, warehouse: str, qty: float) -> dict:
         "total_picked": float
       }
     """
+    block_portal()
     qty = flt(qty)
     suggested = get_suggested_batches(item_code, warehouse, qty)
     picked = [b for b in suggested["batches"] if flt(b["suggested_qty"]) > 0]
@@ -114,6 +118,7 @@ def auto_pick_fefo(item_code: str, warehouse: str, qty: float) -> dict:
 @frappe.whitelist()
 def get_expiring_dashboard(warehouse: str = None, limit: int = 10) -> dict:
     """UC-17 step 4: dashboard widget — counts by severity + top batches."""
+    block_portal()
     cond = "AND warehouse = %(wh)s" if warehouse else ""
     params = {"wh": warehouse} if warehouse else {}
     counts = frappe.db.sql(f"""
@@ -145,6 +150,7 @@ def get_expiring_dashboard(warehouse: str = None, limit: int = 10) -> dict:
 @frappe.whitelist()
 def check_batch_status(batch_no: str) -> dict:
     """Trả thông tin nhanh về 1 batch — phục vụ UI validate trước khi submit."""
+    block_portal()
     b = frappe.db.get_value("SC Batch", batch_no,
                              ["name", "item", "expiry_date", "blocked", "block_reason"],
                              as_dict=True)

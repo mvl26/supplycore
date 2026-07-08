@@ -9,6 +9,10 @@ from frappe.utils import now
 class SCQualityInspection(Document):
 
     def validate(self):
+        # L20/T06: QC KHÔNG được sửa dữ liệu phiếu nhập. Khoá UI (read_only) chỉ
+        # là gợi ý client; ở đây ép lại item/lô/SL nhận theo đúng dòng phiếu nhập
+        # gốc (pr_item_ref) — defense-in-depth, dù POST thẳng cũng snap về nguồn.
+        self._sync_from_receipt()
         # UC-10: equipment unavailable → On Hold
         if self.equipment_unavailable:
             if not (self.equipment_note and str(self.equipment_note).strip()):
@@ -27,14 +31,57 @@ class SCQualityInspection(Document):
                 elif all(s == "Accepted" for s in statuses) and len(statuses) == len(self.readings):
                     self.overall_status = "Accepted"
 
+    def _sync_from_receipt(self):
+        """L20/T06: ép item / lô / SL nhận theo dòng phiếu nhập gốc (read-only thật
+        ở backend). Bỏ qua nếu là phiếu QC tạo tay không gắn dòng PR."""
+        if not (self.purchase_receipt and self.pr_item_ref):
+            return
+        pri = frappe.db.get_value(
+            "SC Purchase Receipt Item", self.pr_item_ref,
+            ["item", "batch_no", "qty", "parent"], as_dict=True)
+        if not pri or pri.parent != self.purchase_receipt:
+            return
+        self.item = pri.item
+        if pri.batch_no:
+            self.batch = pri.batch_no
+        self.received_qty = pri.qty
+
     def before_submit(self):
+        # L19: người KẾT LUẬN QC chính là 'người kiểm' — ghi đè theo tài khoản
+        # đang submit, không cho gán hộ người khác (field cũng read-only ở UI).
+        if frappe.session.user not in (None, "Guest"):
+            self.inspected_by = frappe.session.user
         if self.equipment_unavailable:
             return  # On Hold submit OK
+        # Đã bỏ QC Checklist Template (SC-E033 không còn áp dụng): KCS điền trực tiếp
+        # các dòng tiêu chí (mặc định 5 dòng mẫu). Chỉ cần ≥1 tiêu chí có kết quả.
         if not self.readings:
             frappe.throw(_("SC-E-QI-READINGS: Phải nhập kết quả cho ít nhất 1 tiêu chí trước khi submit"))
         set_count = sum(1 for r in self.readings if r.status)
         if set_count == 0:
             frappe.throw(_("SC-E-QI-READINGS: Phải nhập kết quả cho ít nhất 1 tiêu chí trước khi submit"))
+        self._validate_result_action()
+
+    def _validate_result_action(self):
+        """L17: chặn cặp Kết quả ↔ Hành động mâu thuẫn.
+        Cho phép Conditional Accept khi Đạt (luồng có điều kiện), nhưng:
+        - Đạt KHÔNG được Trả NCC / Yêu cầu thay thế.
+        - Không đạt KHÔNG được Chấp nhận / Chấp nhận có điều kiện."""
+        action = self.action_taken
+        if not action or action == "Pending":
+            return
+        accept_actions = ("Accept", "Conditional Accept")
+        reject_actions = ("Return to Supplier", "Request Replacement")
+        conflict = (
+            (self.overall_status == "Accepted" and action in reject_actions) or
+            (self.overall_status == "Rejected" and action in accept_actions)
+        )
+        if conflict:
+            frappe.throw(_(
+                "SC-E032 QC_RESULT_ACTION_CONFLICT: Kết quả '{0}' mâu thuẫn với "
+                "hành động '{1}'. Đạt → chỉ Chấp nhận / Chấp nhận có điều kiện; "
+                "Không đạt → chỉ Trả NCC / Yêu cầu thay thế."
+            ).format(self.overall_status, action), title="SC-E032 QC_RESULT_ACTION_CONFLICT")
 
     def on_submit(self):
         # UC-10: On Hold → skip mọi rollup

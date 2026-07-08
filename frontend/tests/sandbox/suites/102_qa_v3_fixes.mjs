@@ -1,8 +1,7 @@
 // Suite 102: Verify QA Report v3 fixes (25/05/2026 round 3)
 //
-// 8 fix:
+// 8 fix (v3-M0-09 BHYT card regex removed GĐ1 — SC Patient doctype dropped):
 //   v3-M11-UAT cleanup: disable UAT/SMOKE rules + terminate test FC
-//   v3-M0-09 BHYT card regex VN
 //   v3-M2-06 MR total_estimated_cost > 0
 //   v3-M6-01 SAME_WAREHOUSE error code rõ
 //   v3-M9-01 ICS summary audit logging
@@ -39,72 +38,9 @@ export const tests = [
   },
 
   // -----------------------------------------------------------------------
-  // v3-M0-09: BHYT card invalid format → SC-E022
+  // v3-M0-09: bỏ — BHYT card regex + SC Patient doctype đã bị xoá khỏi
+  // backend (GĐ1, hospital business logic dropped).
   // -----------------------------------------------------------------------
-  {
-    name: 'v3-M0-09: BHYT card format sai → SC-E022',
-    run: async ({ page }) => {
-      const csrf = await page.evaluate(() => window.sc_csrf)
-      const result = await page.evaluate(async ({ csrf }) => {
-        const r = await fetch('/api/resource/SC Patient', {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': csrf },
-          body: JSON.stringify({
-            doctype: 'SC Patient',
-            patient_id: 'BN-TEST-BHYT-' + Date.now(),
-            patient_name: 'Test BHYT format',
-            bhyt_card_no: 'INVALID-FMT',
-          }),
-        })
-        const d = await r.json()
-        return { status: r.status, exc: d.exception || '', msg: (d._server_messages || '').slice(0, 200) }
-      }, { csrf })
-      const ok = result.status >= 400 && (
-        result.exc.includes('SC-E022') || result.msg.includes('SC-E022') ||
-        result.exc.includes('INVALID_BHYT') || result.msg.includes('INVALID_BHYT')
-      )
-      return ok
-        ? { ok: true, detail: 'BHYT sai format reject SC-E022' }
-        : { ok: false, detail: `status=${result.status} exc="${result.exc.slice(0, 80)}"` }
-    },
-  },
-
-  // -----------------------------------------------------------------------
-  // v3-M0-09 ngược lại: BHYT valid → tạo OK
-  // -----------------------------------------------------------------------
-  {
-    name: 'v3-M0-09: BHYT card đúng format (HC4101234567890) tạo OK',
-    run: async ({ page }) => {
-      const csrf = await page.evaluate(() => window.sc_csrf)
-      const pid = 'BN-TEST-OK-' + Date.now()
-      const result = await page.evaluate(async ({ pid, csrf }) => {
-        const r = await fetch('/api/resource/SC Patient', {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': csrf },
-          body: JSON.stringify({
-            doctype: 'SC Patient',
-            patient_id: pid,
-            patient_name: 'Test BHYT valid',
-            bhyt_card_no: 'HC4101234567890',  // 15 ký tự đúng format
-          }),
-        })
-        const d = await r.json()
-        return { status: r.status, name: d.data?.name, exc: d.exception || '' }
-      }, { pid, csrf })
-      // Cleanup
-      if (result.name) {
-        await page.evaluate(async ({ name, csrf }) => {
-          await fetch(`/api/resource/SC Patient/${encodeURIComponent(name)}`, {
-            method: 'DELETE', credentials: 'include',
-            headers: { 'X-Frappe-CSRF-Token': csrf },
-          })
-        }, { name: result.name, csrf })
-      }
-      return result.status >= 200 && result.status < 300
-        ? { ok: true, detail: `Tạo ${result.name} OK` }
-        : { ok: false, detail: `status=${result.status} exc="${result.exc.slice(0, 80)}"` }
-    },
-  },
 
   // -----------------------------------------------------------------------
   // v3-M6-01: SC Transfer Request same warehouse → SC-E024

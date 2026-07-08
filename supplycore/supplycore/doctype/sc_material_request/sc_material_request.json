@@ -15,6 +15,7 @@
   "department",
   "warehouse",
   "requested_by",
+  "requested_by_name",
   "section_link",
   "procurement_plan",
   "auto_generated",
@@ -85,6 +86,13 @@
    "label": "Người yêu cầu"
   },
   {
+   "fieldname": "requested_by_name",
+   "fieldtype": "Data",
+   "label": "Tên người yêu cầu",
+   "fetch_from": "requested_by.full_name",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_link",
    "fieldtype": "Section Break",
    "label": "Liên kết",
@@ -139,6 +147,7 @@
   {
    "fieldname": "total_estimated_cost",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng ước tính",
    "read_only": 1,
@@ -208,14 +217,6 @@
    "submit": 1,
    "report": 1,
    "print": 1
-  },
-  {
-   "role": "SupplyCore Ward Staff",
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "submit": 1,
-   "report": 1
   },
   {
    "role": "SupplyCore Accountant",

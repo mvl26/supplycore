@@ -1,0 +1,315 @@
+name: Build SupplyCore Windows installer
+
+# Assembles the whole offline appliance and publishes a GitHub Release:
+#
+#   job `guest`     (Linux + KVM):
+#     SupplyCore Docker image  ->  docker save (tagged, contract #1)
+#       ->  Packer build disk0.qcow2  ->  smoke.sh (two-phase persistence gate)
+#       ->  upload artifact `disk0`.
+#   job `installer` (windows-latest):
+#     download `disk0` -> fetch-deps (QEMU/WinSW) -> Pester -> ISCC compile
+#       ->  test-install (silent install smoke) -> SHA256  ->  gh release (tags only).
+#
+# ── DEPENDENCY PINS — ĐÃ PIN ĐẦY ĐỦ (URL + SHA256 thật, verify 2026-06-15) ─────
+#   Không còn placeholder nào. Đã pin:
+#     QEMU  20260501  + sha256   (installer/ci/fetch-deps.ps1)
+#     WinSW v2.12.0   + sha256   (installer/ci/fetch-deps.ps1)
+#     Ubuntu release-20260515 + sha256 (bước "packer build" dưới đây)
+#   Nếu một URL 404 về sau (bản cũ bị dọn): chọn bản mới, sửa URL + tính lại sha256.
+#   (Seed ISO cidata do make-data.ps1 tạo bằng IMAPI2FS — COM Windows sẵn có —
+#    nên KHÔNG cần oscdimg/ADK.)
+#
+# ── VẪN CẦN (hạ tầng, không phải PIN) ─────────────────────────────────────────
+#   - Secret `APP_GH_TOKEN` (PAT read-only repo) để render apps.json.
+#   - Job `guest` cần runner CÓ KVM (Packer/QEMU accel=kvm, không fallback TCG).
+#
+# ── RUNNER CAPABILITY CAVEATS (infra) ─────────────────────────────────────────
+#   * job `guest` REQUIRES KVM. supplycore.pkr.hcl hardcodes accelerator="kvm"
+#     and smoke.sh uses `-accel kvm` with NO TCG fallback, so a stock hosted
+#     runner without nested virtualization makes this job FAIL OUTRIGHT (it does
+#     not degrade to slow TCG). Use a KVM-capable / nested-virt runner (e.g. a
+#     self-hosted/larger runner, or a cloud runner with nested virt enabled).
+#   * job `installer` `test-install` step: windows-latest lacks WHPX/nested-virt,
+#     so QEMU falls back to TCG (very slow). test-install.ps1 exits honestly
+#     (non-zero if localhost health can't be verified) — so that ONE step is
+#     `continue-on-error: true` to avoid failing the whole release on an
+#     un-accelerated runner, but its outcome is surfaced explicitly afterwards.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Image name fixed to the literal contract owner (mvl26): the saved tar MUST
+  # contain ghcr.io/mvl26/supplycore:latest or install.sh fails (contract #1).
+  IMAGE: ghcr.io/mvl26/supplycore
+  # Pinned frappe_docker ref — provides the build context (resources/core/*).
+  # Same values as .github/workflows/build-image.yml (build the SAME image).
+  FRAPPE_DOCKER_REF: 1e3d40fa65347209418e70a451d5b266e1a75b92
+  FRAPPE_BRANCH: version-15
+  PYTHON_VERSION: 3.11.9
+  NODE_VERSION: 18.20.4
+  # SC_VERSION for the .iss / OutputBaseFilename. On a tag this is vX.Y.Z; on a
+  # manual dispatch github.ref_name is a BRANCH (may contain '/'), which would
+  # produce an invalid filename — fall back to a dev version instead.
+  SC_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0-dev' }}
+
+jobs:
+  # ───────────────────────────── job: guest ──────────────────────────────────
+  guest:
+    name: Build disk0 (image -> Packer -> smoke)
+    # REQUIRES KVM (see header). ubuntu-latest works only if it offers nested
+    # virt; otherwise swap for a KVM-capable runner here.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout SupplyCore (at workspace root)
+        # Root checkout (NOT a subpath): Packer's file provisioner and smoke.sh
+        # use repo-root-relative paths (guest/, deploy/, supplycore-image.tar).
+        uses: actions/checkout@v4
+
+      - name: Checkout frappe_docker (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: frappe/frappe_docker
+          ref: ${{ env.FRAPPE_DOCKER_REF }}
+          path: frappe_docker
+
+      - name: Inject SupplyCore Containerfile
+        run: |
+          cp docker/Containerfile frappe_docker/images/custom/Containerfile
+
+      - name: Render apps.json (token via secret file)
+        run: |
+          sed "s|__TOKEN__|${{ secrets.APP_GH_TOKEN }}|" \
+            docker/apps.json.template > "${RUNNER_TEMP}/apps.json"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (load locally, amd64) — same as build-image.yml
+        uses: docker/build-push-action@v6
+        with:
+          context: frappe_docker
+          file: frappe_docker/images/custom/Containerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          # Tag with the LITERAL contract tag so the save below is digest-free.
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.SC_VERSION }}
+          secret-files: |
+            apps_json=${{ runner.temp }}/apps.json
+          build-args: |
+            FRAPPE_BRANCH=${{ env.FRAPPE_BRANCH }}
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+            NODE_VERSION=${{ env.NODE_VERSION }}
+            INSTALL_CHROMIUM=false
+
+      - name: Save image to tar (contract #1 — tagged, repo root)
+        # install.sh `docker load`s this and FAILS if it can't read a tag
+        # (digest-only save). Save the LITERAL tag; the HCL file-provisioner
+        # stages ./supplycore-image.tar from repo root.
+        run: |
+          docker tag ${{ env.IMAGE }}:latest ghcr.io/mvl26/supplycore:latest
+          docker save ghcr.io/mvl26/supplycore:latest -o supplycore-image.tar
+          ls -lh supplycore-image.tar
+
+      - name: Install Packer + QEMU + genisoimage
+        # qemu-system-x86 / qemu-utils: smoke.sh boots the VM + qemu-img.
+        # genisoimage: smoke.sh builds the cidata seed ISO.
+        run: |
+          set -euxo pipefail
+          wget -qO- https://apt.releases.hashicorp.com/gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
+            | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt-get update
+          sudo apt-get install -y packer qemu-system-x86 qemu-utils genisoimage
+          packer version
+          qemu-system-x86_64 --version
+
+      - name: Enable KVM access + diagnose
+        # GitHub-hosted ubuntu runner CÓ /dev/kvm nhưng quyền hạn chế → QEMU accel=kvm
+        # không khởi động ("Qemu failed to start"). Nới quyền /dev/kvm = 0666 (udev rule
+        # chuẩn dùng cho QEMU/Android-emulator trên Actions). Cũng in chẩn đoán để biết
+        # nếu runner KHÔNG có /dev/kvm (khi đó phải đổi sang larger/nested-virt runner).
+        run: |
+          set -x
+          egrep -c '(vmx|svm)' /proc/cpuinfo || echo "WARN: CPU không có cờ ảo hóa"
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm || true
+          ls -l /dev/kvm || echo "ERROR: /dev/kvm KHÔNG tồn tại trên runner này"
+
+      - name: Packer init
+        run: packer init guest/packer/
+
+      - name: Packer build disk0 (from repo ROOT)
+        # ubuntu_image: URL bản RELEASE có ngày (cây releases/ giữ lâu hơn cây jammy/ daily).
+        #   Đã pin release-20260515 + SHA256 thật (verify 2026-06-15). NẾU 404 về sau →
+        #   mở https://cloud-images.ubuntu.com/releases/jammy/ chọn release-YYYYMMDD hiện có,
+        #   sửa ngày ở URL + lấy lại sha256 dòng 'ubuntu-22.04-server-cloudimg-amd64.img'
+        #   trong .../release-<ngày>/SHA256SUMS.
+        env:
+          PACKER_LOG: "1"   # log chi tiết nếu QEMU vẫn không lên (để debug tiếp)
+        run: |
+          packer build \
+            -var ubuntu_image=https://cloud-images.ubuntu.com/releases/jammy/release-20260515/ubuntu-22.04-server-cloudimg-amd64.img \
+            -var ubuntu_image_sha256=f6729b53d930d7f0c6691eb553cfa6be7109de9412125bf1bf2dc6747de8a44d \
+            guest/packer/supplycore.pkr.hcl
+
+      - name: Compress disk0 (qcow2 zlib) — giảm kích thước .exe
+        # qcow2 từ Packer KHÔNG nén → rất to. convert -c nén zlib (giảm ~40-60%).
+        # Smoke + production vẫn boot read-write được trên qcow2 nén (đọc giải nén,
+        # ghi cluster mới không nén). Nén TRƯỚC smoke để smoke kiểm chính ảnh sẽ ship.
+        run: |
+          set -euxo pipefail
+          qemu-img convert -O qcow2 -c output-disk0/disk0.qcow2 output-disk0/disk0-c.qcow2
+          mv -f output-disk0/disk0-c.qcow2 output-disk0/disk0.qcow2
+          ls -lh output-disk0/disk0.qcow2
+
+      - name: Smoke test (two-phase disk1-persistence gate, from repo ROOT)
+        run: bash guest/packer/smoke.sh
+
+      - name: Upload disk0 artifact
+        # HCL: output_directory="output-disk0", vm_name="disk0.qcow2".
+        # Single file -> artifact contains disk0.qcow2 at its root.
+        uses: actions/upload-artifact@v4
+        with:
+          name: disk0
+          path: output-disk0/disk0.qcow2
+          if-no-files-found: error
+          retention-days: 7
+
+  # ─────────────────────────── job: installer ────────────────────────────────
+  installer:
+    name: Build .exe (deps -> Pester -> Inno -> test-install -> release)
+    needs: guest
+    runs-on: windows-latest
+    permissions:
+      contents: write # softprops/action-gh-release needs write to publish.
+    steps:
+      - name: Checkout SupplyCore
+        uses: actions/checkout@v4
+
+      - name: Download disk0 artifact into dist\
+        # -> dist\disk0.qcow2, which installer\supplycore.iss [Files] expects.
+        uses: actions/download-artifact@v4
+        with:
+          name: disk0
+          path: dist
+
+      - name: Fetch pinned Windows build deps (QEMU / WinSW)
+        # Produces dist\qemu\*, dist\WinSW.exe. FAILS LOUDLY if any <<PIN-...>>
+        # in fetch-deps.ps1 is still a placeholder. (No ISO builder: make-data.ps1
+        # uses IMAPI2FS — a COM API built into Windows — for the cidata seed ISO.)
+        shell: pwsh
+        run: pwsh installer/ci/fetch-deps.ps1
+
+      - name: Run Pester (launcher unit tests)
+        # Discovers *.Tests.ps1 recursively (the .bats files are ignored).
+        # -CI => fail-on-error + non-zero exit on any failing test.
+        shell: pwsh
+        run: Invoke-Pester -Path tests/installer/ -CI
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile installer (Inno Setup)
+        # SC_VERSION drives AppVersion + OutputBaseFilename (.iss falls back to
+        # 0.0.0-dev if unset). Với SourceDir={#SourcePath}\.. (repo root) trong .iss,
+        # Output mặc định ở <repo-root>\Output\; bước release tìm .exe đệ quy nên không lệ thuộc.
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DSC_VERSION=${env:SC_VERSION}" installer\supplycore.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed (exit $LASTEXITCODE)." }
+
+      - name: Locate built installer
+        id: setup
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path . -Recurse -Filter 'SupplyCore-Setup-*.exe' -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime | Select-Object -Last 1
+          if (-not $exe) { throw "No SupplyCore-Setup-*.exe produced by ISCC." }
+          Write-Host "Installer: $($exe.FullName)"
+          "exe=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Checksum (SHA256)
+        shell: pwsh
+        run: |
+          $exe = '${{ steps.setup.outputs.exe }}'
+          $hash = (Get-FileHash -Path $exe -Algorithm SHA256).Hash
+          $name = Split-Path $exe -Leaf
+          $line = "$hash  $name"
+          $out  = Join-Path (Split-Path $exe -Parent) 'SHA256.txt'
+          $line | Out-File -FilePath $out -Encoding ascii
+          Write-Host $line
+          "sha256txt=$out" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        id: checksum
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: |
+            ${{ steps.setup.outputs.exe }}
+            ${{ steps.checksum.outputs.sha256txt }}
+          if-no-files-found: error
+
+      - name: Decide Release assets (GitHub giới hạn 2 GiB/file)
+        id: relassets
+        shell: pwsh
+        run: |
+          $exe = '${{ steps.setup.outputs.exe }}'
+          $sha = '${{ steps.checksum.outputs.sha256txt }}'
+          $sz  = (Get-Item $exe).Length
+          $limit = 2147483648
+          if ($sz -lt $limit) {
+            $files = "$exe`n$sha"
+            $note  = "Đính kèm: SupplyCore-Setup + SHA256.txt."
+            Write-Host "exe $([math]::Round($sz/1MB)) MB < 2 GiB → đính kèm .exe vào Release."
+          } else {
+            $files = "$sha"
+            $note  = "⚠️ .exe = $([math]::Round($sz/1MB)) MB > 2 GiB (vượt giới hạn GitHub Release). Tải .exe từ **Actions → run này → Artifacts → installer**. Chỉ SHA256.txt đính ở đây."
+            Write-Warning "exe $([math]::Round($sz/1MB)) MB >= 2 GiB → KHÔNG đính .exe (Release chỉ có SHA256 + ghi chú)."
+          }
+          "files<<EOF`n$files`nEOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "note=$note"            | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Publish Release (tags only)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.relassets.outputs.note }}
+          files: ${{ steps.relassets.outputs.files }}
+          fail_on_unmatched_files: true
+
+      # ── test-install chạy CUỐI + có timeout (KHÔNG chặn release) ────────────────
+      # windows-latest KHÔNG có WHPX/nested-virt → installer ssPostInstall chạy
+      # wait-healthy chờ VM (TCG) rất lâu, có thể treo. Đặt timeout-minutes để bước
+      # tự bị kill thay vì treo tới job-timeout 6h. Release đã publish ở trên rồi nên
+      # kết quả bước này KHÔNG ảnh hưởng file .exe. (App đã được kiểm thật ở job `guest`/KVM.)
+      - name: Test install (bonus smoke; KHÔNG chặn release; TCG trên hosted runner)
+        id: testinstall
+        continue-on-error: true
+        timeout-minutes: 20
+        shell: pwsh
+        run: pwsh installer/ci/test-install.ps1
+
+      - name: Surface test-install result
+        if: always()
+        shell: pwsh
+        run: |
+          if ('${{ steps.testinstall.outcome }}' -eq 'success') {
+            Write-Host "test-install: PASS (install + service Running + health 200 + clean uninstall)."
+          } else {
+            Write-Warning "test-install: KHÔNG pass đầy đủ (hosted runner thiếu WHPX → QEMU TCG không kịp 200, hoặc bị timeout 20'). KHÔNG ảnh hưởng release — .exe đã publish; app đã verify ở job guest/KVM. Cần xác minh end-to-end trên máy/runner có WHPX."
+          }

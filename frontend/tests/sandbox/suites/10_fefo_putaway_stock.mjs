@@ -79,21 +79,6 @@ export const tests = [
     },
   },
   {
-    name: 'PD detail có FefoPickGuide visible',
-    run: async ({ page, BASE, OUT, name }) => {
-      const pds = await apiGetList(page, 'SC Patient Dispensing',
-        { fields: ['name'], filters: { docstatus: 1 }, limit: 1 })
-      if (!pds.length) return { ok: false, detail: 'No PD' }
-      await navigateTo(page, BASE, `/doc/SC%20Patient%20Dispensing/${encodeURIComponent(pds[0].name)}`)
-      await page.waitForTimeout(2500)
-      await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
-      const guide = await page.locator('text=Hướng dẫn lấy hàng').count()
-      return guide >= 1
-        ? { ok: true, detail: `PD ${pds[0].name}: FEFO guide visible` }
-        : { ok: false, detail: 'No FEFO panel' }
-    },
-  },
-  {
     name: 'TR new form có WarehouseStockPanel',
     run: async ({ page, BASE, OUT, name }) => {
       // List TR with from_warehouse set

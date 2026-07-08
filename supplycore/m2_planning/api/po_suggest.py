@@ -19,6 +19,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, today, getdate, add_days
 
+from supplycore.utils.permissions import block_portal
+
 
 @frappe.whitelist()
 def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
@@ -35,6 +37,7 @@ def suggest_po_from_mr(mr_name: str, auto_create: int = 0) -> dict:
           "created_pos": ["SC-PO-...", ...]
         }
     """
+    block_portal()
     mr = frappe.get_doc("SC Material Request", mr_name)
     if mr.docstatus != 1:
         frappe.throw(_("MR {0} chưa submit").format(mr_name), title="SC-E-MR")
@@ -246,4 +249,5 @@ def _create_draft_po(mr, supplier: str, fc: str, items: list) -> str:
 @frappe.whitelist()
 def get_po_suggestion_preview(mr_name: str) -> dict:
     """Alias không auto-create — UI hiển thị preview."""
+    block_portal()
     return suggest_po_from_mr(mr_name, auto_create=0)

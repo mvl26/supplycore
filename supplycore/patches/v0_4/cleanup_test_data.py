@@ -1,12 +1,11 @@
-"""QA-BUG-M11-01 + M5-01 + M7-02 + M5-02: Cleanup test data trong production.
+"""QA-BUG-M11-01 + M5-01 + M5-02: Cleanup test data trong production.
 
 Xóa hoặc disable:
   - SC Alert có title chứa '[TEST]' hoặc '%UAT%'
   - SC Batch test ('asdasd', 'TEST-BC-*')
-  - SC Patient có 'UAT-DOC' / 'UAT %' trong tên (disable, không xóa vì có dispense history)
   - Rename SC Batch có '/' trong batch_id thành dấu '-'
 
-Idempotent. KHÔNG xóa data có sub-document (SLE/PD) liên kết — chỉ disable.
+Idempotent. KHÔNG xóa data có sub-document (SLE) liên kết — chỉ disable.
 """
 
 import frappe
@@ -46,17 +45,7 @@ def execute():
                 pass
     print(f"  ✓ Disable/xóa {disabled_batch} test batch")
 
-    # 3. Disable test patients (UAT-DOC, BN-DOC-*)
-    test_patients = frappe.db.sql("""
-        SELECT name FROM `tabSC Patient`
-        WHERE patient_name LIKE '%UAT-DOC%' OR patient_name LIKE 'UAT %'
-           OR name LIKE 'BN-DOC-%'
-    """, as_dict=True)
-    for p in test_patients:
-        frappe.db.set_value("SC Patient", p.name, "disabled", 1, update_modified=False)
-    print(f"  ✓ Disable {len(test_patients)} test patient")
-
-    # 4. Rename batch_id có '/' (lo/19/05/2026) → lo-19-05-2026.
+    # 3. Rename batch_id có '/' (lo/19/05/2026) → lo-19-05-2026.
     # SC Batch không allow_rename → fallback SQL trực tiếp (cập nhật name +
     # batch_id + cascade FK trong SLE/PR Item/etc.). Idempotent.
     slash_batches = frappe.db.sql("""
@@ -78,7 +67,6 @@ def execute():
                 ("tabSC Stock Ledger Entry", "batch"),
                 ("tabSC Purchase Receipt Item", "batch_no"),
                 ("tabSC Stock Entry Item", "batch"),
-                ("tabSC Patient Dispensing Item", "batch"),
                 ("tabSC Transfer Request Item", "batch"),
                 ("tabSC Quality Inspection", "batch"),
                 ("tabSC Recall Notice", "batch_no"),
@@ -96,4 +84,4 @@ def execute():
 
     frappe.db.commit()
     print(f"QA cleanup: alerts={len(test_alerts)}, batches={disabled_batch}, "
-          f"patients={len(test_patients)}, renamed={renamed}")
+          f"renamed={renamed}")

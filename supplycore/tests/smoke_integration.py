@@ -81,11 +81,21 @@ def run():
     mr.append("items", {
         "item": item, "qty": 50, "uom": item_uom,
         "schedule_date": add_days(today(), 7),
+        # SC-E023 ZERO_MR_COST (QAv3-BUG-M2-06): MR Purchase phải có đơn giá ước
+        # tính > 0. Link framework_contract để validate() auto-fetch fc_price
+        # (mirror flow thật: user chọn HĐ khung khi lập MR).
+        "framework_contract": fc.name,
     })
     mr.flags.ignore_permissions = True
     mr.insert(); mr.submit()
-    results.append({"step": "2. MR submit",
+    # UC-07 (d75f902): submit → Pending (chờ duyệt), KHÔNG auto-approve. Cần
+    # approve() riêng trước khi create_purchase_orders() (SC-E-MR-NOT-APPROVED).
+    mr.reload()
+    mr.approve()
+    mr.reload()
+    results.append({"step": "2. MR submit + approve",
                     "mr": mr.name, "status": mr.status, "items": len(mr.items)})
+    assert mr.status == "Approved", f"MR status={mr.status} (mong Approved)"
 
     # === Step 3: create_purchase_orders → draft PO ===
     out = mr.create_purchase_orders()

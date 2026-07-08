@@ -71,7 +71,7 @@ FC_DATASET = [
     # 9. TBYT Hồng Hà — bông + gạc, sắp hết hạn (≤30 ngày) để test cờ expiring_soon
     ("HD-2026-HHA-009", "SC-SUP-03160",
      add_days(today(), -340), add_days(today(), 25),
-     "Net 30", "Giao tận Kho Khoa Dược, lead time 3 ngày", "Thường quy",
+     "Net 30", "Giao tận Kho Giao hàng, lead time 3 ngày", "Thường quy",
      [("VTTH-COTTON", 1500, 18000), ("VTTH-GAUZE-5", 2000, 9500)]),
 
     # 10. Roche Diagnostics — bộ truyền + sát trùng

@@ -150,29 +150,6 @@ class SCAlert(Document):
         return {"po": po.name, "url": f"/app/sc-purchase-order/{po.name}"}
 
     @frappe.whitelist()
-    def action_priority_dispense(self, note: str = None):
-        """expiring_batch → đánh dấu batch cần ưu tiên cấp phát.
-        Hiện tại: ghi vào remarks + resolution_action=Acted Upon.
-        Future: set batch.priority_pickup=1 khi field tồn tại."""
-        if self.alert_type != "expiring_batch":
-            frappe.throw(_("Action chỉ áp dụng cho expiring_batch"))
-        if self.resolved:
-            frappe.throw(_("SC-E-ALERT-RESOLVED"))
-        remark = f"Đã đánh dấu ưu tiên cấp phát batch {self.reference_name}"
-        if note:
-            remark += f": {note}"
-        new_remarks = (self.remarks or "") + f"\n[{now()}] {remark}"
-        self.db_set({
-            "remarks": new_remarks.strip(),
-            "resolved": 1,
-            "resolution_action": "Acted Upon",
-            "resolved_by": frappe.session.user
-                if frappe.session.user not in (None, "", "Guest") else "Administrator",
-            "resolved_at": now(),
-        })
-        return {"batch": self.reference_name, "priority": True}
-
-    @frappe.whitelist()
     def action_contact_supplier(self, message: str = None):
         """Gửi email contact tới supplier liên quan."""
         # Resolve supplier theo reference type

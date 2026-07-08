@@ -29,6 +29,7 @@
   "section_total",
   "total_qty",
   "section_other",
+  "import_source",
   "remarks",
   "amended_from"
  ],
@@ -182,6 +183,15 @@
    "collapsible": 1
   },
   {
+   "fieldname": "import_source",
+   "fieldtype": "Select",
+   "options": "Manual",
+   "label": "Nguồn phiếu",
+   "default": "Manual",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Ghi chú"
@@ -237,21 +247,6 @@
    "submit": 1,
    "report": 1,
    "print": 1
-  },
-  {
-   "role": "SupplyCore Ward Staff",
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "submit": 1,
-   "report": 1
-  },
-  {
-   "role": "Pharmacy Officer",
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "report": 1
   },
   {
    "role": "SupplyCore Accountant",

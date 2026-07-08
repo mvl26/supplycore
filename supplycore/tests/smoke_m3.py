@@ -37,6 +37,7 @@ def run():
     pr.posting_date = today()
     pr.to_warehouse = warehouse
     pr.qc_required = 1
+    pr.no_po_reason = "Smoke test M3 - nhận hàng không qua PO"
     pr.append("items", {
         "item": item_code, "qty": 100, "uom": item_uom,
         "rate": 30000, "warehouse": warehouse,

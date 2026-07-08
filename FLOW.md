@@ -29,10 +29,10 @@ flowchart TD
         BATCH[SC Batch + FEFO]
     end
 
-    subgraph "M6+M7 Phát hàng"
-        TR[SC Transfer Request<br/>kho→khoa]
-        DR[SC Dispensing Request<br/>+ Patient Dispensing]
-        BHYT[BHYT calc N01-N09]
+    subgraph "M6+M7 Bán hàng"
+        TR[SC Transfer Request<br/>kho→kho phòng ban]
+        SO[SC Sales Order<br/>+ Delivery Note]
+        SI[SC Sales Invoice<br/>+ Sales Receipt]
     end
 
     subgraph "M8 Kế toán"
@@ -63,8 +63,8 @@ flowchart TD
     PR -->|create batch| BATCH
     BATCH --> SLE
     SLE -->|FEFO sort| TR
-    SLE -->|FEFO sort| DR
-    DR -->|qty × ceiling × rate| BHYT
+    SLE -->|FEFO sort| SO
+    SO -->|deliver| SI
     PI -->|on_submit| GL
     PI -->|on_submit| PE
     PE -->|on_submit| GL
@@ -128,30 +128,28 @@ flowchart TD
 **Verified bởi `tests/smoke_integration.py`** — chạy thực tế chain 8 bước.
 GL Σ Dr = Σ Cr = 55, 3-way match = "Match".
 
-## Stock issue chain (Khoa→Bệnh nhân, FEFO + BHYT)
+## Stock issue chain (Kho→Khách hàng, FEFO — bán hàng)
 
 ```
-[1] Khoa Nội tạo Transfer Request (qty=10 mặt hàng X từ Kho Tổng)
+[1] Phòng Kho vận tạo Transfer Request (qty=10 mặt hàng X từ Kho Tổng)
     → TR validate from≠to, both not group
     → submit → status=Approved
 
 [2] SK click "Tạo SE" trên TR
     → TR.make_stock_entry(): SE Material Transfer draft
     → SK chọn batch (FEFO suggest qua API)
-    → submit SE → 2 SLE rows: -qty Kho Tổng / +qty Kho Khoa
+    → submit SE → 2 SLE rows: -qty Kho Tổng / +qty Kho phòng ban
     → TR.status=Received
 
-[3] BS đặt thuốc cho bệnh nhân BHYT (Khoa tạo Dispensing Request)
-    → DR submit → status=Approved
-    → Pharmacy/SK tạo SE Issue (FEFO)
-    → tạo Patient Dispensing
-    → BHYT calc:
-        cfg = SC BHYT Code Config (priority: item-spec > group > fallback)
-        effective_rate = min(cfg.payment_rate, patient.bhyt_payment_rate)
-        cap = min(unit_cost, cfg.ceiling_price)
-        bhyt_amount = qty × cap × effective_rate / 100
-        patient_pays = total_cost - bhyt_amount
-    → submit PD → SLE (-qty) + ghi nhận hồ sơ BN
+[3] Nhân viên kinh doanh tạo Sales Order cho khách hàng (theo HĐ khung bán)
+    → SO submit → status=Approved
+    → SK tạo Delivery Note (FEFO pick batch) → SLE (-qty)
+    → tạo Sales Invoice từ DN:
+        Dr 131 Phải thu KH (party=customer)   grand_total
+           Cr 511 Doanh thu bán hàng            total_amount
+           Cr 3331 Thuế GTGT phải nộp           tax_amount
+        Dr 632 Giá vốn hàng bán / Cr 156 Hàng hóa (COGS theo giá vốn FEFO)
+    → khách thanh toán → Sales Receipt → Dr 1121/Cr 131, SI.outstanding giảm
 ```
 
 ## Recall + Trace (M10) — đóng vòng audit
@@ -159,17 +157,16 @@ GL Σ Dr = Σ Cr = 55, 3-way match = "Match".
 ```
 [1] BYT thông báo lô X bị thu hồi → SK/QC tạo SC Recall Notice
     → input: batch_no, recall_reason, severity (Class I/II/III), recall_type
-    → click "Populate Affected Items" → quét SLE + PD Item:
+    → click "Populate Affected Items" → quét SLE:
        - location warehouse: tồn còn ở từng kho
-       - location patient: bệnh nhân đã dùng (PD)
-       - location department: stock đã chuyển khoa (TR)
+       - location department: stock đã chuyển phòng ban (TR)
 
 [2] Submit Recall
     → SC Batch.blocked = 1 + block_reason ghi tên Recall
     → từ giờ mọi SE Issue/Transfer dùng batch này → SC-E008 BATCH_RECALLED
     → status = Issued
 
-[3] Khoa/Patient trả hàng → SK update affected_items.recovered_qty
+[3] Phòng ban/Khách hàng trả hàng → SK update affected_items.recovered_qty
 [4] Outstanding=0 → Recall.status = Completed
 ```
 
@@ -194,7 +191,7 @@ Sau action: `action_taken=1`, link đến doc đã tạo, alert auto-resolve.
 - M2: forecast generation (cần ML/trend) — `generate_procurement_forecast` placeholder
 - M4: PDA offline IndexedDB sync
 - M11: Frontend Workspace + Number Cards (Phase 3 mockup) — backend đã ready
-- M7: BHYT settlement report (báo cáo thanh quyết toán theo period)
+- M7: AR aging report theo khách hàng (báo cáo công nợ phải thu theo period)
 - M6/M9: Multi-level approval workflows (Frappe Workflow config)
 - M3: Auto-create Return PR khi QI Rejected (schema đã ready)
 - ~~M11→M6: low_stock alert auto-create Transfer Request~~ ✅ slice 2 (alert→MR thay vì TR; xem section "Alert + KPI" phía trên)

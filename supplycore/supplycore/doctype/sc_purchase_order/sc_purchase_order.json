@@ -166,6 +166,7 @@
   {
    "fieldname": "grand_total",
    "fieldtype": "Currency",
+   "precision": "0",
    "options": "VND",
    "label": "Tổng giá trị",
    "read_only": 1,

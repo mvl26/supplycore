@@ -52,8 +52,8 @@
   {"fieldname": "items", "fieldtype": "Table", "options": "Procurement Plan Item", "label": "Items"},
 
   {"fieldname": "section_total", "fieldtype": "Section Break", "label": "Tổng hợp"},
-  {"fieldname": "budget", "fieldtype": "Currency", "label": "Ngân sách dự kiến", "options": "VND", "non_negative": 1, "description": "Để 0 nếu không kiểm soát ngân sách"},
-  {"fieldname": "total_estimated_cost", "fieldtype": "Currency", "label": "Tổng chi phí ước tính", "options": "VND", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "budget", "fieldtype": "Currency", "precision": "0", "label": "Ngân sách dự kiến", "options": "VND", "non_negative": 1, "description": "Để 0 nếu không kiểm soát ngân sách"},
+  {"fieldname": "total_estimated_cost", "fieldtype": "Currency", "precision": "0", "label": "Tổng chi phí ước tính", "options": "VND", "read_only": 1, "in_list_view": 1},
   {"fieldname": "budget_acknowledged", "fieldtype": "Check", "label": "Xác nhận vượt ngân sách", "default": "0", "depends_on": "eval:doc.budget>0 && doc.total_estimated_cost>doc.budget", "description": "Bắt buộc tick nếu total vượt budget mới được submit"},
   {"fieldname": "column_break_3", "fieldtype": "Column Break"},
   {"fieldname": "status", "fieldtype": "Select", "options": "Draft\nApproved\nGenerated\nCancelled", "label": "Trạng thái", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},

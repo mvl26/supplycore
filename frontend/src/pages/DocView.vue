@@ -1,15 +1,15 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, call } from '../api'
 import { DT } from '../modules'
-import { FORM_SCHEMAS } from '../schemas'
+import { FORM_SCHEMAS, QUICK_CREATE } from '../schemas'
+import QuickCreateModal from '../components/QuickCreateModal.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
 import ActionPanel from '../components/ActionPanel.vue'
 import DocForm from '../components/DocForm.vue'
 import RelatedDocs from '../components/RelatedDocs.vue'
-import FefoPickGuide from '../components/FefoPickGuide.vue'
 import WarehouseStockPanel from '../components/WarehouseStockPanel.vue'
 import FetchUpstream from '../components/FetchUpstream.vue'
 import RecallRecoveryPanel from '../components/RecallRecoveryPanel.vue'
@@ -18,11 +18,12 @@ import IcsSummaryPanel from '../components/IcsSummaryPanel.vue'
 import IrScopePanel from '../components/IrScopePanel.vue'
 import RouteGuidePanel from '../components/RouteGuidePanel.vue'
 import BarcodeDisplay from '../components/BarcodeDisplay.vue'
+import FefoPickGuide from '../components/FefoPickGuide.vue'
 import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
 import DetailViewGeneric from '../components/DetailViewGeneric.vue'
 import { DETAIL_CONFIGS } from '../detail-configs'
 import { useToastStore } from '../stores/toast'
-import { fmtDateTime, fmtNumber } from '../utils'
+import { fmtDate, fmtDateTime, fmtNumber, today } from '../utils'
 import { statusLabel, isSubmittable } from '../modules'
 import { fieldLabel } from '../i18n'
 
@@ -40,17 +41,28 @@ const doc = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const editing = ref(false)
+// L16: theo dõi thay đổi chưa lưu — chỉ hiện "Gửi duyệt" khi đã Lưu (sạch).
+const dirty = ref(false)
+watch(() => doc.value, () => { dirty.value = true })
+async function markClean() { await nextTick(); dirty.value = false }
+const batchItemName = ref('')   // tên vật tư của lô (fetch để in lên nhãn)
 const docFormRef = ref(null)  // expose validate() từ DocForm để highlight field thiếu
 
 const LINK_PENDING_KEY = 'sc-link-create-pending'
 const LINK_RESULT_KEY  = 'sc-link-create-result'
+
+// CR-03: state cho modal "Tạo nhanh" (không rời trang).
+// target xác định nơi điền kết quả: top-level field hoặc dòng child.
+const quickCreate = ref(null)  // { doctype, prefill, target: { childField?, rowIdx?, fieldName } }
 
 async function load() {
   if (isNew.value) {
     // Init empty doc with defaults; childtable empty array
     doc.value = { doctype: doctype.value, docstatus: 0 }
     if (schema.value?.items) {
-      doc.value[schema.value.items.field] = []
+      // Seed dòng mặc định nếu schema khai báo (vd QC: hiện sẵn 5 dòng tiêu chí trống)
+      const dr = schema.value.items.defaultRows
+      doc.value[schema.value.items.field] = Array.isArray(dr) ? dr.map(r => ({ ...r })) : []
     }
     editing.value = true
     // Nếu đang trong vòng round-trip "+ Tạo mới Link" → prefill từ doc gốc
@@ -65,6 +77,26 @@ async function load() {
   loading.value = true
   try {
     doc.value = await getDoc(doctype.value, name.value)
+    // QC nháp (docstatus 0) chưa có dòng tiêu chí → seed sẵn 5 dòng mẫu trống để KCS điền.
+    // Chỉ áp dụng cho bản nháp & khi bảng đang rỗng (không chèn vào phiếu đã chốt/đã có dòng).
+    {
+      const sItems = schema.value?.items
+      const dr = sItems?.defaultRows
+      if (Array.isArray(dr) && doc.value?.docstatus === 0
+          && (!doc.value[sItems.field] || doc.value[sItems.field].length === 0)) {
+        doc.value[sItems.field] = dr.map(r => ({ ...r }))
+      }
+    }
+    // Lô: lấy tên vật tư (item_name) để in lên nhãn 50×30mm
+    batchItemName.value = ''
+    if (doctype.value === 'SC Batch' && doc.value?.item) {
+      try {
+        const r = await call('frappe.client.get_value', {
+          doctype: 'SC Item', filters: { name: doc.value.item }, fieldname: 'item_name',
+        })
+        batchItemName.value = r?.item_name || ''
+      } catch (e) {}
+    }
     // Auto-edit khi draft → user khỏi phải bấm "Sửa"
     // Trừ khi đã duyệt 3-tier (approval_stage=Approved) → khoá sửa
     editing.value = doc.value.docstatus === 0
@@ -80,6 +112,7 @@ async function load() {
         toast.success(`Đã chọn ${result.field}: ${result.newName}`)
       }
     } catch (e) {}
+    await markClean()
   } catch (e) {
     toast.error(`Không tải được: ${e.message}`)
     doc.value = null
@@ -88,19 +121,59 @@ async function load() {
   }
 }
 
+// Đặt lại form (chỉ ở chế độ tạo mới): xoá hết dữ liệu user nhập, đưa phiếu về
+// trạng thái mới tinh (áp lại default như today). Dùng để chọn lại HĐ khung/NCC
+// khi PO đã bị khoá theo framework_contract.
+function resetForm() {
+  if (!isNew.value) return
+  const filled = Object.keys(doc.value || {}).filter(
+    k => !['doctype', 'docstatus'].includes(k)
+      && doc.value[k] != null && doc.value[k] !== ''
+      && !(Array.isArray(doc.value[k]) && doc.value[k].length === 0)
+  )
+  if (filled.length && !confirm('Đặt lại phiếu? Mọi thông tin đã nhập sẽ bị xoá về trắng.')) return
+  const fresh = { doctype: doctype.value, docstatus: 0 }
+  if (schema.value?.items) fresh[schema.value.items.field] = []
+  for (const sec of (schema.value?.sections || [])) {
+    for (const f of (sec.fields || [])) {
+      if (f.default !== undefined) fresh[f.name] = f.default === 'today' ? today() : f.default
+    }
+  }
+  doc.value = fresh
+  try { sessionStorage.removeItem(LINK_PENDING_KEY) } catch (e) {}
+  toast.success('Đã đặt lại phiếu')
+}
+
 // Khi user bấm "+ Tạo mới" trên Link field → lưu state rồi navigate sang form new
 // payload có thể là { field, search } (từ LinkAutocomplete khi không có kết quả)
 async function onCreateNewLink(payload) {
   const field = payload?.field || payload
   const searchText = payload?.search || ''
   if (!field?.linkTo) return
+
+  // CR-03: nếu doctype hỗ trợ quick-create → mở MODAL ngay (không rời trang).
+  const qc = QUICK_CREATE[field.linkTo]
+  if (qc) {
+    const prefill = {}
+    if (searchText && qc.prefillField) prefill[qc.prefillField] = searchText
+    quickCreate.value = {
+      doctype: field.linkTo,
+      prefill,
+      target: (payload && payload.childField != null)
+        ? { childField: payload.childField, rowIdx: payload.rowIdx, fieldName: field.name }
+        : { fieldName: field.name },
+    }
+    return
+  }
+
+  // Fallback (doctype chưa hỗ trợ quick-create, vd SC Batch): điều hướng + prefill cũ.
   const prefill = {}
   // UX-004: pre-fill tên/mã từ text user đã gõ trong dropdown search.
   // Map per-doctype field name chính (vd Item Group dùng group_name).
   const NAME_FIELD = {
     'SC Item Group': 'group_name', 'SC UOM': 'uom_name', 'SC Supplier': 'supplier_name',
     'SC Warehouse': 'warehouse_name', 'SC Department': 'department_name',
-    'SC Item': 'item_name', 'SC Patient': 'patient_name',
+    'SC Item': 'item_name',
     'SC GL Account': 'account_name',
   }
   if (searchText && NAME_FIELD[field.linkTo]) {
@@ -130,6 +203,50 @@ async function onCreateNewLink(payload) {
     prefill,
   }))
   router.push(`/doc/${encodeURIComponent(field.linkTo)}/new`)
+}
+
+// CR-03: bản ghi vừa tạo nhanh → tự điền vào đúng trường (top-level hoặc dòng
+// child) + tự điền các cột phụ fetchFrom (vd item_name, supplier_name) ngay từ
+// doc vừa tạo (đã có đủ field), không cần round-trip thêm.
+function onQuickCreated({ name, doc: created }) {
+  const qc = quickCreate.value
+  quickCreate.value = null
+  if (!qc || !name || !doc.value) return
+  const t = qc.target
+  if (t.childField != null) {
+    // Child: cột nào có fetchFrom.source === field vừa set → lấy target_field từ doc mới
+    const cols = schema.value?.items?.columns || []
+    const companions = {}
+    for (const c of cols) {
+      if (c.fetchFrom && c.fetchFrom.source === t.fieldName) {
+        const v = created?.[c.fetchFrom.target_field]
+        if (v != null) companions[c.name] = v
+      }
+    }
+    const arr = Array.isArray(doc.value[t.childField]) ? [...doc.value[t.childField]] : []
+    if (arr[t.rowIdx]) {
+      arr[t.rowIdx] = { ...arr[t.rowIdx], [t.fieldName]: name, ...companions }
+      doc.value = { ...doc.value, [t.childField]: arr }
+    }
+  } else {
+    // Top-level: field vừa set tự khai fetchFrom → set doc[target_field]
+    const companions = {}
+    const f = findHeaderField(t.fieldName)
+    if (f?.fetchFrom) {
+      const v = created?.[f.fetchFrom.target_field]
+      if (v != null) companions[f.fetchFrom.target_field] = v
+    }
+    doc.value = { ...doc.value, [t.fieldName]: name, ...companions }
+  }
+}
+
+function findHeaderField(fieldName) {
+  for (const sec of (schema.value?.sections || [])) {
+    for (const f of (sec.fields || [])) {
+      if (f.name === fieldName) return f
+    }
+  }
+  return null
 }
 
 watch(() => route.fullPath, load)
@@ -276,7 +393,7 @@ function changeSummary(v) {
   return `${labels.length} thay đổi — ${shown}${more}`
 }
 function fmtLogTime(s) {
-  try { return new Date(s).toLocaleString('vi-VN') } catch (e) { return s }
+  try { return fmtDateTime(s) } catch (e) { return s }
 }
 
 // === Barcode quét được (SC Batch / Bin Location) ===
@@ -286,9 +403,12 @@ const barcodeInfo = computed(() => {
   if (doctype.value === 'SC Batch') {
     const v = d.barcode || d.batch_id
     if (!v) return null
-    return { value: v, title: `Lô: ${d.batch_id || d.name}`,
-             subtitle: [d.item, d.expiry_date ? `HSD: ${d.expiry_date}` : '']
-               .filter(Boolean).join(' · ') }
+    // Nhãn lô: mã vạch (kèm mã barcode) + tên vật tư + HSD
+    return {
+      value: v,
+      title: batchItemName.value || d.item || '',
+      subtitle: d.expiry_date ? `HSD: ${d.expiry_date}` : '',
+    }
   }
   if (doctype.value === 'Bin Location') {
     const v = d.barcode || d.bin_code
@@ -297,6 +417,34 @@ const barcodeInfo = computed(() => {
              subtitle: [d.warehouse, d.zone].filter(Boolean).join(' · ') }
   }
   return null
+})
+
+// === FEFO pick guide (UC-19) — hướng dẫn lấy hàng theo hạn dùng ===
+// Áp cho các phiếu xuất/giao/chuyển: mỗi dòng vật tư (có item + qty) tra 1 guide
+// theo kho nguồn. DN/SE dùng kho dòng hoặc kho nguồn header; TR dùng from_warehouse.
+const fefoLines = computed(() => {
+  const d = doc.value
+  if (!d || isNew.value) return []
+  const dt = doctype.value
+  let rows = null, headerWh = null, qtyField = 'qty', wantWarehouse = true
+  if (dt === 'SC Delivery Note') {
+    rows = d.items; headerWh = d.from_warehouse; qtyField = 'qty'
+  } else if (dt === 'SC Stock Entry' && d.entry_type === 'Material Issue') {
+    rows = d.items; headerWh = d.from_warehouse; qtyField = 'qty'
+  } else if (dt === 'SC Transfer Request') {
+    rows = d.items; headerWh = d.from_warehouse; qtyField = 'requested_qty'
+  } else {
+    return []
+  }
+  if (!Array.isArray(rows)) return []
+  const out = []
+  rows.forEach((r, idx) => {
+    const warehouse = r.warehouse || headerWh
+    const qty = Number(r[qtyField]) || 0
+    if (!r.item || !warehouse || qty <= 0) return
+    out.push({ key: `${idx}-${r.item}-${warehouse}`, item: r.item, warehouse, qty })
+  })
+  return out
 })
 
 function validateRequired() {
@@ -429,14 +577,14 @@ const STATUS_KEYS = new Set([
   'status', 'qc_status', 'overall_status', 'severity', 'request_type',
   'warehouse_type', 'department_type', 'count_type', 'recall_type',
   'investigation_type', 'variance_reason', 'payment_method',
-  'bhyt_type', 'entry_type', 'alert_type', 'approval_stage',
+  'entry_type', 'alert_type', 'approval_stage',
 ])
 
 function displayField(value, key) {
   if (value == null || value === '') return '—'
   if (typeof value === 'object') return JSON.stringify(value).slice(0, 100)
-  if (/_date$/.test(key) && value) return new Date(value).toLocaleDateString('vi-VN')
-  if (/_at$/.test(key) && value) return new Date(value).toLocaleString('vi-VN')
+  if (/_date$/.test(key) && value) return fmtDate(value)
+  if (/_at$/.test(key) && value) return fmtDateTime(value)
   if (STATUS_KEYS.has(key) && typeof value === 'string') return statusLabel(value, key)
   if (/value|amount|total|cost|rate/.test(key) && typeof value === 'number') {
     return fmtNumber(value)
@@ -466,6 +614,9 @@ function displayField(value, key) {
         <span v-if="statusBadge && !isNew" :class="['sc-badge', statusBadge.cls]">{{ statusBadge.text }}</span>
 
         <template v-if="isNew">
+          <button v-if="schema" @click="resetForm" :disabled="saving" class="sc-btn-secondary text-sm">
+            <Icon name="rotate-cw" :size="14" /> Đặt lại
+          </button>
           <button @click="save" :disabled="saving" class="sc-btn-primary text-sm">
             <template v-if="saving">Đang lưu...</template>
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
@@ -477,11 +628,13 @@ function displayField(value, key) {
             <template v-if="saving">Đang lưu...</template>
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
-          <button v-if="doc.docstatus === 0 && isSubmittable(doctype)" @click="doSubmit"
+          <button v-if="doc.docstatus === 0 && isSubmittable(doctype) && !dirty" @click="doSubmit"
             :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm"
             title="Gửi bản ghi vào quy trình duyệt. Sau khi gửi sẽ không sửa được trừ khi Huỷ duyệt.">
             <Icon name="upload" :size="14" /> Gửi duyệt
           </button>
+          <span v-else-if="doc.docstatus === 0 && isSubmittable(doctype) && dirty"
+            class="text-xs text-sc-text-muted self-center italic">Lưu để hiện nút Gửi duyệt</span>
         </template>
         <template v-else>
           <!-- Đã duyệt 3-tier nhưng chưa Submit → cho Submit kích hoạt -->
@@ -521,8 +674,13 @@ function displayField(value, key) {
     <IrScopePanel v-if="doctype === 'SC Investigation Report' && !isNew && doc?.name"
       :doc="doc" />
 
-    <!-- Bản đồ chỉ đường: Chuyển kho / Cấp phát / Vị trí lưu trữ -->
+    <!-- Bản đồ chỉ đường: Chuyển kho / Xuất kho / Vị trí lưu trữ -->
     <RouteGuidePanel v-if="!isNew && doc?.name" :doctype="doctype" :doc="doc" />
+
+    <!-- UC-19 FEFO: hướng dẫn lấy hàng theo hạn dùng cho phiếu xuất/giao/chuyển -->
+    <div v-if="fefoLines.length" class="mb-4">
+      <FefoPickGuide v-for="ln in fefoLines" :key="ln.key"
+        :item="ln.item" :warehouse="ln.warehouse" :qty-needed="ln.qty" /></div>
 
     <!-- Banner: HĐ đã duyệt 3-tier → khoá sửa -->
     <div v-if="approvalLocked"
@@ -540,10 +698,6 @@ function displayField(value, key) {
       :selectable="isNew || editing"
       :title="isNew || editing ? 'Chọn tồn kho nguồn — tích để điền vào bảng chi tiết' : 'Tồn kho nguồn'"
       @fill="onStockFill" />
-    <template v-if="doctype === 'SC Patient Dispensing' && doc.items?.length">
-      <FefoPickGuide v-for="(it, i) in doc.items.filter(it => it.item && it.warehouse && it.qty)"
-        :key="`fefo-${i}`" :item="it.item" :warehouse="it.warehouse" :qtyNeeded="it.qty" />
-    </template>
 
     <!-- New / Edit mode → DocForm -->
     <template v-if="isNew || editing">
@@ -554,6 +708,11 @@ function displayField(value, key) {
         <p class="text-sc-text-muted">Form schema chưa được định nghĩa cho {{ doctype }}.</p>
       </div>
     </template>
+
+    <!-- CR-03: modal Tạo nhanh bản ghi tham chiếu (NCC, Vật tư, Kho, Khoa…) -->
+    <QuickCreateModal v-if="quickCreate"
+      :doctype="quickCreate.doctype" :prefill="quickCreate.prefill"
+      @created="onQuickCreated" @close="quickCreate = null" />
 
     <!-- View mode (chỉ khi đã submit hoặc cancel — không phải draft) -->
     <template v-else>

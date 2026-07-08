@@ -153,6 +153,12 @@ h1, h2, h3, h4 { letter-spacing: -0.012em; }
   }
   .sc-table tbody tr:hover { @apply bg-sc-royal-50/60; }
   .sc-table tbody tr:last-child td { @apply border-b-0; }
+  /* Mobile: cột co theo nội dung + cuộn ngang (vuốt) thay vì dồn chữ xuống dòng.
+     Cần wrapper overflow-x-auto bao quanh <table class="sc-table">. Desktop giữ nguyên. */
+  @media (max-width: 640px) {
+    .sc-table thead th,
+    .sc-table tbody td { white-space: nowrap; padding-left: 0.625rem; padding-right: 0.625rem; }
+  }
 
   /* Recessed section / panel */
   .sc-panel {

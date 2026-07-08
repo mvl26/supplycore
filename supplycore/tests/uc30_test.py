@@ -144,35 +144,6 @@ def test_populate_affected_items_warehouse():
         return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
 
 
-def test_blocked_batch_rejects_patient_dispensing():
-    """PD với batch blocked → throw SC-E-RCL-BATCH-RECALLED."""
-    wh = _pick_warehouse()
-    item = _make_item("BLKPD")
-    batch = _make_batch(item.name)
-    _seed_sle(item.name, wh, batch.name, 100)
-    # Block batch trực tiếp
-    frappe.db.set_value("SC Batch", batch.name, {
-        "blocked": 1, "block_reason": "Recall test"
-    })
-    pd = frappe.new_doc("SC Patient Dispensing")
-    pd.dispensing_date = today()
-    pd.append("items", {"item": item.name, "batch": batch.name,
-                          "qty": 5, "unit_cost": 1000})
-    pd.flags.ignore_permissions = True
-    try:
-        pd.insert()  # validate sẽ throw
-        frappe.db.rollback()
-        return {"pass": False, "msg": "X PD inserted với batch blocked"}
-    except frappe.ValidationError as e:
-        frappe.db.rollback()
-        if "RCL-BATCH-RECALLED" in str(e):
-            return {"pass": True, "msg": "OK throw SC-E-RCL-BATCH-RECALLED"}
-        return {"pass": False, "msg": f"X wrong error: {str(e)[:120]}"}
-    except Exception as e:
-        frappe.db.rollback()
-        return {"pass": False, "msg": f"X threw: {type(e).__name__}: {str(e)[:120]}"}
-
-
 def test_blocked_batch_rejects_stock_entry():
     """SE Material Issue batch blocked → throw SC-E008 BATCH_RECALLED."""
     wh = _pick_warehouse()
@@ -316,56 +287,6 @@ def test_create_write_off():
         return {"pass": False, "msg": f"X threw: {str(e)[:200]}"}
 
 
-def test_notify_clinical_staff_marks_rows():
-    """PD-affected → notify → clinical_notified=1 + clinical_notified_at set."""
-    # Tạo affected_items dạng Patient thủ công (không cần PD thật)
-    wh = _pick_warehouse()
-    item = _make_item("CLIN")
-    batch = _make_batch(item.name)
-    _seed_sle(item.name, wh, batch.name, 100)
-    rn = _make_recall_notice(item.name, batch.name)
-    # Manual append patient row
-    rn.append("affected_items", {
-        "location_type": "Patient",
-        "voucher_type": "SC Patient Dispensing",
-        "voucher_no": "DUMMY-PD-001",
-        "qty_dispensed": 5,
-        "recovered_qty": 0,
-        "status": "Notified",
-    })
-    rn.save(ignore_permissions=True)
-    rn.submit()
-    try:
-        res = rn.notify_clinical_staff()
-        rn.reload()
-        frappe.db.rollback()
-        if res["notified"] == 1 and rn.clinical_notified_at:
-            return {"pass": True, "msg": f"OK notified={res['notified']}"}
-        return {"pass": False, "msg": f"X res={res} clinical_at={rn.clinical_notified_at}"}
-    except Exception as e:
-        frappe.db.rollback()
-        return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
-
-
-def test_audit_dispensings_in_period():
-    """audit_dispensings_in_period() → trả list có has_batch_link flag."""
-    wh = _pick_warehouse()
-    item = _make_item("AUDIT")
-    batch = _make_batch(item.name)
-    _seed_sle(item.name, wh, batch.name, 100)
-    rn = _make_recall_notice(item.name, batch.name)
-    try:
-        res = rn.audit_dispensings_in_period(
-            start_date=add_days(today(), -30), end_date=today())
-        frappe.db.rollback()
-        if "dispensings" in res and "count" in res and "period" in res:
-            return {"pass": True, "msg": f"OK structure (count={res['count']})"}
-        return {"pass": False, "msg": f"X missing keys: {list(res.keys())}"}
-    except Exception as e:
-        frappe.db.rollback()
-        return {"pass": False, "msg": f"X threw: {str(e)[:120]}"}
-
-
 def test_notify_departments_groups_by_dept():
     """notify_departments group rows theo department."""
     wh = _pick_warehouse()
@@ -380,7 +301,7 @@ def test_notify_departments_groups_by_dept():
     rn.append("affected_items", {
         "location_type": "Department", "department": dept,
         "voucher_type": "Manual", "voucher_no": "TEST",
-        "qty_dispensed": 10, "outstanding_qty": 10,
+        "qty_issued": 10, "outstanding_qty": 10,
         "status": "Notified",
     })
     rn.save(ignore_permissions=True)
@@ -401,14 +322,11 @@ def run():
         test_create_recall_notice_blocks_batch,
         test_cancel_recall_unblocks_batch,
         test_populate_affected_items_warehouse,
-        test_blocked_batch_rejects_patient_dispensing,
         test_blocked_batch_rejects_stock_entry,
         test_recall_se_bypasses_blocked_check,
         test_update_recovery_updates_outstanding,
         test_create_return_to_supplier,
         test_create_write_off,
-        test_notify_clinical_staff_marks_rows,
-        test_audit_dispensings_in_period,
         test_notify_departments_groups_by_dept,
     ]
     results = []

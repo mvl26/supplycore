@@ -3,13 +3,17 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, today, now
+from frappe.utils import flt, today, now, getdate
+
+from supplycore.utils.permissions import block_portal
 
 
 class SCPurchaseOrder(Document):
 
     def validate(self):
         self._compute_totals()
+        self._validate_line_quantities()
+        self._validate_delivery_date()
         self._validate_supplier()
         self._check_price_variance()
         self._validate_against_framework_contract()
@@ -19,6 +23,7 @@ class SCPurchaseOrder(Document):
             self.status = "Draft"
 
     def before_submit(self):
+        self._validate_rates_before_submit()
         # UX đơn giản hoá: nếu user submit thẳng (không qua workflow review),
         # auto-approve. Workflow review vẫn dùng được optionally qua action buttons.
         if self.approval_stage != "Approved":
@@ -107,6 +112,36 @@ class SCPurchaseOrder(Document):
         self.total_qty = total_qty
         self.grand_total = total
 
+    def _validate_line_quantities(self):
+        """T12: SL phải > 0 ở mọi lần lưu (kể cả Draft) — tránh lưu im lặng
+        với SL = 0 / âm. Đơn giá > 0 kiểm ở before_submit (cho phép Draft tạo
+        sẵn để điền giá sau, vd auto-PO từ Alert)."""
+        for r in self.items:
+            if flt(r.qty) <= 0:
+                frappe.throw(_(
+                    "SC-E-QTY: Số lượng phải > 0 (dòng {0}, vật tư {1}). "
+                    "Không chấp nhận 0 hoặc số âm."
+                ).format(r.idx, r.item or "—"), title="SC-E-QTY")
+
+    def _validate_rates_before_submit(self):
+        """T12: không cho chốt/gửi PO với đơn giá ≤ 0."""
+        for r in self.items:
+            if flt(r.rate) <= 0:
+                frappe.throw(_(
+                    "SC-E-RATE: Đơn giá phải > 0 trước khi gửi PO "
+                    "(dòng {0}, vật tư {1})."
+                ).format(r.idx, r.item or "—"), title="SC-E-RATE")
+
+    def _validate_delivery_date(self):
+        """L13: ngày giao yêu cầu không được trước ngày tạo PO."""
+        if self.schedule_date and self.transaction_date:
+            if getdate(self.schedule_date) < getdate(self.transaction_date):
+                frappe.throw(_(
+                    "SC-E030 PO_DELIVERY_BEFORE_ORDER: Ngày giao yêu cầu ({0}) "
+                    "không được trước ngày tạo PO ({1})."
+                ).format(self.schedule_date, self.transaction_date),
+                    title="SC-E030 PO_DELIVERY_BEFORE_ORDER")
+
     def _validate_supplier(self):
         from supplycore.utils.validators import validate_supplier
         s = validate_supplier(self.supplier)
@@ -118,12 +153,39 @@ class SCPurchaseOrder(Document):
         if not self.framework_contract:
             return
         fc = frappe.db.get_value("Framework Contract", self.framework_contract,
-                                  ["docstatus", "status", "remaining_value", "valid_to"], as_dict=True)
+                                  ["docstatus", "status", "remaining_value", "valid_to", "supplier"], as_dict=True)
         if not fc:
             return
         if fc.docstatus != 1 or fc.status != "Active":
             frappe.throw(_("HĐK {0} không Active").format(self.framework_contract),
                          title="SC-E002 FC_INACTIVE")
+        # L12: NCC của PO phải trùng NCC đã ký trên HĐ khung
+        if fc.supplier and self.supplier and self.supplier != fc.supplier:
+            frappe.throw(_(
+                "SC-E027 FC_SUPPLIER_MISMATCH: NCC của PO ({0}) khác NCC của HĐ khung ({1}). "
+                "PO theo HĐ khung phải đặt đúng NCC đã ký."
+            ).format(self.supplier, fc.supplier), title="SC-E027 FC_SUPPLIER_MISMATCH")
+        # L12 + L14: chỉ cho đặt vật tư trong HĐK và SL không vượt phần còn lại
+        fc_items = {r.item_code: r for r in frappe.get_all(
+            "FC Item", filters={"parent": self.framework_contract},
+            fields=["item_code", "remaining_qty", "contract_qty"])}
+        for r in self.items:
+            if r.item not in fc_items:
+                frappe.throw(_(
+                    "SC-E028 ITEM_NOT_IN_FC: Vật tư {0} không nằm trong HĐ khung {1}. "
+                    "PO theo HĐ khung chỉ được đặt vật tư đã ký."
+                ).format(r.item, self.framework_contract), title="SC-E028 ITEM_NOT_IN_FC")
+        # L14: gộp SL theo item trong PO rồi so với remaining_qty của HĐK
+        po_qty = {}
+        for r in self.items:
+            po_qty[r.item] = po_qty.get(r.item, 0) + flt(r.qty)
+        for item_code, qty in po_qty.items():
+            remaining = flt(fc_items[item_code].remaining_qty)
+            if qty > remaining:
+                frappe.throw(_(
+                    "SC-E029 FC_QTY_EXCEEDED: Vật tư {0} đặt {1} vượt số lượng còn lại "
+                    "của HĐ khung ({2})."
+                ).format(item_code, qty, remaining), title="SC-E029 FC_QTY_EXCEEDED")
         if flt(self.grand_total) > flt(fc.remaining_value):
             frappe.throw(_("Tổng PO ({0}) vượt hạn mức HĐK còn lại ({1})").format(
                 frappe.format(self.grand_total, {"fieldtype": "Currency"}),
@@ -196,7 +258,7 @@ class SCPurchaseOrder(Document):
         )
         msg = f"""
             <p>Kính gửi {self.supplier_name or self.supplier},</p>
-            <p>Bệnh viện đặt hàng theo PO <b>{self.name}</b>:</p>
+            <p>Công ty Miyano Việt Nam đặt hàng theo PO <b>{self.name}</b>:</p>
             <table border="1" cellpadding="6" cellspacing="0">
                 <tr><th>Mã VT</th><th>SL</th><th>UOM</th><th>Đơn giá</th><th>Thành tiền</th></tr>
                 {items_html}
@@ -249,6 +311,11 @@ class SCPurchaseOrder(Document):
 # ----------------------------------------------------------------------
 @frappe.whitelist()
 def make_pr_from_po(po_name: str) -> str:
+    """GĐ4 Task 5 (security sweep): hàm module-level WRITE (tạo PR draft với
+    `ignore_permissions=True`) — KHÔNG qua `run_doc_method` nên không tự động
+    check permission. Không gate thì bất kỳ user đăng nhập nào (kể cả Portal)
+    truyền `po_name` bất kỳ sẽ đọc được PO nội bộ + tạo được PR thật."""
+    block_portal()
     po = frappe.get_doc("SC Purchase Order", po_name)
     if po.docstatus != 1:
         frappe.throw(_("PO chưa submit"), title="SC-E-PO")

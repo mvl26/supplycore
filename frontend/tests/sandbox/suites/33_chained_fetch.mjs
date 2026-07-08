@@ -7,7 +7,7 @@
 //   4. Fetch từ FC → supplier + framework_contract + items có rate
 //   5. SC Purchase Receipt mới — nguồn "PO"
 //   6. Fetch từ PO → supplier + purchase_order + items
-//   7. Backend API: validate mappings symmetry — sources_for() trả non-empty cho 9 target
+//   7. Backend API: validate mappings symmetry — sources_for() trả non-empty cho 7 target
 
 const BASE_URL = process.env.SC_BASE || 'http://supplycore'
 
@@ -36,14 +36,14 @@ async function pickFirstActiveFC(page) {
 
 export const tests = [
   {
-    name: 'sources_for() returns mappings cho 9 target',
+    name: 'sources_for() returns mappings cho 7 target',
     run: async ({ page, BASE, OUT, name }) => {
       await page.goto(`${BASE}/supplycore/dashboard`)
       await page.waitForTimeout(800)
       const expected = [
         'SC Material Request', 'SC Purchase Order', 'SC Purchase Receipt',
         'SC Purchase Invoice', 'SC Quality Inspection', 'SC Stock Entry',
-        'SC Patient Dispensing', 'SC Stock Reconciliation',
+        'SC Stock Reconciliation',
       ]
       const results = {}
       for (const t of expected) {

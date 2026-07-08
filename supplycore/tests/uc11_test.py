@@ -199,6 +199,7 @@ def test_link_replacement_sets_replaced():
     rep.append("items", {
         "item": item.name, "qty": 5, "uom": _get_uom(),
         "rate": 10_000, "warehouse": _pick_warehouse(),
+        "expiry_date": add_days(today(), 365), "supplier_batch_no": f"LOT-{random_string(5)}",
     })
     rep.flags.ignore_permissions = True
     rep.insert(); rep.submit()
