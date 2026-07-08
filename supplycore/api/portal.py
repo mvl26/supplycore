@@ -154,13 +154,35 @@ def portal_me():
     }
 
 
+def _attach_item_names(rows):
+    """Gắn `item_name` (tên vật tư, `SC Item.item_name`) vào từng dòng có
+    field `item` (mã vật tư) -- UC-41 khách hàng tìm "theo tên hoặc mã",
+    chỉ trả mã (item code) là không đủ. 1 query duy nhất theo danh sách mã
+    distinct, tránh N+1."""
+    item_codes = list({r["item"] for r in rows if r.get("item")})
+    if not item_codes:
+        return rows
+    names_by_code = {
+        r.name: r.item_name for r in frappe.get_all(
+            "SC Item", filters={"name": ["in", item_codes]}, fields=["name", "item_name"])
+    }
+    for r in rows:
+        r["item_name"] = names_by_code.get(r.get("item"))
+    return rows
+
+
 @frappe.whitelist()
 def portal_contracts():
-    """Danh sách Hợp đồng khung (SFC) đang Hiệu lực của khách + items."""
+    """Danh sách Hợp đồng khung (SFC) đang Hiệu lực (và CHƯA hết hạn) của
+    khách + items. `status="Hiệu lực"` không đủ: SFC không có scheduler tự
+    chuyển "Hiệu lực" -> "Hết hạn" mỗi ngày (chỉ `_derive_status()` chạy khi
+    doc được save lại) nên 1 hợp đồng đã qua `valid_to` vẫn có thể còn
+    status "Hiệu lực" stale trong DB -- phải tự lọc thêm `valid_to >=
+    today()` ở đây, không tin riêng field `status`."""
     customer = _require_portal_customer()
     contracts = frappe.get_all(
         "SC Sales Framework Contract",
-        filters={"customer": customer, "status": "Hiệu lực"},
+        filters={"customer": customer, "status": "Hiệu lực", "valid_to": [">=", today()]},
         fields=["name", "valid_from", "valid_to", "total_value", "status"],
         order_by="valid_from desc",
     )
@@ -170,25 +192,29 @@ def portal_contracts():
             fields=["item", "uom", "contract_qty", "sold_qty", "remaining_qty", "unit_price"],
             order_by="idx",
         )
+        _attach_item_names(c["items"])
     return contracts
 
 
 @frappe.whitelist()
 def portal_catalog():
-    """Danh mục vật tư gộp từ mọi SFC còn Hiệu lực của khách."""
+    """Danh mục vật tư gộp từ mọi SFC còn Hiệu lực VÀ chưa hết hạn (xem
+    docstring `portal_contracts` -- cùng lý do cần lọc thêm `valid_to`) của
+    khách."""
     customer = _require_portal_customer()
     sfc_names = frappe.get_all(
         "SC Sales Framework Contract",
-        filters={"customer": customer, "status": "Hiệu lực"},
+        filters={"customer": customer, "status": "Hiệu lực", "valid_to": [">=", today()]},
         pluck="name",
     )
     if not sfc_names:
         return []
-    return frappe.get_all(
+    rows = frappe.get_all(
         "SFC Item", filters={"parent": ["in", sfc_names]},
         fields=["item", "uom", "unit_price", "remaining_qty", "parent as framework_contract"],
         order_by="item",
     )
+    return _attach_item_names(rows)
 
 
 @frappe.whitelist()
@@ -261,8 +287,15 @@ def compute_milestones(order: str):
     ĐẦU TIÊN gặp phải được đánh dấu `current`, các mốc sau đó (nếu có) vẫn giữ
     `pending`. Chỉ đọc (read-only), dùng `frappe.get_all`/`frappe.db.get_value`
     (không `get_doc`) và guard `None` ở mọi bước để chịu được chuỗi chưa đi
-    hết (đơn mới đặt, chưa giao, chưa xuất HĐ, ...)."""
-    so = frappe.db.get_value("SC Sales Order", order, ["order_date", "creation"], as_dict=True)
+    hết (đơn mới đặt, chưa giao, chưa xuất HĐ, ...).
+
+    Ngoại lệ: nếu SO ở trạng thái kết thúc KHÔNG tiến triển ("Từ chối") thì
+    KHÔNG đánh dấu bất kỳ mốc nào là `current` -- các mốc sau mốc 1 vẫn giữ
+    `pending` (không áp dụng/không còn ý nghĩa theo dõi), tránh Portal UI
+    hiện nhầm hiệu ứng "đang xử lý" (pulsing current) trên 1 đơn đã bị từ
+    chối."""
+    so = frappe.db.get_value(
+        "SC Sales Order", order, ["order_date", "creation", "status"], as_dict=True)
 
     milestones = [
         {"key": "placed", "label": "Đã đặt hàng", "status": "pending", "time": None},
@@ -315,11 +348,16 @@ def compute_milestones(order: str):
             milestones[3]["status"] = "done"
             milestones[3]["time"] = last_receipt_date
 
-    found_current = False
-    for m in milestones:
-        if m["status"] == "pending" and not found_current:
-            m["status"] = "current"
-            found_current = True
+    # Đơn "Từ chối": KHÔNG có mốc nào là mốc "đang xử lý" tiếp theo -- chuỗi
+    # nghiệp vụ đã dừng lại vĩnh viễn, các mốc chưa done giữ nguyên `pending`.
+    is_rejected = bool(so and so.status == "Từ chối")
+
+    if not is_rejected:
+        found_current = False
+        for m in milestones:
+            if m["status"] == "pending" and not found_current:
+                m["status"] = "current"
+                found_current = True
 
     return milestones
 
