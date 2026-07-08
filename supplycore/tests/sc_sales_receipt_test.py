@@ -241,6 +241,41 @@ def test_receipt_posts_gl():
         return {"pass": False, "msg": f"X threw: {str(e)[:250]}"}
 
 
+def test_receipt_on_draft_invoice_blocked():
+    """SI chưa submit (Draft) — outstanding_amount == grand_total do validate(),
+    nhưng chưa có bút toán Dr 131 tương ứng nào được post. Thu tiền trên SI
+    draft phải bị chặn — nếu không, GL post Cr 131 không có Dr 131 khớp
+    → công nợ khách hàng (131) bị âm sai."""
+    cust = _make_customer("DRAFT")
+    item = _make_item("DRAFT")
+    wh = _pick_warehouse()
+    batch = _make_batch(item.name, add_days(today(), 200))
+    _seed_stock(item.name, wh, batch.name, 100, rate=1000)
+    dn, so = _make_delivered_dn(cust.name, item.name, wh, 10, unit_price=1000)
+    _accept_dn(dn)
+    si = frappe.new_doc("SC Sales Invoice")
+    si.customer = cust.name
+    si.delivery_note = dn.name
+    si.invoice_date = today()
+    si.append("items", {"item": item.name, "qty": 10, "unit_price": 1000})
+    si.flags.ignore_permissions = True
+    si.insert()  # KHÔNG submit — vẫn Draft (docstatus=0)
+    si.reload()
+    ctx = {"customer": cust, "item": item, "wh": wh, "si": si}
+    sr = _make_receipt(ctx, 4000)
+    try:
+        sr.insert()
+        frappe.db.rollback()
+        return {"pass": False, "msg": f"X did not throw on draft SI (docstatus={si.docstatus})"}
+    except frappe.ValidationError as e:
+        msg = str(e)
+        frappe.db.rollback()
+        return {"pass": True, "msg": f"OK threw: {msg[:150]}"}
+    except Exception as e:
+        frappe.db.rollback()
+        return {"pass": False, "msg": f"X threw unexpected: {str(e)[:200]}"}
+
+
 def test_receipt_cancel_restores():
     """Submit roi cancel -> outstanding va 131 quay ve truoc submit."""
     ctx = _seed_chain("CANCEL", qty=10, unit_price=1000)  # grand_total = 10000
@@ -270,6 +305,7 @@ def run():
         test_receipt_full_sets_paid,
         test_receipt_over_outstanding_blocked,
         test_receipt_posts_gl,
+        test_receipt_on_draft_invoice_blocked,
         test_receipt_cancel_restores,
     ]
     results = []

@@ -56,6 +56,12 @@ class SCSalesReceipt(Document):
             frappe.throw(_("Số tiền thu phải lớn hơn 0."))
         if not self.sales_invoice:
             return
+        si_docstatus = frappe.db.get_value("SC Sales Invoice", self.sales_invoice, "docstatus")
+        if si_docstatus != 1:
+            frappe.throw(_(
+                "SC-E-SR-SI-NOT-SUBMITTED: Hóa đơn bán {0} chưa phát hành (chưa submit) "
+                "— không thể thu tiền."
+            ).format(self.sales_invoice), title="SC-E-SR-SI-NOT-SUBMITTED")
         outstanding = flt(frappe.db.get_value("SC Sales Invoice", self.sales_invoice, "outstanding_amount"))
         if flt(self.amount) > outstanding + EPSILON:
             frappe.throw(_(
