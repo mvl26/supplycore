@@ -161,6 +161,9 @@
   .alert{border-radius:var(--radius-sm); padding:11px 13px; font-size:13px; margin-bottom:12px; line-height:1.45;}
   .alert-error{background:var(--danger-soft); color:#7A1912;}
   .alert-success{background:var(--success-soft); color:#124F31;}
+  .reg-lbl{font-size:12.5px; font-weight:600; color:var(--muted); display:block;}
+  .reg-inp{width:100%; padding:11px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:14px; margin:4px 0 12px; box-sizing:border-box; font-family:inherit;}
+  .reg-inp:focus{outline:none; border-color:var(--accent);}
   .alert-info{background:var(--accent-soft); color:var(--navy-dk);}
 
   .empty-state{text-align:center; padding:36px 16px; color:var(--muted);}
@@ -270,6 +273,63 @@
       <button class="btn btn-primary" onclick="window.location.href='/api/method/logout'">Đăng xuất</button>
     </div>
   </div>
+{% elif is_guest %}
+  <div class="full-msg">
+    <div class="box" style="max-width:430px; text-align:left;">
+      <div style="text-align:center; margin-bottom:16px;">
+        <div class="ic">🛒</div>
+        <h1 style="margin-bottom:6px;">Đăng ký khách hàng</h1>
+        <p style="margin:0;">Tạo tài khoản để xem bảng giá và đặt hàng trực tuyến với Miyano Việt Nam.</p>
+      </div>
+      <div id="reg-alert"></div>
+      <label class="reg-lbl">Tên công ty / khách hàng <span style="color:var(--danger)">*</span></label>
+      <input id="reg-name" class="reg-inp" placeholder="VD: Công ty TNHH ABC" />
+      <label class="reg-lbl">Email (dùng để đăng nhập) <span style="color:var(--danger)">*</span></label>
+      <input id="reg-email" class="reg-inp" type="email" placeholder="ban@congty.vn" />
+      <label class="reg-lbl">Mật khẩu <span style="color:var(--danger)">*</span> <span style="font-weight:400;color:var(--faint)">(tối thiểu 6 ký tự)</span></label>
+      <input id="reg-pass" class="reg-inp" type="password" placeholder="••••••" />
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;"><label class="reg-lbl">Điện thoại</label><input id="reg-phone" class="reg-inp" placeholder="Tùy chọn" /></div>
+        <div style="flex:1;"><label class="reg-lbl">Mã số thuế</label><input id="reg-tax" class="reg-inp" placeholder="Tùy chọn" /></div>
+      </div>
+      <button class="btn btn-primary" id="reg-submit" style="width:100%; margin-top:8px;">Đăng ký &amp; vào cổng</button>
+      <p style="text-align:center; margin:16px 0 0; font-size:13px; color:var(--muted);">
+        Đã có tài khoản? <a href="/login?redirect-to=/portal" style="color:var(--accent); font-weight:700; text-decoration:none;">Đăng nhập</a>
+      </p>
+    </div>
+  </div>
+  <script>
+    (function(){
+      var CSRF = "{{ csrf_token }}";
+      var $ = function(id){ return document.getElementById(id); };
+      function esc(s){ return String(s==null?"":s); }
+      function showAlert(msg, ok){
+        $("reg-alert").innerHTML = '<div class="alert ' + (ok?"alert-success":"alert-error") + '">' + esc(msg) + '</div>';
+      }
+      function pickErr(d){
+        if(d && d._server_messages){ try{ return JSON.parse(JSON.parse(d._server_messages)[0]).message; }catch(e){} }
+        if(d && d.exception){ var p=String(d.exception).split(":"); return p[p.length-1].trim(); }
+        return "Đăng ký thất bại, vui lòng thử lại.";
+      }
+      var btn = $("reg-submit");
+      btn.addEventListener("click", function(){
+        var name=$("reg-name").value.trim(), email=$("reg-email").value.trim(), pass=$("reg-pass").value;
+        if(!name||!email||!pass){ showAlert("Vui lòng nhập Tên, Email và Mật khẩu."); return; }
+        if(pass.length<6){ showAlert("Mật khẩu tối thiểu 6 ký tự."); return; }
+        btn.disabled=true; btn.textContent="Đang tạo tài khoản…"; $("reg-alert").innerHTML="";
+        fetch("/api/method/supplycore.api.portal.portal_register", {
+          method:"POST", credentials:"same-origin",
+          headers:{"Content-Type":"application/json","X-Frappe-CSRF-Token":CSRF,"Accept":"application/json"},
+          body: JSON.stringify({customer_name:name, email:email, password:pass, phone:$("reg-phone").value.trim(), tax_code:$("reg-tax").value.trim()})
+        }).then(function(r){ return r.json().catch(function(){return {};}).then(function(d){ return {ok:r.ok,d:d}; }); })
+          .then(function(res){
+            if(!res.ok){ showAlert(pickErr(res.d)); btn.disabled=false; btn.textContent="Đăng ký & vào cổng"; return; }
+            showAlert("Đăng ký thành công! Đang vào cổng…", true);
+            setTimeout(function(){ window.location.href="/portal"; }, 800);
+          }).catch(function(){ showAlert("Lỗi kết nối, vui lòng thử lại."); btn.disabled=false; btn.textContent="Đăng ký & vào cổng"; });
+      });
+    })();
+  </script>
 {% else %}
   <div id="portal-shell">
     <header id="sc-header">
@@ -320,6 +380,15 @@
         <div id="order-alert"></div>
         <div id="order-lines"></div>
         <div id="order-cart-summary"></div>
+
+        <!-- Đặt hàng lẻ theo bảng giá online (không cần hợp đồng) -->
+        <div id="general-order-block" style="margin-top:24px; border-top:1px dashed var(--border); padding-top:18px;">
+          <div class="section-title" style="margin-top:0;">🛍️ Đặt hàng lẻ — bảng giá online</div>
+          <input class="search-box" id="general-search" placeholder="Tìm hàng theo tên…" />
+          <div id="general-alert"></div>
+          <div id="general-lines"><div class="spinner"></div></div>
+          <div id="general-cart-summary"></div>
+        </div>
       </section>
 
       <!-- ===== Đơn hàng của tôi ===== -->
@@ -495,12 +564,27 @@
     // ---------------------------------------------------------------------
     var catalogData = [];
     function loadCatalog(){
-      callApi("portal_catalog").then(function(rows){
-        catalogData = rows || [];
+      Promise.all([
+        callApi("portal_catalog").catch(function(){ return []; }),
+        callApi("portal_catalog_general").catch(function(){ return []; })
+      ]).then(function(res){
+        catalogData = res[0] || [];
+        generalItems = res[1] || [];
         renderCatalog(catalogData);
+        appendGeneralPriceList(generalItems);
       }).catch(function(err){
         document.getElementById("catalog-list").innerHTML = '<div class="alert alert-error">' + esc(err.message) + '</div>';
       });
+    }
+    function appendGeneralPriceList(rows){
+      var box = document.getElementById("catalog-list");
+      if(!rows || !rows.length) return;
+      var html = '<div class="section-title">Bảng giá bán online</div>' + rows.map(function(r){
+        return '<div class="row-item"><div><div class="name">' + esc(r.item_name||r.item) + '</div>' +
+          '<div class="meta">ĐVT ' + esc(r.uom||"") + '</div></div>' +
+          '<div class="price mono">' + fmtVND(r.selling_price) + '</div></div>';
+      }).join("");
+      if(!catalogData.length){ box.innerHTML = html; } else { box.insertAdjacentHTML("beforeend", html); }
     }
     function renderCatalog(rows){
       var box = document.getElementById("catalog-list");
@@ -536,7 +620,97 @@
       }).catch(function(err){
         document.getElementById("order-contract-picker").innerHTML = '<div class="alert alert-error">' + esc(err.message) + '</div>';
       });
+      loadGeneralCatalog().then(function(){ renderGeneralLines(""); });
     }
+
+    // ---------------------------------------------------------------------
+    // Đặt hàng lẻ (bảng giá online) — portal_catalog_general + portal_order_place_general
+    // ---------------------------------------------------------------------
+    var generalItems = [];
+    var generalCart = {}; // item -> {qty}
+    function loadGeneralCatalog(){
+      return callApi("portal_catalog_general").then(function(rows){
+        generalItems = rows || []; return generalItems;
+      }).catch(function(){ generalItems = []; return []; });
+    }
+    function gItem(code){ return generalItems.find(function(x){ return x.item === code; }); }
+    function renderGeneralLines(filter){
+      var box = document.getElementById("general-lines");
+      if(!box) return;
+      var rows = generalItems;
+      if(filter){ var q = filter.toLowerCase(); rows = rows.filter(function(r){
+        return String(r.item_name||"").toLowerCase().indexOf(q)>-1 || String(r.item||"").toLowerCase().indexOf(q)>-1; }); }
+      if(!rows.length){
+        box.innerHTML = '<div class="empty-state"><div class="ic">🛍️</div><p>Chưa có mặt hàng bán online.</p></div>';
+        document.getElementById("general-cart-summary").innerHTML = ""; return;
+      }
+      box.innerHTML = rows.map(function(r){
+        var q = (generalCart[r.item] && generalCart[r.item].qty) || 0;
+        var it = String(r.item);
+        return '<div class="order-line">' +
+          '<div class="top"><div><div class="name">' + esc(r.item_name || r.item) + '</div>' +
+          '<div class="unit">ĐVT ' + esc(r.uom||"") + ' · ' + fmtVND(r.selling_price) + '/đơn vị</div></div>' +
+          '<div class="line-subtotal mono" data-gsub="' + esc(it) + '">' + fmtVND(q*r.selling_price) + '</div></div>' +
+          '<div class="bottom"><div class="qty-stepper">' +
+            '<button type="button" data-gact="dec" data-gi="' + esc(it) + '">−</button>' +
+            '<input type="number" min="0" step="1" value="' + q + '" data-gqty="' + esc(it) + '" class="qty-input" />' +
+            '<button type="button" data-gact="inc" data-gi="' + esc(it) + '">+</button>' +
+          '</div></div></div>';
+      }).join("");
+      box.querySelectorAll("[data-gact]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var item = btn.getAttribute("data-gi");
+          var input = box.querySelector('.qty-input[data-gqty="' + (window.CSS&&CSS.escape?CSS.escape(item):item) + '"]');
+          var v = Number(input.value||0);
+          v = btn.getAttribute("data-gact")==="inc" ? v+1 : Math.max(0, v-1);
+          input.value = v; onGeneralQty(item, v);
+        });
+      });
+      box.querySelectorAll(".qty-input").forEach(function(input){
+        input.addEventListener("input", function(){ onGeneralQty(input.getAttribute("data-gqty"), Number(input.value||0)); });
+      });
+      renderGeneralSummary();
+    }
+    function onGeneralQty(item, qty){
+      qty = Math.max(0, qty||0);
+      var r = gItem(item);
+      if(qty>0) generalCart[item] = {qty:qty}; else delete generalCart[item];
+      var sub = document.querySelector('[data-gsub="' + (window.CSS&&CSS.escape?CSS.escape(item):item) + '"]');
+      if(sub && r) sub.textContent = fmtVND(qty * r.selling_price);
+      renderGeneralSummary();
+    }
+    function renderGeneralSummary(){
+      var box = document.getElementById("general-cart-summary");
+      if(!box) return;
+      var count=0, total=0;
+      Object.keys(generalCart).forEach(function(item){
+        var r = gItem(item); count++; total += generalCart[item].qty * (r ? r.selling_price : 0);
+      });
+      if(!count){ box.innerHTML = ""; return; }
+      box.innerHTML = '<div class="cart-summary"><div class="totals"><span>' + count + ' mặt hàng</span>' +
+        '<span class="amt mono">' + fmtVND(total) + '</span></div>' +
+        '<button class="btn btn-primary" id="btn-general-submit" style="width:100%;">Đặt hàng lẻ</button></div>';
+      document.getElementById("btn-general-submit").addEventListener("click", submitGeneralOrder);
+    }
+    function submitGeneralOrder(){
+      var items = Object.keys(generalCart).map(function(item){ return {item:item, qty:generalCart[item].qty}; });
+      var alertBox = document.getElementById("general-alert");
+      if(!items.length){ alertBox.innerHTML = '<div class="alert alert-error">Chọn ít nhất 1 mặt hàng.</div>'; return; }
+      var btn = document.getElementById("btn-general-submit");
+      btn.disabled = true; btn.textContent = "Đang đặt hàng…"; alertBox.innerHTML = "";
+      callApi("portal_order_place_general", {items: items}).then(function(res){
+        generalCart = {};
+        alertBox.innerHTML = '<div class="alert alert-success">Đặt hàng thành công — đơn <strong class="mono">' + esc(res.order) + '</strong>, tổng ' + fmtVND(res.total_amount) + '. Đơn đang "Chờ duyệt".</div>';
+        renderGeneralLines(document.getElementById("general-search").value.trim());
+        LOADED["orders"] = false;
+      }).catch(function(err){
+        alertBox.innerHTML = '<div class="alert alert-error">' + esc(err.message) + '</div>';
+        btn.disabled = false; btn.textContent = "Đặt hàng lẻ";
+      });
+    }
+    document.getElementById("general-search").addEventListener("input", function(e){
+      renderGeneralLines(e.target.value.trim());
+    });
     function renderContractPicker(){
       var box = document.getElementById("order-contract-picker");
       if(!contracts.length){

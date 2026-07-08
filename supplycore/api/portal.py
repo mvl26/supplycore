@@ -11,11 +11,14 @@ client gửi lên. Không trả `name` (docname) của dòng child-table ra ngo�
 (chỉ item/qty/giá) để tránh rò rỉ định danh nội bộ không cần thiết.
 """
 
+import re
+
 import frappe
 from frappe import _
 from frappe.utils import cint, flt, today
 
 PORTAL_ROLE = "SC Customer Portal"
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 PROVISION_ROLES = {"System Manager", "SupplyCore Manager", "SupplyCore Purchaser"}
 DOWNLOADABLE_DOCTYPES = {"SC Sales Invoice", "SC Delivery Note"}
 
@@ -430,3 +433,109 @@ def portal_document_download(doctype, name):
         frappe.throw(_("Không có quyền tải tài liệu này"), frappe.PermissionError)
 
     return {"html": frappe.get_print(doctype, name)}
+
+
+# ===========================================================================
+# Thương mại điện tử: khách TỰ đăng ký + danh mục chung + đặt hàng lẻ
+# ===========================================================================
+
+@frappe.whitelist(allow_guest=True)
+def portal_register(customer_name, email, password, phone=None, tax_code=None):
+    """Khách vãng lai TỰ đăng ký: tạo tài khoản đăng nhập (Website User) +
+    tự tạo SC Customer (Hoạt động, đã gắn Portal → thỏa BRU-CUS-001) + gán
+    role Portal (khóa 1-1 BRU-CUS-002), rồi TỰ ĐĂNG NHẬP.
+
+    Chạy dưới Guest nên tạo doc bằng ignore_permissions. Chỉ gán đúng
+    PORTAL_ROLE (không cho leo thang role khác)."""
+    customer_name = (customer_name or "").strip()
+    email = (email or "").strip().lower()
+    password = password or ""
+    tax_code = (tax_code or "").strip() or None
+
+    if not customer_name or not email or not password:
+        frappe.throw(_("Vui lòng nhập đầy đủ Tên khách hàng, Email và Mật khẩu"))
+    if not _EMAIL_RE.match(email):
+        frappe.throw(_("Email không hợp lệ"))
+    if len(password) < 6:
+        frappe.throw(_("Mật khẩu tối thiểu 6 ký tự"))
+    if frappe.db.exists("User", email):
+        frappe.throw(_("Email {0} đã được đăng ký — vui lòng đăng nhập").format(email))
+    if tax_code and frappe.db.exists("SC Customer", {"tax_code": tax_code}):
+        frappe.throw(_("Mã số thuế {0} đã tồn tại trong hệ thống").format(tax_code))
+
+    user = frappe.get_doc({
+        "doctype": "User", "email": email, "first_name": customer_name,
+        "user_type": "Website User", "send_welcome_email": 0, "new_password": password,
+    })
+    user.flags.ignore_permissions = True
+    user.insert(ignore_permissions=True)
+    user.add_roles(PORTAL_ROLE)
+
+    cust = frappe.get_doc({
+        "doctype": "SC Customer", "customer_name": customer_name,
+        "tax_code": tax_code, "phone": (phone or "").strip() or None,
+        "status": "Hoạt động", "portal_user": user.name, "credit_limit": 0,
+    })
+    cust.flags.ignore_permissions = True
+    cust.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    # Tự đăng nhập: thiết lập session cho chính user vừa tạo.
+    frappe.local.login_manager.login_as(user.name)
+    return {"customer": cust.name, "user": user.name, "redirect": "/portal"}
+
+
+@frappe.whitelist()
+def portal_catalog_general():
+    """Danh mục CHUNG (bán online) — mọi khách đã đăng nhập Portal đều xem
+    được (không phụ thuộc hợp đồng). Chỉ hàng available_online=1 & giá > 0."""
+    _require_portal_customer()  # chặn guest / non-portal
+    return frappe.get_all(
+        "SC Item",
+        filters={"available_online": 1, "selling_price": [">", 0], "disabled": 0},
+        fields=["name as item", "item_name", "uom", "selling_price"],
+        order_by="item_name asc", limit_page_length=500,
+    )
+
+
+@frappe.whitelist()
+def portal_order_place_general(items):
+    """Đặt hàng lẻ từ danh mục chung: tạo SC Sales Order KHÔNG hợp đồng, giá
+    lấy SERVER-SIDE từ SC Item.selling_price (không tin client), qty > 0, tự
+    gắn đúng khách đang đăng nhập."""
+    customer = _require_portal_customer()
+    if isinstance(items, str):
+        items = frappe.parse_json(items)
+    if not items:
+        frappe.throw(_("Chưa chọn mặt hàng nào"))
+
+    lines = []
+    for row in items:
+        code = row.get("item")
+        try:
+            qty = flt(row.get("qty"))
+        except (TypeError, ValueError):
+            qty = 0
+        if qty <= 0:
+            frappe.throw(_("Số lượng phải > 0"))
+        it = frappe.db.get_value(
+            "SC Item", code,
+            ["item_name", "uom", "selling_price", "available_online", "disabled"],
+            as_dict=True)
+        if not it or it.disabled or not it.available_online or flt(it.selling_price) <= 0:
+            frappe.throw(_("Mặt hàng {0} không bán online").format(code))
+        price = flt(it.selling_price)
+        lines.append({"item": code, "uom": it.uom, "qty": qty,
+                      "unit_price": price, "amount": qty * price})
+
+    so = frappe.new_doc("SC Sales Order")
+    so.customer = customer
+    so.order_date = today()
+    # KHÔNG gắn framework_contract → controller bỏ qua pricing HĐ, giữ giá đã set.
+    for ln in lines:
+        so.append("items", ln)
+    so.flags.ignore_permissions = True
+    so.insert()
+    so.submit()
+    so.reload()
+    return {"order": so.name, "total_amount": flt(so.total_amount)}
