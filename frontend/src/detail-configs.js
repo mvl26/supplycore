@@ -839,7 +839,7 @@ export const DETAIL_CONFIGS = {
     ],
     sections: [
       { title: 'Hiệu lực', icon: 'calendar', fields: [
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Từ ngày', value: (d) => d.valid_from ? fmtDate(d.valid_from) : '—' },
         { label: 'Đến ngày', value: (d) => d.valid_to ? fmtDate(d.valid_to) : '—' },
@@ -893,9 +893,9 @@ export const DETAIL_CONFIGS = {
     ],
     sections: [
       { title: 'Tham chiếu', icon: 'link', fields: [
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
-        { label: 'HĐ khung', value: (d) => d.framework_contract,
+        { label: 'HĐ khung', value: (d) => d.framework_contract_display || d.framework_contract,
           link: (d) => d.framework_contract ? `/doc/SC Sales Framework Contract/${d.framework_contract}` : null },
         { label: 'Người duyệt', value: (d) => d.approval_by },
       ]},
@@ -944,7 +944,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Tham chiếu', icon: 'link', fields: [
         { label: 'Sales Order', value: (d) => d.sales_order,
           link: (d) => d.sales_order ? `/doc/SC Sales Order/${d.sales_order}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Kho xuất', value: (d) => d.from_warehouse },
       ]},
@@ -990,7 +990,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Thông tin nghiệm thu', icon: 'info', fields: [
         { label: 'Delivery Note', value: (d) => d.delivery_note,
           link: (d) => d.delivery_note ? `/doc/SC Delivery Note/${d.delivery_note}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Người nhận hàng', value: (d) => d.accepted_by },
         { label: 'Ghi chú', value: (d) => d.note, pre: true },
@@ -1036,7 +1036,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Tham chiếu', icon: 'link', fields: [
         { label: 'Delivery Note', value: (d) => d.delivery_note,
           link: (d) => d.delivery_note ? `/doc/SC Delivery Note/${d.delivery_note}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Tiền thuế', value: (d) => d.tax_amount != null ? fmtVND(d.tax_amount) : '—' },
       ]},
@@ -1079,7 +1079,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Tham chiếu', icon: 'link', fields: [
         { label: 'Hoá đơn bán', value: (d) => d.sales_invoice,
           link: (d) => d.sales_invoice ? `/doc/SC Sales Invoice/${d.sales_invoice}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Ngày thu', value: (d) => d.receipt_date ? fmtDate(d.receipt_date) : '—' },
       ]},

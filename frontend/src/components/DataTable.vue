@@ -96,7 +96,7 @@ function onHeaderClick(c) {
                 <span v-else class="text-sc-border-strong">—</span>
               </template>
               <template v-else>
-                {{ fmt(r[c.key], c) }}
+                {{ fmt(r[c.displayKey || c.key], c) }}
               </template>
             </td>
           </tr>

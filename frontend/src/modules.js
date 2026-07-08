@@ -429,7 +429,7 @@ export const DT = {
     module: 'm7', label: 'HĐ khung bán hàng', icon: 'file-text',
     listColumns: [
       { key: 'name', label: 'Mã HĐ', mono: true },
-      { key: 'customer', label: 'Khách hàng' },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
       { key: 'valid_from', label: 'Hiệu lực từ', type: 'date' },
       { key: 'valid_to', label: 'Hiệu lực đến', type: 'date' },
       { key: 'total_value', label: 'Tổng giá trị', type: 'currency', align: 'right' },
@@ -441,7 +441,7 @@ export const DT = {
     module: 'm7', label: 'Đơn bán hàng', icon: 'clipboard-list',
     listColumns: [
       { key: 'name', label: 'Mã SO', mono: true },
-      { key: 'customer', label: 'Khách hàng' },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
       { key: 'framework_contract', label: 'HĐ khung', mono: true },
       { key: 'order_date', label: 'Ngày đặt', type: 'date' },
       { key: 'total_amount', label: 'Tổng', type: 'currency', align: 'right' },
@@ -456,7 +456,7 @@ export const DT = {
     listColumns: [
       { key: 'name', label: 'Mã DN', mono: true },
       { key: 'sales_order', label: 'SO', mono: true },
-      { key: 'customer', label: 'Khách hàng' },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
       { key: 'from_warehouse', label: 'Kho xuất' },
       { key: 'delivery_date', label: 'Ngày giao', type: 'date' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
@@ -469,7 +469,7 @@ export const DT = {
     listColumns: [
       { key: 'name', label: 'Mã BB', mono: true },
       { key: 'delivery_note', label: 'DN', mono: true },
-      { key: 'customer', label: 'Khách hàng' },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
       { key: 'acceptance_date', label: 'Ngày nghiệm thu', type: 'date' },
       { key: 'accepted_by', label: 'Người nhận' },
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
@@ -481,7 +481,7 @@ export const DT = {
     module: 'm7', extraModules: ['m8'], label: 'Hóa đơn bán hàng', icon: 'receipt',
     listColumns: [
       { key: 'name', label: 'Mã SI', mono: true },
-      { key: 'customer', label: 'Khách hàng' },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
       { key: 'delivery_note', label: 'DN', mono: true },
       { key: 'invoice_date', label: 'Ngày HD', type: 'date' },
       { key: 'grand_total', label: 'Tổng', type: 'currency', align: 'right' },
@@ -495,7 +495,7 @@ export const DT = {
     module: 'm7', extraModules: ['m8'], label: 'Phiếu thu tiền', icon: 'credit-card',
     listColumns: [
       { key: 'name', label: 'Mã PT', mono: true },
-      { key: 'customer', label: 'Khách hàng' },
+      { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
       { key: 'sales_invoice', label: 'SI', mono: true },
       { key: 'receipt_date', label: 'Ngày thu', type: 'date' },
       { key: 'amount', label: 'Số tiền', type: 'currency', align: 'right' },

@@ -55,10 +55,36 @@ def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start
         )
         if or_filters:
             kwargs["or_filters"] = or_filters
-        return frappe.db.get_all(doctype, **kwargs)
+        rows = frappe.db.get_all(doctype, **kwargs)
+        _attach_list_customer_names(doctype, rows)
+        return rows
     except Exception as e:
         frappe.log_error(message=f"list_docs({doctype}): {e}", title="frontend.list_docs")
         frappe.throw(_("Lỗi truy vấn {0}: {1}").format(doctype, str(e)[:200]))
+
+
+# Doctype bán hàng hiện cột "Khách hàng" — cần TÊN thay vì mã (không lưu
+# customer_name, chỉ có link customer). displayKey='customer_name' ở modules.js.
+_LIST_CUSTOMER_NAME_DTS = {
+    "SC Sales Order", "SC Delivery Note", "SC Sales Invoice", "SC Sales Receipt",
+    "SC Acceptance Record", "SC Sales Framework Contract",
+}
+
+
+def _attach_list_customer_names(doctype, rows):
+    """Đính kèm customer_name cho mỗi dòng list bán hàng (1 truy vấn batch)."""
+    if doctype not in _LIST_CUSTOMER_NAME_DTS or not rows:
+        return
+    codes = {r.get("customer") for r in rows if r.get("customer")}
+    if not codes:
+        return
+    names = dict(frappe.db.get_all(
+        "SC Customer", filters={"name": ["in", list(codes)]},
+        fields=["name", "customer_name"], as_list=True))
+    for r in rows:
+        c = r.get("customer")
+        if c:
+            r["customer_name"] = names.get(c) or c
 
 
 @frappe.whitelist()
@@ -171,7 +197,27 @@ def get_doc(doctype, name):
     """Get full doc + child tables."""
     if not frappe.has_permission(doctype, "read", doc=name):
         frappe.throw(_("Không có quyền đọc {0} {1}").format(doctype, name), frappe.PermissionError)
-    return frappe.get_doc(doctype, name).as_dict()
+    d = frappe.get_doc(doctype, name).as_dict()
+    _attach_display_names(doctype, d)
+    return d
+
+
+def _attach_display_names(doctype, d):
+    """M7 UX: đính kèm TÊN hiển thị cho các link chính (khách hàng, HĐ khung bán)
+    để MÀN CHI TIẾT hiện tên thay vì mã doc. SO/DN/SI/SR không lưu customer_name
+    (chỉ có link customer) nên phải resolve tại đây. Chỉ 1-2 truy vấn nhẹ khi mở
+    chi tiết; không đụng doctype mua (framework_contract của bên mua trỏ
+    'Framework Contract' khác — exists() bên dưới trả False nên bỏ qua)."""
+    if doctype != "SC Customer" and d.get("customer") and not d.get("customer_name"):
+        d["customer_name"] = frappe.db.get_value("SC Customer", d["customer"], "customer_name")
+    fc = d.get("framework_contract")
+    if fc and frappe.db.exists("SC Sales Framework Contract", fc):
+        row = frappe.db.get_value(
+            "SC Sales Framework Contract", fc, ["customer", "valid_to"], as_dict=True)
+        if row:
+            cn = frappe.db.get_value("SC Customer", row.customer, "customer_name") or row.customer
+            d["framework_contract_display"] = (
+                f"{cn} — HĐ đến {row.valid_to}" if row.valid_to else cn)
 
 
 @frappe.whitelist()
