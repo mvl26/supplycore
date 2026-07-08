@@ -210,6 +210,19 @@ def portal_order_place(contract, items):
         frappe.throw(_("Không có quyền đặt hàng trên Hợp đồng khung này"),
                       frappe.PermissionError)
 
+    # BUG 2: chan qty<=0 (hoac khong phai so) truoc khi tao SO -- portal user
+    # khong duoc phep tao don rac tong tien = 0 (hoac am) qua Portal. Kiem
+    # tra o day (som nhat) thay vi de controller SC Sales Order xu ly, vi
+    # SO Item.qty chi co rang buoc non_negative (cho phep 0) chu khong bat
+    # buoc > 0.
+    for row in items:
+        try:
+            qty = flt(row.get("qty"))
+        except (TypeError, ValueError):
+            qty = 0
+        if qty <= 0:
+            frappe.throw(_("Số lượng phải > 0"))
+
     uom_by_item = {
         r.item: r.uom for r in frappe.get_all(
             "SFC Item", filters={"parent": contract}, fields=["item", "uom"])

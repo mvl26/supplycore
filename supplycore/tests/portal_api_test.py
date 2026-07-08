@@ -271,6 +271,43 @@ def test_portal_order_place():
         frappe.db.rollback()
 
 
+def test_order_place_zero_qty_rejected():
+    """BUG 2: portal_order_place voi qty<=0 phai bi tu choi -- khong the tao
+    SO rac tong tien = 0 qua Portal. qty>0 van hoat dong binh thuong."""
+    orig_user = frappe.session.user
+    try:
+        cust, email, sfc, item = _seed_customer_with_contract("ZEROQ", contract_qty=50, unit_price=1000)
+
+        from supplycore.api.portal import portal_order_place
+
+        frappe.set_user(email)
+        try:
+            portal_order_place(sfc, [{"item": item, "qty": 0}])
+            return {"pass": False, "msg": "X qty=0 khong throw"}
+        except frappe.ValidationError:
+            pass
+
+        # qty am cung phai bi chan
+        try:
+            portal_order_place(sfc, [{"item": item, "qty": -5}])
+            return {"pass": False, "msg": "X qty=-5 khong throw"}
+        except frappe.ValidationError:
+            pass
+
+        # qty > 0 van dat hang binh thuong
+        res = portal_order_place(sfc, [{"item": item, "qty": 5}])
+        so = frappe.get_doc("SC Sales Order", res["order"])
+        ok = so.customer == cust and flt(res["total_amount"]) == 5000
+        if ok:
+            return {"pass": True, "msg": f"OK qty<=0 rejected, qty>0 order={so.name} total={res['total_amount']}"}
+        return {"pass": False, "msg": f"X qty>0 order sai: {res}"}
+    except Exception as e:
+        return {"pass": False, "msg": f"X threw wrong exception: {str(e)[:200]}"}
+    finally:
+        frappe.set_user(orig_user)
+        frappe.db.rollback()
+
+
 def test_order_place_other_contract_denied():
     """set_user(A), contract=SFC cua B -> PermissionError."""
     orig_user = frappe.session.user
@@ -388,6 +425,7 @@ def run():
         test_portal_me,
         test_portal_contracts_and_catalog,
         test_portal_order_place,
+        test_order_place_zero_qty_rejected,
         test_order_place_other_contract_denied,
         test_order_track_and_history_own_only,
         test_document_download_other_customer_denied,
