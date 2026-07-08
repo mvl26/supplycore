@@ -85,9 +85,8 @@ class SCRecallNotice(Document):
 
         Query SC SLE để tìm tất cả vị trí batch đã đến:
           - Còn ở warehouse → tồn kho hiện tại
-          - Đã chuyển qua SC Stock Entry Material Transfer → khoa khác
-
-        # TODO GĐ2: bổ sung trace/recall theo SC Delivery Note → SC Customer (chuỗi bán)
+          - Đã bán ra ngoài qua SC Delivery Note → SC Customer (BRU-REC-001:
+            thu hồi phải truy được toàn bộ lô đã bán ra theo khách hàng)
         """
         if self.docstatus != 0:
             frappe.throw(_("Chỉ populate khi Draft"))
@@ -111,6 +110,34 @@ class SCRecallNotice(Document):
                 "voucher_type": "Stock Balance",
                 "voucher_no": "—",
                 "qty_issued": flt(row.qty),
+                "recovered_qty": 0,
+                "status": "Notified",
+            })
+
+        # 2. Đã bán ra cho khách hàng qua SC Delivery Note (docstatus=1 —
+        # loại DN đã hủy: cancel post SLE đối ứng cùng voucher_no chứ KHÔNG
+        # set is_cancelled, nên phải lọc theo docstatus của DN, không thể
+        # chỉ lọc qty_change<0).
+        cust_qty = frappe.db.sql("""
+            SELECT dn.name AS voucher_no, dn.customer AS customer,
+                   dn.delivery_date AS voucher_date,
+                   SUM(sle.qty_change) AS qty
+            FROM `tabSC Stock Ledger Entry` sle
+            JOIN `tabSC Delivery Note` dn ON dn.name = sle.voucher_no
+            WHERE sle.voucher_type = 'SC Delivery Note'
+              AND sle.batch = %s
+              AND dn.docstatus = 1
+            GROUP BY dn.name, dn.customer, dn.delivery_date
+            HAVING qty < 0
+        """, self.batch_no, as_dict=True)
+        for row in cust_qty:
+            self.append("affected_items", {
+                "location_type": "Customer",
+                "customer": row.customer,
+                "voucher_type": "SC Delivery Note",
+                "voucher_no": row.voucher_no,
+                "voucher_date": row.voucher_date,
+                "qty_issued": abs(flt(row.qty)),
                 "recovered_qty": 0,
                 "status": "Notified",
             })
@@ -148,6 +175,35 @@ class SCRecallNotice(Document):
             "recall_reason": self.recall_reason,
             "by_department": by_dept,
             "letter_count": len(by_dept),
+        }
+
+    @frappe.whitelist()
+    def notify_customers(self):
+        """BRU-REC-001: group affected_items theo KHÁCH HÀNG đã mua lô bị thu hồi —
+        1 recall letter / customer (song song notify_departments cho kho nội bộ
+        cũ, giữ nguyên notify_departments vì frontend còn gọi trực tiếp)."""
+        if self.docstatus != 1:
+            frappe.throw(_("SC-E-RCL-NOT-ISSUED: Chỉ gửi phiếu khi Recall Notice đã Issued"))
+        by_customer = {}
+        for r in self.affected_items:
+            if r.location_type != "Customer" or not r.customer:
+                continue
+            by_customer.setdefault(r.customer, []).append({
+                "row_name": r.name,
+                "voucher_type": r.voucher_type,
+                "voucher_no": r.voucher_no,
+                "voucher_date": str(r.voucher_date) if r.voucher_date else None,
+                "qty_issued": flt(r.qty_issued),
+                "outstanding": flt(r.outstanding_qty),
+                "status": r.status,
+            })
+        return {
+            "recall_notice": self.name,
+            "batch_no": self.batch_no,
+            "item": self.item,
+            "recall_reason": self.recall_reason,
+            "by_customer": by_customer,
+            "letter_count": len(by_customer),
         }
 
     @frappe.whitelist()
@@ -257,5 +313,3 @@ class SCRecallNotice(Document):
         self.db_set("resolution", "Destroy")
         self.db_set("resolution_date", frappe.utils.today())
         return {"write_off_entry": se.name, "url": f"/app/sc-stock-entry/{se.name}"}
-
-    # TODO GĐ2: bổ sung trace/recall theo SC Delivery Note → SC Customer (chuỗi bán)

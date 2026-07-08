@@ -8,6 +8,7 @@
   "location_type",
   "warehouse",
   "department",
+  "customer",
   "column_break_1",
   "voucher_type",
   "voucher_no",
@@ -31,7 +32,7 @@
   {
    "fieldname": "location_type",
    "fieldtype": "Select",
-   "options": "Warehouse\nDepartment",
+   "options": "Warehouse\nDepartment\nCustomer",
    "label": "Loại vị trí",
    "reqd": 1,
    "in_list_view": 1,
@@ -52,6 +53,15 @@
    "options": "SC Department",
    "label": "Khoa",
    "depends_on": "eval:doc.location_type=='Department'"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "options": "SC Customer",
+   "label": "Khách hàng",
+   "in_list_view": 1,
+   "columns": 2,
+   "depends_on": "eval:doc.location_type=='Customer'"
   },
   {
    "fieldname": "column_break_1",

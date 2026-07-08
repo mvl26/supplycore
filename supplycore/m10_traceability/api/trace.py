@@ -8,10 +8,8 @@ from supplycore.utils.permissions import block_portal
 
 @frappe.whitelist()
 def get_batch_trace(batch_no: str) -> dict:
-    """UC-29: trả full vòng đời batch — header + origin + movements +
-    current_stock + data_quality.
-
-    # TODO GĐ2: bổ sung trace/recall theo SC Delivery Note → SC Customer (chuỗi bán)
+    """UC-29/UC-34: trả full vòng đời batch — header + origin + movements +
+    current_stock + sold_to (đã bán cho khách hàng nào) + data_quality.
     """
     block_portal()
     if not batch_no or not frappe.db.exists("SC Batch", batch_no):
@@ -97,6 +95,29 @@ def get_batch_trace(batch_no: str) -> dict:
     total_current = sum(r["qty"] for r in by_wh)
     current_stock = {"total_qty": total_current, "by_warehouse": by_wh}
 
+    # Sold to: đã bán cho khách hàng nào qua SC Delivery Note (UC-34/BRU-REC-001).
+    # docstatus=1 để loại DN đã hủy (cancel post SLE đối ứng cùng voucher_no
+    # chứ không set is_cancelled trên dòng gốc).
+    sold_to_raw = frappe.db.sql("""
+        SELECT dn.customer AS customer, dn.name AS delivery_note,
+               dn.delivery_date AS delivery_date,
+               SUM(sle.qty_change) AS qty
+        FROM `tabSC Stock Ledger Entry` sle
+        JOIN `tabSC Delivery Note` dn ON dn.name = sle.voucher_no
+        WHERE sle.voucher_type = 'SC Delivery Note'
+          AND sle.batch = %s
+          AND dn.docstatus = 1
+        GROUP BY dn.customer, dn.name, dn.delivery_date
+        HAVING qty < 0
+        ORDER BY dn.delivery_date ASC
+    """, batch_no, as_dict=True)
+    sold_to = [{
+        "customer": r["customer"],
+        "delivery_note": r["delivery_note"],
+        "delivery_date": str(r["delivery_date"]) if r["delivery_date"] else None,
+        "qty": abs(flt(r["qty"])),
+    } for r in sold_to_raw]
+
     # Data quality
     missing = []
     if not batch.supplier:
@@ -122,6 +143,7 @@ def get_batch_trace(batch_no: str) -> dict:
         "origin": origin,
         "movements": movements,
         "current_stock": current_stock,
+        "sold_to": sold_to,
         "data_quality": data_quality,
     }
 
