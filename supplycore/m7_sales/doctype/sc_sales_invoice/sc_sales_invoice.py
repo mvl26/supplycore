@@ -25,7 +25,7 @@ cùng voucher_type/voucher_no); trả delivery_note.status về "Đã nghiệm t
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, getdate
+from frappe.utils import flt
 
 
 class SCSalesInvoice(Document):
@@ -43,6 +43,18 @@ class SCSalesInvoice(Document):
         self.db_set("status", "Đã phát hành")
         if self.delivery_note:
             frappe.db.set_value("SC Delivery Note", self.delivery_note, "status", "Đã xuất HĐ")
+
+    def before_cancel(self):
+        # BRU-PAY-001: chặn TRƯỚC KHI docstatus bị ghi (before_cancel chạy
+        # trước db_update, trước cả on_cancel/cancel_voucher) — nếu chặn ở
+        # on_cancel thì docstatus=2 đã được ghi xuống DB rồi mới throw, để
+        # lại chứng từ "Hủy" nhưng GL gốc không được đảo (không nhất quán).
+        # Đặt ở đây để hủy hóa đơn không thể ghi bút toán đảo vào kỳ đã khóa
+        # sổ (vd. kỳ bị khóa SAU khi đã submit) MÀ KHÔNG để lại cửa sổ
+        # inconsistency nào, kể cả khi không có rollback ở tầng request.
+        from supplycore.utils.fiscal import check_fiscal_lock
+
+        check_fiscal_lock(self.invoice_date)
 
     def on_cancel(self):
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
@@ -131,15 +143,13 @@ class SCSalesInvoice(Document):
         self.outstanding_amount = flt(self.grand_total)
 
     # ------------------------------------------------------------------
-    # BRU-PAY-001
+    # BRU-PAY-001 — dùng chung supplycore.utils.fiscal.check_fiscal_lock
+    # (cùng helper với SC Sales Receipt/SC Purchase Invoice/SC Payment Entry).
     # ------------------------------------------------------------------
     def _check_fiscal_lock(self):
-        lock = frappe.db.get_single_value("SupplyCore Settings", "fiscal_lock_date")
-        if lock and self.invoice_date and getdate(self.invoice_date) <= getdate(lock):
-            frappe.throw(_(
-                "BRU-PAY-001: Ngày hóa đơn {0} nằm trong kỳ đã khóa sổ (khóa đến "
-                "{1}) — không thể phát hành."
-            ).format(self.invoice_date, lock), title="BRU-PAY-001")
+        from supplycore.utils.fiscal import check_fiscal_lock
+
+        check_fiscal_lock(self.invoice_date)
 
     # ------------------------------------------------------------------
     # GL posting (VAS pattern)

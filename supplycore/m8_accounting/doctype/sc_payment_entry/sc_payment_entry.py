@@ -23,6 +23,12 @@ class SCPaymentEntry(Document):
             self.status = "Draft"
 
     def before_submit(self):
+        # BRU-PAY-001: không được submit PE có payment_date nằm trong kỳ đã
+        # khóa sổ (mirror SC Sales Invoice/SC Sales Receipt — trước fix này
+        # PE KHÔNG có check này, chỉ SI/SR có).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.payment_date)
+
         # UC-25 step 5/5a: enforce role theo approval_level
         user_roles = set(frappe.get_roles(frappe.session.user))
         if self.approval_level == "Executive":
@@ -48,6 +54,12 @@ class SCPaymentEntry(Document):
         self.db_set("approved_by", frappe.session.user
                     if frappe.session.user not in (None, "", "Guest") else "Administrator")
         self.db_set("approved_at", now())
+
+    def before_cancel(self):
+        # BRU-PAY-001: chặn TRƯỚC KHI docstatus bị ghi (before_cancel chạy
+        # trước db_update/on_cancel — xem lý do trong SC Sales Invoice.before_cancel).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.payment_date)
 
     def on_cancel(self):
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry

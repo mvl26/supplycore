@@ -20,7 +20,7 @@ sales_invoice.outstanding_amount; tính lại status.
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, getdate
+from frappe.utils import flt
 
 EPSILON = 0.01
 
@@ -35,6 +35,13 @@ class SCSalesReceipt(Document):
     def on_submit(self):
         self._post_gl()
         self._settle_invoice(flt(self.amount))
+
+    def before_cancel(self):
+        # BRU-PAY-001: chặn TRƯỚC KHI docstatus bị ghi — xem lý do trong
+        # SC Sales Invoice.before_cancel.
+        from supplycore.utils.fiscal import check_fiscal_lock
+
+        check_fiscal_lock(self.receipt_date)
 
     def on_cancel(self):
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
@@ -69,15 +76,13 @@ class SCSalesReceipt(Document):
             ).format(self.amount, outstanding, self.sales_invoice))
 
     # ------------------------------------------------------------------
-    # BRU-PAY-001
+    # BRU-PAY-001 — dùng chung supplycore.utils.fiscal.check_fiscal_lock
+    # (cùng helper với SC Sales Invoice/SC Purchase Invoice/SC Payment Entry).
     # ------------------------------------------------------------------
     def _check_fiscal_lock(self):
-        lock = frappe.db.get_single_value("SupplyCore Settings", "fiscal_lock_date")
-        if lock and self.receipt_date and getdate(self.receipt_date) <= getdate(lock):
-            frappe.throw(_(
-                "BRU-PAY-001: Ngày thu {0} nằm trong kỳ đã khóa sổ (khóa đến {1}) "
-                "— không thể lập phiếu thu."
-            ).format(self.receipt_date, lock), title="BRU-PAY-001")
+        from supplycore.utils.fiscal import check_fiscal_lock
+
+        check_fiscal_lock(self.receipt_date)
 
     # ------------------------------------------------------------------
     def _post_gl(self):

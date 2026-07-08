@@ -29,6 +29,12 @@ class SCPurchaseInvoice(Document):
             self.status = "Draft"
 
     def before_submit(self):
+        # BRU-PAY-001: không được submit hóa đơn mua có invoice_date nằm
+        # trong kỳ đã khóa sổ (mirror SC Sales Invoice/SC Sales Receipt —
+        # trước fix này PI KHÔNG có check này, chỉ SI/SR có).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.invoice_date)
+
         # UC-24 step 6: mismatch/force approved → require explanation
         if self.three_way_match_status in ("Mismatch", "Force Approved"):
             if not (self.mismatch_explanation and str(self.mismatch_explanation).strip()):
@@ -76,6 +82,12 @@ class SCPurchaseInvoice(Document):
         self.db_set("approved_by", frappe.session.user
                     if frappe.session.user not in (None, "", "Guest") else "Administrator")
         self.db_set("approved_at", now())
+
+    def before_cancel(self):
+        # BRU-PAY-001: chặn TRƯỚC KHI docstatus bị ghi (before_cancel chạy
+        # trước db_update/on_cancel — xem lý do trong SC Sales Invoice.before_cancel).
+        from supplycore.utils.fiscal import check_fiscal_lock
+        check_fiscal_lock(self.invoice_date)
 
     def on_cancel(self):
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
