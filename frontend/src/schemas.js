@@ -664,7 +664,7 @@ export const FORM_SCHEMAS = {
         { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer', required: true,
           readonlyWhenSet: 'framework_contract' },
         { name: 'framework_contract', label: 'HĐ khung', type: 'Link', linkTo: 'SC Sales Framework Contract',
-          readonlyWhenSet: 'framework_contract', canCreateNew: true,
+          readonlyWhenSet: 'framework_contract',
           fetchFrom: { target_doctype: 'SC Sales Framework Contract', target_field: 'customer' },
           hint: 'Chọn HĐ khung sẽ tự điền & khoá khách hàng — giá lấy theo HĐ khung (BRU-SFC-002)' },
         { name: 'order_date', label: 'Ngày đặt', type: 'Date', required: true, default: 'today' },
