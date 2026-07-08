@@ -84,13 +84,16 @@ class SCPurchaseInvoice(Document):
 
     # ------------------------------------------------------------------
     def _compute_totals(self):
+        # Làm tròn VND (precision 0) NGAY tại tính toán để field lưu DB và GL
+        # nhất quán từ 1 nguồn — tránh lệch 1 VND do mỗi Currency field làm tròn
+        # độc lập khi qty lẻ (mirror SC Sales Invoice._compute_totals).
         subtotal = 0
         for r in self.items:
-            r.amount = flt(r.qty) * flt(r.rate)
+            r.amount = flt(flt(r.qty) * flt(r.rate), 0)
             subtotal += flt(r.amount)
-        self.subtotal = subtotal
-        self.vat_amount = flt(subtotal) * flt(self.vat_rate or 0) / 100
-        self.grand_total = self.subtotal + self.vat_amount
+        self.subtotal = flt(subtotal, 0)
+        self.vat_amount = flt(flt(self.subtotal) * flt(self.vat_rate or 0) / 100, 0)
+        self.grand_total = flt(self.subtotal) + flt(self.vat_amount)
         # outstanding = grand_total - paid_amount
         self.outstanding_amount = flt(self.grand_total) - flt(self.paid_amount or 0)
 
