@@ -25,11 +25,6 @@ const NAME_FIELD = {
 }
 const nameFieldOf = (dt) => NAME_FIELD[dt] || null
 
-// M7: HĐ khung BÁN không có field tên — định danh bằng khách + kỳ hiệu lực.
-// Dùng endpoint search riêng (join lấy customer_name) + nhãn ghép, mirror
-// cách Framework Contract (mua) đã làm.
-const SALES_FC = 'SC Sales Framework Contract'
-
 // Nhãn tiếng Việt cho nút "+ Tạo mới …" (thay vì tên doctype tiếng Anh).
 const DT_LABEL = {
   'SC Customer': 'Khách hàng', 'SC Supplier': 'Nhà cung cấp',
@@ -38,13 +33,43 @@ const DT_LABEL = {
 }
 const dtLabel = (dt) => DT_LABEL[dt] || (dt || '').replace(/^SC /, '')
 
+// M7 UX: doctype bán hàng KHÔNG có field tên đơn lẻ (HĐ khung bán, và các
+// chứng từ SO/DN/SI vốn chỉ định danh bằng mã) → hiển thị TÊN KHÁCH làm chính,
+// phụ đề là số phiếu + ngày (+ tiền/trạng thái). Dùng endpoint search chuyên
+// biệt (join lấy customer_name), mirror cách Framework Contract (mua) đã làm.
+const _money = (v) => (v == null || v === '') ? '' : `${Number(v).toLocaleString('vi-VN')} đ`
+const _dot = (...p) => p.filter(Boolean).join(' · ')
+const _cust = (r) => r.customer_name || r.customer || r.name
+const COMPOSED = {
+  'SC Sales Framework Contract': {
+    endpoint: 'supplycore.api.frontend.search_sales_framework_contract', args: {},
+    primary: _cust,
+    sub: (r) => _dot((r.valid_from || r.valid_to) ? `HL: ${r.valid_from || '?'} → ${r.valid_to || '?'}` : '', r.status),
+    inputLabel: (r) => r.valid_to ? `${_cust(r)} — HĐ đến ${r.valid_to}` : _cust(r),
+  },
+  'SC Sales Order': {
+    endpoint: 'supplycore.api.frontend.search_sales_doc', args: { doctype: 'SC Sales Order' },
+    primary: _cust, sub: (r) => _dot(r.name, r.ref_date, r.status),
+    inputLabel: (r) => `${_cust(r)} — ${r.name}`,
+  },
+  'SC Delivery Note': {
+    endpoint: 'supplycore.api.frontend.search_sales_doc', args: { doctype: 'SC Delivery Note' },
+    primary: _cust, sub: (r) => _dot(r.name, r.ref_date, r.status),
+    inputLabel: (r) => `${_cust(r)} — ${r.name}`,
+  },
+  'SC Sales Invoice': {
+    endpoint: 'supplycore.api.frontend.search_sales_doc', args: { doctype: 'SC Sales Invoice' },
+    primary: _cust, sub: (r) => _dot(r.name, r.ref_date, _money(r.amount), r.status),
+    inputLabel: (r) => `${_cust(r)} — ${r.name}`,
+  },
+}
+const composed = () => COMPOSED[props.linkTo]
+
 // Nhãn hiển thị "Tên (mã)" — nếu không có tên thì chỉ mã.
 function fmtLabel(row) {
   if (!row) return ''
-  if (props.linkTo === SALES_FC) {
-    const nm = row.customer_name || row.customer || row.name
-    return row.valid_to ? `${nm} — HĐ đến ${row.valid_to}` : nm
-  }
+  const c = composed()
+  if (c) return c.inputLabel(row)
   const nf = nameFieldOf(props.linkTo)
   const nm = nf ? row[nf] : null
   return (nm && nm !== row.name) ? `${nm} (${row.name})` : row.name
@@ -68,23 +93,14 @@ const dropdownStyle = ref({})
 // Resolve nhãn cho 1 mã (khi load doc hoặc modelValue đổi từ ngoài).
 async function resolveLabel(code) {
   if (!code) { displayLabel.value = ''; if (!typing.value) search.value = ''; return }
-  // HĐ khung bán: fetch khách + kỳ để dựng nhãn tường minh (2 truy vấn nhẹ, chỉ chạy khi load).
-  if (props.linkTo === SALES_FC) {
+  // Doctype nhãn ghép (SFC/SO/DN/SI): gọi chính endpoint search rồi khớp đúng
+  // mã để dựng nhãn tường minh (tên khách + số phiếu). Chỉ chạy khi load doc.
+  const c = composed()
+  if (c) {
     try {
-      const rows = await getList(SALES_FC, {
-        fields: ['name', 'customer', 'valid_from', 'valid_to'],
-        filters: [['name', '=', code]], limit: 1,
-      })
-      if (rows && rows.length) {
-        let cname = rows[0].customer
-        try {
-          const cs = await getList('SC Customer', {
-            fields: ['name', 'customer_name'], filters: [['name', '=', rows[0].customer]], limit: 1,
-          })
-          if (cs && cs.length) cname = cs[0].customer_name
-        } catch (e) {}
-        displayLabel.value = fmtLabel({ ...rows[0], customer_name: cname })
-      } else displayLabel.value = code
+      const rows = await call(c.endpoint, { ...c.args, q: code, limit: 20 })
+      const row = (rows || []).find((r) => r.name === code)
+      displayLabel.value = row ? c.inputLabel(row) : code
     } catch (e) { displayLabel.value = code }
     if (!typing.value) search.value = displayLabel.value
     return
@@ -151,9 +167,11 @@ async function doSearch(q) {
       results.value = rows || []
       return
     }
-    // M7: HĐ khung BÁN tìm theo tên/mã khách, mã HĐ, vật tư — endpoint riêng (join customer_name)
-    if (props.linkTo === SALES_FC) {
-      const rows = await call('supplycore.api.frontend.search_sales_framework_contract', { q: q || '', limit: 20 })
+    // M7: doctype nhãn ghép (HĐ khung bán, SO/DN/SI) — endpoint search chuyên biệt
+    // (join customer_name, tìm theo tên/mã khách + mã phiếu).
+    const c = composed()
+    if (c) {
+      const rows = await call(c.endpoint, { ...c.args, q: q || '', limit: 20 })
       if (my !== _seq) return
       results.value = rows || []
       return
@@ -226,16 +244,11 @@ function pick(row) {
 }
 
 const subLabel = (r) => {
+  const c = composed()
+  if (c) return c.sub(r)
   // Framework Contract: số HĐ làm chính → phụ hiện NCC
   if (props.linkTo === 'Framework Contract') {
     return r.supplier_name || ''
-  }
-  // HĐ khung bán: phụ hiện kỳ hiệu lực + trạng thái
-  if (props.linkTo === SALES_FC) {
-    const parts = []
-    if (r.valid_from || r.valid_to) parts.push(`HL: ${r.valid_from || '?'} → ${r.valid_to || '?'}`)
-    if (r.status) parts.push(r.status)
-    return parts.join(' · ')
   }
   // SC Batch: hiện item + HSD
   if (props.linkTo === 'SC Batch' && (r.item || r.expiry_date)) {
@@ -248,13 +261,15 @@ const subLabel = (r) => {
 }
 // Tên hiển thị chính trong dropdown (ưu tiên tên)
 const primaryText = (r) => {
-  if (props.linkTo === SALES_FC) return r.customer_name || r.customer || r.name
+  const c = composed()
+  if (c) return c.primary(r)
   const nf = nameFieldOf(props.linkTo)
   const nm = nf ? r[nf] : null
   return nm || r.name
 }
 const hasName = (r) => {
-  if (props.linkTo === SALES_FC) return !!(r.customer_name && r.customer_name !== r.name)
+  // Doctype nhãn ghép: mã phiếu đã nằm trong phụ đề (sub) → không hiện dòng mã riêng.
+  if (composed()) return false
   const nf = nameFieldOf(props.linkTo)
   return !!(nf && r[nf] && r[nf] !== r.name)
 }

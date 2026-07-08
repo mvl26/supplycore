@@ -125,6 +125,47 @@ def search_sales_framework_contract(q=None, limit=20):
     """, params, as_dict=True)
 
 
+# M7 UX: các chứng từ bán hàng tham chiếu (SO/DN/SI) — hiện TÊN khách + ngày
+# thay vì chỉ mã doc. field (date, amount) lấy từ whitelist này (an toàn khỏi
+# SQL injection vì doctype + field đều từ config server-side, không từ client).
+_SALES_DOC_SEARCH = {
+    "SC Sales Order":   ("order_date",   "total_amount"),
+    "SC Delivery Note": ("delivery_date", None),
+    "SC Sales Invoice": ("invoice_date", "grand_total"),
+}
+
+
+@frappe.whitelist()
+def search_sales_doc(doctype, q=None, limit=20):
+    """Tìm chứng từ bán hàng (SO/DN/SI) theo mã, mã khách, hoặc TÊN khách —
+    trả kèm customer_name + ngày + số tiền để hiển thị tường minh trong droplist."""
+    cfg = _SALES_DOC_SEARCH.get(doctype)
+    if not cfg:
+        frappe.throw(_("Doctype {0} không hỗ trợ tìm kiếm bán hàng").format(doctype))
+    # SQL thô bỏ qua permission_query → chặn Portal (rò chéo khách, BRU-SEC-001).
+    block_portal()
+    if not frappe.has_permission(doctype, "read"):
+        frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
+    date_field, amount_field = cfg
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = ("WHERE d.name LIKE %(like)s OR d.customer LIKE %(like)s "
+                "OR cust.customer_name LIKE %(like)s")
+    amount_sel = f"d.`{amount_field}` AS amount" if amount_field else "NULL AS amount"
+    return frappe.db.sql(f"""
+        SELECT d.name, d.customer, cust.customer_name,
+               d.`{date_field}` AS ref_date, {amount_sel}, d.status
+        FROM `tab{doctype}` d
+        LEFT JOIN `tabSC Customer` cust ON cust.name = d.customer
+        {cond}
+        ORDER BY d.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
+
+
 @frappe.whitelist()
 def get_doc(doctype, name):
     """Get full doc + child tables."""
