@@ -277,25 +277,41 @@
   <div class="full-msg">
     <div class="box" style="max-width:430px; text-align:left;">
       <div style="text-align:center; margin-bottom:16px;">
-        <div class="ic">🛒</div>
-        <h1 style="margin-bottom:6px;">Đăng ký khách hàng</h1>
-        <p style="margin:0;">Tạo tài khoản để xem bảng giá và đặt hàng trực tuyến với Miyano Việt Nam.</p>
+        <div class="brand-mark" style="margin:0 auto 10px;">M</div>
+        <h1 style="margin-bottom:6px;" id="gate-title">Cổng khách hàng Miyano</h1>
+        <p style="margin:0;" id="gate-sub">Đăng nhập hoặc đăng ký để xem bảng giá và đặt hàng trực tuyến.</p>
       </div>
       <div id="reg-alert"></div>
-      <label class="reg-lbl">Tên công ty / khách hàng <span style="color:var(--danger)">*</span></label>
-      <input id="reg-name" class="reg-inp" placeholder="VD: Công ty TNHH ABC" />
-      <label class="reg-lbl">Email (dùng để đăng nhập) <span style="color:var(--danger)">*</span></label>
-      <input id="reg-email" class="reg-inp" type="email" placeholder="ban@congty.vn" />
-      <label class="reg-lbl">Mật khẩu <span style="color:var(--danger)">*</span> <span style="font-weight:400;color:var(--faint)">(tối thiểu 6 ký tự)</span></label>
-      <input id="reg-pass" class="reg-inp" type="password" placeholder="••••••" />
-      <div style="display:flex; gap:10px;">
-        <div style="flex:1;"><label class="reg-lbl">Điện thoại</label><input id="reg-phone" class="reg-inp" placeholder="Tùy chọn" /></div>
-        <div style="flex:1;"><label class="reg-lbl">Mã số thuế</label><input id="reg-tax" class="reg-inp" placeholder="Tùy chọn" /></div>
+
+      <!-- ĐĂNG NHẬP -->
+      <div id="login-view">
+        <label class="reg-lbl">Email</label>
+        <input id="lg-email" class="reg-inp" type="email" placeholder="ban@congty.vn" autocomplete="username" />
+        <label class="reg-lbl">Mật khẩu</label>
+        <input id="lg-pass" class="reg-inp" type="password" placeholder="••••••" autocomplete="current-password" />
+        <button class="btn btn-primary" id="lg-submit" style="width:100%; margin-top:6px;">Đăng nhập</button>
+        <p style="text-align:center; margin:16px 0 0; font-size:13px; color:var(--muted);">
+          Chưa có tài khoản? <a href="#" id="to-reg" style="color:var(--accent); font-weight:700; text-decoration:none;">Đăng ký ngay</a>
+        </p>
       </div>
-      <button class="btn btn-primary" id="reg-submit" style="width:100%; margin-top:8px;">Đăng ký &amp; vào cổng</button>
-      <p style="text-align:center; margin:16px 0 0; font-size:13px; color:var(--muted);">
-        Đã có tài khoản? <a href="/login?redirect-to=/portal" style="color:var(--accent); font-weight:700; text-decoration:none;">Đăng nhập</a>
-      </p>
+
+      <!-- ĐĂNG KÝ -->
+      <div id="reg-view" style="display:none;">
+        <label class="reg-lbl">Tên công ty / khách hàng <span style="color:var(--danger)">*</span></label>
+        <input id="reg-name" class="reg-inp" placeholder="VD: Công ty TNHH ABC" />
+        <label class="reg-lbl">Email (dùng để đăng nhập) <span style="color:var(--danger)">*</span></label>
+        <input id="reg-email" class="reg-inp" type="email" placeholder="ban@congty.vn" />
+        <label class="reg-lbl">Mật khẩu <span style="color:var(--danger)">*</span> <span style="font-weight:400;color:var(--faint)">(tối thiểu 6 ký tự)</span></label>
+        <input id="reg-pass" class="reg-inp" type="password" placeholder="••••••" />
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;"><label class="reg-lbl">Điện thoại</label><input id="reg-phone" class="reg-inp" placeholder="Tùy chọn" /></div>
+          <div style="flex:1;"><label class="reg-lbl">Mã số thuế</label><input id="reg-tax" class="reg-inp" placeholder="Tùy chọn" /></div>
+        </div>
+        <button class="btn btn-primary" id="reg-submit" style="width:100%; margin-top:8px;">Đăng ký &amp; vào cổng</button>
+        <p style="text-align:center; margin:16px 0 0; font-size:13px; color:var(--muted);">
+          Đã có tài khoản? <a href="#" id="to-login" style="color:var(--accent); font-weight:700; text-decoration:none;">Đăng nhập</a>
+        </p>
+      </div>
     </div>
   </div>
   <script>
@@ -306,11 +322,46 @@
       function showAlert(msg, ok){
         $("reg-alert").innerHTML = '<div class="alert ' + (ok?"alert-success":"alert-error") + '">' + esc(msg) + '</div>';
       }
-      function pickErr(d){
+      function pickErr(d, fallback){
         if(d && d._server_messages){ try{ return JSON.parse(JSON.parse(d._server_messages)[0]).message; }catch(e){} }
+        if(d && (d.message || d._error_message)){ return d.message || d._error_message; }
         if(d && d.exception){ var p=String(d.exception).split(":"); return p[p.length-1].trim(); }
-        return "Đăng ký thất bại, vui lòng thử lại.";
+        return fallback || "Có lỗi, vui lòng thử lại.";
       }
+      // ---- toggle 2 view ----
+      function setView(v){
+        $("reg-alert").innerHTML="";
+        $("login-view").style.display = (v==="login") ? "block" : "none";
+        $("reg-view").style.display   = (v==="reg")   ? "block" : "none";
+        $("gate-title").textContent = (v==="login") ? "Đăng nhập" : "Đăng ký khách hàng";
+        $("gate-sub").textContent = (v==="login")
+          ? "Chào mừng quý khách quay lại với Miyano Việt Nam."
+          : "Tạo tài khoản để xem bảng giá và đặt hàng trực tuyến.";
+      }
+      $("to-reg").addEventListener("click", function(e){ e.preventDefault(); setView("reg"); });
+      $("to-login").addEventListener("click", function(e){ e.preventDefault(); setView("login"); });
+
+      // ---- ĐĂNG NHẬP: gọi thẳng /api/method/login của Frappe ----
+      var lg = $("lg-submit");
+      function doLogin(){
+        var usr=$("lg-email").value.trim(), pwd=$("lg-pass").value;
+        if(!usr||!pwd){ showAlert("Vui lòng nhập Email và Mật khẩu."); return; }
+        lg.disabled=true; lg.textContent="Đang đăng nhập…"; $("reg-alert").innerHTML="";
+        fetch("/api/method/login", {
+          method:"POST", credentials:"same-origin",
+          headers:{"Content-Type":"application/x-www-form-urlencoded","X-Frappe-CSRF-Token":CSRF},
+          body: "usr=" + encodeURIComponent(usr) + "&pwd=" + encodeURIComponent(pwd)
+        }).then(function(r){ return r.text().then(function(t){ var d={}; try{d=JSON.parse(t);}catch(e){} return {ok:r.ok,d:d}; }); })
+          .then(function(res){
+            if(!res.ok){ showAlert(pickErr(res.d, "Sai email hoặc mật khẩu.")); lg.disabled=false; lg.textContent="Đăng nhập"; return; }
+            showAlert("Đăng nhập thành công! Đang vào cổng…", true);
+            setTimeout(function(){ window.location.href="/portal"; }, 500);
+          }).catch(function(){ showAlert("Lỗi kết nối, vui lòng thử lại."); lg.disabled=false; lg.textContent="Đăng nhập"; });
+      }
+      lg.addEventListener("click", doLogin);
+      $("lg-pass").addEventListener("keydown", function(e){ if(e.key==="Enter") doLogin(); });
+
+      // ---- ĐĂNG KÝ ----
       var btn = $("reg-submit");
       btn.addEventListener("click", function(){
         var name=$("reg-name").value.trim(), email=$("reg-email").value.trim(), pass=$("reg-pass").value;
@@ -323,11 +374,13 @@
           body: JSON.stringify({customer_name:name, email:email, password:pass, phone:$("reg-phone").value.trim(), tax_code:$("reg-tax").value.trim()})
         }).then(function(r){ return r.json().catch(function(){return {};}).then(function(d){ return {ok:r.ok,d:d}; }); })
           .then(function(res){
-            if(!res.ok){ showAlert(pickErr(res.d)); btn.disabled=false; btn.textContent="Đăng ký & vào cổng"; return; }
+            if(!res.ok){ showAlert(pickErr(res.d, "Đăng ký thất bại.")); btn.disabled=false; btn.textContent="Đăng ký & vào cổng"; return; }
             showAlert("Đăng ký thành công! Đang vào cổng…", true);
             setTimeout(function(){ window.location.href="/portal"; }, 800);
           }).catch(function(){ showAlert("Lỗi kết nối, vui lòng thử lại."); btn.disabled=false; btn.textContent="Đăng ký & vào cổng"; });
       });
+
+      setView("login");  // mặc định hiện Đăng nhập
     })();
   </script>
 {% else %}
@@ -521,7 +574,7 @@
         method: "POST",
         headers: {"X-Frappe-CSRF-Token": CSRF},
         credentials: "same-origin",
-      }).finally(function(){ window.location.href = "/login"; });
+      }).finally(function(){ window.location.href = "/portal"; });
     });
 
     // ---------------------------------------------------------------------
