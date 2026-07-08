@@ -174,9 +174,16 @@ class SCPurchaseInvoice(Document):
     # ------------------------------------------------------------------
     def _post_gl_entries(self):
         """
-          Dr 152  Hàng tồn kho       subtotal
-          Dr 1331 Thuế GTGT khấu trừ vat_amount  (nếu vat>0)
-             Cr 331 Phải trả NCC      grand_total
+          Hóa đơn mua thường:
+            Dr 152  Hàng tồn kho       subtotal
+            Dr 1331 Thuế GTGT khấu trừ vat_amount  (nếu vat>0)
+               Cr 331 Phải trả NCC      grand_total
+
+          Debit/Credit Note trả hàng NCC (is_debit_note/is_credit_note=1):
+          hàng đi NGƯỢC trở lại NCC → GL đảo chiều so với hóa đơn mua thường:
+            Dr 331 Phải trả NCC        grand_total  (giảm công nợ phải trả)
+               Cr 152 Hàng tồn kho       subtotal      (giảm tồn kho)
+               Cr 1331 Thuế GTGT khấu trừ vat_amount (nếu vat>0, giảm khấu trừ)
         """
         from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
 
@@ -189,18 +196,34 @@ class SCPurchaseInvoice(Document):
                              indicator="orange", alert=True)
             return
 
-        entries = [
-            {"account": acc_inventory, "debit": flt(self.subtotal),
-             "remarks": f"PI {self.name} — hàng tồn kho"},
-        ]
-        if flt(self.vat_amount) > 0 and acc_vat:
-            entries.append({"account": acc_vat, "debit": flt(self.vat_amount),
-                             "remarks": f"PI {self.name} — VAT khấu trừ"})
-        entries.append({
-            "account": acc_payable, "credit": flt(self.grand_total),
-            "party_type": "SC Supplier", "party": self.supplier,
-            "remarks": f"PI {self.name} — phải trả NCC",
-        })
+        is_return_note = bool(self.get("is_debit_note") or self.get("is_credit_note"))
+
+        if is_return_note:
+            # Trả hàng NCC: đảo ngược bút toán mua hàng thường — payable
+            # GIẢM (Dr 331), tồn kho GIẢM (Cr 152), VAT khấu trừ GIẢM (Cr 1331).
+            entries = [
+                {"account": acc_payable, "debit": flt(self.grand_total),
+                 "party_type": "SC Supplier", "party": self.supplier,
+                 "remarks": f"PI {self.name} — trả hàng NCC, giảm phải trả"},
+                {"account": acc_inventory, "credit": flt(self.subtotal),
+                 "remarks": f"PI {self.name} — giảm hàng tồn kho (trả hàng)"},
+            ]
+            if flt(self.vat_amount) > 0 and acc_vat:
+                entries.append({"account": acc_vat, "credit": flt(self.vat_amount),
+                                 "remarks": f"PI {self.name} — giảm VAT khấu trừ (trả hàng)"})
+        else:
+            entries = [
+                {"account": acc_inventory, "debit": flt(self.subtotal),
+                 "remarks": f"PI {self.name} — hàng tồn kho"},
+            ]
+            if flt(self.vat_amount) > 0 and acc_vat:
+                entries.append({"account": acc_vat, "debit": flt(self.vat_amount),
+                                 "remarks": f"PI {self.name} — VAT khấu trừ"})
+            entries.append({
+                "account": acc_payable, "credit": flt(self.grand_total),
+                "party_type": "SC Supplier", "party": self.supplier,
+                "remarks": f"PI {self.name} — phải trả NCC",
+            })
 
         SCGLEntry.post_journal(
             entries=entries,
