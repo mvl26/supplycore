@@ -62,6 +62,22 @@ def portal_provision(customer, email):
 
     user_doc.add_roles(PORTAL_ROLE)
 
+    # BRU-CUS-002: mỗi tài khoản Portal chỉ gắn ĐÚNG MỘT khách hàng. set_value
+    # bên dưới ghi thẳng SQL (bỏ qua controller validate → _validate_portal_user_unique
+    # không chạy), nên phải tự kiểm ở đây: nếu user (đã chuẩn hoá) đã là
+    # portal_user của khách khác → chặn, tránh 1 user thấy dữ liệu chéo nhiều
+    # khách (permission_query_conditions lọc theo portal_user).
+    other = frappe.db.get_value(
+        "SC Customer",
+        {"portal_user": user_doc.name, "name": ["!=", customer]},
+        "name",
+    )
+    if other:
+        frappe.throw(_(
+            "BRU-CUS-002: Tài khoản Portal {0} đã được gán cho khách hàng {1} — "
+            "mỗi tài khoản chỉ gắn với đúng một khách hàng."
+        ).format(user_doc.name, other))
+
     # Frappe chuẩn hoá User.name/email về chữ thường khi validate (xem
     # frappe/core/doctype/user/user.py: self.email = self.email.strip().lower()).
     # Phải dùng user_doc.name (đã chuẩn hoá) để lưu vào SC Customer.portal_user
@@ -204,7 +220,14 @@ def portal_catalog():
     customer = _require_portal_customer()
     sfc_names = frappe.get_all(
         "SC Sales Framework Contract",
-        filters={"customer": customer, "status": "Hiệu lực", "valid_to": [">=", today()]},
+        filters={
+            "customer": customer, "status": "Hiệu lực",
+            # BRU-SFC-001: chỉ HĐ CÒN hiệu lực theo NGÀY — vừa chưa hết hạn
+            # (valid_to>=today) vừa đã tới ngày hiệu lực (valid_from<=today).
+            # Thiếu lọc valid_from → HĐ tương lai (submit set status="Hiệu lực"
+            # ngay) lọt vào catalog cho khách đặt sớm.
+            "valid_to": [">=", today()], "valid_from": ["<=", today()],
+        },
         pluck="name",
     )
     if not sfc_names:

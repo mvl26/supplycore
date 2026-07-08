@@ -49,7 +49,7 @@ class SCDeliveryNote(Document):
         if not self.sales_order:
             return
         so_status = frappe.db.get_value("SC Sales Order", self.sales_order, "status")
-        if so_status not in ("Đã duyệt", "Đang xử lý"):
+        if so_status != "Đã duyệt":
             frappe.throw(_(
                 "BRU-SO-002: Đơn hàng bán {0} chưa được duyệt (trạng thái hiện tại: "
                 "{1}) — không thể tạo Phiếu giao hàng."
@@ -59,32 +59,56 @@ class SCDeliveryNote(Document):
     # FEFO auto-pick + BRU-INV-001 (tại thời điểm chọn lô)
     # ------------------------------------------------------------------
     def _resolve_batches(self):
-        from supplycore.api.fefo import auto_pick_fefo
+        from supplycore.api.fefo import get_suggested_batches
 
-        for row in list(self.items):
+        # Cấp phát FEFO có "reserved": theo dõi SL đã giữ theo (item, warehouse,
+        # batch) trên TOÀN phiếu. Bản cũ gọi auto_pick_fefo cho TỪNG dòng, mỗi
+        # dòng đọc CÙNG số dư DB (chưa post SLE nào) nên 2 dòng cùng item/lô đều
+        # thấy đủ tồn rồi cùng chọn 1 lô → tồn âm khi on_submit post tuần tự
+        # (BRU-INV-001). Trừ phần đã reserved đảm bảo FEFO trải đúng qua nhiều lô
+        # và không cấp vượt tồn thật.
+        reserved = {}
+        # (1) Ghi nhận trước các dòng đã gán lô thủ công.
+        for row in self.items:
             row.warehouse = row.warehouse or self.from_warehouse
             if row.batch:
+                key = (row.item, row.warehouse, row.batch)
+                reserved[key] = flt(reserved.get(key, 0)) + flt(row.qty)
+
+        # (2) Auto-pick FEFO cho các dòng chưa có lô, trừ phần đã reserved.
+        for row in list(self.items):
+            if row.batch:
                 continue
-            result = auto_pick_fefo(row.item, row.warehouse, row.qty)
-            if flt(result.get("shortfall")):
+            need = flt(row.qty)
+            # qty=0 → get_suggested_batches trả TẤT CẢ lô khả dụng (đã loại hết
+            # hạn/blocked/QC fail) theo thứ tự FEFO; ta tự cấp phát trừ reserved.
+            batches = get_suggested_batches(row.item, row.warehouse, 0)["batches"]
+            picks = []
+            for b in batches:
+                key = (row.item, row.warehouse, b["batch_no"])
+                avail = flt(b["available_qty"]) - flt(reserved.get(key, 0))
+                if avail <= 0:
+                    continue
+                take = min(need, avail)
+                if take <= 0:
+                    continue
+                picks.append((b["batch_no"], take))
+                reserved[key] = flt(reserved.get(key, 0)) + take
+                need -= take
+                if need <= 0:
+                    break
+            if need > 0:
                 frappe.throw(_(
                     "BRU-INV-001: Không đủ tồn kho khả dụng cho vật tư {0} tại kho "
                     "{1} — cần {2}, thiếu {3}."
-                ).format(row.item, row.warehouse, row.qty, result["shortfall"]),
-                    title="BRU-INV-001")
-            picked = result.get("picked") or []
-            if not picked:
-                frappe.throw(_(
-                    "BRU-INV-001: Không tìm thấy lô khả dụng cho vật tư {0} tại kho {1}."
-                ).format(row.item, row.warehouse), title="BRU-INV-001")
-            # Lô đầu tiên gán vào dòng hiện tại; nếu cần nhiều lô để đủ SL thì
-            # tách các lô còn lại thành dòng DN Item mới (mirror FEFO split).
-            row.batch = picked[0]["batch_no"]
-            row.qty = flt(picked[0]["suggested_qty"])
-            for extra in picked[1:]:
+                ).format(row.item, row.warehouse, row.qty, need), title="BRU-INV-001")
+            # Lô đầu gán vào dòng hiện tại; các lô còn lại tách thành dòng mới.
+            row.batch = picks[0][0]
+            row.qty = picks[0][1]
+            for extra_batch, extra_qty in picks[1:]:
                 self.append("items", {
                     "item": row.item, "uom": row.uom, "warehouse": row.warehouse,
-                    "batch": extra["batch_no"], "qty": flt(extra["suggested_qty"]),
+                    "batch": extra_batch, "qty": extra_qty,
                 })
 
     # ------------------------------------------------------------------
@@ -96,6 +120,12 @@ class SCDeliveryNote(Document):
         )
 
         today_d = getdate(today())
+        # Gộp SL cần xuất theo (item, warehouse, batch) trên TOÀN phiếu rồi so
+        # MỘT LẦN với tồn khả dụng. Kiểm per-row của bản cũ để lọt tồn âm khi
+        # NHIỀU dòng cùng dùng chung 1 lô (mỗi dòng thấy đủ tồn độc lập nhưng
+        # tổng vượt tồn thật) → BRU-INV-001. Đây là chốt chặn cuối cùng, đúng
+        # bất kể _resolve_batches cấp phát thế nào.
+        need_by_key = {}
         for row in self.items:
             wh = row.warehouse or self.from_warehouse
             if row.batch:
@@ -105,13 +135,17 @@ class SCDeliveryNote(Document):
                         "BRU-EXP-001: Lô {0} (vật tư {1}) đã hết hạn ({2}) — không thể "
                         "xuất kho."
                     ).format(row.batch, row.item, expiry), title="BRU-EXP-001")
-            avail = SCStockLedgerEntry.get_available_qty(row.item, wh, row.batch)
-            if flt(row.qty) > flt(avail):
+            key = (row.item, wh, row.batch)
+            need_by_key[key] = flt(need_by_key.get(key, 0)) + flt(row.qty)
+
+        for (item, wh, batch), need in need_by_key.items():
+            avail = SCStockLedgerEntry.get_available_qty(item, wh, batch)
+            if flt(need) > flt(avail):
                 frappe.throw(_(
                     "BRU-INV-001: Không đủ tồn kho khả dụng cho vật tư {0}{1} tại kho "
                     "{2}: cần {3}, còn {4}."
-                ).format(row.item, f" lô {row.batch}" if row.batch else "", wh,
-                          row.qty, avail), title="BRU-INV-001")
+                ).format(item, f" lô {batch}" if batch else "", wh,
+                          need, avail), title="BRU-INV-001")
 
     # ------------------------------------------------------------------
     # SLE posting / reversal

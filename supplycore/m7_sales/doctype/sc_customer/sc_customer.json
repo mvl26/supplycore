@@ -17,6 +17,7 @@
    "label": "Hạn mức công nợ", "default": "0", "description": "0 = không giới hạn"},
   {"fieldname": "payment_terms", "fieldtype": "Data", "label": "Điều khoản thanh toán"},
   {"fieldname": "portal_user", "fieldtype": "Link", "options": "User", "label": "Tài khoản Portal",
+   "unique": 1,
    "description": "Tài khoản Portal — bắt buộc & 1-1 ở GĐ3/M12"}
  ],
  "permissions": [

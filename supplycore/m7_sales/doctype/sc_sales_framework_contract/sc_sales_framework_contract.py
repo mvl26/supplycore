@@ -66,6 +66,7 @@ class SCSalesFrameworkContract(Document):
                     JOIN `tabSC Sales Order` so ON so.name = soi.parent
                     WHERE so.framework_contract = %s
                       AND so.docstatus = 1
+                      AND so.status != 'Từ chối'
                       AND soi.item = %s
                 """, (self.name, row.item))[0][0]
             sold = flt(sold)

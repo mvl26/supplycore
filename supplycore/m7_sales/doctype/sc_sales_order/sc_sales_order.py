@@ -17,7 +17,7 @@ Business rules:
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import flt, getdate, today
 
 from supplycore.utils.permissions import block_portal
 
@@ -42,6 +42,24 @@ class SCSalesOrder(Document):
         if not self.framework_contract:
             return
         fc = frappe.get_doc("SC Sales Framework Contract", self.framework_contract)
+
+        # BRU-SFC-001 (hiệu lực theo NGÀY): không được đặt đơn trên HĐ khung
+        # CHƯA tới ngày hiệu lực hoặc ĐÃ hết hạn. KHÔNG tin `fc.status` cho việc
+        # này — SFC không có scheduler tự chuyển "Hiệu lực"→"Hết hạn", và
+        # on_submit set cứng status="Hiệu lực" bất kể valid_from tương lai, nên
+        # status có thể stale. Kiểm ngày ở write-path đóng mọi đường (portal/
+        # desk/API) vì mọi SC Sales Order đều chạy validate().
+        today_d = getdate(today())
+        if fc.valid_from and getdate(fc.valid_from) > today_d:
+            frappe.throw(_(
+                "BRU-SFC-001: Hợp đồng khung {0} chưa tới ngày hiệu lực ({1}) — "
+                "không thể đặt đơn."
+            ).format(self.framework_contract, fc.valid_from), title="BRU-SFC-001")
+        if fc.valid_to and getdate(fc.valid_to) < today_d:
+            frappe.throw(_(
+                "BRU-SFC-001: Hợp đồng khung {0} đã hết hạn ({1}) — không thể đặt đơn."
+            ).format(self.framework_contract, fc.valid_to), title="BRU-SFC-001")
+
         sfc_items_by_item = {r.item: r for r in fc.items}
 
         for row in self.items:
@@ -72,6 +90,7 @@ class SCSalesOrder(Document):
                 JOIN `tabSC Sales Order` so ON so.name = soi.parent
                 WHERE so.framework_contract = %s
                   AND so.docstatus = 1
+                  AND so.status != 'Từ chối'
                   AND so.name != %s
                   AND soi.item = %s
             """, (self.framework_contract, self.name or "", item_code))[0][0])
