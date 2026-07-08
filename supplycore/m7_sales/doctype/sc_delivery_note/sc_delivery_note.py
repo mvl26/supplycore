@@ -11,8 +11,9 @@ Business rules:
 
 Submit: ghi SC Stock Ledger Entry (-qty) cho từng dòng; set status "Đã giao";
 cập nhật sales_order.status = "Đã bàn giao".
-Cancel: chèn SLE đối ứng (+qty) + đánh dấu is_cancelled (mirror SC Purchase
-Receipt._reverse_stock_ledger); trả sales_order.status về "Đã duyệt".
+Cancel: chèn SLE đối ứng (+qty), append-only — KHÔNG đánh dấu is_cancelled
+trên dòng gốc (xem _reverse_stock_ledger; mirror sang SC Purchase Receipt /
+SC Stock Entry / SC Stock Reconciliation); trả sales_order.status về "Đã duyệt".
 """
 
 import frappe
@@ -153,8 +154,9 @@ class SCDeliveryNote(Document):
             # NB: KHÔNG set is_cancelled trên dòng gốc. get_available_qty tính
             # SUM(qty_change) WHERE is_cancelled=0, nên dòng gốc (-qty) và dòng
             # đối ứng (+qty) tự triệt tiêu → tồn trả về đúng. Nếu vừa set
-            # is_cancelled vừa post đối ứng sẽ đảo KÉP (bug). Xem ghi chú:
-            # SC Purchase Receipt._reverse_stock_ledger còn lỗi này (pre-existing).
+            # is_cancelled vừa post đối ứng sẽ đảo KÉP (bug — pattern này đã
+            # được mirror sang SC Purchase Receipt / SC Stock Entry /
+            # SC Stock Reconciliation._reverse_stock_ledger).
 
 
 def _get_valuation(item, warehouse, batch=None):

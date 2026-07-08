@@ -1,7 +1,10 @@
 """SC Stock Ledger Entry — immutable transaction log.
 
 KHÔNG sửa/xóa trực tiếp. Chỉ tạo qua submit của SC Stock Entry / SC Purchase Receipt.
-Cancel được thực hiện bằng cách chèn row đối ứng (qty_change đảo dấu) + set is_cancelled.
+Cancel được thực hiện bằng cách chèn row đối ứng (qty_change đảo dấu), APPEND-ONLY:
+KHÔNG set is_cancelled trên dòng gốc. get_qty/get_available_qty SUM(qty_change)
+WHERE is_cancelled=0 — nếu vừa loại dòng gốc vừa cộng dòng đối ứng sẽ đảo KÉP
+(double-reversal bug). Giữ cả 2 dòng is_cancelled=0 để tự triệt tiêu về đúng số dư.
 """
 
 import frappe

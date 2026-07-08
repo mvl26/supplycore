@@ -216,7 +216,11 @@ class SCStockReconciliation(Document):
                 batch=s.batch, bin_location=s.bin_location,
                 remarks=f"Cancel SLE {s.name}",
             )
-            frappe.db.set_value("SC Stock Ledger Entry", s.name, "is_cancelled", 1)
+            # NB: KHÔNG set is_cancelled trên dòng gốc. get_qty/get_available_qty
+            # tính SUM(qty_change) WHERE is_cancelled=0, nên dòng gốc và dòng đối
+            # ứng tự triệt tiêu → tồn trả về đúng. Nếu vừa set is_cancelled vừa
+            # post đối ứng sẽ đảo KÉP (bug — đã sửa, mirror
+            # SC Delivery Note._reverse_stock_ledger).
 
     # ------------------------------------------------------------------
     def _post_gl_entries(self):
