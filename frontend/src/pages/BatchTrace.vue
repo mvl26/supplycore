@@ -300,6 +300,49 @@ const missingLabel = {
       </div>
     </div>
 
+    <!-- Section 3b: Đã bán cho khách hàng (BRU-REC-001) -->
+    <div v-if="trace.sold_to && trace.sold_to.length" class="sc-card p-5">
+      <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
+        <span class="text-xl"><Icon name="users" :size="18" /></span> Đã bán cho khách hàng
+        <span class="ml-auto font-mono text-sm text-sc-text-muted">
+          {{ trace.sold_to.length }} khách ·
+          <span class="text-sc-danger font-semibold">
+            -{{ fmtNumber(trace.sold_to.reduce((s, r) => s + (Number(r.qty) || 0), 0)) }}
+          </span>
+        </span>
+      </h3>
+      <div class="overflow-x-auto">
+        <table class="sc-table">
+          <thead>
+            <tr>
+              <th>Khách hàng</th>
+              <th class="text-right">SL đã bán</th>
+              <th>Ngày giao</th>
+              <th>Phiếu giao (DN)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(s, idx) in trace.sold_to" :key="idx">
+              <td>
+                <span class="text-sc-royal hover:underline cursor-pointer"
+                  @click="goToDoc('SC Customer', s.customer)">{{ s.customer || '—' }}</span>
+              </td>
+              <td class="text-right font-mono font-semibold text-sc-danger">
+                {{ fmtNumber(s.qty) }}
+              </td>
+              <td class="text-xs">{{ fmtDate(s.delivery_date) || '—' }}</td>
+              <td class="text-xs">
+                <span class="text-sc-royal hover:underline cursor-pointer font-mono"
+                  @click="goToDoc('SC Delivery Note', s.delivery_note)">
+                  {{ s.delivery_note }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Section 4: Movements -->
     <div class="sc-card overflow-hidden">
       <div class="p-5 pb-3">

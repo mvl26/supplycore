@@ -26,6 +26,25 @@ export const ACTIONS = {
       ]},
   ],
 
+  // === M1 Release Order — UC-05 (Lệnh gọi hàng → PO) ===
+  'Release Order': [
+    { method: 'make_purchase_order', label: 'Tạo đơn mua (PO)', icon: 'shopping-cart', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Approved' && !d.purchase_order,
+      navigateOnSuccess: { type: 'doc', dt: 'SC Purchase Order', from: 'result' } },
+  ],
+
+  // === M2 Procurement Plan — UC-06 (Kế hoạch mua → MR) ===
+  'Procurement Plan': [
+    { method: 'auto_load_items', label: 'Tự nạp theo tiêu thụ', icon: 'clipboard-list', variant: 'primary',
+      when: (d) => d.docstatus === 0 && d.warehouse,
+      args: [{ key: 'item_filter', label: 'Lọc theo nhóm VT (tuỳ chọn)', type: 'text' }] },
+    { method: 'auto_load_reorder_items', label: 'Tự nạp theo tồn tối thiểu', icon: 'download', variant: 'secondary',
+      when: (d) => d.docstatus === 0 && d.warehouse },
+    { method: 'make_material_request', label: 'Tạo Yêu cầu mua (MR)', icon: 'file-text', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Approved' && !d.material_request,
+      navigateOnSuccess: { type: 'doc', dt: 'SC Material Request', from: 'result' } },
+  ],
+
   // === M2 Purchase Order — UC-08 (workflow đơn giản hoá) ===
   'SC Purchase Order': [
     { method: 'make_purchase_receipt', label: 'Tạo Phiếu nhập (PR)', icon: 'package', variant: 'primary',

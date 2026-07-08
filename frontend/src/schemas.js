@@ -247,9 +247,93 @@ export const FORM_SCHEMAS = {
     },
   },
 
+  'Release Order': {
+    sections: [
+      { title: 'Thông tin chung', fields: [
+        { name: 'framework_contract', label: 'Hợp đồng khung', type: 'Link', linkTo: 'Framework Contract', required: true,
+          fetchFrom: { target_doctype: 'Framework Contract', target_field: 'supplier' },
+          hint: 'Chọn HĐ khung Active — NCC tự điền theo hợp đồng. Để trống items để backend tự nạp vật tư còn hạn mức.' },
+        { name: 'supplier', label: 'Nhà cung cấp', type: 'Link', linkTo: 'SC Supplier', readonly: true,
+          hint: 'Tự lấy theo HĐ khung' },
+        { name: 'release_date', label: 'Ngày lệnh', type: 'Date', required: true, default: 'today' },
+        { name: 'required_by', label: 'Ngày cần giao', type: 'Date', required: true,
+          hint: 'Không được trước ngày lệnh' },
+        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
+      ]},
+    ],
+    items: {
+      field: 'items', label: 'Danh mục vật tư cần gọi',
+      columns: [
+        { name: 'item_code', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '25%' },
+        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', required: true, width: '12%',
+          scope: { itemField: 'item_code' },
+          fetchFrom: { source: 'item_code', target_doctype: 'SC Item', target_field: 'uom' } },
+        { name: 'qty', label: 'SL gọi', type: 'Float', required: true, width: '15%' },
+        { name: 'available_qty', label: 'Còn theo HĐK', type: 'Float', readonly: true, width: '15%' },
+        { name: 'unit_price', label: 'Đơn giá HĐK', type: 'Currency', readonly: true, width: '18%',
+          hint: 'Lấy theo hợp đồng khung — không sửa tay' },
+        { name: 'amount', label: 'Thành tiền', type: 'Currency', readonly: true, width: '15%',
+          compute: { from: ['qty', 'unit_price'], op: 'mul' } },
+      ],
+    },
+  },
+
   // ============================================================
   // M2 Planning
   // ============================================================
+  'Procurement Plan': {
+    sections: [
+      { title: 'Thông tin chung', fields: [
+        { name: 'plan_date', label: 'Ngày lập kế hoạch', type: 'Date', required: true, default: 'today' },
+        { name: 'period_type', label: 'Kỳ kế hoạch', type: 'Select', required: true,
+          options: [
+            { value: 'Monthly', label: 'Hàng tháng' },
+            { value: 'Quarterly', label: 'Hàng quý' },
+            { value: 'Yearly', label: 'Hàng năm' },
+            { value: 'Adhoc', label: 'Đột xuất' },
+          ], default: 'Monthly' },
+        { name: 'from_date', label: 'Từ ngày', type: 'Date', required: true },
+        { name: 'to_date', label: 'Đến ngày', type: 'Date', required: true },
+        { name: 'required_by', label: 'Ngày cần hàng', type: 'Date',
+          hint: 'Sẽ truyền sang Material Request khi tạo' },
+      ]},
+      { title: 'Phạm vi & tham số tính', fields: [
+        { name: 'warehouse', label: 'Kho', type: 'Link', linkTo: 'SC Warehouse', required: true },
+        { name: 'consumption_lookback_months', label: 'Số tháng lịch sử tính bình quân', type: 'Int', default: 3,
+          hint: 'Lấy bình quân tiêu thụ N tháng gần nhất' },
+        { name: 'safety_stock_factor', label: 'Hệ số safety stock (%)', type: 'Percent', default: 20,
+          hint: '% bổ sung trên nhu cầu cơ bản' },
+      ]},
+      { title: 'Ngân sách', fields: [
+        { name: 'budget', label: 'Ngân sách dự kiến (VND)', type: 'Currency',
+          hint: 'Để 0 nếu không kiểm soát ngân sách' },
+        { name: 'total_estimated_cost', label: 'Tổng chi phí ước tính (VND)', type: 'Currency', readonly: true,
+          hint: 'Tự tính = Σ thành tiền các dòng' },
+        { name: 'budget_acknowledged', label: 'Xác nhận vượt ngân sách', type: 'Check',
+          hint: 'Bắt buộc tick nếu tổng chi phí vượt ngân sách mới submit được' },
+        { name: 'auto_create_mr', label: 'Tự tạo Material Request sau Submit', type: 'Check' },
+        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
+      ]},
+    ],
+    items: {
+      field: 'items', label: 'Danh mục vật tư cần mua',
+      columns: [
+        { name: 'item_code', label: 'Mã VT', type: 'Link', linkTo: 'SC Item', required: true, width: '18%' },
+        { name: 'item_name', label: 'Tên', type: 'Data', readonly: true, width: '15%',
+          fetchFrom: { source: 'item_code', target_doctype: 'SC Item', target_field: 'item_name' } },
+        { name: 'uom', label: 'UOM', type: 'Link', linkTo: 'SC UOM', width: '8%',
+          scope: { itemField: 'item_code' },
+          fetchFrom: { source: 'item_code', target_doctype: 'SC Item', target_field: 'uom' } },
+        { name: 'current_stock', label: 'Tồn hiện tại', type: 'Float', readonly: true, width: '10%' },
+        { name: 'avg_monthly_consumption', label: 'Tiêu thụ/tháng', type: 'Float', readonly: true, width: '10%' },
+        { name: 'planned_qty', label: 'SL dự kiến mua', type: 'Float', required: true, width: '11%' },
+        { name: 'estimated_unit_cost', label: 'Đơn giá ƯT', type: 'Currency', width: '13%' },
+        { name: 'estimated_amount', label: 'Thành tiền', type: 'Currency', readonly: true, width: '13%',
+          compute: { from: ['planned_qty', 'estimated_unit_cost'], op: 'mul' } },
+      ],
+    },
+  },
+
   'SC Material Request': {
     sections: [
       { title: 'Thông tin chung', fields: [

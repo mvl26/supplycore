@@ -23,6 +23,7 @@ const STATUS_BADGE = {
   Active: 'sc-badge-success', Expired: 'sc-badge-warning', Exhausted: 'sc-badge-critical',
   Terminated: 'sc-badge-critical',
   Issued: 'sc-badge-info', 'In Progress': 'sc-badge-warning',
+  Converted: 'sc-badge-info', Generated: 'sc-badge-info',
   Completed: 'sc-badge-success', Resolved: 'sc-badge-success',
   Investigating: 'sc-badge-warning', Closed: 'sc-badge-neutral',
   Paid: 'sc-badge-success', Unpaid: 'sc-badge-warning',
@@ -61,6 +62,7 @@ export const STATUS_LABEL = {
   Approved: 'Đã duyệt', Rejected: 'Từ chối', Cancelled: 'Đã huỷ',
   Active: 'Hiệu lực', Expired: 'Hết hạn', Exhausted: 'Hết hạn mức', Terminated: 'Kết thúc',
   Issued: 'Đã phát hành', 'In Progress': 'Đang xử lý',
+  Converted: 'Đã tạo PO', Generated: 'Đã tạo MR',
   Completed: 'Hoàn tất', Resolved: 'Đã xử lý',
   Investigating: 'Đang điều tra', Closed: 'Đã đóng',
   Paid: 'Đã thanh toán', Unpaid: 'Chưa thanh toán',
@@ -269,6 +271,19 @@ export const DT = {
     listFields: ['name', 'contract_number', 'supplier_name', 'valid_from', 'valid_to',
                   'total_value', 'remaining_value', 'status', 'docstatus'],
   },
+  'Release Order': {
+    module: 'm1', label: 'Lệnh gọi hàng', icon: 'clipboard-list',
+    listColumns: [
+      { key: 'name', label: 'Mã RO', mono: true },
+      { key: 'framework_contract', label: 'HĐ khung', mono: true },
+      { key: 'supplier', label: 'NCC' },
+      { key: 'release_date', label: 'Ngày lệnh', type: 'date' },
+      { key: 'total_amount', label: 'Tổng', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'framework_contract', 'supplier', 'release_date', 'total_amount',
+                  'status', 'docstatus'],
+  },
 
   // === M2 ===
   'SC Material Request': {
@@ -294,6 +309,19 @@ export const DT = {
       { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'transaction_date', 'supplier', 'schedule_date', 'grand_total', 'status', 'docstatus'],
+  },
+  'Procurement Plan': {
+    module: 'm2', label: 'Kế hoạch mua sắm', icon: 'calendar',
+    listColumns: [
+      { key: 'name', label: 'Mã PP', mono: true },
+      { key: 'plan_date', label: 'Ngày lập', type: 'date' },
+      { key: 'period_type', label: 'Kỳ' },
+      { key: 'warehouse', label: 'Kho' },
+      { key: 'total_estimated_cost', label: 'Ước tính', type: 'currency', align: 'right' },
+      { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+    ],
+    listFields: ['name', 'plan_date', 'period_type', 'warehouse', 'total_estimated_cost',
+                  'status', 'docstatus'],
   },
 
   // === M3 ===

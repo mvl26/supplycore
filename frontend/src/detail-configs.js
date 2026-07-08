@@ -35,6 +35,124 @@ function statusByField(d, map) {
 
 export const DETAIL_CONFIGS = {
 
+  // ===== M1: Release Order (Lệnh gọi hàng) ==================================
+  'Release Order': {
+    icon: 'clipboard-list',
+    accentLabel: 'Lệnh gọi hàng',
+    title: (d) => d.supplier_name || d.supplier || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.release_date ? `Lệnh ${fmtDate(d.release_date)}` : null },
+      { icon: 'truck', text: (d) => d.required_by ? `Cần giao ${fmtDate(d.required_by)}` : null },
+      { icon: 'file-text', text: (d) => d.framework_contract ? `HĐK ${d.framework_contract}` : null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      return statusByField(d, {
+        'Draft': { label: 'Bản nháp', cls: 'sc-badge-neutral', icon: 'file' },
+        'Approved': { label: 'Đã duyệt', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Converted': { label: 'Đã tạo PO', cls: 'sc-badge-info', icon: 'shopping-cart' },
+        'Cancelled': { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' },
+      })
+    },
+    tiles: [
+      { icon: 'wallet', label: 'Tổng giá trị', value: (d) => d.total_amount, fmt: 'moneyShort',
+        sublabel: (d) => d.total_amount ? fmtVND(d.total_amount) : null },
+      { icon: 'list', label: 'Số dòng vật tư', value: (d) => (d.items || []).length, fmt: 'number' },
+      { icon: 'boxes', label: 'Tổng SL gọi',
+        value: (d) => (d.items || []).reduce((s, r) => s + (Number(r.qty) || 0), 0), fmt: 'number' },
+      { icon: 'file-text', label: 'HĐK còn lại lúc tạo', value: (d) => d.remaining_value_at_release, fmt: 'moneyShort' },
+    ],
+    sections: [
+      { title: 'Tham chiếu', icon: 'link', fields: [
+        { label: 'Hợp đồng khung', value: (d) => d.framework_contract,
+          link: (d) => d.framework_contract ? `/doc/Framework Contract/${d.framework_contract}` : null },
+        { label: 'Nhà cung cấp', value: (d) => d.supplier_name || d.supplier },
+        { label: 'Purchase Order tạo từ RO', value: (d) => d.purchase_order,
+          link: (d) => d.purchase_order ? `/doc/SC Purchase Order/${d.purchase_order}` : null },
+        { label: 'Ghi chú', value: (d) => d.remarks, pre: true },
+      ]},
+    ],
+    items: {
+      field: 'items',
+      label: 'Danh mục vật tư cần gọi',
+      icon: 'package',
+      columns: [
+        { label: 'Mã VT', accessor: 'item_code', mono: true, anchor: 'navy' },
+        { label: 'Tên vật tư', accessor: 'item_name', max: true },
+        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'SL gọi', accessor: 'qty', align: 'right', fmt: 'number' },
+        { label: 'Còn HĐK', accessor: 'available_qty', align: 'right', fmt: 'number' },
+        { label: 'Đơn giá', accessor: 'unit_price', align: 'right', fmt: 'money' },
+        { label: 'Thành tiền', accessor: 'amount', align: 'right', fmt: 'money', anchor: 'navy' },
+      ],
+      totals: [null, null, null, 'qty', null, null, 'amount'],
+    },
+  },
+
+  // ===== M2: Procurement Plan (Kế hoạch mua sắm) ============================
+  'Procurement Plan': {
+    icon: 'calendar',
+    accentLabel: 'Kế hoạch mua sắm',
+    title: (d) => d.warehouse || d.name,
+    subtitleMono: (d) => d.name,
+    meta: [
+      { icon: 'calendar', text: (d) => d.plan_date ? `Lập ${fmtDate(d.plan_date)}` : null },
+      { icon: 'tag', text: (d) => d.period_type ? `Kỳ ${d.period_type}` : null },
+      { icon: 'warehouse', text: (d) => d.warehouse ? `Kho ${d.warehouse}` : null },
+    ],
+    status: (d) => {
+      if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
+      return statusByField(d, {
+        'Draft': { label: 'Bản nháp', cls: 'sc-badge-neutral', icon: 'file' },
+        'Approved': { label: 'Đã duyệt', cls: 'sc-badge-success', icon: 'check-circle-2' },
+        'Generated': { label: 'Đã tạo MR', cls: 'sc-badge-info', icon: 'file-text' },
+        'Cancelled': { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' },
+      })
+    },
+    tiles: [
+      { icon: 'wallet', label: 'Tổng ước tính', value: (d) => d.total_estimated_cost, fmt: 'moneyShort',
+        sublabel: (d) => d.total_estimated_cost ? fmtVND(d.total_estimated_cost) : null },
+      { icon: 'list', label: 'Số dòng vật tư', value: (d) => (d.items || []).length, fmt: 'number' },
+      { icon: 'boxes', label: 'Tổng SL dự kiến',
+        value: (d) => (d.items || []).reduce((s, r) => s + (Number(r.planned_qty) || 0), 0), fmt: 'number' },
+      { icon: 'shield-alert', label: 'Ngân sách',
+        value: (d) => Number(d.budget) > 0 ? fmtVND(d.budget) : '—',
+        accent: (d) => Number(d.budget) > 0 && Number(d.total_estimated_cost) > Number(d.budget) ? 'amber' : 'default',
+        sublabel: (d) => Number(d.budget) > 0 && Number(d.total_estimated_cost) > Number(d.budget)
+          ? (d.budget_acknowledged ? 'Vượt — đã xác nhận' : 'Vượt ngân sách') : null },
+    ],
+    sections: [
+      { title: 'Phạm vi & tham số', icon: 'crosshair', fields: [
+        { label: 'Kho', value: (d) => d.warehouse },
+        { label: 'Từ ngày', value: (d) => d.from_date ? fmtDate(d.from_date) : '—' },
+        { label: 'Đến ngày', value: (d) => d.to_date ? fmtDate(d.to_date) : '—' },
+        { label: 'Ngày cần hàng', value: (d) => d.required_by ? fmtDate(d.required_by) : '—' },
+        { label: 'Tháng lịch sử tính', value: (d) => d.consumption_lookback_months },
+        { label: 'Hệ số safety stock', value: (d) => d.safety_stock_factor != null ? `${d.safety_stock_factor}%` : '—' },
+        { label: 'Material Request đã tạo', value: (d) => d.material_request,
+          link: (d) => d.material_request ? `/doc/SC Material Request/${d.material_request}` : null },
+        { label: 'Ghi chú', value: (d) => d.remarks, pre: true },
+      ]},
+    ],
+    items: {
+      field: 'items',
+      label: 'Danh mục vật tư cần mua',
+      icon: 'package',
+      columns: [
+        { label: 'Mã VT', accessor: 'item_code', mono: true, anchor: 'navy' },
+        { label: 'Tên vật tư', accessor: 'item_name', max: true },
+        { label: 'UOM', accessor: 'uom', align: 'center', anchor: 'muted' },
+        { label: 'Tồn', accessor: 'current_stock', align: 'right', fmt: 'number' },
+        { label: 'TT/tháng', accessor: 'avg_monthly_consumption', align: 'right', fmt: 'number' },
+        { label: 'SL mua', accessor: 'planned_qty', align: 'right', fmt: 'number', anchor: 'navy' },
+        { label: 'Đơn giá', accessor: 'estimated_unit_cost', align: 'right', fmt: 'money' },
+        { label: 'Thành tiền', accessor: 'estimated_amount', align: 'right', fmt: 'money', anchor: 'navy' },
+      ],
+      totals: [null, null, null, null, null, 'planned_qty', null, 'estimated_amount'],
+    },
+  },
+
   // ===== Financial: PO ======================================================
   'SC Purchase Order': {
     icon: 'shopping-cart',

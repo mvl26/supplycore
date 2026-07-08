@@ -18,6 +18,7 @@ import IcsSummaryPanel from '../components/IcsSummaryPanel.vue'
 import IrScopePanel from '../components/IrScopePanel.vue'
 import RouteGuidePanel from '../components/RouteGuidePanel.vue'
 import BarcodeDisplay from '../components/BarcodeDisplay.vue'
+import FefoPickGuide from '../components/FefoPickGuide.vue'
 import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
 import DetailViewGeneric from '../components/DetailViewGeneric.vue'
 import { DETAIL_CONFIGS } from '../detail-configs'
@@ -418,6 +419,34 @@ const barcodeInfo = computed(() => {
   return null
 })
 
+// === FEFO pick guide (UC-19) — hướng dẫn lấy hàng theo hạn dùng ===
+// Áp cho các phiếu xuất/giao/chuyển: mỗi dòng vật tư (có item + qty) tra 1 guide
+// theo kho nguồn. DN/SE dùng kho dòng hoặc kho nguồn header; TR dùng from_warehouse.
+const fefoLines = computed(() => {
+  const d = doc.value
+  if (!d || isNew.value) return []
+  const dt = doctype.value
+  let rows = null, headerWh = null, qtyField = 'qty', wantWarehouse = true
+  if (dt === 'SC Delivery Note') {
+    rows = d.items; headerWh = d.from_warehouse; qtyField = 'qty'
+  } else if (dt === 'SC Stock Entry' && d.entry_type === 'Material Issue') {
+    rows = d.items; headerWh = d.from_warehouse; qtyField = 'qty'
+  } else if (dt === 'SC Transfer Request') {
+    rows = d.items; headerWh = d.from_warehouse; qtyField = 'requested_qty'
+  } else {
+    return []
+  }
+  if (!Array.isArray(rows)) return []
+  const out = []
+  rows.forEach((r, idx) => {
+    const warehouse = r.warehouse || headerWh
+    const qty = Number(r[qtyField]) || 0
+    if (!r.item || !warehouse || qty <= 0) return
+    out.push({ key: `${idx}-${r.item}-${warehouse}`, item: r.item, warehouse, qty })
+  })
+  return out
+})
+
 function validateRequired() {
   const s = schema.value
   if (!s) return null
@@ -647,6 +676,11 @@ function displayField(value, key) {
 
     <!-- Bản đồ chỉ đường: Chuyển kho / Xuất kho / Vị trí lưu trữ -->
     <RouteGuidePanel v-if="!isNew && doc?.name" :doctype="doctype" :doc="doc" />
+
+    <!-- UC-19 FEFO: hướng dẫn lấy hàng theo hạn dùng cho phiếu xuất/giao/chuyển -->
+    <div v-if="fefoLines.length" class="mb-4">
+      <FefoPickGuide v-for="ln in fefoLines" :key="ln.key"
+        :item="ln.item" :warehouse="ln.warehouse" :qty-needed="ln.qty" /></div>
 
     <!-- Banner: HĐ đã duyệt 3-tier → khoá sửa -->
     <div v-if="approvalLocked"
