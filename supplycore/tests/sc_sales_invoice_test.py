@@ -284,6 +284,50 @@ def test_si_desk_price_override_ignored():
         return {"pass": False, "msg": f"X threw: {str(e)[:250]}"}
 
 
+def test_fractional_qty_gl_balances():
+    """BUG 1: qty le (7.5) + unit_price=333 + tax_rate=10 -> total=2497.5,
+    tax=249.75, grand=2747.25. Moi Currency field VND precision 0 lam tron
+    DOC LAP khi luu neu con la float -> drift 1 VND giua header va GL, va
+    header tu mau thuan (grand != total+tax). Phai lam tron total/tax/grand
+    VE SO NGUYEN NGAY TAI _compute_totals de moi noi dung 1 nguon."""
+    ctx = _seed_chain("FRAC", qty=7.5, unit_price=333)
+    si = _make_si(ctx)
+    si.tax_rate = 10
+    try:
+        si.insert()
+        si.submit()
+        si.reload()  # doc them cac gia tri DA LUU DB (moi Currency field VND
+                      # precision 0 lam tron doc lap khi ghi) -- khong dung
+                      # gia tri float con trong bo nho truoc khi save.
+
+        header_consistent = flt(si.total_amount) + flt(si.tax_amount) == flt(si.grand_total)
+
+        gl_rows = frappe.get_all(
+            "SC GL Entry",
+            filters={"voucher_type": "SC Sales Invoice", "voucher_no": si.name, "is_cancelled": 0},
+            fields=["account", "debit", "credit"],
+        )
+        total_debit = sum(flt(r.debit) for r in gl_rows)
+        total_credit = sum(flt(r.credit) for r in gl_rows)
+        ar_balance = SCGLEntry.get_balance("131", ctx["customer"].name)
+
+        ok = (
+            header_consistent
+            and flt(total_debit) == flt(total_credit)
+            and flt(ar_balance) == flt(si.grand_total)
+        )
+        msg = (f"header: total={si.total_amount} tax={si.tax_amount} grand={si.grand_total} "
+               f"(consistent={header_consistent}); GL debit={total_debit} credit={total_credit}; "
+               f"AR balance={ar_balance}")
+        frappe.db.rollback()
+        if ok:
+            return {"pass": True, "msg": f"OK {msg}"}
+        return {"pass": False, "msg": f"X {msg}"}
+    except Exception as e:
+        frappe.db.rollback()
+        return {"pass": False, "msg": f"X threw: {str(e)[:250]}"}
+
+
 def test_si_cancel_reverses_gl():
     """Submit roi cancel -> 131 balance quay lai truoc submit."""
     ctx = _seed_chain("CANCEL", qty=25, unit_price=1200)
@@ -312,6 +356,7 @@ def run():
         test_si_posts_ar_gl,
         test_si_cogs_posted,
         test_si_fiscal_lock_blocked,
+        test_fractional_qty_gl_balances,
         test_si_cancel_reverses_gl,
     ]
     results = []

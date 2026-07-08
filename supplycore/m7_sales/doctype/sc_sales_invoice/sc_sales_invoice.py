@@ -112,12 +112,21 @@ class SCSalesInvoice(Document):
 
     # ------------------------------------------------------------------
     def _compute_totals(self):
+        """Lam tron VND (precision 0) NGAY TAI DAY -- moi Currency field VND
+        (total_amount/tax_amount/grand_total/SI Item.amount) lam tron DOC LAP
+        khi Frappe ghi xuong DB (vd qty=7.5 le -> total=2497.5 lam tron 2498,
+        grand=2747.25 lam tron 2747 -> 2498+250 != 2747, lech 1 VND voi GL).
+        Lam tron tung so hang VE SO NGUYEN truoc, roi cong don cac so nguyen
+        (total_amount + tax_amount == grand_total LUON dung vi ca 2 da la so
+        nguyen) -- dam bao header tu nhat quan va _post_ar_gl (doc lai chinh
+        cac field da lam tron nay, khong tinh lai tu raw) post GL Dr131 =
+        Cr511 + Cr3331 CHINH XAC, khong drift."""
         total = 0
         for r in self.items:
-            r.amount = flt(r.qty) * flt(r.unit_price)
+            r.amount = flt(flt(r.qty) * flt(r.unit_price), 0)
             total += flt(r.amount)
-        self.total_amount = total
-        self.tax_amount = flt(total) * flt(self.tax_rate or 0) / 100
+        self.total_amount = flt(total, 0)
+        self.tax_amount = flt(flt(self.total_amount) * flt(self.tax_rate or 0) / 100, 0)
         self.grand_total = flt(self.total_amount) + flt(self.tax_amount)
         self.outstanding_amount = flt(self.grand_total)
 
@@ -215,7 +224,11 @@ class SCSalesInvoice(Document):
                      "is_cancelled": 0, "qty_change": ["<", 0]},
             fields=["qty_change", "valuation_rate"],
         )
-        return flt(sum(abs(flt(r.qty_change)) * flt(r.valuation_rate) for r in rows))
+        # Lam tron ve so nguyen VND (precision 0, giong total/tax/grand o
+        # _compute_totals) -- gia tri nay tu can (Dr632=Cr156 cung 1 so vo
+        # huong) nen lam tron chi de nhat quan don vi tien te, khong anh
+        # huong can bang GL.
+        return flt(sum(abs(flt(r.qty_change)) * flt(r.valuation_rate) for r in rows), 0)
 
 
 # ---------------------------------------------------------------------------
