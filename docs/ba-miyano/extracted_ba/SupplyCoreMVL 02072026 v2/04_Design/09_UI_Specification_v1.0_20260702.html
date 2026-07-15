@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI — Đặc tả Giao diện & Hệ thống Thiết kế (UI Spec + Design System) | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Đặc tả Giao diện & Hệ thống Thiết kế (UI Spec + Design System)</h1>
+  <div class="doc-meta">
+    <span>Mã: UI-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Đặc tả Giao diện & Hệ thống Thiết kế (UI Spec + Design System)
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#overview">1. Tổng quan giao diện</a></li>
+        <li><a href="#principles">2. Nguyên tắc thiết kế</a></li>
+        <li><a href="#palette">3. Bảng màu & Typography</a></li>
+        <li><a href="#components">4. Thư viện Component</a></li>
+        <li><a href="#patterns">5. Archetype màn hình</a></li>
+        <li><a href="#danh-sach">6. Danh sách màn hình</a></li>
+        <li><a href="#chi-tiet">7. Đặc tả màn hình</a></li>
+        <li><a href="#pda">8. PDA & Portal</a></li>
+    </ol>
+  </nav>
+
+<h2 id="overview">1. Tổng quan giao diện</h2><p>Giao diện gồm 43 màn hình (1 màn/Use Case) trên Frappe Desk cho nội bộ và cổng www/portal cho khách hàng, tối ưu cho desktop, tablet và PDA.</p><h2 id="principles">2. Nguyên tắc thiết kế</h2><ul><li>Nhất quán: mọi màn dùng chung header/breadcrumb/stepper/badge.</li><li>Tối giản thao tác: luồng chính ≤ 5 bước; hành động chính nổi bật.</li><li>An toàn: xác nhận trước submit/cancel; hiển thị trạng thái rõ ràng.</li><li>Cô lập Portal: khách chỉ thấy dữ liệu & menu của mình.</li></ul><h2 id="palette">3. Bảng màu & Typography</h2><table>
+<thead><tr><th>Vai trò</th><th>Màu</th><th>Mã</th></tr></thead>
+<tbody>
+<tr><td>Primary / Header</td><td>Navy</td><td>#1F4E79</td></tr>
+<tr><td>Accent</td><td>Blue</td><td>#2E75B6</td></tr>
+<tr><td>Success / Đạt</td><td>Green</td><td>#375623</td></tr>
+<tr><td>Warning</td><td>Orange</td><td>#E36C09</td></tr>
+<tr><td>Danger / Chặn</td><td>Red</td><td>#C00000</td></tr>
+<tr><td>Zebra row</td><td>Grey</td><td>#F2F2F2</td></tr>
+</tbody>
+</table><p><b>Typography:</b> Arial 11pt (thân), H2 14pt navy, H3 12pt xanh, code Courier New 9.5pt.</p><h2 id="components">4. Thư viện Component</h2><table>
+<thead><tr><th>Component</th><th>Mô tả</th><th>Dùng ở</th></tr></thead>
+<tbody>
+<tr><td>Button</td><td>Primary/secondary/danger</td><td>Mọi form</td></tr>
+<tr><td>Status badge</td><td>Nhãn trạng thái theo workflow</td><td>List & form</td></tr>
+<tr><td>Workflow stepper</td><td>Thanh tiến trình trạng thái</td><td>Chứng từ</td></tr>
+<tr><td>Form section</td><td>Nhóm trường theo khối</td><td>Form chứng từ</td></tr>
+<tr><td>Child table / grid</td><td>Bảng dòng chi tiết</td><td>PO, đơn bán…</td></tr>
+<tr><td>List view + filter bar</td><td>Danh sách + bộ lọc</td><td>Mọi danh sách</td></tr>
+<tr><td>KPI card</td><td>Thẻ chỉ số</td><td>Dashboard</td></tr>
+<tr><td>Alert item</td><td>Dòng cảnh báo</td><td>M11</td></tr>
+<tr><td>Breadcrumb</td><td>Điều hướng phân cấp</td><td>Mọi màn</td></tr>
+<tr><td>Toast / callout</td><td>Thông báo</td><td>Toàn hệ thống</td></tr>
+<tr><td>PDA scan input</td><td>Ô quét mã</td><td>PDA M4</td></tr>
+<tr><td>Order tracker</td><td>4 cột mốc đơn</td><td>Portal M12</td></tr>
+</tbody>
+</table><h2 id="patterns">5. Archetype màn hình (5)</h2><table>
+<thead><tr><th>Archetype</th><th>Đặc điểm</th><th>Ví dụ UC</th></tr></thead>
+<tbody>
+<tr><td>List View</td><td>Bộ lọc + bảng + hành động hàng loạt</td><td>UC-01, UC-14, UC-41</td></tr>
+<tr><td>Form chứng từ</td><td>Header + section + child table + stepper</td><td>UC-08, UC-24, UC-25</td></tr>
+<tr><td>Master Form</td><td>Dữ liệu chủ + trạng thái kích hoạt</td><td>UC-02, UC-22, UC-15</td></tr>
+<tr><td>Dashboard</td><td>KPI card + biểu đồ + drill-down</td><td>UC-37, UC-31, UC-43</td></tr>
+<tr><td>PDA Mobile</td><td>Khung điện thoại + scan box</td><td>UC-17</td></tr>
+</tbody>
+</table><h2 id="danh-sach">6. Danh sách 43 màn hình</h2><table>
+<thead><tr><th width="70">Mã màn</th><th width="70">UC</th><th>Tên màn hình</th><th>Archetype</th></tr></thead>
+<tbody>
+<tr><td><code>SCR-01</code></td><td><code>UC-01</code></td><td>M1</td><td>list</td></tr>
+<tr><td><code>SCR-02</code></td><td><code>UC-02</code></td><td>M1</td><td>master</td></tr>
+<tr><td><code>SCR-03</code></td><td><code>UC-03</code></td><td>M1</td><td>form</td></tr>
+<tr><td><code>SCR-04</code></td><td><code>UC-04</code></td><td>M1</td><td>form</td></tr>
+<tr><td><code>SCR-05</code></td><td><code>UC-05</code></td><td>M1</td><td>form</td></tr>
+<tr><td><code>SCR-06</code></td><td><code>UC-06</code></td><td>M2</td><td>form</td></tr>
+<tr><td><code>SCR-07</code></td><td><code>UC-07</code></td><td>M2</td><td>form</td></tr>
+<tr><td><code>SCR-08</code></td><td><code>UC-08</code></td><td>M2</td><td>form</td></tr>
+<tr><td><code>SCR-09</code></td><td><code>UC-09</code></td><td>M3</td><td>form</td></tr>
+<tr><td><code>SCR-10</code></td><td><code>UC-10</code></td><td>M3</td><td>form</td></tr>
+<tr><td><code>SCR-11</code></td><td><code>UC-11</code></td><td>M3</td><td>form</td></tr>
+<tr><td><code>SCR-12</code></td><td><code>UC-12</code></td><td>M4</td><td>master</td></tr>
+<tr><td><code>SCR-13</code></td><td><code>UC-13</code></td><td>M4</td><td>form</td></tr>
+<tr><td><code>SCR-14</code></td><td><code>UC-14</code></td><td>M4</td><td>list</td></tr>
+<tr><td><code>SCR-15</code></td><td><code>UC-15</code></td><td>M4</td><td>master</td></tr>
+<tr><td><code>SCR-16</code></td><td><code>UC-16</code></td><td>M4</td><td>form</td></tr>
+<tr><td><code>SCR-17</code></td><td><code>UC-17</code></td><td>M4</td><td>pda</td></tr>
+<tr><td><code>SCR-18</code></td><td><code>UC-18</code></td><td>M5</td><td>master</td></tr>
+<tr><td><code>SCR-19</code></td><td><code>UC-19</code></td><td>M5</td><td>form</td></tr>
+<tr><td><code>SCR-20</code></td><td><code>UC-20</code></td><td>M5</td><td>dashboard</td></tr>
+<tr><td><code>SCR-21</code></td><td><code>UC-21</code></td><td>M6</td><td>form</td></tr>
+<tr><td><code>SCR-22</code></td><td><code>UC-22</code></td><td>M7</td><td>master</td></tr>
+<tr><td><code>SCR-23</code></td><td><code>UC-23</code></td><td>M7</td><td>form</td></tr>
+<tr><td><code>SCR-24</code></td><td><code>UC-24</code></td><td>M7</td><td>form</td></tr>
+<tr><td><code>SCR-25</code></td><td><code>UC-25</code></td><td>M7</td><td>form</td></tr>
+<tr><td><code>SCR-26</code></td><td><code>UC-26</code></td><td>M7</td><td>form</td></tr>
+<tr><td><code>SCR-27</code></td><td><code>UC-27</code></td><td>M8</td><td>form</td></tr>
+<tr><td><code>SCR-28</code></td><td><code>UC-28</code></td><td>M8</td><td>form</td></tr>
+<tr><td><code>SCR-29</code></td><td><code>UC-29</code></td><td>M8</td><td>form</td></tr>
+<tr><td><code>SCR-30</code></td><td><code>UC-30</code></td><td>M8</td><td>form</td></tr>
+<tr><td><code>SCR-31</code></td><td><code>UC-31</code></td><td>M8</td><td>dashboard</td></tr>
+<tr><td><code>SCR-32</code></td><td><code>UC-32</code></td><td>M9</td><td>form</td></tr>
+<tr><td><code>SCR-33</code></td><td><code>UC-33</code></td><td>M9</td><td>form</td></tr>
+<tr><td><code>SCR-34</code></td><td><code>UC-34</code></td><td>M10</td><td>list</td></tr>
+<tr><td><code>SCR-35</code></td><td><code>UC-35</code></td><td>M10</td><td>form</td></tr>
+<tr><td><code>SCR-36</code></td><td><code>UC-36</code></td><td>M10</td><td>form</td></tr>
+<tr><td><code>SCR-37</code></td><td><code>UC-37</code></td><td>M11</td><td>dashboard</td></tr>
+<tr><td><code>SCR-38</code></td><td><code>UC-38</code></td><td>M11</td><td>master</td></tr>
+<tr><td><code>SCR-39</code></td><td><code>UC-39</code></td><td>M11</td><td>dashboard</td></tr>
+<tr><td><code>SCR-40</code></td><td><code>UC-40</code></td><td>M12</td><td>form</td></tr>
+<tr><td><code>SCR-41</code></td><td><code>UC-41</code></td><td>M12</td><td>list</td></tr>
+<tr><td><code>SCR-42</code></td><td><code>UC-42</code></td><td>M12</td><td>form</td></tr>
+<tr><td><code>SCR-43</code></td><td><code>UC-43</code></td><td>M12</td><td>dashboard</td></tr>
+</tbody>
+</table><h2 id="chi-tiet">7. Đặc tả màn hình (trích đại diện mỗi phân hệ)</h2><h3 id="scr-01">SCR-01 — M1 <span style="font-weight:normal">(UC-01)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>list</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-01</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-08">SCR-08 — M2 <span style="font-weight:normal">(UC-08)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>form</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-08</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-17">SCR-17 — M4 <span style="font-weight:normal">(UC-17)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>pda</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-17</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-22">SCR-22 — M7 <span style="font-weight:normal">(UC-22)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>master</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-22</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-24">SCR-24 — M7 <span style="font-weight:normal">(UC-24)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>form</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-24</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-25">SCR-25 — M7 <span style="font-weight:normal">(UC-25)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>form</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-25</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-37">SCR-37 — M11 <span style="font-weight:normal">(UC-37)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>dashboard</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-37</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-42">SCR-42 — M12 <span style="font-weight:normal">(UC-42)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>form</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-42</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h3 id="scr-43">SCR-43 — M12 <span style="font-weight:normal">(UC-43)</span></h3><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Archetype</td><td>dashboard</td></tr>
+<tr><td>Vùng bố cục</td><td>Header + breadcrumb + vùng chính + hành động</td></tr>
+<tr><td>Trường chính</td><td>Theo nghiệp vụ UC UC-43</td></tr>
+<tr><td>Hành động</td><td>Lưu / Submit / Hủy / In (tùy màn)</td></tr>
+<tr><td>Trạng thái</td><td>Hiển thị badge + stepper theo workflow</td></tr>
+<tr><td>Validation</td><td>Chặn khi vi phạm business rule</td></tr>
+<tr><td>Điều hướng</td><td>Breadcrumb về danh sách; liên kết chứng từ nguồn</td></tr>
+</tbody>
+</table><h2 id="pda">8. PDA & Portal</h2><p><b>PDA (M4):</b> màn quét mã trong khung điện thoại, scan box lớn, gợi ý thao tác nhập/xuất/chuyển/kiểm. <b>Portal (M12):</b> giao diện riêng cho khách — trang chủ, catalog & bảng giá, đặt hàng, theo dõi đơn theo 4 cột mốc; không hiển thị menu nội bộ.</p>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: UI | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

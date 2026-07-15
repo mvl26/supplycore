@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   SupplyCore — refined clinical operations console
+   Brand: Navy #1F4E79 · Royal #2E75B6 (Phase 3 spec)
+   ============================================================ */
+
+:root {
+  --sc-navy: #1F4E79;
+  --sc-navy-deep: #173A5C;
+  --sc-royal: #2E75B6;
+  --sc-royal-light: #5B9BD5;
+  --sc-bg: #F3F6FA;
+  --sc-surface: #FFFFFF;
+  --sc-border: #E5EAF1;
+  --sc-text: #1D2A3A;
+  --sc-text-muted: #6B7689;
+}
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  background-color: var(--sc-bg);
+  color: var(--sc-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+
+/* Tabular, aligned numerals everywhere data is shown */
+.font-mono, table td, .sc-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv01' 1;
+}
+
+h1, h2, h3, h4 { letter-spacing: -0.012em; }
+
+::selection { background: rgba(46, 117, 182, 0.20); }
+
+/* Scrollbar — slim and unobtrusive */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #C6D0DE;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: #A7B4C7; background-clip: padding-box; }
+
+/* ---------------- Component layer ---------------- */
+@layer components {
+
+  /* Cards / surfaces */
+  .sc-card {
+    @apply bg-sc-surface rounded-xl border border-sc-border shadow-sc-sm;
+  }
+  .sc-card-interactive {
+    @apply bg-sc-surface rounded-xl border border-sc-border shadow-sc-sm
+           transition-all duration-200 ease-sc
+           hover:shadow-sc-md hover:border-sc-border-strong hover:-translate-y-[2px];
+  }
+
+  /* Buttons */
+  .sc-btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2
+           text-sm font-semibold text-white bg-sc-royal
+           shadow-sc-xs transition-all duration-150 ease-sc
+           hover:bg-sc-navy hover:shadow-sc-md hover:-translate-y-[1px]
+           active:translate-y-0 active:shadow-none
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .sc-btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2
+           text-sm font-semibold text-sc-navy bg-sc-surface border border-sc-border
+           transition-all duration-150 ease-sc
+           hover:border-sc-royal hover:text-sc-royal hover:bg-sc-royal-50
+           active:translate-y-0
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .sc-btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5
+           text-sm font-medium text-sc-text-soft
+           transition-colors duration-150 ease-sc
+           hover:bg-sc-bg-soft hover:text-sc-navy;
+  }
+  .sc-btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2
+           text-sm font-semibold text-white bg-sc-danger
+           shadow-sc-xs transition-all duration-150 ease-sc
+           hover:brightness-110 hover:shadow-sc-md hover:-translate-y-[1px]
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .sc-icon-btn {
+    @apply inline-flex items-center justify-center rounded-md h-9 w-9
+           text-sc-text-soft transition-all duration-150 ease-sc
+           hover:bg-sc-bg-soft hover:text-sc-navy;
+  }
+
+  /* Badges — soft fill + inset ring */
+  .sc-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md
+           text-xs font-semibold ring-1 ring-inset whitespace-nowrap;
+  }
+  .sc-badge-critical { @apply bg-red-50 text-sc-critical ring-red-200/70; }
+  .sc-badge-warning  { @apply bg-amber-50 text-sc-warning ring-amber-200/70; }
+  .sc-badge-info     { @apply bg-sky-50 text-sc-info ring-sky-200/70; }
+  .sc-badge-success  { @apply bg-emerald-50 text-sc-success ring-emerald-200/70; }
+  .sc-badge-neutral  { @apply bg-slate-100 text-slate-600 ring-slate-200/80; }
+
+  /* Inputs */
+  .sc-input {
+    @apply w-full bg-sc-surface border border-sc-border rounded-md px-3 py-2 text-sm
+           text-sc-text transition-all duration-150 ease-sc
+           placeholder:text-sc-text-muted/70
+           focus:outline-none focus:border-sc-royal focus:shadow-sc-focus
+           hover:border-sc-border-strong;
+  }
+  .sc-label {
+    @apply block text-xs font-semibold text-sc-text-soft mb-1.5;
+  }
+  /* UX-005: highlight field thiếu trên form sau khi submit */
+  .sc-field-invalid .sc-input,
+  .sc-field-invalid select,
+  .sc-field-invalid textarea,
+  .sc-field-invalid input[type="text"],
+  .sc-field-invalid input[type="number"],
+  .sc-field-invalid input[type="date"] {
+    @apply border-sc-danger ring-1 ring-sc-danger/30 bg-red-50/30;
+  }
+  .sc-field-invalid label > span.text-sc-danger {
+    @apply font-bold;
+  }
+
+  /* Tables */
+  .sc-table { @apply w-full text-sm border-separate border-spacing-0; }
+  .sc-table thead th {
+    @apply bg-sc-bg-soft text-sc-text-muted font-semibold text-xs uppercase tracking-wide
+           px-4 py-2.5 text-left border-b border-sc-border;
+  }
+  .sc-table tbody td {
+    @apply px-4 py-2.5 text-left border-b border-sc-border/70 text-sc-text;
+  }
+  .sc-table tbody tr {
+    @apply transition-colors duration-100;
+  }
+  .sc-table tbody tr:hover { @apply bg-sc-royal-50/60; }
+  .sc-table tbody tr:last-child td { @apply border-b-0; }
+  /* Mobile: cột co theo nội dung + cuộn ngang (vuốt) thay vì dồn chữ xuống dòng.
+     Cần wrapper overflow-x-auto bao quanh <table class="sc-table">. Desktop giữ nguyên. */
+  @media (max-width: 640px) {
+    .sc-table thead th,
+    .sc-table tbody td { white-space: nowrap; padding-left: 0.625rem; padding-right: 0.625rem; }
+  }
+
+  /* Recessed section / panel */
+  .sc-panel {
+    @apply bg-sc-bg-soft rounded-lg border border-sc-border;
+  }
+}
+
+/* ---------------- Atmosphere ---------------- */
+.sc-app-bg {
+  background-color: var(--sc-bg);
+  background-image:
+    radial-gradient(1100px 460px at 78% -8%, rgba(46, 117, 182, 0.07), transparent 70%),
+    radial-gradient(900px 420px at -6% 4%, rgba(31, 78, 121, 0.06), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* ---------------- Motion ---------------- */
+@keyframes sc-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sc-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Page route enter — keyed wrapper in App.vue replays this on every navigation */
+.sc-route-view { animation: sc-fade-in .26s ease both; }
+
+/* Generic fade transition (used by AppShell mobile backdrop) */
+.route-enter-active, .route-leave-active { transition: opacity .2s ease; }
+.route-enter-from, .route-leave-to { opacity: 0; }
+
+/* Staggered reveal — apply .sc-stagger to a container, children rise in sequence */
+.sc-stagger > * {
+  animation: sc-fade-up .52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.sc-stagger > *:nth-child(1)  { animation-delay: .03s; }
+.sc-stagger > *:nth-child(2)  { animation-delay: .07s; }
+.sc-stagger > *:nth-child(3)  { animation-delay: .11s; }
+.sc-stagger > *:nth-child(4)  { animation-delay: .15s; }
+.sc-stagger > *:nth-child(5)  { animation-delay: .19s; }
+.sc-stagger > *:nth-child(6)  { animation-delay: .23s; }
+.sc-stagger > *:nth-child(7)  { animation-delay: .27s; }
+.sc-stagger > *:nth-child(8)  { animation-delay: .31s; }
+.sc-stagger > *:nth-child(9)  { animation-delay: .35s; }
+.sc-stagger > *:nth-child(10) { animation-delay: .39s; }
+.sc-stagger > *:nth-child(11) { animation-delay: .43s; }
+.sc-stagger > *:nth-child(12) { animation-delay: .47s; }
+
+.sc-rise { animation: sc-fade-up .5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.sc-appear { animation: sc-fade-in .4s ease both; }
+
+/* Skeleton shimmer */
+.sc-skeleton {
+  background: linear-gradient(100deg, #EAEEF4 30%, #F4F7FB 50%, #EAEEF4 70%);
+  background-size: 720px 100%;
+  animation: sc-shimmer 1.4s linear infinite;
+  border-radius: 6px;
+}
+@keyframes sc-shimmer {
+  from { background-position: -360px 0; }
+  to   { background-position: 360px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, .sc-stagger > *, .route-enter-active, .route-leave-active {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Print — clean snapshots */
+@media print {
+  .sc-no-print { display: none !important; }
+}

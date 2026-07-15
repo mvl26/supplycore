@@ -1,0 +1,48 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB", "istable": 1,
+ "field_order": [
+  "item", "item_name", "uom",
+  "column_break_1", "batch", "bin_location",
+  "section_qty", "system_qty", "actual_qty", "is_counted", "difference",
+  "column_break_qty", "variance_pct", "needs_recount", "recount_actual_qty",
+  "third_count_qty",
+  "section_value", "valuation_rate", "variance_value",
+  "section_meta", "reason", "remarks"
+ ],
+ "fields": [
+  {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
+  {"fieldname": "item_name", "fieldtype": "Data", "fetch_from": "item.item_name", "label": "Tên", "read_only": 1, "in_list_view": 1, "columns": 2},
+  {"fieldname": "uom", "fieldtype": "Link", "options": "SC UOM", "label": "UOM", "reqd": 1, "columns": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "batch", "fieldtype": "Link", "options": "SC Batch", "label": "Lô"},
+  {"fieldname": "bin_location", "fieldtype": "Link", "options": "Bin Location", "label": "Bin"},
+
+  {"fieldname": "section_qty", "fieldtype": "Section Break", "label": "Số lượng"},
+  {"fieldname": "system_qty", "fieldtype": "Float", "label": "SL hệ thống", "read_only": 1, "in_list_view": 1, "columns": 1,
+   "description": "Snapshot từ SC SLE lúc tạo phiếu (ẩn khi in nếu hide_system_qty=1)"},
+  {"fieldname": "actual_qty", "fieldtype": "Float", "label": "SL thực tế", "in_list_view": 1, "columns": 1, "non_negative": 1},
+  {"fieldname": "is_counted", "fieldtype": "Check", "label": "Đã đếm", "default": "0",
+   "description": "Auto = 1 khi counter staff nhập actual_qty (phân biệt với SL=0)"},
+  {"fieldname": "difference", "fieldtype": "Float", "label": "Chênh lệch", "read_only": 1, "in_list_view": 1, "columns": 1,
+   "description": "= actual − system. Dương = thừa, âm = thiếu"},
+  {"fieldname": "column_break_qty", "fieldtype": "Column Break"},
+  {"fieldname": "variance_pct", "fieldtype": "Percent", "label": "% chênh lệch", "read_only": 1},
+  {"fieldname": "needs_recount", "fieldtype": "Check", "label": "Cần đếm lại", "read_only": 1,
+   "description": "Auto = 1 nếu |variance_pct| > recount_threshold"},
+  {"fieldname": "recount_actual_qty", "fieldtype": "Float", "label": "SL đếm lại"},
+  {"fieldname": "third_count_qty", "fieldtype": "Float", "label": "SL đếm lần 3", "non_negative": 1, "description": "UC-27 6a: đếm lần 3 khi recount vẫn chênh > threshold — cần Manager chứng kiến"},
+
+  {"fieldname": "section_value", "fieldtype": "Section Break", "label": "Giá trị chênh lệch"},
+  {"fieldname": "valuation_rate", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Đơn giá tham chiếu", "read_only": 1},
+  {"fieldname": "variance_value", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Δ giá trị", "read_only": 1},
+
+  {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
+  {"fieldname": "reason", "fieldtype": "Select",
+   "options": "\nTheft\nDamage\nSystem Error\nCounting Error\nExpired/Discarded\nReceiving Error\nOther",
+   "label": "Lý do chênh lệch"},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "M9 Stocktake", "name": "SC ICS Item", "permissions": [],
+ "sort_field": "modified", "sort_order": "DESC"
+}

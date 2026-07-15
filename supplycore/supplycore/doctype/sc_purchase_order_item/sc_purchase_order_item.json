@@ -1,0 +1,22 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB", "istable": 1,
+ "field_order": ["item", "item_name", "qty", "uom", "rate", "amount", "warehouse", "schedule_date", "received_qty",
+                  "fc_unit_price", "price_variance_pct", "has_price_variance"],
+ "fields": [
+  {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
+  {"fieldname": "item_name", "fieldtype": "Data", "fetch_from": "item.item_name", "label": "Tên", "read_only": 1, "in_list_view": 1, "columns": 3},
+  {"fieldname": "qty", "fieldtype": "Float", "label": "SL", "reqd": 1, "non_negative": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "uom", "fieldtype": "Link", "options": "SC UOM", "label": "UOM", "reqd": 1, "columns": 1},
+  {"fieldname": "rate", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Đơn giá", "reqd": 1, "columns": 1},
+  {"fieldname": "amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Thành tiền", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho"},
+  {"fieldname": "schedule_date", "fieldtype": "Date", "label": "Ngày cần"},
+  {"fieldname": "received_qty", "fieldtype": "Float", "label": "SL đã nhận", "read_only": 1, "default": "0"},
+  {"fieldname": "fc_unit_price", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Giá FC tham chiếu", "read_only": 1, "default": "0"},
+  {"fieldname": "price_variance_pct", "fieldtype": "Percent", "label": "Lệch giá (%)", "read_only": 1, "default": "0"},
+  {"fieldname": "has_price_variance", "fieldtype": "Check", "label": "Lệch giá > 1%", "read_only": 1, "default": "0"}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
+ "module": "Supplycore", "name": "SC Purchase Order Item", "permissions": [],
+ "sort_field": "modified", "sort_order": "DESC"
+}

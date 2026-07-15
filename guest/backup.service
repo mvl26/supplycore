@@ -1,0 +1,7 @@
+# guest/backup.service
+[Unit]
+Description=SupplyCore daily backup
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/supplycore/supplycore.env
+ExecStart=/opt/supplycore/backup.sh

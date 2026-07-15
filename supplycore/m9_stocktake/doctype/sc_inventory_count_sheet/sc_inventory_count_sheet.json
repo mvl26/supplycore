@@ -1,0 +1,278 @@
+{
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-ICS-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "field_order": [
+  "section_main",
+  "count_date",
+  "warehouse",
+  "column_break_1",
+  "planned_by",
+  "counted_by",
+  "section_scope",
+  "count_scope",
+  "item_group",
+  "bin_zone",
+  "column_break_scope",
+  "recount_threshold_pct",
+  "hide_system_qty",
+  "section_items",
+  "items",
+  "section_summary",
+  "total_items",
+  "mismatched_items",
+  "column_break_summary",
+  "total_variance_qty",
+  "total_variance_value",
+  "section_status",
+  "status",
+  "stock_reconciliation",
+  "manager_witness",
+  "amended_from",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Phiếu kiểm kê"
+  },
+  {
+   "fieldname": "count_date",
+   "fieldtype": "Date",
+   "label": "Ngày kiểm kê",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "options": "SC Warehouse",
+   "label": "Kho",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "planned_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người lập kế hoạch"
+  },
+  {
+   "fieldname": "counted_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Thủ kho đếm"
+  },
+  {
+   "fieldname": "section_scope",
+   "fieldtype": "Section Break",
+   "label": "Phạm vi"
+  },
+  {
+   "fieldname": "count_scope",
+   "fieldtype": "Select",
+   "options": "All Items\nBy Item Group\nBy Zone",
+   "label": "Phạm vi",
+   "reqd": 1,
+   "default": "All Items",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "item_group",
+   "fieldtype": "Link",
+   "options": "SC Item Group",
+   "label": "Nhóm vật tư",
+   "depends_on": "eval:doc.count_scope=='By Item Group'"
+  },
+  {
+   "fieldname": "bin_zone",
+   "fieldtype": "Data",
+   "label": "Zone bin",
+   "depends_on": "eval:doc.count_scope=='By Zone'"
+  },
+  {
+   "fieldname": "column_break_scope",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recount_threshold_pct",
+   "fieldtype": "Percent",
+   "label": "Ngưỡng đếm lại (%)",
+   "default": "5",
+   "description": "|variance| > threshold → flag needs_recount"
+  },
+  {
+   "fieldname": "hide_system_qty",
+   "fieldtype": "Check",
+   "label": "Ẩn system_qty khi in",
+   "default": "1",
+   "description": "Tránh bias cho người đếm — chỉ MGR thấy"
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Items kiểm kê"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "SC ICS Item",
+   "label": "Items"
+  },
+  {
+   "fieldname": "section_summary",
+   "fieldtype": "Section Break",
+   "label": "Tổng hợp"
+  },
+  {
+   "fieldname": "total_items",
+   "fieldtype": "Int",
+   "label": "Tổng items",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "mismatched_items",
+   "fieldtype": "Int",
+   "label": "Items chênh lệch",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_summary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_variance_qty",
+   "fieldtype": "Float",
+   "label": "Tổng Δ qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_variance_value",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Tổng Δ giá trị",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Trạng thái"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "Draft\nIn Progress\nCounted\nReconciled\nCancelled",
+   "label": "Status",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "stock_reconciliation",
+   "fieldtype": "Link",
+   "options": "SC Stock Reconciliation",
+   "label": "SR đã tạo",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "manager_witness",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Manager chứng kiến (đếm lần 3)",
+   "description": "UC-27 6a: bắt buộc khi có item third_count_qty"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Inventory Count Sheet",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "write": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1,
+   "create": 1
+  },
+  {
+   "role": "Warehouse Officer",
+   "read": 1,
+   "write": 1,
+   "submit": 1,
+   "report": 1,
+   "print": 1,
+   "create": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M9 Stocktake",
+ "name": "SC Inventory Count Sheet",
+ "search_fields": "warehouse,count_date,status",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

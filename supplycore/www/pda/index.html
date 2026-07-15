@@ -1,0 +1,249 @@
+{% extends "templates/web.html" %}
+{% block title %}SupplyCore PDA{% endblock %}
+
+{% block style %}
+<style>
+:root {
+    --sc-primary: #2E75B6;
+    --sc-primary-dark: #1F4E79;
+    --sc-success: #28A745;
+    --sc-warning: #FFC107;
+    --sc-error: #DC3545;
+    --sc-bg: #F2F2F2;
+    --sc-white: #FFFFFF;
+    --sc-border: #BFBFBF;
+    --sc-text: #2C3E50;
+}
+body { font-family: 'Inter', sans-serif; background: var(--sc-bg); margin: 0; }
+#pda-app { max-width: 480px; margin: 0 auto; padding: 16px;
+           background: var(--sc-white); min-height: 100vh; }
+h1 { color: var(--sc-primary-dark); font-size: 22px; margin: 0 0 16px; }
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.menu-btn { background: var(--sc-primary); color: var(--sc-white); border: 0;
+            padding: 24px 16px; font-size: 16px; font-weight: 600; border-radius: 8px;
+            cursor: pointer; min-height: 80px; }
+.menu-btn:active { background: var(--sc-primary-dark); }
+.section { margin-top: 24px; padding: 16px; background: #EBF5FB;
+           border-radius: 8px; }
+.scan-input { width: 100%; padding: 14px 12px; font-size: 16px; border: 2px solid var(--sc-border);
+              border-radius: 6px; box-sizing: border-box; }
+.scan-input:focus { border-color: var(--sc-primary); outline: none; }
+.btn-primary { background: var(--sc-primary); color: white; border: 0;
+               padding: 14px 20px; border-radius: 6px; font-size: 16px;
+               font-weight: 600; cursor: pointer; min-height: 44px; width: 100%;
+               margin-top: 8px; }
+.btn-success { background: var(--sc-success); color: white; border: 0;
+               padding: 14px 20px; border-radius: 6px; font-size: 16px;
+               font-weight: 600; cursor: pointer; min-height: 44px; width: 100%;
+               margin-top: 8px; }
+.btn-secondary { background: #F2F2F2; color: var(--sc-text); border: 1px solid var(--sc-border);
+                 padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+.result-card { padding: 12px; background: var(--sc-white); border: 1px solid var(--sc-border);
+               border-radius: 6px; margin-top: 12px; }
+.result-card .label { font-size: 12px; color: #6C757D; }
+.result-card .value { font-size: 16px; font-weight: 600; color: var(--sc-text); margin-bottom: 6px; }
+.alert { padding: 10px 12px; border-radius: 6px; margin-top: 8px; font-size: 14px; }
+.alert-error { background: #FCE4D6; color: #721C24; }
+.alert-warning { background: #FFF2CC; color: #856404; }
+.alert-success { background: #E2EFDA; color: #155724; }
+.tag { display: inline-block; padding: 2px 8px; background: #D6E4F0; color: var(--sc-primary-dark);
+       border-radius: 999px; font-size: 12px; font-weight: 600; margin-right: 4px; }
+.offline-banner { background: var(--sc-warning); color: var(--sc-text);
+                  padding: 8px 12px; text-align: center; font-weight: 600; font-size: 13px; }
+.label { display: block; margin-top: 12px; font-size: 13px; color: #6C757D; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div id="offline-banner" class="offline-banner" style="display:none;">⚠ Đang offline — giao dịch lưu local, sẽ đồng bộ khi có mạng</div>
+
+<div id="pda-app">
+    <h1>📦 SupplyCore PDA</h1>
+
+    <div id="menu-screen">
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="showScreen('receipt')">📥<br>Nhập kho</button>
+            <button class="menu-btn" onclick="showScreen('issue')">📤<br>Xuất kho</button>
+            <button class="menu-btn" onclick="showScreen('transfer')">🔄<br>Chuyển kho</button>
+            <button class="menu-btn" onclick="showScreen('count')">📋<br>Kiểm kê</button>
+        </div>
+
+        <div class="section">
+            <strong>Quét nhanh</strong>
+            <input type="text" id="quick-scan" class="scan-input" autofocus
+                   placeholder="Quét hoặc nhập barcode..."
+                   onkeydown="if(event.key==='Enter')scanBarcode()">
+            <button class="btn-primary" onclick="scanBarcode()">🔍 Tra cứu</button>
+            <div id="scan-result"></div>
+        </div>
+    </div>
+
+    <div id="screen-content" style="display:none;">
+        <button class="btn-secondary" onclick="showScreen('menu')">← Trở lại menu</button>
+        <h2 id="screen-title"></h2>
+
+        <label class="label">Bin (quét hoặc chọn)</label>
+        <input type="text" id="bin-input" class="scan-input" placeholder="Quét bin barcode...">
+
+        <label class="label">Vật tư (quét barcode)</label>
+        <input type="text" id="item-input" class="scan-input" placeholder="Quét item barcode..."
+               onkeydown="if(event.key==='Enter')lookupItem()">
+        <div id="item-info"></div>
+
+        <label class="label">Số lượng</label>
+        <input type="number" id="qty-input" class="scan-input" placeholder="0" min="0" step="0.01">
+
+        <label class="label">Số lô (nếu có)</label>
+        <input type="text" id="batch-input" class="scan-input" placeholder="Nhập hoặc quét lô...">
+
+        <button class="btn-success" onclick="confirmAction()">✅ Xác nhận</button>
+        <div id="action-result"></div>
+    </div>
+</div>
+
+<script>
+let currentMode = 'menu';
+let pdaSession = 'PDA-' + Date.now();
+
+window.addEventListener('online',  () => document.getElementById('offline-banner').style.display = 'none');
+window.addEventListener('offline', () => document.getElementById('offline-banner').style.display = 'block');
+if (!navigator.onLine) document.getElementById('offline-banner').style.display = 'block';
+
+function showScreen(mode) {
+    currentMode = mode;
+    document.getElementById('menu-screen').style.display = mode === 'menu' ? 'block' : 'none';
+    document.getElementById('screen-content').style.display = mode !== 'menu' ? 'block' : 'none';
+    if (mode !== 'menu') {
+        const titles = {receipt:'📥 Nhập kho', issue:'📤 Xuất kho', transfer:'🔄 Chuyển kho', count:'📋 Kiểm kê'};
+        document.getElementById('screen-title').innerText = titles[mode] || mode;
+        document.getElementById('item-input').value = '';
+        document.getElementById('qty-input').value = '';
+        document.getElementById('batch-input').value = '';
+        document.getElementById('item-info').innerHTML = '';
+        document.getElementById('action-result').innerHTML = '';
+    }
+}
+
+async function scanBarcode() {
+    const code = document.getElementById('quick-scan').value.trim();
+    const out = document.getElementById('scan-result');
+    if (!code) return;
+    out.innerHTML = '⏳ Đang tra cứu...';
+    try {
+        const r = await callApi('supplycore.api.wms.scan_barcode', {barcode: code, context: currentMode});
+        out.innerHTML = renderScanResult(r);
+    } catch (e) {
+        out.innerHTML = `<div class="alert alert-error">${e.message || 'Lỗi tra cứu'}</div>`;
+    }
+}
+
+async function lookupItem() {
+    const code = document.getElementById('item-input').value.trim();
+    const out = document.getElementById('item-info');
+    if (!code) return;
+    out.innerHTML = '⏳ ...';
+    try {
+        const r = await callApi('supplycore.api.wms.scan_barcode', {barcode: code, context: currentMode});
+        if (r.type === 'item') {
+            out.innerHTML = `<div class="result-card">
+                <span class="tag">${r.item_code}</span>
+                ${r.has_batch ? '<span class="tag" style="background:#FFF2CC;color:#856404">Có lô</span>' : ''}
+                <div class="value">${r.item_name}</div>
+                <div class="label">UOM: ${r.uom}</div>
+                ${r.suggested_bin ? `<div class="label">Bin gợi ý: <b>${r.suggested_bin.bin_code}</b> (${r.suggested_bin.warehouse})</div>` : ''}
+            </div>`;
+        } else if (r.type === 'batch') {
+            out.innerHTML = `<div class="result-card">
+                <div class="value">Lô: ${r.batch_no}</div>
+                <div class="label">Item: ${r.item_code}</div>
+                <div class="label">Hạn: ${r.expiry_date || 'N/A'}</div>
+            </div>`;
+            document.getElementById('batch-input').value = r.batch_no;
+            document.getElementById('item-input').value = r.item_code;
+        }
+    } catch (e) {
+        out.innerHTML = `<div class="alert alert-error">${e.message || 'Lỗi'}</div>`;
+    }
+}
+
+async function confirmAction() {
+    const out = document.getElementById('action-result');
+    const item_code = document.getElementById('item-input').value.trim();
+    const qty = parseFloat(document.getElementById('qty-input').value);
+    const batch = document.getElementById('batch-input').value.trim();
+    const bin = document.getElementById('bin-input').value.trim();
+
+    if (!item_code || !qty || qty <= 0) {
+        out.innerHTML = '<div class="alert alert-warning">Cần nhập item + qty hợp lệ</div>';
+        return;
+    }
+    if (currentMode !== 'receipt') {
+        out.innerHTML = '<div class="alert alert-warning">Mode này chưa implement (đang trong v1)</div>';
+        return;
+    }
+
+    out.innerHTML = '⏳ Đang xử lý...';
+    try {
+        // Resolve bin to warehouse if user gave bin code
+        let warehouse = null, bin_location = null;
+        if (bin) {
+            const bin_r = await callApi('supplycore.api.wms.scan_barcode', {barcode: bin});
+            if (bin_r.type === 'bin') {
+                bin_location = bin_r.bin_location;
+                warehouse = bin_r.warehouse;
+            }
+        }
+        const r = await callApi('supplycore.api.wms.confirm_putaway', {
+            item_code, warehouse, qty, bin_location,
+            batch_no: batch || null,
+            pda_session: pdaSession,
+        });
+        out.innerHTML = `<div class="alert alert-success">✓ Đã tạo Stock Entry: <b>${r.stock_entry}</b> (${r.status})</div>`;
+        setTimeout(() => showScreen('menu'), 1500);
+    } catch (e) {
+        out.innerHTML = `<div class="alert alert-error">${e.message || 'Lỗi xác nhận'}</div>`;
+    }
+}
+
+function renderScanResult(r) {
+    if (r.type === 'item') {
+        return `<div class="result-card">
+            <span class="tag">VẬT TƯ</span>
+            <div class="value">${r.item_code} — ${r.item_name}</div>
+            <div class="label">UOM: ${r.uom} • ${r.has_batch ? 'có lô' : 'không lô'} ${r.qc_required ? '• yêu cầu QC' : ''}</div>
+            ${r.suggested_bin ? `<div class="label">Bin gợi ý: ${r.suggested_bin.bin_code}</div>` : ''}
+        </div>`;
+    }
+    if (r.type === 'batch') {
+        return `<div class="result-card">
+            <span class="tag" style="background:#FFF2CC;color:#856404">LÔ</span>
+            <div class="value">${r.batch_no}</div>
+            <div class="label">Item: ${r.item_code} • Hạn: ${r.expiry_date || 'N/A'}</div>
+        </div>`;
+    }
+    if (r.type === 'bin') {
+        return `<div class="result-card">
+            <span class="tag" style="background:#D6E4F0">BIN</span>
+            <div class="value">${r.bin_code}</div>
+            <div class="label">Kho: ${r.warehouse} ${r.is_quarantine ? '• 🚫 Quarantine' : ''}</div>
+        </div>`;
+    }
+    return '<div class="alert alert-error">Không nhận dạng được</div>';
+}
+
+async function callApi(method, args) {
+    const url = '/api/method/' + method;
+    const resp = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': frappe.csrf_token || 'token'},
+        body: JSON.stringify(args || {}),
+    });
+    if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err._server_messages || err.message || `HTTP ${resp.status}`);
+    }
+    const data = await resp.json();
+    return data.message;
+}
+</script>
+{% endblock %}

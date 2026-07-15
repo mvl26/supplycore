@@ -1,0 +1,33 @@
+{
+ "actions": [],
+ "creation": "2026-07-06 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "item",
+  "uom",
+  "column_break_1",
+  "contract_qty",
+  "sold_qty",
+  "remaining_qty",
+  "unit_price"
+ ],
+ "fields": [
+  {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Vật tư", "reqd": 1, "in_list_view": 1, "columns": 2},
+  {"fieldname": "uom", "fieldtype": "Link", "options": "SC UOM", "label": "Đơn vị", "columns": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "contract_qty", "fieldtype": "Float", "label": "SL hợp đồng", "reqd": 1, "in_list_view": 1, "non_negative": 1, "columns": 1},
+  {"fieldname": "sold_qty", "fieldtype": "Float", "label": "SL đã bán", "read_only": 1, "default": "0", "no_copy": 1},
+  {"fieldname": "remaining_qty", "fieldtype": "Float", "label": "SL còn lại", "read_only": 1, "in_list_view": 1, "no_copy": 1, "columns": 1},
+  {"fieldname": "unit_price", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Đơn giá", "reqd": 1, "in_list_view": 1, "non_negative": 1, "columns": 1}
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-07-06 00:00:00",
+ "module": "M7 Sales",
+ "name": "SFC Item",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -1,0 +1,45 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "field:account_code", "track_changes": 1, "is_tree": 1, "nsm_parent_field": "parent_account",
+ "field_order": [
+  "section_main", "account_code", "account_name",
+  "column_break_1", "account_type", "is_group", "disabled",
+  "section_tree", "parent_account", "root_type",
+  "section_meta", "vas_reference", "remarks",
+  "lft", "rgt", "old_parent"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Tài khoản kế toán"},
+  {"fieldname": "account_code", "fieldtype": "Data", "label": "Số TK", "reqd": 1, "unique": 1, "in_list_view": 1, "search_index": 1,
+   "description": "Theo TT 200/2014/TT-BTC hoặc TT 107/2017 (BV công)"},
+  {"fieldname": "account_name", "fieldtype": "Data", "label": "Tên TK", "reqd": 1, "in_list_view": 1, "search_index": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "account_type", "fieldtype": "Select",
+   "options": "\nReceivable\nPayable\nBank\nCash\nStock\nExpense\nIncome\nTax\nFixed Asset\nOther",
+   "label": "Loại tài khoản", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "is_group", "fieldtype": "Check", "label": "Là nhóm", "default": "0", "in_standard_filter": 1},
+  {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0", "in_standard_filter": 1},
+
+  {"fieldname": "section_tree", "fieldtype": "Section Break", "label": "Phân cấp"},
+  {"fieldname": "parent_account", "fieldtype": "Link", "options": "SC GL Account", "label": "TK cha", "search_index": 1},
+  {"fieldname": "root_type", "fieldtype": "Select",
+   "options": "Asset\nLiability\nEquity\nIncome\nExpense",
+   "label": "Loại gốc", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+
+  {"fieldname": "section_meta", "fieldtype": "Section Break", "collapsible": 1},
+  {"fieldname": "vas_reference", "fieldtype": "Data", "label": "Tham chiếu VAS"},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"},
+  {"fieldname": "lft", "fieldtype": "Int", "label": "lft", "hidden": 1, "read_only": 1, "no_copy": 1, "search_index": 1},
+  {"fieldname": "rgt", "fieldtype": "Int", "label": "rgt", "hidden": 1, "read_only": 1, "no_copy": 1, "search_index": 1},
+  {"fieldname": "old_parent", "fieldtype": "Data", "label": "Old Parent", "hidden": 1, "read_only": 1, "no_copy": 1}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "report": 1},
+  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "report": 1, "print": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC GL Account", "title_field": "account_name",
+ "search_fields": "account_code,account_name",
+ "sort_field": "account_code", "sort_order": "ASC"
+}

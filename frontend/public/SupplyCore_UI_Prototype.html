@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SupplyCore — Prototype Giao diện theo Persona</title>
+<style>
+/* ===== DESIGN TOKENS (TL#09 UI Specification) ===== */
+:root{
+  --primary:#1F4E79; --primary-light:#2E75B6; --primary-dark:#163a5a;
+  --bg-light:#E9EFF7; --bg-zebra:#F2F2F2; --danger:#C00000; --warning:#E36C09;
+  --success:#375623; --neutral:#7F7F7F; --white:#FFFFFF;
+  --line:#d8e0ea; --text:#222; --text-muted:#6a7480;
+  --radius:4px; --unit:8px; --shadow:0 2px 4px rgba(0,0,0,.1);
+  --shadow-lg:0 6px 18px rgba(15,40,70,.16);
+  --font:Arial, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);font-size:14.67px;color:var(--text);background:#cfd8e3;line-height:1.45}
+button{font-family:inherit;cursor:pointer}
+a{color:var(--primary-light);text-decoration:none}
+
+/* ===== APP SHELL ===== */
+.app{display:grid;grid-template-columns:248px 1fr;grid-template-rows:54px 1fr;
+  grid-template-areas:"brand top" "side main";height:100vh;overflow:hidden}
+
+/* Brand corner */
+.brand{grid-area:brand;background:var(--primary-dark);color:#fff;display:flex;align-items:center;
+  gap:10px;padding:0 16px;border-right:1px solid rgba(255,255,255,.08)}
+.brand .logo{width:30px;height:30px;border-radius:6px;background:linear-gradient(135deg,#2E75B6,#7fb1e0);
+  display:grid;place-items:center;font-weight:800;color:#fff;font-size:16px}
+.brand b{font-size:16px;letter-spacing:.3px}
+.brand small{display:block;font-size:9.5px;color:#9db8d6;font-weight:400;margin-top:-2px}
+
+/* Topbar */
+.topbar{grid-area:top;background:var(--primary);color:#fff;display:flex;align-items:center;
+  gap:14px;padding:0 18px}
+.topbar .crumb{font-size:13px;color:#cfe0f2}
+.topbar .crumb b{color:#fff}
+.topbar .spacer{flex:1}
+.searchbox{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);border-radius:20px;
+  padding:6px 14px;width:280px;color:#dce9f7}
+.searchbox input{background:transparent;border:none;outline:none;color:#fff;font-size:13px;width:100%}
+.searchbox input::placeholder{color:#bcd2ea}
+.topbar .ic{position:relative;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(255,255,255,.12);font-size:16px}
+.topbar .ic .dot{position:absolute;top:-2px;right:-2px;background:var(--danger);color:#fff;font-size:9.5px;
+  min-width:16px;height:16px;border-radius:9px;display:grid;place-items:center;padding:0 4px;font-weight:700}
+.userchip{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.1);padding:5px 12px 5px 6px;border-radius:22px}
+.userchip .av{width:28px;height:28px;border-radius:50%;background:#7fb1e0;color:#10314f;font-weight:700;
+  display:grid;place-items:center;font-size:13px}
+.userchip .nm{font-size:12.5px;line-height:1.1}
+.userchip .nm small{display:block;color:#bcd2ea;font-size:10px}
+
+/* Sidebar */
+.sidebar{grid-area:side;background:var(--white);border-right:1px solid var(--line);display:flex;
+  flex-direction:column;overflow:hidden}
+.persona-pick{padding:12px;border-bottom:1px solid var(--line);background:var(--bg-light)}
+.persona-pick label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);font-weight:700}
+.persona-pick select{width:100%;margin-top:6px;padding:9px 10px;border:1px solid #b9c8db;border-radius:var(--radius);
+  font-family:inherit;font-size:13px;background:#fff;color:var(--primary);font-weight:700}
+.persona-card{padding:11px 12px;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--line)}
+.persona-card .pav{width:40px;height:40px;border-radius:9px;flex:none;display:grid;place-items:center;
+  color:#fff;font-weight:800;font-size:15px}
+.persona-card .pn{font-size:13.5px;font-weight:700;color:var(--primary)}
+.persona-card .pr{font-size:11px;color:var(--text-muted)}
+.role-badge{display:inline-block;margin-top:4px;font-size:9.5px;font-weight:700;color:#fff;
+  background:var(--primary-light);padding:2px 7px;border-radius:10px;letter-spacing:.3px}
+.nav{flex:1;overflow-y:auto;padding:8px 0}
+.nav .grp{font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--neutral);
+  padding:12px 16px 4px;font-weight:700}
+.nav a{display:flex;align-items:center;gap:11px;padding:9px 16px;color:#33414f;font-size:13px;
+  border-left:3px solid transparent;cursor:pointer}
+.nav a .nic{width:18px;text-align:center;opacity:.8}
+.nav a:hover{background:var(--bg-light)}
+.nav a.active{background:var(--bg-light);border-left-color:var(--primary);color:var(--primary);font-weight:700}
+.nav a .tag{margin-left:auto;font-size:9.5px;background:var(--danger);color:#fff;border-radius:9px;
+  padding:1px 6px;font-weight:700}
+.scope-note{padding:10px 14px;border-top:1px solid var(--line);background:#fbfcfe;font-size:10.5px;color:var(--text-muted)}
+.scope-note b{color:var(--success)}
+
+/* Main */
+.main{grid-area:main;overflow-y:auto;padding:20px 24px 60px;background:#eef2f7}
+.page-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}
+.page-head h1{font-size:18px;color:var(--primary)}
+.page-head .sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.page-head .scrtag{font-size:10px;background:#dde7f3;color:var(--primary);padding:3px 8px;border-radius:10px;font-weight:700}
+.page-head .spacer{flex:1}
+
+/* Buttons */
+.btn{border:1px solid transparent;border-radius:var(--radius);padding:8px 14px;font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;gap:7px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-ghost{background:#fff;border-color:#c2cedd;color:var(--primary)}
+.btn-ghost:hover{background:var(--bg-light)}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warn{background:var(--warning);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+
+/* Cards */
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px}
+.card>.ct{padding:11px 16px;border-bottom:1px solid var(--line);font-weight:700;color:var(--primary);
+  font-size:13px;display:flex;align-items:center;gap:8px}
+.card>.ct .spacer{flex:1}
+.card>.cb{padding:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+
+/* KPI tiles */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:14px 16px;border-top:3px solid var(--primary-light);position:relative}
+.kpi .k-lbl{font-size:11.5px;color:var(--text-muted);font-weight:600}
+.kpi .k-val{font-size:30px;font-weight:800;color:var(--primary);line-height:1.1;margin:4px 0 2px}
+.kpi .k-sub{font-size:11px;font-weight:600}
+.kpi.warn{border-top-color:var(--warning)} .kpi.warn .k-val{color:var(--warning)}
+.kpi.danger{border-top-color:var(--danger)} .kpi.danger .k-val{color:var(--danger)}
+.kpi.success{border-top-color:var(--success)} .kpi.success .k-val{color:var(--success)}
+.kpi .k-ic{position:absolute;top:12px;right:14px;font-size:18px;opacity:.25}
+
+/* Tables */
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+table.tbl th{background:var(--bg-light);color:var(--primary);text-align:left;padding:9px 11px;font-size:11.5px;
+  border-bottom:2px solid #d0ddec;white-space:nowrap}
+table.tbl td{padding:9px 11px;border-bottom:1px solid #eef1f5;vertical-align:middle}
+table.tbl tr:nth-child(even) td{background:var(--bg-zebra)}
+table.tbl tr:hover td{background:#eaf1fb}
+table.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* Badges */
+.bdg{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:11px}
+.bdg.green{background:#e3efe0;color:var(--success)}
+.bdg.amber{background:#fcefe0;color:var(--warning)}
+.bdg.red{background:#f8e2e2;color:var(--danger)}
+.bdg.grey{background:#ececec;color:var(--neutral)}
+.bdg.blue{background:#dde9f7;color:var(--primary)}
+.dotled::before{content:"●";margin-right:4px}
+.stars{color:#E8A800;letter-spacing:1px}
+
+/* Forms */
+.fld{margin-bottom:12px}
+.fld label{display:block;font-size:11.5px;font-weight:700;color:#41506180;color:var(--text-muted);margin-bottom:4px}
+.fld input,.fld select,.fld textarea{width:100%;padding:8px 10px;border:1px solid #c2cedd;border-radius:var(--radius);
+  font-family:inherit;font-size:13px;background:#fff}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 2px #2e75b633}
+.fld .ro{background:#f4f6f9;color:#444}
+.req::after{content:" *";color:var(--danger)}
+.help{font-size:10.5px;color:var(--neutral);margin-top:3px}
+
+/* Misc */
+.banner{padding:10px 14px;border-radius:var(--radius);font-size:12.5px;margin-bottom:14px;display:flex;align-items:center;gap:9px}
+.banner.warn{background:#fcefe0;color:#8a4708;border:1px solid #f0cda0}
+.banner.info{background:#e7f0fb;color:#16456f;border:1px solid #bcd6f0}
+.banner.ok{background:#e3efe0;color:#2d4a1c;border:1px solid #bcd9ac}
+.banner.crit{background:#f8e2e2;color:#7a0000;border:1px solid #e6b3b3}
+.bar{height:9px;border-radius:5px;background:#e4eaf1;overflow:hidden;display:inline-block;width:100%;vertical-align:middle}
+.bar>span{display:block;height:100%;background:var(--primary-light)}
+.bar.full>span{background:var(--success)} .bar.low>span{background:var(--warning)} .bar.crit>span{background:var(--danger)}
+.muted{color:var(--text-muted)} .small{font-size:11px} .center{text-align:center} .rt{text-align:right}
+.flexsplit{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:11px;background:var(--bg-light);color:var(--primary);padding:4px 10px;border-radius:13px;font-weight:600}
+
+/* Warehouse grid */
+.wh-grid{display:flex;flex-direction:column;gap:14px}
+.wh-row{display:flex;align-items:center;gap:8px}
+.wh-row .rl{width:70px;font-size:11px;font-weight:700;color:var(--text-muted)}
+.bin{width:46px;height:34px;border-radius:4px;border:1px solid #c2cedd;display:grid;place-items:center;
+  font-size:9.5px;cursor:pointer;color:#56657a;font-weight:700}
+.bin.f{background:#cfe0cf;border-color:#9cc09c;color:#2d4a1c}
+.bin.h{background:#fae6cc;border-color:#e7bf8e;color:#8a4708}
+.bin.e{background:#f1f3f6}
+.bin.sel{outline:3px solid var(--primary);outline-offset:1px}
+
+/* PDA mock */
+.pda-wrap{display:flex;justify-content:center;padding:6px 0}
+.pda{width:320px;background:#0f2333;border-radius:26px;padding:12px;box-shadow:var(--shadow-lg)}
+.pda .screen{background:#f4f7fb;border-radius:16px;overflow:hidden}
+.pda .pda-top{background:var(--primary);color:#fff;padding:11px 14px;font-weight:700;font-size:13px;display:flex;
+  align-items:center;justify-content:space-between}
+.pda .pda-body{padding:13px}
+.scan-box{border:2px dashed var(--primary-light);border-radius:8px;background:#eaf1fb;padding:18px;text-align:center;
+  color:var(--primary);font-weight:700;margin-bottom:12px}
+.scan-box .cam{font-size:30px;display:block;margin-bottom:4px}
+.pda-item{background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px;margin-bottom:10px;font-size:12.5px}
+.pda-item .pi-h{font-weight:700;color:var(--primary);margin-bottom:5px}
+.bigbtn{width:100%;padding:13px;border:none;border-radius:8px;background:var(--success);color:#fff;font-weight:800;
+  font-size:14px;letter-spacing:.4px}
+
+/* Timeline */
+.timeline{position:relative;padding-left:26px}
+.timeline::before{content:"";position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:#c9d7e6}
+.tl-item{position:relative;margin-bottom:16px}
+.tl-item::before{content:"";position:absolute;left:-22px;top:3px;width:12px;height:12px;border-radius:50%;
+  background:var(--primary-light);border:2px solid #fff;box-shadow:0 0 0 2px #c9d7e6}
+.tl-item.ok::before{background:var(--success)} .tl-item.warn::before{background:var(--warning)} .tl-item.bad::before{background:var(--danger)}
+.tl-item .tt{font-weight:700;font-size:12.5px;color:var(--primary)}
+.tl-item .tm{font-size:10.5px;color:var(--neutral)}
+
+/* match cols */
+.match{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.match .mc{padding:12px;border-right:1px solid var(--line)}
+.match .mc:last-child{border-right:none}
+.match .mc h4{font-size:12px;color:var(--primary);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.match .ln{font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between}
+
+.checklist .ck{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eef1f5;font-size:12.5px}
+.checklist .ck .qno{width:22px;height:22px;border-radius:50%;background:var(--bg-light);color:var(--primary);
+  display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.checklist .ck .qx{flex:1}
+.seg{display:inline-flex;border:1px solid #c2cedd;border-radius:6px;overflow:hidden}
+.seg button{border:none;background:#fff;padding:5px 12px;font-size:11.5px;font-weight:700;color:#56657a}
+.seg button.on-ok{background:var(--success);color:#fff} .seg button.on-no{background:var(--danger);color:#fff}
+
+.footer-note{margin-top:8px;font-size:10.5px;color:var(--neutral);text-align:center}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="brand">
+    <div class="logo">S</div>
+    <div><b>SupplyCore</b><small>Quản lý Cung ứng VTYT</small></div>
+  </div>
+  <div class="topbar">
+    <div class="crumb" id="crumb">Trang chủ</div>
+    <div class="spacer"></div>
+    <div class="searchbox"><span>🔍</span><input id="globalSearch" placeholder="Tìm vật tư, lô, PO, NCC..."></div>
+    <div class="ic" title="Cảnh báo">🔔<span class="dot" id="bellCount">7</span></div>
+    <div class="userchip"><div class="av" id="uav">L</div>
+      <div class="nm" id="uname">Nguyễn Thị Lan<small id="urole">SC-MANAGER</small></div>
+    </div>
+  </div>
+  <aside class="sidebar">
+    <div class="persona-pick">
+      <label>Đăng nhập với chân dung</label>
+      <select id="personaSelect" onchange="switchPersona(this.value)"></select>
+    </div>
+    <div class="persona-card" id="personaCard"></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="scope-note" id="scopeNote"></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+
+<script>
+/* ============================================================
+   DỮ LIỆU PERSONA — bám sát file Chân dung & Ma trận phân quyền
+   ============================================================ */
+const PERSONAS = {
+  lan: {
+    name:"Nguyễn Thị Lan", title:"Trưởng phòng Vật tư TTBYT", role:"SC-MANAGER",
+    av:"L", color:"#1F4E79", scope:"Toàn bộ kho & khoa (xem tất cả)", twofa:"Bắt buộc",
+    goal:"Kiểm soát toàn bộ chuỗi cung ứng, đảm bảo đủ vật tư & ngân sách hợp lý",
+    nav:[
+      {g:"Tổng quan"},
+      {id:"lan_dash", ic:"📊", t:"Dashboard KPI", scr:"SCR-041"},
+      {id:"lan_alert", ic:"🔔", t:"Trung tâm Cảnh báo", scr:"SCR-042", tag:"15"},
+      {g:"Phê duyệt"},
+      {id:"lan_po", ic:"✅", t:"Phê duyệt PO", scr:"SCR-007", tag:"7"},
+      {id:"lan_pay", ic:"💰", t:"Phê duyệt Thanh toán", scr:"SCR-031", tag:"3"},
+      {g:"Cung ứng"},
+      {id:"lan_supplier", ic:"🏢", t:"Danh sách NCC", scr:"SCR-001"},
+      {id:"lan_report", ic:"📈", t:"Báo cáo & Tồn kho", scr:"SCR-023"},
+    ], home:"lan_dash"
+  },
+  hung: {
+    name:"Trần Văn Hùng", title:"Nhân viên Mua sắm (P. Vật tư)", role:"SC-MANAGER",
+    av:"H", color:"#2E75B6", scope:"Dữ liệu NCC, PO, hợp đồng toàn hệ thống", twofa:"Bắt buộc",
+    goal:"Tạo & theo dõi đơn hàng đúng hạn, quản lý nhà cung cấp",
+    nav:[
+      {g:"Tổng quan"},
+      {id:"hung_dash", ic:"🛒", t:"Bảng điều khiển Mua sắm", scr:"M2"},
+      {g:"Nhà cung cấp"},
+      {id:"lan_supplier", ic:"🏢", t:"Danh sách NCC", scr:"SCR-001"},
+      {id:"hung_contract", ic:"📄", t:"Hợp đồng Khung", scr:"SCR-003"},
+      {g:"Mua sắm"},
+      {id:"hung_po", ic:"🧾", t:"Tạo Đơn đặt hàng", scr:"SCR-006"},
+      {id:"hung_track", ic:"🚚", t:"Theo dõi Đơn hàng", scr:"SCR-008"},
+    ], home:"hung_dash"
+  },
+  tam: {
+    name:"Lê Văn Tâm", title:"Thủ kho Trung tâm", role:"SC-STOREKEEPER",
+    av:"T", color:"#375623", scope:"Chỉ kho được gán: Kho TT, Kho Dược", twofa:"Tùy chọn (Email OTP)",
+    goal:"Nhập–xuất chính xác, không thất thoát, tuân thủ FEFO",
+    nav:[
+      {g:"Tổng quan"},
+      {id:"tam_dash", ic:"📦", t:"Bảng điều khiển Kho", scr:"M4"},
+      {g:"Nhập kho"},
+      {id:"tam_grn", ic:"📲", t:"Tiếp nhận hàng (PDA)", scr:"SCR-009"},
+      {g:"Quản lý kho"},
+      {id:"tam_map", ic:"🗺️", t:"Bản đồ Kho", scr:"SCR-013"},
+      {id:"tam_batch", ic:"🏷️", t:"Lô hàng & Hạn dùng", scr:"SCR-017", tag:"3"},
+      {g:"Cấp phát"},
+      {id:"tam_fefo", ic:"📤", t:"Cấp phát FEFO", scr:"SCR-027"},
+    ], home:"tam_dash"
+  },
+  mai: {
+    name:"Phạm Thị Mai", title:"Điều dưỡng trưởng — Khoa Ngoại", role:"SC-WARD-NURSE",
+    av:"M", color:"#E36C09", scope:"Chỉ Khoa Ngoại (requesting_ward)", twofa:"Không bắt buộc",
+    goal:"Yêu cầu đủ vật tư cho khoa, không gián đoạn điều trị",
+    nav:[
+      {g:"Tổng quan"},
+      {id:"mai_dash", ic:"🏥", t:"Tổng quan Khoa", scr:"M7"},
+      {g:"Yêu cầu vật tư"},
+      {id:"mai_req", ic:"📝", t:"Yêu cầu Vật tư", scr:"SCR-025"},
+      {id:"mai_stock", ic:"📦", t:"Tồn kho Khoa", scr:"SCR-023"},
+      {id:"mai_return", ic:"↩️", t:"Hoàn trả Vật tư", scr:"SCR-024"},
+    ], home:"mai_dash"
+  },
+  phong: {
+    name:"Đỗ Văn Phong", title:"Kế toán Thanh toán (P. TCKT)", role:"SC-ACCOUNTANT",
+    av:"P", color:"#7030A0", scope:"Dữ liệu hóa đơn, thanh toán (không sửa kho)", twofa:"Khuyến nghị",
+    goal:"Thanh toán đúng, đối chiếu khớp 3 bên, minh bạch",
+    nav:[
+      {g:"Tổng quan"},
+      {id:"phong_dash", ic:"💵", t:"Bảng điều khiển Kế toán", scr:"M8"},
+      {g:"Thanh toán"},
+      {id:"phong_inv", ic:"📥", t:"Tải Hóa đơn NCC", scr:"SCR-029"},
+      {id:"phong_match", ic:"⚖️", t:"Đối chiếu 3 bên", scr:"SCR-030", tag:"4"},
+      {id:"phong_hist", ic:"🗂️", t:"Lịch sử Thanh toán", scr:"SCR-032"},
+    ], home:"phong_dash"
+  },
+  quynh: {
+    name:"Vũ Thị Quỳnh", title:"NV Kiểm soát Chất lượng / Dược sĩ", role:"SC-QC",
+    av:"Q", color:"#C00000", scope:"Dữ liệu lô hàng, QC toàn hệ thống", twofa:"Khuyến nghị",
+    goal:"Đảm bảo chất lượng lô hàng, kiểm soát quarantine & thu hồi",
+    nav:[
+      {g:"Tổng quan"},
+      {id:"quynh_dash", ic:"🔬", t:"Bảng điều khiển QC", scr:"M10"},
+      {g:"Kiểm tra chất lượng"},
+      {id:"quynh_qc", ic:"📋", t:"QC Checklist Lô hàng", scr:"SCR-010"},
+      {id:"quynh_quar", ic:"🚧", t:"Quarantine Lô hàng", scr:"SCR-020", tag:"2"},
+      {g:"Truy xuất"},
+      {id:"quynh_trace", ic:"🧬", t:"Truy xuất Nguồn gốc", scr:"SCR-038"},
+      {id:"quynh_recall", ic:"⚠️", t:"Quản lý Thu hồi", scr:"SCR-039"},
+    ], home:"quynh_dash"
+  }
+};
+
+/* shared helpers */
+const stars=n=>{let f=Math.round(n);return '<span class="stars">'+'★'.repeat(f)+'☆'.repeat(5-f)+'</span> '+n.toFixed(1);};
+function pageHead(title,sub,scr,actions){return `<div class="page-head"><div><h1>${title}</h1><div class="sub">${sub||''}</div></div><div class="spacer"></div>${scr?`<span class="scrtag">${scr}</span>`:''}${actions||''}</div>`;}
+
+/* ============================================================
+   SCREENS — mỗi hàm trả về HTML 1 màn hình
+   ============================================================ */
+const SCREENS = {
+
+/* ---------- SC-MANAGER : CHỊ LAN ---------- */
+lan_dash:()=>pageHead("Dashboard Tổng quan","Cập nhật: 09:15:32 · 24/05/2026 — phạm vi: toàn bệnh viện","SCR-041",
+  `<button class="btn btn-ghost btn-sm">⚙️ Cấu hình cảnh báo</button>`)+`
+  <div class="kpis">
+    <div class="kpi warn"><span class="k-ic">📝</span><div class="k-lbl">PO chờ phê duyệt</div><div class="k-val">7</div><div class="k-sub" style="color:var(--warning)">⚠ Cần xử lý ngay</div></div>
+    <div class="kpi danger"><span class="k-ic">⏳</span><div class="k-lbl">Hạn dùng &lt; 30 ngày</div><div class="k-val">12</div><div class="k-sub" style="color:var(--danger)">⚠ Cần xuất ưu tiên</div></div>
+    <div class="kpi warn"><span class="k-ic">📉</span><div class="k-lbl">Tồn thấp cảnh báo</div><div class="k-val">5</div><div class="k-sub" style="color:var(--warning)">⚠ Cần mua bổ sung</div></div>
+    <div class="kpi success"><span class="k-ic">💰</span><div class="k-lbl">Thanh toán chờ duyệt</div><div class="k-val">3</div><div class="k-sub" style="color:var(--success)">💰 Cần phê duyệt</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="ct">📦 Tồn kho theo Kho</div><div class="cb">
+      ${[["Kho Trung tâm",78,"full"],["Kho Khoa Nội",42,"low"],["Kho Khoa Ngoại",61,""],["Kho Cấp cứu",99,"crit"]].map(([n,p,c])=>
+        `<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px"><div style="width:120px;font-size:12.5px">${n}</div>
+        <div class="bar ${c}"><span style="width:${p}%"></span></div><b style="width:42px;text-align:right">${p}%</b></div>`).join('')}
+    </div></div>
+    <div class="card"><div class="ct">🕒 Hoạt động gần đây</div><div class="cb" style="padding-top:10px">
+      <div class="timeline">
+        <div class="tl-item ok"><div class="tt">GRN-0042 nhận hàng <span class="bdg green">✓</span></div><div class="tm">10:30 · Cty A Pharma</div></div>
+        <div class="tl-item ok"><div class="tt">DISP-0015 cấp phát <span class="bdg green">✓</span></div><div class="tm">09:45 · Khoa Nội tổng hợp</div></div>
+        <div class="tl-item"><div class="tt">PO-0043 đã phê duyệt</div><div class="tm">09:15 · 7.700.000 ₫</div></div>
+        <div class="tl-item ok"><div class="tt">QC-0042 kiểm tra PASS</div><div class="tm">08:50 · LOT-A01</div></div>
+        <div class="tl-item warn"><div class="tt">MR-0078 yêu cầu mới</div><div class="tm">08:30 · Khoa Ngoại</div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="card"><div class="ct">🏆 Top 5 vật tư tiêu thụ nhiều nhất (tháng này)</div><div class="cb">
+    ${[["Găng tay khám","5.200 hộp",100],["Kim tiêm 5ml","3.100 cái",78],["Băng gạc vô trùng","2.800 gói",70],["Nước muối sinh lý","1.200 chai",42],["Bơm tiêm 10ml","980 cái",30]].map(([n,v,p])=>
+      `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:160px;font-size:12.5px">${n}</div>
+       <div class="bar"><span style="width:${p}%"></span></div><b style="width:90px;text-align:right;font-size:12px">${v}</b></div>`).join('')}
+  </div></div>`,
+
+lan_alert:()=>pageHead("Trung tâm Cảnh báo","Tổng hợp cảnh báo toàn hệ thống","SCR-042",
+  `<button class="btn btn-ghost btn-sm">Đánh dấu tất cả đã xử lý</button>`)+`
+  <div class="card"><div class="cb" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="muted small">Lọc:</span>
+    <select style="padding:6px;border:1px solid #c2cedd;border-radius:4px"><option>Tất cả module</option><option>M5 Lô hàng</option><option>M2 Mua sắm</option></select>
+    <select style="padding:6px;border:1px solid #c2cedd;border-radius:4px"><option>Mọi mức độ</option><option>Critical</option><option>Warning</option><option>Info</option></select>
+    <select style="padding:6px;border:1px solid #c2cedd;border-radius:4px"><option>Chưa xử lý</option><option>Đã xử lý</option></select>
+  </div></div>
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Thời gian</th><th>Nội dung cảnh báo</th><th>Module</th><th>Mức độ</th><th>Hành động</th></tr></thead>
+    <tbody>
+      <tr><td class="small">09:00 hôm nay</td><td>🔴 <b>LOT-C03</b>: Lô Nước muối <b>ĐÃ HẾT HẠN</b> — Cần cách ly ngay</td><td><span class="bdg blue">M5</span></td><td><span class="bdg red">Critical</span></td><td><button class="btn btn-danger btn-sm">Cách ly</button></td></tr>
+      <tr><td class="small">08:30 hôm nay</td><td>⚠ Tồn kho Găng tay size S dưới mức tối thiểu (còn 50/200 hộp)</td><td><span class="bdg blue">M2</span></td><td><span class="bdg amber">Warning</span></td><td><button class="btn btn-ghost btn-sm">Tạo PO</button></td></tr>
+      <tr><td class="small">08:05 hôm nay</td><td>⚠ 12 lô hàng sẽ hết hạn trong 30 ngày tới</td><td><span class="bdg blue">M5</span></td><td><span class="bdg amber">Warning</span></td><td><button class="btn btn-ghost btn-sm">Xem lô</button></td></tr>
+      <tr><td class="small">Hôm qua 15:00</td><td>ℹ PO-2026-0043 chờ phê duyệt quá 24h — Nhắc nhở SC-MANAGER</td><td><span class="bdg blue">M2</span></td><td><span class="bdg grey">Info</span></td><td><button class="btn btn-primary btn-sm">Phê duyệt</button></td></tr>
+      <tr><td class="small">Hôm qua 11:20</td><td>ℹ Hợp đồng HĐ-2026-001 sẽ hết hiệu lực sau 30 ngày</td><td><span class="bdg blue">M1</span></td><td><span class="bdg grey">Info</span></td><td><button class="btn btn-ghost btn-sm">Gia hạn</button></td></tr>
+    </tbody>
+  </table>
+  <div class="cb" style="border-top:1px solid var(--line);font-size:12px">Tổng: <b>15</b> cảnh báo &nbsp;|&nbsp; 🔴 Critical: <b>3</b> &nbsp;|&nbsp; ⚠ Warning: <b>8</b> &nbsp;|&nbsp; ℹ Info: <b>4</b></div></div>`,
+
+lan_po:()=>pageHead("Phê duyệt Đơn đặt hàng","PO-2026-0042 — chờ phê duyệt","SCR-007",
+  `<button class="btn btn-success">✓ Phê duyệt</button> <button class="btn btn-danger">✗ Từ chối</button>`)+`
+  <div class="banner warn">⚠ PO chờ phê duyệt — Gửi bởi: Trần Văn Hùng lúc 09:15 ngày 24/05/2026. Hạn mức của bạn: PO ≤ 50 triệu.</div>
+  <div class="grid2">
+    <div class="card"><div class="ct">🧾 Thông tin PO</div><div class="cb">
+      <div class="fld"><label>Nhà cung cấp</label><input class="ro" value="Công ty A Pharma" readonly></div>
+      <div class="row"><div class="fld" style="flex:1"><label>Tổng giá trị</label><input class="ro" value="7.700.000 ₫" readonly></div>
+      <div class="fld" style="flex:1"><label>Ngày cần nhận</label><input class="ro" value="01/06/2026" readonly></div></div>
+      <div class="fld"><label>Hợp đồng khung</label><input class="ro" value="HĐ-2026-001 (còn hiệu lực)" readonly></div>
+      <div class="ct" style="border:none;padding:8px 0 4px">📜 Lịch sử mua NCC này</div>
+      <table class="tbl"><tbody>
+        <tr><td>PO-2026-0038</td><td class="num">5.200.000 ₫</td><td><span class="bdg green">✓ Hoàn tất</span></td></tr>
+        <tr><td>PO-2026-0031</td><td class="num">3.800.000 ₫</td><td><span class="bdg green">✓ Hoàn tất</span></td></tr>
+      </tbody></table>
+    </div></div>
+    <div class="card"><div class="ct">⚖️ So sánh với Hợp đồng Khung</div><div class="cb">
+      <div class="banner ok">✓ HĐ-2026-001 còn hiệu lực — tất cả giá khớp hợp đồng khung</div>
+      <table class="tbl"><thead><tr><th>Vật tư</th><th class="num">SL</th><th class="num">Giá HĐ</th><th class="num">Giá PO</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Găng tay khám</td><td class="num">500</td><td class="num">12.000</td><td class="num">12.000</td><td><span class="bdg green">✓</span></td></tr>
+        <tr><td>Kim tiêm 5ml</td><td class="num">200</td><td class="num">8.500</td><td class="num">8.500</td><td><span class="bdg green">✓</span></td></tr>
+      </tbody></table>
+      <div class="fld" style="margin-top:14px"><label>Lý do từ chối (bắt buộc khi từ chối)</label><textarea rows="2" placeholder="Nhập lý do nếu từ chối PO..."></textarea></div>
+    </div></div>
+  </div>`,
+
+lan_pay:()=>pageHead("Phê duyệt Thanh toán","3 hóa đơn đã khớp 3 bên, chờ phê duyệt","SCR-031")+`
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Mã hóa đơn</th><th>Nhà cung cấp</th><th class="num">Số tiền (gồm VAT)</th><th>3-way Match</th><th>Hạn TT</th><th>Hành động</th></tr></thead>
+    <tbody>
+      <tr><td>VAT-2026-042</td><td>Công ty A Pharma</td><td class="num">8.470.000 ₫</td><td><span class="bdg green">✓ Khớp</span></td><td>23/06/2026</td><td><button class="btn btn-success btn-sm">Duyệt</button> <button class="btn btn-ghost btn-sm">Xem</button></td></tr>
+      <tr><td>VAT-2026-039</td><td>Dược phẩm B</td><td class="num">15.180.000 ₫</td><td><span class="bdg green">✓ Khớp</span></td><td>20/06/2026</td><td><button class="btn btn-success btn-sm">Duyệt</button> <button class="btn btn-ghost btn-sm">Xem</button></td></tr>
+      <tr><td>VAT-2026-037</td><td>Thiết bị Y tế C</td><td class="num">42.900.000 ₫</td><td><span class="bdg amber">⚠ Lệch 2%</span></td><td>18/06/2026</td><td><button class="btn btn-ghost btn-sm">Xem chênh lệch</button></td></tr>
+    </tbody></table>
+    <div class="cb" style="border-top:1px solid var(--line);font-size:12px">Tổng chờ duyệt: <b>66.550.000 ₫</b> · 1 hóa đơn lệch cần xem xét trước khi duyệt.</div>
+  </div>`,
+
+lan_supplier:()=>pageHead("Danh sách Nhà cung cấp","Quản lý NCC đã phê duyệt","SCR-001",
+  `<button class="btn btn-primary btn-sm">+ Thêm NCC</button> <button class="btn btn-ghost btn-sm">Import</button> <button class="btn btn-ghost btn-sm">Xuất Excel</button>`)+`
+  <div class="card"><div class="cb" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="searchbox" style="background:#f1f4f8;color:#56657a;width:280px"><span>🔍</span><input placeholder="Tìm theo tên, MST, người liên hệ..." style="color:#222"></div>
+    <select style="padding:7px;border:1px solid #c2cedd;border-radius:4px"><option>Trạng thái: Tất cả</option><option>Active</option><option>Pending</option><option>Blacklisted</option></select>
+    <select style="padding:7px;border:1px solid #c2cedd;border-radius:4px"><option>Xếp hạng: Tất cả</option><option>≥4 sao</option><option>Chưa đánh giá</option></select>
+  </div></div>
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Mã NCC</th><th>Tên NCC</th><th>MST</th><th>Trạng thái</th><th>Xếp hạng</th><th>Hợp đồng</th></tr></thead>
+    <tbody>
+      <tr><td>NCC-001</td><td>Công ty A Pharma</td><td>0101234567</td><td><span class="bdg green dotled">Active</span></td><td>${stars(4.2)}</td><td>HĐ-2026-001</td></tr>
+      <tr><td>NCC-002</td><td>Dược phẩm B</td><td>0209876543</td><td><span class="bdg green dotled">Active</span></td><td>${stars(4.8)}</td><td>HĐ-2026-005</td></tr>
+      <tr><td>NCC-003</td><td>Thiết bị Y tế C</td><td>0312345678</td><td><span class="bdg amber dotled">Pending</span></td><td class="muted">— chưa đánh giá</td><td>—</td></tr>
+      <tr><td>NCC-004</td><td>Vật tư Y tế An Khang</td><td>0405551122</td><td><span class="bdg green dotled">Active</span></td><td>${stars(3.9)}</td><td>HĐ-2026-008</td></tr>
+      <tr><td>NCC-005</td><td>Hóa chất XN Delta</td><td>0507788990</td><td><span class="bdg grey dotled">Inactive</span></td><td>${stars(3.1)}</td><td>—</td></tr>
+    </tbody></table>
+    <div class="cb" style="border-top:1px solid var(--line);font-size:12px">Tổng: <b>47 NCC</b> &nbsp;|&nbsp; Active: <b>38</b> &nbsp;|&nbsp; Pending: <b>6</b> &nbsp;|&nbsp; Inactive: <b>3</b></div>
+  </div>`,
+
+lan_report:()=>pageHead("Báo cáo & Tồn kho theo Khoa","Phạm vi: toàn bộ kho & khoa","SCR-023",
+  `<button class="btn btn-ghost btn-sm">📄 Xuất PDF</button> <button class="btn btn-ghost btn-sm">Xuất Excel</button>`)+`
+  <div class="grid3">
+    <div class="kpi"><div class="k-lbl">Giá trị tồn kho</div><div class="k-val" style="font-size:22px">4,82 tỷ</div><div class="k-sub muted">₫ — toàn hệ thống</div></div>
+    <div class="kpi success"><div class="k-lbl">Vòng quay tồn kho</div><div class="k-val" style="font-size:22px">6,4</div><div class="k-sub" style="color:var(--success)">lần/năm ▲</div></div>
+    <div class="kpi warn"><div class="k-lbl">Tỷ lệ hết hàng</div><div class="k-val" style="font-size:22px">2,1%</div><div class="k-sub" style="color:var(--warning)">trong tháng</div></div>
+  </div>
+  <div class="card"><div class="ct">Tồn kho chi tiết theo Khoa/Kho</div><table class="tbl">
+    <thead><tr><th>Khoa / Kho</th><th class="num">Số mặt hàng</th><th class="num">Giá trị tồn</th><th>Mức lấp đầy</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+      <tr><td>Kho Trung tâm</td><td class="num">412</td><td class="num">3.150.000.000</td><td><div class="bar full"><span style="width:78%"></span></div></td><td><span class="bdg green">Ổn định</span></td></tr>
+      <tr><td>Khoa Nội tổng hợp</td><td class="num">86</td><td class="num">420.000.000</td><td><div class="bar low"><span style="width:42%"></span></div></td><td><span class="bdg amber">Cần bổ sung</span></td></tr>
+      <tr><td>Khoa Ngoại</td><td class="num">94</td><td class="num">610.000.000</td><td><div class="bar"><span style="width:61%"></span></div></td><td><span class="bdg green">Ổn định</span></td></tr>
+      <tr><td>Khoa Cấp cứu</td><td class="num">58</td><td class="num">280.000.000</td><td><div class="bar crit"><span style="width:99%"></span></div></td><td><span class="bdg red">Gần đầy</span></td></tr>
+    </tbody></table></div>`,
+
+/* ---------- SC-MANAGER (Mua sắm) : ANH HÙNG ---------- */
+hung_dash:()=>pageHead("Bảng điều khiển Mua sắm","Anh Hùng · NV Mua sắm — phạm vi NCC/PO/Hợp đồng","M2")+`
+  <div class="kpis">
+    <div class="kpi"><span class="k-ic">🧾</span><div class="k-lbl">PO đang mở</div><div class="k-val">23</div><div class="k-sub muted">9 chờ giao hàng</div></div>
+    <div class="kpi warn"><span class="k-ic">⏰</span><div class="k-lbl">PO chờ duyệt</div><div class="k-val">7</div><div class="k-sub" style="color:var(--warning)">gửi Trưởng phòng</div></div>
+    <div class="kpi danger"><span class="k-ic">🚚</span><div class="k-lbl">Đơn trễ hạn</div><div class="k-val">2</div><div class="k-sub" style="color:var(--danger)">cần đốc thúc NCC</div></div>
+    <div class="kpi success"><span class="k-ic">📄</span><div class="k-lbl">Hợp đồng hiệu lực</div><div class="k-val">14</div><div class="k-sub" style="color:var(--success)">2 sắp hết hạn</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="ct">📌 Việc cần làm hôm nay</div><div class="cb">
+      <div class="banner warn">⚠ 5 vật tư dưới mức tồn tối thiểu — đề xuất tạo PO bổ sung</div>
+      <div class="banner info">ℹ PO-2026-0043 bị từ chối: "Vượt hạn mức, cần báo giá lại"</div>
+      <div class="banner ok">✓ Hợp đồng HĐ-2026-008 đã được phê duyệt</div>
+    </div></div>
+    <div class="card"><div class="ct">🏢 NCC giao hàng đúng hạn (90 ngày)</div><div class="cb">
+      ${[["Dược phẩm B",96,"full"],["Công ty A Pharma",88,"full"],["An Khang",81,""],["Thiết bị Y tế C",64,"low"]].map(([n,p,c])=>
+      `<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px"><div style="width:150px;font-size:12.5px">${n}</div><div class="bar ${c}"><span style="width:${p}%"></span></div><b style="width:42px;text-align:right">${p}%</b></div>`).join('')}
+    </div></div>
+  </div>`,
+
+hung_contract:()=>pageHead("Quản lý Hợp đồng Khung","HĐ-2026-001 · Công ty A Pharma","SCR-003",
+  `<button class="btn btn-primary btn-sm">+ Tạo Hợp đồng mới</button>`)+`
+  <div class="grid2">
+    <div class="card"><div class="ct">📄 Thông tin Hợp đồng</div><div class="cb">
+      <div class="fld"><label>Mã hợp đồng</label><input value="HĐ-2026-001"></div>
+      <div class="fld"><label>Nhà cung cấp</label><select><option>Công ty A Pharma</option><option>Dược phẩm B</option></select></div>
+      <div class="row"><div class="fld" style="flex:1"><label>Từ ngày</label><input value="01/01/2026"></div>
+      <div class="fld" style="flex:1"><label>Đến ngày</label><input value="31/12/2026"></div></div>
+      <div class="fld"><label>Giá trị hợp đồng</label><input value="5.000.000.000 ₫"></div>
+      <div class="fld"><label>Điều khoản thanh toán</label><input value="Net 30"></div>
+      <div class="fld"><label>Trạng thái</label><div><span class="bdg grey dotled">Draft</span></div></div>
+      <div style="margin-top:6px"><button class="btn btn-ghost btn-sm">Lưu nháp</button> <button class="btn btn-primary btn-sm">Gửi phê duyệt</button></div>
+    </div></div>
+    <div class="card"><div class="ct">📦 Danh mục vật tư trong hợp đồng <span class="spacer"></span><button class="btn btn-ghost btn-sm">+ Thêm dòng</button></div><div class="cb">
+      <table class="tbl"><thead><tr><th>Mã vật tư</th><th>ĐVT</th><th class="num">Đơn giá</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>VT-001 · Găng tay khám</td><td>Hộp</td><td class="num">12.000</td><td><button class="btn btn-ghost btn-sm">🗑</button></td></tr>
+        <tr><td>VT-002 · Kim tiêm 5ml</td><td>Cái</td><td class="num">45.000</td><td><button class="btn btn-ghost btn-sm">🗑</button></td></tr>
+        <tr><td>VT-003 · Nước muối SL</td><td>Chai</td><td class="num">8.500</td><td><button class="btn btn-ghost btn-sm">🗑</button></td></tr>
+      </tbody></table>
+      <div class="muted small" style="margin-top:8px">Tổng số mặt hàng: <b>3</b> · <a>Import từ Excel</a></div>
+    </div></div>
+  </div>`,
+
+hung_po:()=>pageHead("Tạo Đơn đặt hàng (PO)","PO-2026-0042 · Trạng thái: Draft","SCR-006",
+  `<button class="btn btn-ghost btn-sm">Lưu nháp</button> <button class="btn btn-primary btn-sm">Gửi duyệt</button>`)+`
+  <div class="grid2">
+    <div class="card"><div class="ct">🧾 Thông tin PO</div><div class="cb">
+      <div class="fld"><label class="req">Nhà cung cấp</label><select><option>Công ty A Pharma</option><option>Dược phẩm B</option></select></div>
+      <div class="fld"><label>Hợp đồng khung</label><select><option>HĐ-2026-001</option><option>— Không áp dụng —</option></select></div>
+      <div class="row"><div class="fld" style="flex:1"><label>Ngày đặt</label><input value="24/05/2026"></div>
+      <div class="fld" style="flex:1"><label class="req">Ngày cần</label><input value="01/06/2026"></div></div>
+      <div class="fld"><label>Kho nhận</label><select><option>Kho Trung tâm</option><option>Kho Dược</option></select></div>
+      <div class="card" style="margin:6px 0 0;box-shadow:none;background:var(--bg-light)"><div class="cb center">
+        <div class="muted small">TỔNG GIÁ TRỊ</div><div style="font-size:24px;font-weight:800;color:var(--primary)">7.700.000 ₫</div></div></div>
+    </div></div>
+    <div class="card"><div class="ct">📦 Danh mục hàng hóa <span class="spacer"></span><button class="btn btn-ghost btn-sm">Chọn từ HĐ Khung</button></div><div class="cb">
+      <table class="tbl"><thead><tr><th>#</th><th>Vật tư</th><th class="num">SL</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Găng tay khám</td><td class="num">500</td><td class="num">12.000</td><td class="num">6.000.000</td></tr>
+        <tr><td>2</td><td>Kim tiêm 5ml</td><td class="num">200</td><td class="num">8.500</td><td class="num">1.700.000</td></tr>
+        <tr><td colspan="4" class="rt"><b>TỔNG CỘNG</b></td><td class="num"><b>7.700.000</b></td></tr>
+      </tbody></table>
+      <div style="margin-top:10px"><button class="btn btn-ghost btn-sm">+ Thêm dòng</button> <button class="btn btn-ghost btn-sm">📎 Tải file đính kèm</button></div>
+    </div></div>
+  </div>`,
+
+hung_track:()=>pageHead("Theo dõi Đơn hàng","Trạng thái giao hàng các PO đang mở","SCR-008")+`
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Mã PO</th><th>NCC</th><th class="num">Giá trị</th><th>Ngày cần</th><th>Tiến độ</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+      <tr><td>PO-2026-0042</td><td>Công ty A Pharma</td><td class="num">7.700.000</td><td>01/06</td><td><div class="bar full"><span style="width:100%"></span></div></td><td><span class="bdg green">Đã nhận đủ</span></td></tr>
+      <tr><td>PO-2026-0041</td><td>Dược phẩm B</td><td class="num">15.180.000</td><td>28/05</td><td><div class="bar"><span style="width:60%"></span></div></td><td><span class="bdg blue">Đang giao</span></td></tr>
+      <tr><td>PO-2026-0040</td><td>An Khang</td><td class="num">9.350.000</td><td>22/05</td><td><div class="bar crit"><span style="width:30%"></span></div></td><td><span class="bdg red">⚠ Trễ hạn</span></td></tr>
+      <tr><td>PO-2026-0043</td><td>Thiết bị Y tế C</td><td class="num">42.900.000</td><td>05/06</td><td><div class="bar"><span style="width:0%"></span></div></td><td><span class="bdg amber">Chờ duyệt lại</span></td></tr>
+    </tbody></table>
+    <div class="cb" style="border-top:1px solid var(--line);font-size:12px">9 đơn đang giao · <b style="color:var(--danger)">1 đơn trễ hạn</b> · gợi ý: đốc thúc NCC An Khang (PO-0040).</div>
+  </div>`,
+
+/* ---------- SC-STOREKEEPER : ANH TÂM ---------- */
+tam_dash:()=>pageHead("Bảng điều khiển Kho","Anh Tâm · Thủ kho — phạm vi: Kho Trung tâm, Kho Dược","M4")+`
+  <div class="kpis">
+    <div class="kpi"><span class="k-ic">📥</span><div class="k-lbl">GRN chờ nhập hôm nay</div><div class="k-val">3</div><div class="k-sub muted">2 PO đã tới cổng</div></div>
+    <div class="kpi warn"><span class="k-ic">📤</span><div class="k-lbl">Yêu cầu chờ cấp phát</div><div class="k-val">6</div><div class="k-sub" style="color:var(--warning)">2 khẩn cấp</div></div>
+    <div class="kpi danger"><span class="k-ic">⏳</span><div class="k-lbl">Lô sắp/đã hết hạn</div><div class="k-val">3</div><div class="k-sub" style="color:var(--danger)">cần xuất FEFO</div></div>
+    <div class="kpi success"><span class="k-ic">🗺️</span><div class="k-lbl">Bin trống</div><div class="k-val">18</div><div class="k-sub" style="color:var(--success)">sẵn sàng nhập</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="ct">⚡ Tác vụ nhanh</div><div class="cb chips" style="gap:10px">
+      <button class="btn btn-primary">📲 Quét nhận hàng (PDA)</button>
+      <button class="btn btn-ghost">📤 Cấp phát FEFO</button>
+      <button class="btn btn-ghost">🔢 Kiểm kê Cycle Count</button>
+      <button class="btn btn-ghost">🗺️ Bản đồ kho</button>
+    </div></div>
+    <div class="card"><div class="ct">🏷️ Lô cần xử lý gấp (FEFO)</div><div class="cb">
+      <table class="tbl"><tbody>
+        <tr><td>LOT-C03 · Nước muối</td><td><span class="bdg red">🔴 Hết hạn 03/2026</span></td><td><button class="btn btn-danger btn-sm">Cách ly</button></td></tr>
+        <tr><td>LOT-B02 · Kim tiêm</td><td><span class="bdg amber">⚠ Còn 13 ngày</span></td><td><button class="btn btn-warn btn-sm">Xuất gấp</button></td></tr>
+        <tr><td>LOT-E05 · Oxy già</td><td><span class="bdg amber">⚠ Còn 17 ngày</span></td><td><button class="btn btn-warn btn-sm">Xuất gấp</button></td></tr>
+      </tbody></table>
+    </div></div>
+  </div>`,
+
+tam_grn:()=>pageHead("Tiếp nhận hàng qua PDA","Giao diện tối giản cho thiết bị quét mã (480–767px)","SCR-009")+`
+  <div class="banner info">ℹ Màn hình này được tối ưu cho PDA/máy quét mã vạch — nút lớn, mỗi thao tác tối thiểu số lần chạm. Mô phỏng thiết bị bên dưới.</div>
+  <div class="pda-wrap"><div class="pda"><div class="screen">
+    <div class="pda-top"><span>← SupplyCore — GRN</span><span>📶</span></div>
+    <div class="pda-body">
+      <div class="muted small" style="font-weight:700;margin-bottom:6px">SCAN PO HOẶC NHẬP MÃ</div>
+      <div class="scan-box"><span class="cam">📷</span>PO-2026-0042<div class="small" style="font-weight:400">Chạm để quét mã</div></div>
+      <button class="bigbtn" style="background:var(--primary);margin-bottom:12px">TÌM KIẾM PO</button>
+      <div class="pda-item" style="background:var(--bg-light)"><b>NCC:</b> Cty A Pharma<br><b>PO ngày:</b> 24/05/2026<br><b>Kho nhận:</b> Kho Trung tâm</div>
+      <div class="muted small" style="font-weight:700;margin:8px 0 6px">DANH MỤC NHẬN HÀNG</div>
+      <div class="pda-item"><div class="pi-h">Găng tay khám</div>Đặt: 500 · Nhận:
+        <div class="fld" style="margin:6px 0"><input value="500" style="font-size:16px;text-align:center"></div>
+        <div class="row"><div class="fld" style="flex:1;margin:0"><label>Số lô</label><input value="LOT-A01"></div>
+        <div class="fld" style="flex:1;margin:0"><label>HSD</label><input value="12/2027"></div></div></div>
+      <div class="pda-item"><div class="pi-h">Kim tiêm 5ml</div>Đặt: 200 · Nhận:
+        <div class="fld" style="margin:6px 0"><input value="200" style="font-size:16px;text-align:center"></div>
+        <div class="row"><div class="fld" style="flex:1;margin:0"><label>Số lô</label><input value="LOT-B02"></div>
+        <div class="fld" style="flex:1;margin:0"><label>HSD</label><input value="06/2027"></div></div></div>
+      <button class="bigbtn">✓ XÁC NHẬN NHẬN HÀNG</button>
+    </div>
+  </div></div></div>`,
+
+tam_map:()=>pageHead("Bản đồ Kho (Warehouse Map)","Kho: Kho Trung tâm · Khu: Tất cả","SCR-013")+`
+  <div class="grid2" style="grid-template-columns:1.5fr 1fr">
+    <div class="card"><div class="ct">🗺️ Bản đồ kho (Grid View)</div><div class="cb">
+      <div class="wh-grid">
+        <div><div class="muted small" style="font-weight:700;margin-bottom:6px">Khu Z1 — Hàng R01</div>
+        <div class="wh-row"><span class="rl">R01</span>
+          <div class="bin f sel" onclick="this.classList.toggle('sel')">S01</div><div class="bin f">S02</div><div class="bin e">S03</div><div class="bin f">S04</div><div class="bin h">S05</div></div></div>
+        <div><div class="muted small" style="font-weight:700;margin-bottom:6px">Hàng R02</div>
+        <div class="wh-row"><span class="rl">R02</span>
+          <div class="bin f">S01</div><div class="bin f">S02</div><div class="bin h">S03</div><div class="bin e">S04</div><div class="bin e">S05</div></div></div>
+        <div><div class="muted small" style="font-weight:700;margin-bottom:6px">Hàng R03</div>
+        <div class="wh-row"><span class="rl">R03</span>
+          <div class="bin e">S01</div><div class="bin e">S02</div><div class="bin e">S03</div><div class="bin e">S04</div><div class="bin e">S05</div></div></div>
+      </div>
+      <div class="small muted" style="margin-top:14px">Chú thích: <span class="bin f" style="display:inline-grid;width:20px;height:16px"></span> Có hàng &nbsp; <span class="bin h" style="display:inline-grid;width:20px;height:16px"></span> Gần đầy &nbsp; <span class="bin e" style="display:inline-grid;width:20px;height:16px"></span> Trống</div>
+    </div></div>
+    <div>
+      <div class="card"><div class="ct">📊 Thống kê nhanh</div><div class="cb small">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>■ Lấp đầy ≥80%</span><b>12 bin</b></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>■ Lấp đầy 50–80%</span><b>34 bin</b></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>□ Trống (&lt;50%)</span><b>18 bin</b></div>
+        <div class="banner warn" style="margin:8px 0 0">⚠ Cần bổ sung: 5 vật tư</div>
+      </div></div>
+      <div class="card"><div class="ct">📦 Vật tư tại bin đang chọn</div><div class="cb small">
+        <b>Bin:</b> WH1-Z1-R01-S01-L1<br>
+        <div style="margin:6px 0"><b>Sức chứa:</b> 1000 · <b>Hiện:</b> 890</div>
+        <div class="bar full" style="margin-bottom:8px"><span style="width:89%"></span></div>
+        <b>Vật tư:</b> Găng tay khám (LOT-A01)<br><b>HSD:</b> 12/2027 · <span class="bdg amber">★★ Sắp hết</span>
+        <div style="margin-top:10px"><button class="btn btn-ghost btn-sm">Xem chi tiết</button> <button class="btn btn-primary btn-sm">Điều phối</button></div>
+      </div></div>
+    </div>
+  </div>`,
+
+tam_batch:()=>pageHead("Quản lý Lô hàng & Cảnh báo Hạn dùng","Phạm vi: Kho Trung tâm, Kho Dược","SCR-017")+`
+  <div class="grid3">
+    <div class="kpi danger"><div class="k-lbl">🔴 Đã hết hạn</div><div class="k-val">3</div><div class="k-sub" style="color:var(--danger)">lô — cần cách ly</div></div>
+    <div class="kpi warn"><div class="k-lbl">⚠ Hết hạn &lt; 30 ngày</div><div class="k-val">12</div><div class="k-sub" style="color:var(--warning)">lô — xuất ưu tiên</div></div>
+    <div class="kpi"><div class="k-lbl">⚡ 30–60 ngày</div><div class="k-val">28</div><div class="k-sub muted">lô — theo dõi</div></div>
+  </div>
+  <div class="card"><div class="cb" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="searchbox" style="background:#f1f4f8;color:#56657a;width:260px"><span>🔍</span><input placeholder="Tìm theo mã lô, tên vật tư..." style="color:#222"></div>
+    <select style="padding:7px;border:1px solid #c2cedd;border-radius:4px"><option>Trạng thái: Tất cả</option><option>Active</option><option>Quarantine</option><option>Hết hạn</option></select>
+    <select style="padding:7px;border:1px solid #c2cedd;border-radius:4px"><option>Hạn dùng: Tất cả</option><option>&lt; 30 ngày</option><option>Đã hết hạn</option></select>
+  </div></div>
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Số lô</th><th>Vật tư</th><th class="num">Số lượng</th><th>HSD</th><th>Kho</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+    <tbody>
+      <tr><td>LOT-A01</td><td>Găng tay khám</td><td class="num">890 hộp</td><td>12/2027</td><td>KTC</td><td><span class="bdg green">Active</span></td><td><button class="btn btn-ghost btn-sm">Cấp phát</button></td></tr>
+      <tr><td>LOT-B02</td><td>Kim tiêm 5ml</td><td class="num">45 cái</td><td>06/2026 ⚠</td><td>KTC</td><td><span class="bdg amber">⚠ Sắp hết</span></td><td><button class="btn btn-warn btn-sm">Xuất gấp</button></td></tr>
+      <tr><td>LOT-C03</td><td>Nước muối SL</td><td class="num">200 chai</td><td>03/2026 🔴</td><td>KTC</td><td><span class="bdg red">Hết hạn</span></td><td><button class="btn btn-danger btn-sm">Cách ly</button></td></tr>
+      <tr><td>LOT-D04</td><td>Gạc vô trùng</td><td class="num">150 hộp</td><td>09/2027</td><td>KKH</td><td><span class="bdg grey">Quarantine</span></td><td><button class="btn btn-ghost btn-sm">Xem QC</button></td></tr>
+    </tbody></table>
+    <div class="cb" style="border-top:1px solid var(--line);font-size:12px">⚠ 2 lô sắp hết hạn trong 30 ngày &nbsp;|&nbsp; 🔴 1 lô đã hết hạn &nbsp;|&nbsp; <a>Xuất báo cáo PDF</a> · <a>Gửi email cảnh báo</a></div>
+  </div>`,
+
+tam_fefo:()=>pageHead("Thực hiện Cấp phát Vật tư (FEFO)","DISP-2026-0015 · Khoa: Nội tổng hợp · Yêu cầu gốc: MR-2026-0078","SCR-027",
+  `<button class="btn btn-ghost btn-sm">🖨 In phiếu xuất kho</button> <button class="btn btn-success btn-sm">✓ Xác nhận cấp phát</button>`)+`
+  <div class="banner info">ℹ Hệ thống tự chọn lô sớm hết hạn nhất (FEFO – First Expired First Out). Thủ kho có thể điều chỉnh nếu cần.</div>
+  <div class="card"><div class="cb row">
+    <div class="fld" style="flex:1"><label>Ngày cấp phát</label><input class="ro" value="24/05/2026" readonly></div>
+    <div class="fld" style="flex:1"><label>Người thực hiện</label><input class="ro" value="Lê Văn Tâm (Thủ kho)" readonly></div>
+    <div class="fld" style="flex:1"><label>Mức khẩn cấp</label><input class="ro" value="Bình thường" readonly></div>
+  </div></div>
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Vật tư</th><th class="num">Yêu cầu</th><th>Lô FEFO tự động</th><th>HSD</th><th class="num">Cấp phát</th></tr></thead>
+    <tbody>
+      <tr><td>Găng tay khám size M</td><td class="num">200 hộp</td><td>LOT-A01</td><td>12/2027</td><td class="num">200 hộp</td></tr>
+      <tr><td rowspan="2">Kim tiêm 5ml</td><td class="num" rowspan="2">50 cái</td><td>LOT-B02 <span class="bdg amber">⚠</span></td><td>06/2026</td><td class="num">45 cái</td></tr>
+      <tr><td>LOT-G07</td><td>11/2026</td><td class="num">5 cái</td></tr>
+    </tbody></table>
+    <div class="cb" style="border-top:1px solid var(--line);font-size:12px">Kim tiêm: lô LOT-B02 sắp hết hạn được ưu tiên xuất hết (45 cái), phần còn lại lấy từ LOT-G07.</div>
+  </div>`,
+
+/* ---------- SC-WARD-NURSE : CÔ MAI ---------- */
+mai_dash:()=>pageHead("Tổng quan Khoa Ngoại","Cô Mai · Điều dưỡng trưởng — chỉ xem dữ liệu Khoa Ngoại","M7")+`
+  <div class="kpis">
+    <div class="kpi"><span class="k-ic">📝</span><div class="k-lbl">Yêu cầu của tôi</div><div class="k-val">4</div><div class="k-sub muted">2 chờ duyệt</div></div>
+    <div class="kpi success"><span class="k-ic">📦</span><div class="k-lbl">Đã nhận trong tuần</div><div class="k-val">12</div><div class="k-sub" style="color:var(--success)">đủ điều trị</div></div>
+    <div class="kpi warn"><span class="k-ic">📉</span><div class="k-lbl">Vật tư tồn thấp</div><div class="k-val">3</div><div class="k-sub" style="color:var(--warning)">nên yêu cầu thêm</div></div>
+    <div class="kpi danger"><span class="k-ic">↩️</span><div class="k-lbl">Cần hoàn trả</div><div class="k-val">1</div><div class="k-sub" style="color:var(--danger)">vật tư thừa</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="ct">📝 Yêu cầu gần đây của khoa</div><div class="cb"><table class="tbl"><tbody>
+      <tr><td>MR-2026-0078</td><td>2 vật tư</td><td><span class="bdg green">Đã cấp phát</span></td></tr>
+      <tr><td>MR-2026-0081</td><td>5 vật tư</td><td><span class="bdg amber">Chờ duyệt</span></td></tr>
+      <tr><td>MR-2026-0083</td><td>3 vật tư</td><td><span class="bdg blue">Đang chuẩn bị</span></td></tr>
+    </tbody></table></div></div>
+    <div class="card"><div class="ct">⚡ Tác vụ nhanh</div><div class="cb chips" style="gap:10px">
+      <button class="btn btn-primary">📝 Tạo yêu cầu vật tư</button>
+      <button class="btn btn-ghost">📦 Xem tồn kho khoa</button>
+      <button class="btn btn-ghost">↩️ Hoàn trả vật tư</button>
+    </div></div>
+  </div>`,
+
+mai_req:()=>pageHead("Yêu cầu Vật tư từ Khoa","Khoa Ngoại · tạo phiếu yêu cầu cấp phát","SCR-025",
+  `<button class="btn btn-ghost btn-sm">Lưu nháp</button> <button class="btn btn-primary btn-sm">Gửi yêu cầu</button>`)+`
+  <div class="card"><div class="cb row">
+    <div class="fld" style="flex:2"><label class="req">Mức độ khẩn cấp</label>
+      <div class="seg"><button class="on-ok">Bình thường</button><button>Khẩn cấp</button><button>Cấp cứu</button></div></div>
+    <div class="fld" style="flex:1"><label class="req">Ngày cần nhận</label><input value="25/05/2026"></div>
+  </div></div>
+  <div class="card"><div class="ct">📋 Danh mục vật tư yêu cầu <span class="spacer"></span><button class="btn btn-ghost btn-sm">+ Thêm vật tư</button></div><div class="cb">
+    <table class="tbl"><thead><tr><th>Tên vật tư</th><th class="num">SL</th><th>Ghi chú</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Găng tay khám size M</td><td class="num">200</td><td>Cho 3 ngày hoạt động</td><td><button class="btn btn-ghost btn-sm">🗑</button></td></tr>
+      <tr><td>Kim tiêm 5ml</td><td class="num">50</td><td>—</td><td><button class="btn btn-ghost btn-sm">🗑</button></td></tr>
+    </tbody></table>
+    <div style="margin-top:10px"><button class="btn btn-ghost btn-sm">+ Chọn vật tư từ danh mục</button></div>
+    <div class="fld" style="margin-top:12px"><label>Ghi chú thêm</label><textarea rows="2" placeholder="Ghi chú cho thủ kho/quản lý..."></textarea></div>
+  </div></div>`,
+
+mai_stock:()=>pageHead("Tồn kho Khoa Ngoại","Chỉ hiển thị vật tư thuộc Khoa Ngoại (Row-level Security)","SCR-023")+`
+  <div class="banner info">🔒 Bạn đang xem dữ liệu được lọc theo phạm vi <b>Khoa Ngoại</b>. Không thể xem tồn kho của khoa khác.</div>
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Vật tư</th><th class="num">Tồn hiện tại</th><th class="num">Mức tối thiểu</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+    <tbody>
+      <tr><td>Găng tay khám size M</td><td class="num">180 hộp</td><td class="num">100</td><td><span class="bdg green">Đủ</span></td><td></td></tr>
+      <tr><td>Kim tiêm 5ml</td><td class="num">35 cái</td><td class="num">50</td><td><span class="bdg amber">⚠ Thấp</span></td><td><button class="btn btn-ghost btn-sm">Yêu cầu thêm</button></td></tr>
+      <tr><td>Băng gạc vô trùng</td><td class="num">22 gói</td><td class="num">40</td><td><span class="bdg red">🔴 Rất thấp</span></td><td><button class="btn btn-primary btn-sm">Yêu cầu gấp</button></td></tr>
+      <tr><td>Chỉ khâu phẫu thuật</td><td class="num">90 vỉ</td><td class="num">60</td><td><span class="bdg green">Đủ</span></td><td></td></tr>
+    </tbody></table>
+    <div class="cb" style="border-top:1px solid var(--line);font-size:12px">3 vật tư dưới hoặc gần mức tối thiểu — nên tạo yêu cầu bổ sung.</div>
+  </div>`,
+
+mai_return:()=>pageHead("Hoàn trả Vật tư về Kho","Khoa Ngoại · trả vật tư thừa/không dùng","SCR-024",
+  `<button class="btn btn-primary btn-sm">Gửi phiếu hoàn trả</button>`)+`
+  <div class="card"><div class="cb row">
+    <div class="fld" style="flex:1"><label>Khoa hoàn trả</label><input class="ro" value="Khoa Ngoại" readonly></div>
+    <div class="fld" style="flex:1"><label>Kho nhận</label><select><option>Kho Trung tâm</option></select></div>
+    <div class="fld" style="flex:1"><label>Lý do hoàn trả</label><select><option>Dư so với nhu cầu</option><option>Sai chủng loại</option><option>Gần hết hạn</option></select></div>
+  </div></div>
+  <div class="card"><div class="ct">📦 Vật tư hoàn trả <span class="spacer"></span><button class="btn btn-ghost btn-sm">+ Thêm dòng</button></div><div class="cb">
+    <table class="tbl"><thead><tr><th>Vật tư</th><th>Số lô</th><th>HSD</th><th class="num">SL hoàn trả</th><th>Tình trạng</th></tr></thead>
+    <tbody>
+      <tr><td>Băng gạc vô trùng</td><td>LOT-F06</td><td>06/2026</td><td class="num">15 gói</td><td><span class="bdg green">Nguyên vẹn</span></td></tr>
+    </tbody></table>
+    <div class="fld" style="margin-top:12px"><label>Ghi chú</label><textarea rows="2" placeholder="Mô tả tình trạng vật tư hoàn trả..."></textarea></div>
+  </div></div>`,
+
+/* ---------- SC-ACCOUNTANT : ANH PHONG ---------- */
+phong_dash:()=>pageHead("Bảng điều khiển Kế toán","Anh Phong · Kế toán thanh toán — phạm vi: hóa đơn & thanh toán","M8")+`
+  <div class="kpis">
+    <div class="kpi"><span class="k-ic">📥</span><div class="k-lbl">Hóa đơn mới</div><div class="k-val">8</div><div class="k-sub muted">cần đối chiếu</div></div>
+    <div class="kpi warn"><span class="k-ic">⚖️</span><div class="k-lbl">Chờ 3-way Match</div><div class="k-val">4</div><div class="k-sub" style="color:var(--warning)">1 lệch giá</div></div>
+    <div class="kpi success"><span class="k-ic">✅</span><div class="k-lbl">Đã gửi duyệt TT</div><div class="k-val">3</div><div class="k-sub" style="color:var(--success)">66,5 triệu ₫</div></div>
+    <div class="kpi danger"><span class="k-ic">⏰</span><div class="k-lbl">Sắp đến hạn TT</div><div class="k-val">2</div><div class="k-sub" style="color:var(--danger)">trong 5 ngày</div></div>
+  </div>
+  <div class="card"><div class="ct">⚖️ Hóa đơn chờ đối chiếu 3 bên</div><table class="tbl">
+    <thead><tr><th>Hóa đơn</th><th>NCC</th><th>PO</th><th>GRN</th><th class="num">Số tiền</th><th>Kết quả</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>VAT-2026-042</td><td>Cty A Pharma</td><td>PO-0042</td><td>GRN-0042</td><td class="num">8.470.000</td><td><span class="bdg green">✓ Khớp</span></td><td><button class="btn btn-success btn-sm">Gửi duyệt</button></td></tr>
+      <tr><td>VAT-2026-039</td><td>Dược phẩm B</td><td>PO-0041</td><td>GRN-0041</td><td class="num">15.180.000</td><td><span class="bdg green">✓ Khớp</span></td><td><button class="btn btn-success btn-sm">Gửi duyệt</button></td></tr>
+      <tr><td>VAT-2026-037</td><td>Thiết bị Y tế C</td><td>PO-0039</td><td>GRN-0039</td><td class="num">42.900.000</td><td><span class="bdg amber">⚠ Lệch 2%</span></td><td><button class="btn btn-ghost btn-sm">Xem</button></td></tr>
+    </tbody></table></div>`,
+
+phong_inv:()=>pageHead("Tải Hóa đơn Nhà cung cấp","Tạo bản ghi hóa đơn & đính kèm chứng từ","SCR-029",
+  `<button class="btn btn-ghost btn-sm">Lưu nháp</button> <button class="btn btn-primary btn-sm">Lưu & Đối chiếu</button>`)+`
+  <div class="grid2">
+    <div class="card"><div class="ct">🧾 Thông tin hóa đơn</div><div class="cb">
+      <div class="fld"><label class="req">Số hóa đơn (VAT)</label><input value="VAT-2026-042"></div>
+      <div class="fld"><label class="req">Nhà cung cấp</label><select><option>Công ty A Pharma</option></select></div>
+      <div class="fld"><label class="req">Liên kết PO / GRN</label><select><option>PO-2026-0042 · GRN-2026-0042</option></select></div>
+      <div class="row"><div class="fld" style="flex:1"><label>Ngày hóa đơn</label><input value="22/05/2026"></div>
+      <div class="fld" style="flex:1"><label>Hạn thanh toán</label><input value="23/06/2026"></div></div>
+      <div class="row"><div class="fld" style="flex:1"><label>Tiền hàng</label><input value="7.700.000"></div>
+      <div class="fld" style="flex:1"><label>VAT 10%</label><input value="770.000"></div></div>
+      <div class="fld"><label>Tổng thanh toán</label><input class="ro" value="8.470.000 ₫" readonly></div>
+    </div></div>
+    <div class="card"><div class="ct">📎 Chứng từ đính kèm</div><div class="cb">
+      <div class="scan-box" style="background:#f4f7fb"><span class="cam">📄</span>Kéo thả hoặc chọn file hóa đơn (PDF/ảnh)<div class="small" style="font-weight:400">Hỗ trợ PDF, JPG, PNG ≤ 10MB</div></div>
+      <table class="tbl"><tbody>
+        <tr><td>📄 HoaDon_VAT-2026-042.pdf</td><td class="muted small">1,2 MB</td><td><span class="bdg green">Đã tải</span></td></tr>
+        <tr><td>📄 PhieuGiaoHang_042.pdf</td><td class="muted small">0,6 MB</td><td><span class="bdg green">Đã tải</span></td></tr>
+      </tbody></table>
+      <div class="banner info" style="margin-top:10px">ℹ Sau khi lưu, hệ thống sẽ tự đối chiếu PO–GRN–Hóa đơn (3-way match).</div>
+    </div></div>
+  </div>`,
+
+phong_match:()=>pageHead("Đối chiếu 3 bên (3-way Match)","INV-2026-NCC-A-042","SCR-030",
+  `<button class="btn btn-danger btn-sm">✗ Từ chối hóa đơn</button> <button class="btn btn-success btn-sm">Gửi duyệt thanh toán</button>`)+`
+  <div class="match">
+    <div class="mc"><h4>📋 Đơn đặt hàng — PO-2026-0042</h4>
+      <div class="ln"><span>Găng tay × 500 @12.000</span><b>6.000.000</b></div>
+      <div class="ln"><span>Kim tiêm × 200 @8.500</span><b>1.700.000</b></div></div>
+    <div class="mc"><h4>📦 Phiếu nhận hàng — GRN-2026-0042</h4>
+      <div class="ln"><span>Găng tay × 500 <span class="bdg green">✓</span></span><b>6.000.000</b></div>
+      <div class="ln"><span>Kim tiêm × 200 <span class="bdg green">✓</span></span><b>1.700.000</b></div></div>
+    <div class="mc"><h4>🧾 Hóa đơn NCC — VAT-2026-042</h4>
+      <div class="ln"><span>Găng tay × 500 @12.000 <span class="bdg green">✓</span></span><b>6.000.000</b></div>
+      <div class="ln"><span>Kim tiêm × 200 @8.500 <span class="bdg green">✓</span></span><b>1.700.000</b></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><div class="cb">
+    <div class="banner ok">✓ KHỚP HOÀN TOÀN — số lượng, đơn giá và thành tiền của 3 chứng từ trùng khớp</div>
+    <table class="tbl"><tbody>
+      <tr><td>Tổng tiền hàng</td><td class="num"><b>7.700.000 ₫</b></td></tr>
+      <tr><td>Thuế VAT 10%</td><td class="num">770.000 ₫</td></tr>
+      <tr><td>Tổng thanh toán</td><td class="num"><b style="color:var(--primary)">8.470.000 ₫</b></td></tr>
+      <tr><td>Hạn thanh toán</td><td class="num">23/06/2026</td></tr>
+    </tbody></table>
+  </div></div>`,
+
+phong_hist:()=>pageHead("Lịch sử Thanh toán","Tra cứu các khoản đã/đang thanh toán","SCR-032",
+  `<button class="btn btn-ghost btn-sm">Xuất Excel</button>`)+`
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Mã thanh toán</th><th>NCC</th><th>Hóa đơn</th><th class="num">Số tiền</th><th>Ngày TT</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+      <tr><td>PAY-2026-0210</td><td>Dược phẩm B</td><td>VAT-2026-039</td><td class="num">15.180.000</td><td>20/05/2026</td><td><span class="bdg green dotled">Đã thanh toán</span></td></tr>
+      <tr><td>PAY-2026-0208</td><td>An Khang</td><td>VAT-2026-035</td><td class="num">9.350.000</td><td>18/05/2026</td><td><span class="bdg green dotled">Đã thanh toán</span></td></tr>
+      <tr><td>PAY-2026-0212</td><td>Cty A Pharma</td><td>VAT-2026-042</td><td class="num">8.470.000</td><td>—</td><td><span class="bdg amber dotled">Chờ duyệt</span></td></tr>
+      <tr><td>PAY-2026-0205</td><td>Hóa chất Delta</td><td>VAT-2026-030</td><td class="num">3.200.000</td><td>—</td><td><span class="bdg blue dotled">Đã duyệt, chờ chi</span></td></tr>
+    </tbody></table>
+    <div class="cb" style="border-top:1px solid var(--line);font-size:12px">Đã thanh toán tháng 05: <b>184.350.000 ₫</b> · Đang chờ: <b>11.670.000 ₫</b></div>
+  </div>`,
+
+/* ---------- SC-QC : CHỊ QUỲNH ---------- */
+quynh_dash:()=>pageHead("Bảng điều khiển Kiểm soát Chất lượng","Chị Quỳnh · KCS/Dược sĩ — phạm vi: lô hàng & QC toàn hệ thống","M10")+`
+  <div class="kpis">
+    <div class="kpi"><span class="k-ic">📋</span><div class="k-lbl">Lô chờ QC</div><div class="k-val">5</div><div class="k-sub muted">từ GRN hôm nay</div></div>
+    <div class="kpi danger"><span class="k-ic">🚧</span><div class="k-lbl">Đang Quarantine</div><div class="k-val">2</div><div class="k-sub" style="color:var(--danger)">cần điều tra</div></div>
+    <div class="kpi success"><span class="k-ic">✅</span><div class="k-lbl">QC Pass (tuần)</div><div class="k-val">41</div><div class="k-sub" style="color:var(--success)">tỷ lệ 95%</div></div>
+    <div class="kpi warn"><span class="k-ic">⚠️</span><div class="k-lbl">Thu hồi đang mở</div><div class="k-val">1</div><div class="k-sub" style="color:var(--warning)">LOT-C03</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="ct">📋 Lô chờ kiểm tra QC</div><div class="cb"><table class="tbl"><tbody>
+      <tr><td>QC-2026-0042 · LOT-A01</td><td>Găng tay</td><td><button class="btn btn-primary btn-sm">Kiểm tra</button></td></tr>
+      <tr><td>QC-2026-0043 · LOT-H08</td><td>Cồn 70°</td><td><button class="btn btn-primary btn-sm">Kiểm tra</button></td></tr>
+      <tr><td>QC-2026-0044 · LOT-I09</td><td>Bơm tiêm</td><td><button class="btn btn-primary btn-sm">Kiểm tra</button></td></tr>
+    </tbody></table></div></div>
+    <div class="card"><div class="ct">🚧 Lô đang cách ly (Quarantine)</div><div class="cb"><table class="tbl"><tbody>
+      <tr><td>LOT-C03 · Nước muối</td><td><span class="bdg red">Hết hạn</span></td><td><button class="btn btn-danger btn-sm">Thu hồi</button></td></tr>
+      <tr><td>LOT-D04 · Gạc vô trùng</td><td><span class="bdg amber">Nghi ngờ bao bì</span></td><td><button class="btn btn-ghost btn-sm">Điều tra</button></td></tr>
+    </tbody></table></div></div>
+  </div>`,
+
+quynh_qc:()=>pageHead("Checklist QC Lô hàng","QC-2026-0042 · GRN-2026-0042 · Cty A Pharma","SCR-010",
+  `<button class="btn btn-danger btn-sm">Ghi kết quả — FAIL</button> <button class="btn btn-success btn-sm">Ghi kết quả — PASS</button>`)+`
+  <div class="card"><div class="ct">🏷️ Lô hàng: Găng tay khám bệnh (Số lô: LOT-A01)</div><div class="cb">
+    <div class="checklist">
+    ${["Kiểm tra bao bì nguyên vẹn","Hạn sử dụng ≥ 6 tháng còn lại","Nhãn mác đầy đủ theo quy định","Số lô khớp với chứng từ NCC","Kiểm tra ngẫu nhiên (3% mẫu)","Giấy chứng nhận chất lượng đầy đủ"]
+      .map((q,i)=>`<div class="ck"><div class="qno">${i+1}</div><div class="qx">${q}</div>
+        <div class="seg"><button class="on-ok">✓ Đạt</button><button>✗ Không</button></div></div>`).join('')}
+    </div>
+    <div class="fld" style="margin-top:14px"><label>Ghi chú</label><textarea rows="2" placeholder="Ghi chú kiểm tra..."></textarea></div>
+    <div class="row" style="margin-top:6px"><button class="btn btn-ghost btn-sm">📎 Đính kèm ảnh minh chứng</button></div>
+    <div class="banner ok" style="margin-top:12px">Kết quả tổng: ● PASS · Người kiểm: Vũ Thị Quỳnh · Giờ: 10:30</div>
+  </div></div>`,
+
+quynh_quar:()=>pageHead("Xử lý Quarantine Lô hàng","Cách ly & điều tra lô hàng nghi vấn","SCR-020")+`
+  <div class="banner crit">🚧 2 lô đang trong trạng thái cách ly — không được cấp phát cho đến khi có kết luận QC.</div>
+  <div class="card"><table class="tbl">
+    <thead><tr><th>Số lô</th><th>Vật tư</th><th>Lý do cách ly</th><th>Ngày cách ly</th><th class="num">SL</th><th>Hành động</th></tr></thead>
+    <tbody>
+      <tr><td>LOT-C03</td><td>Nước muối SL</td><td>Đã hết hạn sử dụng</td><td>24/05/2026</td><td class="num">200 chai</td><td><button class="btn btn-danger btn-sm">Lập thu hồi</button> <button class="btn btn-ghost btn-sm">Tiêu hủy</button></td></tr>
+      <tr><td>LOT-D04</td><td>Gạc vô trùng</td><td>Nghi ngờ rách bao bì lô nhập</td><td>23/05/2026</td><td class="num">150 hộp</td><td><button class="btn btn-warn btn-sm">Điều tra</button> <button class="btn btn-success btn-sm">Giải phóng</button></td></tr>
+    </tbody></table></div>
+  <div class="card"><div class="ct">🔎 Điều tra lô LOT-D04</div><div class="cb">
+    <div class="fld"><label>Kết luận điều tra</label><select><option>Đang xử lý</option><option>Đạt — giải phóng</option><option>Không đạt — thu hồi/tiêu hủy</option></select></div>
+    <div class="fld"><label>Ghi chú điều tra</label><textarea rows="2" placeholder="Mô tả phát hiện, mẫu kiểm, kết luận..."></textarea></div>
+    <button class="btn btn-primary btn-sm">Lưu kết luận</button>
+  </div></div>`,
+
+quynh_trace:()=>pageHead("Truy xuất Nguồn gốc Lô hàng","LOT-A01 · Găng tay khám bệnh — dòng đời lô hàng","SCR-038")+`
+  <div class="grid2" style="grid-template-columns:1fr 1.3fr">
+    <div class="card"><div class="ct">🏷️ Thông tin lô</div><div class="cb small">
+      <table class="tbl"><tbody>
+        <tr><td>Số lô</td><td><b>LOT-A01</b></td></tr>
+        <tr><td>Vật tư</td><td>Găng tay khám bệnh size M</td></tr>
+        <tr><td>NCC</td><td>Công ty A Pharma</td></tr>
+        <tr><td>HSD</td><td>12/2027</td></tr>
+        <tr><td>SL nhập</td><td>1.000 hộp</td></tr>
+        <tr><td>SL còn lại</td><td>890 hộp</td></tr>
+        <tr><td>Trạng thái</td><td><span class="bdg green">Active</span></td></tr>
+      </tbody></table>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px">🖨 Xuất hồ sơ truy xuất</button>
+    </div></div>
+    <div class="card"><div class="ct">🧬 Dòng đời lô (Timeline)</div><div class="cb">
+      <div class="timeline">
+        <div class="tl-item ok"><div class="tt">Đặt hàng — PO-2026-0042</div><div class="tm">24/05 · 500 hộp từ Cty A Pharma</div></div>
+        <div class="tl-item ok"><div class="tt">Nhận hàng — GRN-2026-0042</div><div class="tm">24/05 10:30 · Kho Trung tâm</div></div>
+        <div class="tl-item ok"><div class="tt">QC PASS — QC-2026-0042</div><div class="tm">24/05 10:30 · Vũ Thị Quỳnh</div></div>
+        <div class="tl-item"><div class="tt">Lưu kho — Bin WH1-Z1-R01-S01</div><div class="tm">24/05 11:00</div></div>
+        <div class="tl-item warn"><div class="tt">Cấp phát — DISP-2026-0015</div><div class="tm">24/05 · 200 hộp → Khoa Nội tổng hợp</div></div>
+        <div class="tl-item"><div class="tt">Tồn hiện tại: 890 hộp</div><div class="tm">Cập nhật 09:15 25/05</div></div>
+      </div>
+    </div></div>
+  </div>`,
+
+quynh_recall:()=>pageHead("Quản lý Thu hồi Lô hàng","Lập & theo dõi đợt thu hồi","SCR-039",
+  `<button class="btn btn-danger btn-sm">+ Lập đợt thu hồi mới</button>`)+`
+  <div class="banner crit">⚠ Truy xuất nhanh các điểm đã nhận lô bị thu hồi để cách ly kịp thời.</div>
+  <div class="grid2">
+    <div class="card"><div class="ct">⚠️ Đợt thu hồi: RECALL-2026-003</div><div class="cb small">
+      <table class="tbl"><tbody>
+        <tr><td>Lô thu hồi</td><td><b>LOT-C03</b> · Nước muối SL</td></tr>
+        <tr><td>Lý do</td><td>Đã hết hạn sử dụng</td></tr>
+        <tr><td>Tổng SL phân phối</td><td>500 chai</td></tr>
+        <tr><td>Đã thu hồi</td><td>320 chai (64%)</td></tr>
+        <tr><td>Trạng thái</td><td><span class="bdg amber">Đang thu hồi</span></td></tr>
+      </tbody></table>
+      <div class="bar low" style="margin-top:8px"><span style="width:64%"></span></div>
+    </div></div>
+    <div class="card"><div class="ct">📍 Điểm đã nhận lô (cần thu hồi)</div><div class="cb"><table class="tbl">
+      <thead><tr><th>Vị trí</th><th class="num">SL</th><th>Trạng thái</th></tr></thead>
+      <tbody>
+        <tr><td>Kho Trung tâm</td><td class="num">200</td><td><span class="bdg green">Đã cách ly</span></td></tr>
+        <tr><td>Khoa Cấp cứu</td><td class="num">120</td><td><span class="bdg green">Đã thu hồi</span></td></tr>
+        <tr><td>Khoa Nội tổng hợp</td><td class="num">180</td><td><span class="bdg red">Chưa thu hồi</span></td></tr>
+      </tbody></table></div></div>
+  </div>`
+};
+
+/* ============================================================
+   ROUTER & KHỞI TẠO
+   ============================================================ */
+let CUR_PERSONA="lan", CUR_SCREEN=null;
+
+function buildPersonaSelect(){
+  const sel=document.getElementById('personaSelect');
+  sel.innerHTML=Object.entries(PERSONAS).map(([k,p])=>`<option value="${k}">${p.name} — ${p.role}</option>`).join('');
+  sel.value=CUR_PERSONA;
+}
+function renderSidebar(){
+  const p=PERSONAS[CUR_PERSONA];
+  document.getElementById('personaCard').innerHTML=
+    `<div class="pav" style="background:${p.color}">${p.av}</div>
+     <div><div class="pn">${p.name}</div><div class="pr">${p.title}</div><span class="role-badge">${p.role}</span></div>`;
+  document.getElementById('nav').innerHTML=p.nav.map(it=>{
+    if(it.g) return `<div class="grp">${it.g}</div>`;
+    return `<a data-id="${it.id}" onclick="go('${it.id}')"><span class="nic">${it.ic}</span>${it.t}${it.tag?`<span class="tag">${it.tag}</span>`:''}</a>`;
+  }).join('');
+  document.getElementById('scopeNote').innerHTML=
+    `🔒 <b>Phạm vi dữ liệu:</b> ${p.scope}<br>🔑 2FA: ${p.twofa}`;
+  // topbar user
+  document.getElementById('uav').textContent=p.av;
+  document.getElementById('uav').style.background='#7fb1e0';
+  document.getElementById('uname').childNodes[0].nodeValue=p.name;
+  document.getElementById('urole').textContent=p.role;
+  // bell count from nav alert tags
+  const alertItem=p.nav.find(n=>n.id&&(n.id.includes('alert')||n.id.includes('quar')||n.id.includes('match')||n.id.includes('batch')));
+  document.getElementById('bellCount').textContent=(p.nav.find(n=>n.tag)||{}).tag||"0";
+}
+function go(id){
+  CUR_SCREEN=id;
+  const p=PERSONAS[CUR_PERSONA];
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.id===id));
+  const item=p.nav.find(n=>n.id===id);
+  document.getElementById('crumb').innerHTML=`${p.role} › <b>${item?item.t:''}</b>`;
+  const fn=SCREENS[id];
+  document.getElementById('main').innerHTML=(fn?fn():`<div class="card"><div class="cb">Màn hình đang được thiết kế.</div></div>`)
+    + `<div class="footer-note">SupplyCore v1.0 · Prototype giao diện theo persona · Bám sát TL#09 Đặc tả Giao diện & Ma trận Phân quyền RBAC</div>`;
+  document.getElementById('main').scrollTop=0;
+}
+function switchPersona(k){
+  CUR_PERSONA=k; renderSidebar(); go(PERSONAS[k].home);
+}
+function init(){ buildPersonaSelect(); renderSidebar(); go(PERSONAS[CUR_PERSONA].home); }
+init();
+</script>
+</body>
+</html>

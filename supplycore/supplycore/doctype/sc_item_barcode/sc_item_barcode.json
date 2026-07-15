@@ -1,0 +1,13 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB", "istable": 1,
+ "field_order": ["barcode", "barcode_type", "uom"],
+ "fields": [
+  {"fieldname": "barcode", "fieldtype": "Data", "label": "Barcode", "reqd": 1, "in_list_view": 1, "columns": 5},
+  {"fieldname": "barcode_type", "fieldtype": "Select", "options": "\nGS1-128\nEAN13\nEAN8\nUPC\nQR\nDataMatrix\nOther",
+   "label": "Loại", "in_list_view": 1, "columns": 2},
+  {"fieldname": "uom", "fieldtype": "Link", "options": "SC UOM", "label": "UOM (nếu khác)", "in_list_view": 1, "columns": 2}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC Item Barcode", "permissions": [],
+ "sort_field": "modified", "sort_order": "DESC"
+}

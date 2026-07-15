@@ -1,0 +1,59 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "field:batch_id", "track_changes": 1,
+ "field_order": [
+  "section_main", "batch_id", "barcode", "item", "item_name",
+  "column_break_1", "expiry_date", "manufacturing_date", "disabled",
+  "section_supplier", "supplier", "supplier_batch_no", "manufacturer", "country_of_origin",
+  "section_qc", "qc_status", "coa_attachment",
+  "section_expiry_ack", "is_short_expiry", "expiry_warning_ack", "acknowledged_by", "acknowledged_at",
+  "section_block", "blocked", "block_reason", "blocked_by", "blocked_at"
+ ],
+ "fields": [
+  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Lô hàng"},
+  {"fieldname": "batch_id", "fieldtype": "Data", "label": "Batch ID", "reqd": 1, "unique": 1, "in_list_view": 1, "search_index": 1,
+   "description": "Format gợi ý: [ItemCode]-YYYYMM-NNN"},
+  {"fieldname": "barcode", "fieldtype": "Data", "label": "Barcode lô", "search_index": 1,
+   "description": "Tự sinh = Batch ID khi tạo lô. Quét để tra cứu lô. Có thể đè bằng mã GS1."},
+  {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
+  {"fieldname": "item_name", "fieldtype": "Data", "label": "Tên VT", "fetch_from": "item.item_name", "read_only": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "expiry_date", "fieldtype": "Date", "label": "Hạn dùng", "reqd": 1, "in_list_view": 1, "search_index": 1},
+  {"fieldname": "manufacturing_date", "fieldtype": "Date", "label": "Ngày SX"},
+  {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0", "in_standard_filter": 1},
+
+  {"fieldname": "section_supplier", "fieldtype": "Section Break", "label": "Nguồn gốc"},
+  {"fieldname": "supplier", "fieldtype": "Link", "options": "SC Supplier", "label": "NCC", "in_standard_filter": 1},
+  {"fieldname": "supplier_batch_no", "fieldtype": "Data", "label": "Số lô NCC"},
+  {"fieldname": "manufacturer", "fieldtype": "Data", "label": "Nhà sản xuất"},
+  {"fieldname": "country_of_origin", "fieldtype": "Data", "label": "Xuất xứ"},
+
+  {"fieldname": "section_qc", "fieldtype": "Section Break", "label": "QC"},
+  {"fieldname": "qc_status", "fieldtype": "Select", "options": "\nPending\nAccepted\nRejected\nConditional",
+   "label": "QC status", "default": "Pending", "in_list_view": 1, "in_standard_filter": 1, "read_only": 1},
+  {"fieldname": "coa_attachment", "fieldtype": "Attach", "label": "CoA (Certificate of Analysis)"},
+
+  {"fieldname": "section_expiry_ack", "fieldtype": "Section Break", "label": "Xác nhận hạn dùng", "collapsible": 1},
+  {"fieldname": "is_short_expiry", "fieldtype": "Check", "label": "Hạn dùng ngắn (<6 tháng)", "read_only": 1, "default": "0", "in_list_view": 1},
+  {"fieldname": "expiry_warning_ack", "fieldtype": "Check", "label": "Xác nhận nhập lô hạn ngắn (Manager)", "default": "0", "depends_on": "is_short_expiry"},
+  {"fieldname": "acknowledged_by", "fieldtype": "Link", "options": "User", "label": "Người xác nhận", "read_only": 1, "depends_on": "expiry_warning_ack"},
+  {"fieldname": "acknowledged_at", "fieldtype": "Datetime", "label": "Thời điểm xác nhận", "read_only": 1, "depends_on": "expiry_warning_ack"},
+
+  {"fieldname": "section_block", "fieldtype": "Section Break", "label": "FEFO Block / Recall"},
+  {"fieldname": "blocked", "fieldtype": "Check", "label": "Block (recall hoặc lý do khác)", "default": "0", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "block_reason", "fieldtype": "Small Text", "label": "Lý do block", "depends_on": "blocked"},
+  {"fieldname": "blocked_by", "fieldtype": "Link", "options": "User", "label": "Người block", "read_only": 1, "depends_on": "blocked"},
+  {"fieldname": "blocked_at", "fieldtype": "Datetime", "label": "Thời điểm block", "read_only": 1, "depends_on": "blocked"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "report": 1, "print": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "create": 1, "report": 1},
+  {"role": "QC Officer", "read": 1, "write": 1, "report": 1},
+  {"role": "Warehouse Officer", "read": 1, "write": 1, "create": 1, "report": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
+ "module": "Supplycore", "name": "SC Batch", "title_field": "batch_id",
+ "search_fields": "batch_id,barcode,item,supplier_batch_no",
+ "sort_field": "expiry_date", "sort_order": "ASC"
+}

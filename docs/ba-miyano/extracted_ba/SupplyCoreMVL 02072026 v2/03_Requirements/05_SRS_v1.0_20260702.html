@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRS — Đặc tả Yêu cầu Phần mềm | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Đặc tả Yêu cầu Phần mềm</h1>
+  <div class="doc-meta">
+    <span>Mã: SRS-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Đặc tả Yêu cầu Phần mềm
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#tong-quan">1. Tổng quan hệ thống</a></li>
+        <li><a href="#fr-list">2. Danh sách FR</a></li>
+        <li><a href="#fr-detail">3. Đặc tả chi tiết FR</a></li>
+        <li><a href="#nfr">4. Yêu cầu phi chức năng (NFR)</a></li>
+        <li><a href="#rang-buoc">5. Ràng buộc hệ thống</a></li>
+    </ol>
+  </nav>
+
+<h2 id="tong-quan">1. Tổng quan hệ thống</h2><p>SupplyCore MVL gồm 12 phân hệ, 52 yêu cầu chức năng (FR) và 14 NFR, xây trên Frappe/ERPNext v15, kiến trúc lai (SC-* tự quản sổ kho & sổ cái). Mỗi FR dưới đây có mô tả, tiêu chí chấp nhận (AC), phụ thuộc và truy vết UC/US/BRU để DEV/AI hiện thực hóa.</p><h2 id="fr-list">2. Danh sách FR (52)</h2><table>
+<thead><tr><th width="100">Mã FR</th><th width="70">Phân hệ</th><th width="70">UC</th><th>Mô tả</th><th>Ưu tiên</th></tr></thead>
+<tbody>
+<tr><td><code>FR-M1-01</code></td><td>M1</td><td><code>UC-01</code></td><td>Hệ thống phải hỗ trợ: Tìm kiếm & Đánh giá Nhà cung cấp</td><td>Must</td></tr>
+<tr><td><code>FR-M1-02</code></td><td>M1</td><td><code>UC-02</code></td><td>Hệ thống phải hỗ trợ: Tạo / Cập nhật Nhà cung cấp</td><td>Must</td></tr>
+<tr><td><code>FR-M1-03</code></td><td>M1</td><td><code>UC-03</code></td><td>Hệ thống phải hỗ trợ: Tạo & Quản lý Hợp đồng Khung Mua (FC)</td><td>Must</td></tr>
+<tr><td><code>FR-M1-04</code></td><td>M1</td><td><code>UC-04</code></td><td>Hệ thống phải hỗ trợ: Theo dõi & Gia hạn / Thanh lý Hợp đồng</td><td>Must</td></tr>
+<tr><td><code>FR-M1-05</code></td><td>M1</td><td><code>UC-05</code></td><td>Hệ thống phải hỗ trợ: Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</td><td>Must</td></tr>
+<tr><td><code>FR-M2-06</code></td><td>M2</td><td><code>UC-06</code></td><td>Hệ thống phải hỗ trợ: Lập Kế hoạch Mua hàng Định kỳ</td><td>Must</td></tr>
+<tr><td><code>FR-M2-07</code></td><td>M2</td><td><code>UC-07</code></td><td>Hệ thống phải hỗ trợ: Tạo Đề nghị Mua hàng (Material Request)</td><td>Must</td></tr>
+<tr><td><code>FR-M2-08</code></td><td>M2</td><td><code>UC-08</code></td><td>Hệ thống phải hỗ trợ: Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</td><td>Must</td></tr>
+<tr><td><code>FR-M3-09</code></td><td>M3</td><td><code>UC-09</code></td><td>Hệ thống phải hỗ trợ: Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</td><td>Must</td></tr>
+<tr><td><code>FR-M3-10</code></td><td>M3</td><td><code>UC-10</code></td><td>Hệ thống phải hỗ trợ: Kiểm tra Chất lượng (QC) Hàng nhập</td><td>Must</td></tr>
+<tr><td><code>FR-M3-11</code></td><td>M3</td><td><code>UC-11</code></td><td>Hệ thống phải hỗ trợ: Xử lý hàng trả lại Nhà cung cấp</td><td>Must</td></tr>
+<tr><td><code>FR-M4-12</code></td><td>M4</td><td><code>UC-12</code></td><td>Hệ thống phải hỗ trợ: Quản lý Bin Location & Putaway Rules</td><td>Must</td></tr>
+<tr><td><code>FR-M4-13</code></td><td>M4</td><td><code>UC-13</code></td><td>Hệ thống phải hỗ trợ: Nhập / Xuất kho thủ công (Batch + Bin)</td><td>Must</td></tr>
+<tr><td><code>FR-M4-14</code></td><td>M4</td><td><code>UC-14</code></td><td>Hệ thống phải hỗ trợ: Tra cứu tồn kho theo vị trí</td><td>Must</td></tr>
+<tr><td><code>FR-M4-15</code></td><td>M4</td><td><code>UC-15</code></td><td>Hệ thống phải hỗ trợ: Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</td><td>Must</td></tr>
+<tr><td><code>FR-M4-16</code></td><td>M4</td><td><code>UC-16</code></td><td>Hệ thống phải hỗ trợ: Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</td><td>Must</td></tr>
+<tr><td><code>FR-M4-17</code></td><td>M4</td><td><code>UC-17</code></td><td>Hệ thống phải hỗ trợ: Quét mã vạch để tra cứu & thao tác</td><td>Must</td></tr>
+<tr><td><code>FR-M5-18</code></td><td>M5</td><td><code>UC-18</code></td><td>Hệ thống phải hỗ trợ: Quản lý Thông tin Lô hàng (Batch)</td><td>Must</td></tr>
+<tr><td><code>FR-M5-19</code></td><td>M5</td><td><code>UC-19</code></td><td>Hệ thống phải hỗ trợ: Xuất kho theo FEFO</td><td>Must</td></tr>
+<tr><td><code>FR-M5-20</code></td><td>M5</td><td><code>UC-20</code></td><td>Hệ thống phải hỗ trợ: Cảnh báo sắp hết hạn</td><td>Must</td></tr>
+<tr><td><code>FR-M6-21</code></td><td>M6</td><td><code>UC-21</code></td><td>Hệ thống phải hỗ trợ: Chuyển kho nội bộ (Stock Transfer)</td><td>Must</td></tr>
+<tr><td><code>FR-M7-22</code></td><td>M7</td><td><code>UC-22</code></td><td>Hệ thống phải hỗ trợ: Quản lý Khách hàng & Tài khoản đăng nhập</td><td>Must</td></tr>
+<tr><td><code>FR-M7-23</code></td><td>M7</td><td><code>UC-23</code></td><td>Hệ thống phải hỗ trợ: Tạo & Quản lý Hợp đồng Khung Bán hàng</td><td>Must</td></tr>
+<tr><td><code>FR-M7-24</code></td><td>M7</td><td><code>UC-24</code></td><td>Hệ thống phải hỗ trợ: Tiếp nhận & Duyệt Đơn đặt hàng của Khách</td><td>Must</td></tr>
+<tr><td><code>FR-M7-25</code></td><td>M7</td><td><code>UC-25</code></td><td>Hệ thống phải hỗ trợ: Xuất kho bán & Lập Phiếu Bàn giao</td><td>Must</td></tr>
+<tr><td><code>FR-M7-26</code></td><td>M7</td><td><code>UC-26</code></td><td>Hệ thống phải hỗ trợ: Bàn giao & Nghiệm thu tại Khách hàng</td><td>Must</td></tr>
+<tr><td><code>FR-M8-27</code></td><td>M8</td><td><code>UC-27</code></td><td>Hệ thống phải hỗ trợ: Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</td><td>Must</td></tr>
+<tr><td><code>FR-M8-28</code></td><td>M8</td><td><code>UC-28</code></td><td>Hệ thống phải hỗ trợ: Thanh toán Nhà cung cấp (Payment Entry)</td><td>Must</td></tr>
+<tr><td><code>FR-M8-29</code></td><td>M8</td><td><code>UC-29</code></td><td>Hệ thống phải hỗ trợ: Xuất Hóa đơn Bán cho Khách hàng</td><td>Must</td></tr>
+<tr><td><code>FR-M8-30</code></td><td>M8</td><td><code>UC-30</code></td><td>Hệ thống phải hỗ trợ: Ghi nhận Thu tiền từ Khách hàng</td><td>Must</td></tr>
+<tr><td><code>FR-M8-31</code></td><td>M8</td><td><code>UC-31</code></td><td>Hệ thống phải hỗ trợ: Báo cáo Tài chính Vật tư</td><td>Must</td></tr>
+<tr><td><code>FR-M9-32</code></td><td>M9</td><td><code>UC-32</code></td><td>Hệ thống phải hỗ trợ: Lập kế hoạch & thực hiện kiểm kê</td><td>Must</td></tr>
+<tr><td><code>FR-M9-33</code></td><td>M9</td><td><code>UC-33</code></td><td>Hệ thống phải hỗ trợ: Đối soát kho & Biên bản (Stock Reconciliation)</td><td>Must</td></tr>
+<tr><td><code>FR-M10-34</code></td><td>M10</td><td><code>UC-34</code></td><td>Hệ thống phải hỗ trợ: Truy xuất nguồn gốc lô (Batch Trace)</td><td>Must</td></tr>
+<tr><td><code>FR-M10-35</code></td><td>M10</td><td><code>UC-35</code></td><td>Hệ thống phải hỗ trợ: Thu hồi Vật tư (Recall Management)</td><td>Must</td></tr>
+<tr><td><code>FR-M10-36</code></td><td>M10</td><td><code>UC-36</code></td><td>Hệ thống phải hỗ trợ: Điều tra Thất thoát Vật tư (Investigation)</td><td>Must</td></tr>
+<tr><td><code>FR-M11-37</code></td><td>M11</td><td><code>UC-37</code></td><td>Hệ thống phải hỗ trợ: Dashboard Điều hành Tổng thể</td><td>Must</td></tr>
+<tr><td><code>FR-M11-38</code></td><td>M11</td><td><code>UC-38</code></td><td>Hệ thống phải hỗ trợ: Cấu hình & Quản lý Cảnh báo Tự động</td><td>Must</td></tr>
+<tr><td><code>FR-M11-39</code></td><td>M11</td><td><code>UC-39</code></td><td>Hệ thống phải hỗ trợ: Xem & Xử lý Cảnh báo Hành động</td><td>Must</td></tr>
+<tr><td><code>FR-M12-40</code></td><td>M12</td><td><code>UC-40</code></td><td>Hệ thống phải hỗ trợ: Khách hàng Đăng nhập Portal</td><td>Must</td></tr>
+<tr><td><code>FR-M12-41</code></td><td>M12</td><td><code>UC-41</code></td><td>Hệ thống phải hỗ trợ: Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</td><td>Must</td></tr>
+<tr><td><code>FR-M12-42</code></td><td>M12</td><td><code>UC-42</code></td><td>Hệ thống phải hỗ trợ: Đặt hàng theo HĐ khung (Portal)</td><td>Must</td></tr>
+<tr><td><code>FR-M12-43</code></td><td>M12</td><td><code>UC-43</code></td><td>Hệ thống phải hỗ trợ: Theo dõi Đơn hàng & Lịch sử (Portal)</td><td>Must</td></tr>
+<tr><td><code>FR-M4-90</code></td><td>M4</td><td><code>UC-13</code></td><td>Ghi sổ kho (SC Stock Ledger) tự động cho mọi nghiệp vụ nhập/xuất/chuyển.</td><td>Must</td></tr>
+<tr><td><code>FR-M8-90</code></td><td>M8</td><td><code>UC-27</code></td><td>Ghi sổ cái nội bộ (SC GL Entry) cho công nợ phải trả & phải thu.</td><td>Must</td></tr>
+<tr><td><code>FR-M11-90</code></td><td>M11</td><td><code>UC-37</code></td><td>Cung cấp dữ liệu KPI thời gian thực cho dashboard điều hành.</td><td>Must</td></tr>
+<tr><td><code>FR-M12-90</code></td><td>M12</td><td><code>UC-40</code></td><td>Cô lập dữ liệu Portal theo khách hàng đăng nhập (permission query).</td><td>Must</td></tr>
+<tr><td><code>FR-M1-90</code></td><td>M1</td><td><code>UC-03</code></td><td>Ràng buộc mọi Lệnh gọi hàng theo hạn mức hợp đồng khung còn lại.</td><td>Must</td></tr>
+<tr><td><code>FR-M3-90</code></td><td>M3</td><td><code>UC-10</code></td><td>Chặn nhập kho khi kết quả QC không đạt.</td><td>Must</td></tr>
+<tr><td><code>FR-M5-90</code></td><td>M5</td><td><code>UC-19</code></td><td>Ép nguyên tắc FEFO khi xuất kho, cảnh báo khi ghi đè.</td><td>Must</td></tr>
+<tr><td><code>FR-M7-90</code></td><td>M7</td><td><code>UC-24</code></td><td>Ràng đơn đặt hàng của khách theo đơn giá & hạn mức HĐ khung bán.</td><td>Must</td></tr>
+<tr><td><code>FR-M9-90</code></td><td>M9</td><td><code>UC-33</code></td><td>Sinh biên bản chênh lệch tự động khi đối soát kiểm kê.</td><td>Must</td></tr>
+</tbody>
+</table><h2 id="fr-detail">3. Đặc tả chi tiết FR (mô tả · AC · phụ thuộc)</h2><h4 id="fr-m1-01">FR-M1-01 — Hệ thống phải hỗ trợ: Tìm kiếm & Đánh giá Nhà cung cấp</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M1-01</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tìm kiếm & Đánh giá Nhà cung cấp Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-01 (Tìm kiếm & Đánh giá Nhà cung cấp).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M1</td></tr>
+<tr><td>Truy vết</td><td><code>UC-01</code> · <code>US-01</code> · <code>TC-01-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m1-02">FR-M1-02 — Hệ thống phải hỗ trợ: Tạo / Cập nhật Nhà cung cấp</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M1-02</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo / Cập nhật Nhà cung cấp Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-02 (Tạo / Cập nhật Nhà cung cấp).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M1</td></tr>
+<tr><td>Truy vết</td><td><code>UC-02</code> · <code>US-02</code> · <code>TC-02-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m1-03">FR-M1-03 — Hệ thống phải hỗ trợ: Tạo & Quản lý Hợp đồng Khung Mua (FC)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M1-03</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo & Quản lý Hợp đồng Khung Mua (FC) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-03 (Tạo & Quản lý Hợp đồng Khung Mua (FC)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-FC-001, BRU-FC-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-03</code> · <code>US-03</code> · <code>TC-03-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m1-04">FR-M1-04 — Hệ thống phải hỗ trợ: Theo dõi & Gia hạn / Thanh lý Hợp đồng</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M1-04</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Theo dõi & Gia hạn / Thanh lý Hợp đồng Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-04 (Theo dõi & Gia hạn / Thanh lý Hợp đồng).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-FC-001, BRU-FC-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-04</code> · <code>US-04</code> · <code>TC-04-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m1-05">FR-M1-05 — Hệ thống phải hỗ trợ: Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M1-05</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-05 (Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M1</td></tr>
+<tr><td>Truy vết</td><td><code>UC-05</code> · <code>US-05</code> · <code>TC-05-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m2-06">FR-M2-06 — Hệ thống phải hỗ trợ: Lập Kế hoạch Mua hàng Định kỳ</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M2-06</code></td></tr>
+<tr><td>Phân hệ</td><td>M2 — Kế hoạch & Mua sắm</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Lập Kế hoạch Mua hàng Định kỳ Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-06 (Lập Kế hoạch Mua hàng Định kỳ).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M2</td></tr>
+<tr><td>Truy vết</td><td><code>UC-06</code> · <code>US-06</code> · <code>TC-06-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m2-07">FR-M2-07 — Hệ thống phải hỗ trợ: Tạo Đề nghị Mua hàng (Material Request)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M2-07</code></td></tr>
+<tr><td>Phân hệ</td><td>M2 — Kế hoạch & Mua sắm</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo Đề nghị Mua hàng (Material Request) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-07 (Tạo Đề nghị Mua hàng (Material Request)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M2</td></tr>
+<tr><td>Truy vết</td><td><code>UC-07</code> · <code>US-07</code> · <code>TC-07-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m2-08">FR-M2-08 — Hệ thống phải hỗ trợ: Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M2-08</code></td></tr>
+<tr><td>Phân hệ</td><td>M2 — Kế hoạch & Mua sắm</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo và Phê duyệt Đơn mua hàng (Purchase Order) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-08 (Tạo và Phê duyệt Đơn mua hàng (Purchase Order)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M2</td></tr>
+<tr><td>Truy vết</td><td><code>UC-08</code> · <code>US-08</code> · <code>TC-08-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m3-09">FR-M3-09 — Hệ thống phải hỗ trợ: Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M3-09</code></td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-09 (Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M3</td></tr>
+<tr><td>Truy vết</td><td><code>UC-09</code> · <code>US-09</code> · <code>TC-09-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m3-10">FR-M3-10 — Hệ thống phải hỗ trợ: Kiểm tra Chất lượng (QC) Hàng nhập</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M3-10</code></td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Kiểm tra Chất lượng (QC) Hàng nhập Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-10 (Kiểm tra Chất lượng (QC) Hàng nhập).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-QC-001, BRU-QC-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-10</code> · <code>US-10</code> · <code>TC-10-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m3-11">FR-M3-11 — Hệ thống phải hỗ trợ: Xử lý hàng trả lại Nhà cung cấp</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M3-11</code></td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Xử lý hàng trả lại Nhà cung cấp Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-11 (Xử lý hàng trả lại Nhà cung cấp).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M3</td></tr>
+<tr><td>Truy vết</td><td><code>UC-11</code> · <code>US-11</code> · <code>TC-11-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m4-12">FR-M4-12 — Hệ thống phải hỗ trợ: Quản lý Bin Location & Putaway Rules</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M4-12</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Quản lý Bin Location & Putaway Rules Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-12 (Quản lý Bin Location & Putaway Rules).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M4</td></tr>
+<tr><td>Truy vết</td><td><code>UC-12</code> · <code>US-12</code> · <code>TC-12-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m4-13">FR-M4-13 — Hệ thống phải hỗ trợ: Nhập / Xuất kho thủ công (Batch + Bin)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M4-13</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Nhập / Xuất kho thủ công (Batch + Bin) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-13 (Nhập / Xuất kho thủ công (Batch + Bin)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M4</td></tr>
+<tr><td>Truy vết</td><td><code>UC-13</code> · <code>US-13</code> · <code>TC-13-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m4-14">FR-M4-14 — Hệ thống phải hỗ trợ: Tra cứu tồn kho theo vị trí</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M4-14</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tra cứu tồn kho theo vị trí Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-14 (Tra cứu tồn kho theo vị trí).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M4</td></tr>
+<tr><td>Truy vết</td><td><code>UC-14</code> · <code>US-14</code> · <code>TC-14-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m4-15">FR-M4-15 — Hệ thống phải hỗ trợ: Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M4-15</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-15 (Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M4</td></tr>
+<tr><td>Truy vết</td><td><code>UC-15</code> · <code>US-15</code> · <code>TC-15-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m4-16">FR-M4-16 — Hệ thống phải hỗ trợ: Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M4-16</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-16 (Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M4</td></tr>
+<tr><td>Truy vết</td><td><code>UC-16</code> · <code>US-16</code> · <code>TC-16-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m4-17">FR-M4-17 — Hệ thống phải hỗ trợ: Quét mã vạch để tra cứu & thao tác</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M4-17</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Quét mã vạch để tra cứu & thao tác Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-17 (Quét mã vạch để tra cứu & thao tác).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M4</td></tr>
+<tr><td>Truy vết</td><td><code>UC-17</code> · <code>US-17</code> · <code>TC-17-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m5-18">FR-M5-18 — Hệ thống phải hỗ trợ: Quản lý Thông tin Lô hàng (Batch)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M5-18</code></td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Quản lý Thông tin Lô hàng (Batch) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-18 (Quản lý Thông tin Lô hàng (Batch)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M5</td></tr>
+<tr><td>Truy vết</td><td><code>UC-18</code> · <code>US-18</code> · <code>TC-18-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m5-19">FR-M5-19 — Hệ thống phải hỗ trợ: Xuất kho theo FEFO</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M5-19</code></td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Xuất kho theo FEFO Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-19 (Xuất kho theo FEFO).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-FEFO-001</td></tr>
+<tr><td>Truy vết</td><td><code>UC-19</code> · <code>US-19</code> · <code>TC-19-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m5-20">FR-M5-20 — Hệ thống phải hỗ trợ: Cảnh báo sắp hết hạn</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M5-20</code></td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Cảnh báo sắp hết hạn Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-20 (Cảnh báo sắp hết hạn).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M5</td></tr>
+<tr><td>Truy vết</td><td><code>UC-20</code> · <code>US-20</code> · <code>TC-20-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m6-21">FR-M6-21 — Hệ thống phải hỗ trợ: Chuyển kho nội bộ (Stock Transfer)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M6-21</code></td></tr>
+<tr><td>Phân hệ</td><td>M6 — Luân chuyển Nội bộ</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Chuyển kho nội bộ (Stock Transfer) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-21 (Chuyển kho nội bộ (Stock Transfer)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M6</td></tr>
+<tr><td>Truy vết</td><td><code>UC-21</code> · <code>US-21</code> · <code>TC-21-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m7-22">FR-M7-22 — Hệ thống phải hỗ trợ: Quản lý Khách hàng & Tài khoản đăng nhập</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M7-22</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Quản lý Khách hàng & Tài khoản đăng nhập Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-22 (Quản lý Khách hàng & Tài khoản đăng nhập).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-22</code> · <code>US-22</code> · <code>TC-22-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m7-23">FR-M7-23 — Hệ thống phải hỗ trợ: Tạo & Quản lý Hợp đồng Khung Bán hàng</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M7-23</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo & Quản lý Hợp đồng Khung Bán hàng Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-23 (Tạo & Quản lý Hợp đồng Khung Bán hàng).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-FC-001, BRU-FC-002, BRU-SO-001, BRU-SO-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-23</code> · <code>US-23</code> · <code>TC-23-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m7-24">FR-M7-24 — Hệ thống phải hỗ trợ: Tiếp nhận & Duyệt Đơn đặt hàng của Khách</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M7-24</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tiếp nhận & Duyệt Đơn đặt hàng của Khách Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-24 (Tiếp nhận & Duyệt Đơn đặt hàng của Khách).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M7</td></tr>
+<tr><td>Truy vết</td><td><code>UC-24</code> · <code>US-24</code> · <code>TC-24-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m7-25">FR-M7-25 — Hệ thống phải hỗ trợ: Xuất kho bán & Lập Phiếu Bàn giao</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M7-25</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Xuất kho bán & Lập Phiếu Bàn giao Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-25 (Xuất kho bán & Lập Phiếu Bàn giao).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-DEL-001</td></tr>
+<tr><td>Truy vết</td><td><code>UC-25</code> · <code>US-25</code> · <code>TC-25-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m7-26">FR-M7-26 — Hệ thống phải hỗ trợ: Bàn giao & Nghiệm thu tại Khách hàng</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M7-26</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Bàn giao & Nghiệm thu tại Khách hàng Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-26 (Bàn giao & Nghiệm thu tại Khách hàng).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-CUS-001, BRU-CUS-002, BRU-DEL-001</td></tr>
+<tr><td>Truy vết</td><td><code>UC-26</code> · <code>US-26</code> · <code>TC-26-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m8-27">FR-M8-27 — Hệ thống phải hỗ trợ: Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M8-27</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-27 (Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M8</td></tr>
+<tr><td>Truy vết</td><td><code>UC-27</code> · <code>US-27</code> · <code>TC-27-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m8-28">FR-M8-28 — Hệ thống phải hỗ trợ: Thanh toán Nhà cung cấp (Payment Entry)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M8-28</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Thanh toán Nhà cung cấp (Payment Entry) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-28 (Thanh toán Nhà cung cấp (Payment Entry)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M8</td></tr>
+<tr><td>Truy vết</td><td><code>UC-28</code> · <code>US-28</code> · <code>TC-28-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m8-29">FR-M8-29 — Hệ thống phải hỗ trợ: Xuất Hóa đơn Bán cho Khách hàng</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M8-29</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Xuất Hóa đơn Bán cho Khách hàng Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-29 (Xuất Hóa đơn Bán cho Khách hàng).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-29</code> · <code>US-29</code> · <code>TC-29-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m8-30">FR-M8-30 — Hệ thống phải hỗ trợ: Ghi nhận Thu tiền từ Khách hàng</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M8-30</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Ghi nhận Thu tiền từ Khách hàng Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-30 (Ghi nhận Thu tiền từ Khách hàng).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-30</code> · <code>US-30</code> · <code>TC-30-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m8-31">FR-M8-31 — Hệ thống phải hỗ trợ: Báo cáo Tài chính Vật tư</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M8-31</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Báo cáo Tài chính Vật tư Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-31 (Báo cáo Tài chính Vật tư).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M8</td></tr>
+<tr><td>Truy vết</td><td><code>UC-31</code> · <code>US-31</code> · <code>TC-31-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m9-32">FR-M9-32 — Hệ thống phải hỗ trợ: Lập kế hoạch & thực hiện kiểm kê</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M9-32</code></td></tr>
+<tr><td>Phân hệ</td><td>M9 — Kiểm kê & Đối soát</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Lập kế hoạch & thực hiện kiểm kê Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-32 (Lập kế hoạch & thực hiện kiểm kê).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M9</td></tr>
+<tr><td>Truy vết</td><td><code>UC-32</code> · <code>US-32</code> · <code>TC-32-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m9-33">FR-M9-33 — Hệ thống phải hỗ trợ: Đối soát kho & Biên bản (Stock Reconciliation)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M9-33</code></td></tr>
+<tr><td>Phân hệ</td><td>M9 — Kiểm kê & Đối soát</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Đối soát kho & Biên bản (Stock Reconciliation) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-33 (Đối soát kho & Biên bản (Stock Reconciliation)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M9</td></tr>
+<tr><td>Truy vết</td><td><code>UC-33</code> · <code>US-33</code> · <code>TC-33-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m10-34">FR-M10-34 — Hệ thống phải hỗ trợ: Truy xuất nguồn gốc lô (Batch Trace)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M10-34</code></td></tr>
+<tr><td>Phân hệ</td><td>M10 — Truy xuất & Điều tra</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Truy xuất nguồn gốc lô (Batch Trace) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-34 (Truy xuất nguồn gốc lô (Batch Trace)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M10</td></tr>
+<tr><td>Truy vết</td><td><code>UC-34</code> · <code>US-34</code> · <code>TC-34-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m10-35">FR-M10-35 — Hệ thống phải hỗ trợ: Thu hồi Vật tư (Recall Management)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M10-35</code></td></tr>
+<tr><td>Phân hệ</td><td>M10 — Truy xuất & Điều tra</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Thu hồi Vật tư (Recall Management) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-35 (Thu hồi Vật tư (Recall Management)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-REC-001</td></tr>
+<tr><td>Truy vết</td><td><code>UC-35</code> · <code>US-35</code> · <code>TC-35-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m10-36">FR-M10-36 — Hệ thống phải hỗ trợ: Điều tra Thất thoát Vật tư (Investigation)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M10-36</code></td></tr>
+<tr><td>Phân hệ</td><td>M10 — Truy xuất & Điều tra</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Điều tra Thất thoát Vật tư (Investigation) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-36 (Điều tra Thất thoát Vật tư (Investigation)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M10</td></tr>
+<tr><td>Truy vết</td><td><code>UC-36</code> · <code>US-36</code> · <code>TC-36-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m11-37">FR-M11-37 — Hệ thống phải hỗ trợ: Dashboard Điều hành Tổng thể</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M11-37</code></td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Dashboard Điều hành Tổng thể Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-37 (Dashboard Điều hành Tổng thể).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M11</td></tr>
+<tr><td>Truy vết</td><td><code>UC-37</code> · <code>US-37</code> · <code>TC-37-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m11-38">FR-M11-38 — Hệ thống phải hỗ trợ: Cấu hình & Quản lý Cảnh báo Tự động</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M11-38</code></td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Cấu hình & Quản lý Cảnh báo Tự động Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-38 (Cấu hình & Quản lý Cảnh báo Tự động).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M11</td></tr>
+<tr><td>Truy vết</td><td><code>UC-38</code> · <code>US-38</code> · <code>TC-38-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m11-39">FR-M11-39 — Hệ thống phải hỗ trợ: Xem & Xử lý Cảnh báo Hành động</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M11-39</code></td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Xem & Xử lý Cảnh báo Hành động Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-39 (Xem & Xử lý Cảnh báo Hành động).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M11</td></tr>
+<tr><td>Truy vết</td><td><code>UC-39</code> · <code>US-39</code> · <code>TC-39-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m12-40">FR-M12-40 — Hệ thống phải hỗ trợ: Khách hàng Đăng nhập Portal</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M12-40</code></td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Khách hàng Đăng nhập Portal Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-40 (Khách hàng Đăng nhập Portal).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-40</code> · <code>US-40</code> · <code>TC-40-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m12-41">FR-M12-41 — Hệ thống phải hỗ trợ: Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M12-41</code></td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Tra cứu HĐ khung, Vật tư & Bảng giá (Portal) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-41 (Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M12</td></tr>
+<tr><td>Truy vết</td><td><code>UC-41</code> · <code>US-41</code> · <code>TC-41-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m12-42">FR-M12-42 — Hệ thống phải hỗ trợ: Đặt hàng theo HĐ khung (Portal)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M12-42</code></td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Đặt hàng theo HĐ khung (Portal) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-42 (Đặt hàng theo HĐ khung (Portal)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M12</td></tr>
+<tr><td>Truy vết</td><td><code>UC-42</code> · <code>US-42</code> · <code>TC-42-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m12-43">FR-M12-43 — Hệ thống phải hỗ trợ: Theo dõi Đơn hàng & Lịch sử (Portal)</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M12-43</code></td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Hệ thống phải hỗ trợ: Theo dõi Đơn hàng & Lịch sử (Portal) Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-43 (Theo dõi Đơn hàng & Lịch sử (Portal)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M12</td></tr>
+<tr><td>Truy vết</td><td><code>UC-43</code> · <code>US-43</code> · <code>TC-43-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m4-90">FR-M4-90 — Ghi sổ kho (SC Stock Ledger) tự động cho mọi nghiệp vụ nhập/xuất/chuyển.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M4-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Ghi sổ kho (SC Stock Ledger) tự động cho mọi nghiệp vụ nhập/xuất/chuyển. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-13 (Nhập / Xuất kho thủ công (Batch + Bin)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M4</td></tr>
+<tr><td>Truy vết</td><td><code>UC-13</code> · <code>US-13</code> · <code>TC-13-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m8-90">FR-M8-90 — Ghi sổ cái nội bộ (SC GL Entry) cho công nợ phải trả & phải thu.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M8-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Ghi sổ cái nội bộ (SC GL Entry) cho công nợ phải trả & phải thu. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-27 (Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M8</td></tr>
+<tr><td>Truy vết</td><td><code>UC-27</code> · <code>US-27</code> · <code>TC-27-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m11-90">FR-M11-90 — Cung cấp dữ liệu KPI thời gian thực cho dashboard điều hành.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M11-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Cung cấp dữ liệu KPI thời gian thực cho dashboard điều hành. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-37 (Dashboard Điều hành Tổng thể).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M11</td></tr>
+<tr><td>Truy vết</td><td><code>UC-37</code> · <code>US-37</code> · <code>TC-37-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m12-90">FR-M12-90 — Cô lập dữ liệu Portal theo khách hàng đăng nhập (permission query).</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M12-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Cô lập dữ liệu Portal theo khách hàng đăng nhập (permission query). Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-40 (Khách hàng Đăng nhập Portal).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M12</td></tr>
+<tr><td>Truy vết</td><td><code>UC-40</code> · <code>US-40</code> · <code>TC-40-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m1-90">FR-M1-90 — Ràng buộc mọi Lệnh gọi hàng theo hạn mức hợp đồng khung còn lại.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M1-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Ràng buộc mọi Lệnh gọi hàng theo hạn mức hợp đồng khung còn lại. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-03 (Tạo & Quản lý Hợp đồng Khung Mua (FC)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M1</td></tr>
+<tr><td>Truy vết</td><td><code>UC-03</code> · <code>US-03</code> · <code>TC-03-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m3-90">FR-M3-90 — Chặn nhập kho khi kết quả QC không đạt.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M3-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Chặn nhập kho khi kết quả QC không đạt. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-10 (Kiểm tra Chất lượng (QC) Hàng nhập).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-QC-001, BRU-QC-002</td></tr>
+<tr><td>Truy vết</td><td><code>UC-10</code> · <code>US-10</code> · <code>TC-10-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m5-90">FR-M5-90 — Ép nguyên tắc FEFO khi xuất kho, cảnh báo khi ghi đè.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M5-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Ép nguyên tắc FEFO khi xuất kho, cảnh báo khi ghi đè. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-19 (Xuất kho theo FEFO).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>BRU-FEFO-001</td></tr>
+<tr><td>Truy vết</td><td><code>UC-19</code> · <code>US-19</code> · <code>TC-19-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m7-90">FR-M7-90 — Ràng đơn đặt hàng của khách theo đơn giá & hạn mức HĐ khung bán.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M7-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Ràng đơn đặt hàng của khách theo đơn giá & hạn mức HĐ khung bán. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-24 (Tiếp nhận & Duyệt Đơn đặt hàng của Khách).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M7</td></tr>
+<tr><td>Truy vết</td><td><code>UC-24</code> · <code>US-24</code> · <code>TC-24-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h4 id="fr-m9-90">FR-M9-90 — Sinh biên bản chênh lệch tự động khi đối soát kiểm kê.</h4><table>
+<thead><tr><th>Thuộc tính</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã FR</td><td><code>FR-M9-90</code></td></tr>
+<tr><td>Phân hệ</td><td>M9 — Kiểm kê & Đối soát</td></tr>
+<tr><td>Mô tả chi tiết</td><td>Sinh biên bản chênh lệch tự động khi đối soát kiểm kê. Chức năng phải xử lý đầy đủ luồng chính, luồng thay thế và ngoại lệ của UC-33 (Đối soát kho & Biên bản (Stock Reconciliation)).</td></tr>
+<tr><td>Đầu vào</td><td>Dữ liệu form + bảng con của nghiệp vụ tương ứng</td></tr>
+<tr><td>Xử lý</td><td>Kiểm tra quyền → kiểm tra quy tắc nghiệp vụ → ghi sổ/cập nhật trạng thái → audit</td></tr>
+<tr><td>Đầu ra</td><td>Chứng từ/bản ghi + cập nhật sổ kho/sổ cái + thông báo</td></tr>
+<tr><td>Tiêu chí chấp nhận (AC)</td><td>1) Thao tác đúng luồng chính hoàn tất & ghi sổ chính xác; 2) Hệ thống CHẶN khi vi phạm quy tắc và hiển thị thông báo rõ ràng; 3) Mọi thay đổi ghi audit trail; 4) Phân quyền đúng vai trò.</td></tr>
+<tr><td>Phụ thuộc</td><td>Master data sẵn sàng; các FR nền tảng (sổ kho FR-M4-90, sổ cái FR-M8-90) hoạt động</td></tr>
+<tr><td>Quy tắc liên quan</td><td>Theo quy tắc phân hệ M9</td></tr>
+<tr><td>Truy vết</td><td><code>UC-33</code> · <code>US-33</code> · <code>TC-33-01/02</code></td></tr>
+<tr><td>Ưu tiên</td><td>Must</td></tr>
+</tbody>
+</table><h2 id="nfr">4. Yêu cầu phi chức năng (NFR) — 14</h2><table>
+<thead><tr><th width="110">Mã NFR</th><th width="150">Nhóm (ISO 25010)</th><th>Mô tả</th><th>Ngưỡng đo</th><th>Phương pháp kiểm chứng</th></tr></thead>
+<tbody>
+<tr><td><code>NFR-PERF-01</code></td><td>Hiệu năng</td><td>Thời gian phản hồi trang danh sách ≤ 2s với 50.000 bản ghi.</td><td><b>≤ 2s (P95)</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-PERF-02</code></td><td>Hiệu năng</td><td>Ghi sổ kho/sổ cái một chứng từ ≤ 1s.</td><td><b>≤ 1s</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-PERF-03</code></td><td>Hiệu năng</td><td>Portal khách hàng tải trang đặt hàng ≤ 3s trên mạng 4G.</td><td><b>≤ 3s</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-SCAL-01</code></td><td>Khả năng mở rộng</td><td>Hỗ trợ ≥ 200 người dùng nội bộ & ≥ 500 tài khoản khách đồng thời.</td><td><b>≥ 700 concurrent</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-AVAI-01</code></td><td>Tính sẵn sàng</td><td>Thời gian hoạt động hệ thống ≥ 99,5%/tháng.</td><td><b>≥ 99,5%</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-SEC-01</code></td><td>Bảo mật</td><td>Cô lập dữ liệu Portal — khách không truy cập được dữ liệu khách khác/nội bộ.</td><td><b>0 rò rỉ chéo</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-SEC-02</code></td><td>Bảo mật</td><td>Mã hóa mật khẩu (bcrypt) & kênh truyền HTTPS/TLS 1.2+.</td><td><b>TLS ≥ 1.2</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-SEC-03</code></td><td>Bảo mật</td><td>Audit trail mọi submit/cancel, không xóa cứng chứng từ đã ghi sổ.</td><td><b>100% chứng từ</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-USAB-01</code></td><td>Khả dụng</td><td>Người dùng mới thao tác nghiệp vụ chính sau ≤ 30 phút đào tạo.</td><td><b>≤ 30 phút</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-COMP-01</code></td><td>Tuân thủ</td><td>Tuân thủ NĐ 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.</td><td><b>Đạt</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-COMP-02</code></td><td>Tuân thủ</td><td>Truy xuất nguồn gốc lô đầy đủ phục vụ thu hồi.</td><td><b>100% lô</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-MAIN-01</code></td><td>Bảo trì</td><td>Kiến trúc module hóa, thêm phân hệ không ảnh hưởng phân hệ khác.</td><td><b>Regression 0</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-PORT-01</code></td><td>Khả chuyển</td><td>Triển khai qua Docker Compose, khôi phục môi trường ≤ 2 giờ.</td><td><b>≤ 2h</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+<tr><td><code>NFR-RELI-01</code></td><td>Độ tin cậy</td><td>Sao lưu dữ liệu hằng ngày, RPO ≤ 24h, RTO ≤ 4h.</td><td><b>RPO≤24h/RTO≤4h</b></td><td>Đo qua kiểm thử/giám sát</td></tr>
+</tbody>
+</table><h2 id="rang-buoc">5. Ràng buộc hệ thống</h2><ul><li>Frappe/ERPNext v15, MariaDB 10.6, Redis 7, Docker Compose; prefix DocType SC-.</li><li>Xác thực session + API key nội bộ; Portal dùng tài khoản khách + role cô lập dữ liệu.</li><li>Sổ kho (SC Stock Ledger) & sổ cái (SC GL Entry) tự quản; không tồn âm; không ghi kỳ đã chốt.</li><li>Audit trail mọi submit/cancel; không xóa cứng chứng từ đã ghi sổ.</li></ul>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: SRS | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

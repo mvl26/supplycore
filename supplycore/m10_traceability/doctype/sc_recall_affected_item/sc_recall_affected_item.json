@@ -1,0 +1,201 @@
+{
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "location_type",
+  "warehouse",
+  "department",
+  "customer",
+  "column_break_1",
+  "voucher_type",
+  "voucher_no",
+  "voucher_date",
+  "section_qty",
+  "qty_issued",
+  "recovered_qty",
+  "destroyed_qty",
+  "column_break_qty",
+  "outstanding_qty",
+  "status",
+  "recovery_date",
+  "recovered_by",
+  "destruction_date",
+  "destruction_witnessed_by",
+  "destruction_reason",
+  "clinical_notified",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "location_type",
+   "fieldtype": "Select",
+   "options": "Warehouse\nDepartment\nCustomer",
+   "label": "Loại vị trí",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "options": "SC Warehouse",
+   "label": "Kho",
+   "in_list_view": 1,
+   "columns": 2,
+   "depends_on": "eval:doc.location_type=='Warehouse'"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "options": "SC Department",
+   "label": "Khoa",
+   "depends_on": "eval:doc.location_type=='Department'"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "options": "SC Customer",
+   "label": "Khách hàng",
+   "in_list_view": 1,
+   "columns": 2,
+   "depends_on": "eval:doc.location_type=='Customer'"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Data",
+   "label": "Loại chứng từ",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Data",
+   "label": "Số chứng từ",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "voucher_date",
+   "fieldtype": "Date",
+   "label": "Ngày",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_qty",
+   "fieldtype": "Section Break",
+   "label": "Số lượng"
+  },
+  {
+   "fieldname": "qty_issued",
+   "fieldtype": "Float",
+   "label": "SL đã xuất",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "recovered_qty",
+   "fieldtype": "Float",
+   "label": "SL thu hồi",
+   "non_negative": 1,
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "destroyed_qty",
+   "fieldtype": "Float",
+   "label": "SL hủy",
+   "non_negative": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "column_break_qty",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "outstanding_qty",
+   "fieldtype": "Float",
+   "label": "Còn chưa thu",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "\nNotified\nIn Progress\nRecovered\nDestroyed\nUsed (No Recovery)",
+   "label": "Trạng thái",
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "recovery_date",
+   "fieldtype": "Date",
+   "label": "Ngày thu hồi",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "recovered_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người thu hồi",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "destruction_date",
+   "fieldtype": "Date",
+   "label": "Ngày tiêu hủy",
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.destroyed_qty>0",
+   "description": "Bắt buộc khi SL hủy > 0 (BUG-007 audit trail)"
+  },
+  {
+   "fieldname": "destruction_witnessed_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người chứng kiến hủy",
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.destroyed_qty>0",
+   "description": "Bắt buộc khi SL hủy > 0 — chống gian lận"
+  },
+  {
+   "fieldname": "destruction_reason",
+   "fieldtype": "Small Text",
+   "label": "Lý do hủy",
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.destroyed_qty>0",
+   "description": "Mô tả phương pháp + lý do tiêu hủy"
+  },
+  {
+   "fieldname": "clinical_notified",
+   "fieldtype": "Check",
+   "label": "Đã báo BS",
+   "default": "0",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Data",
+   "label": "Ghi chú",
+   "allow_on_submit": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M10 Traceability",
+ "name": "SC Recall Affected Item",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

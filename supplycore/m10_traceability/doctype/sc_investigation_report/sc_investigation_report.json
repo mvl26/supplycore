@@ -1,0 +1,342 @@
+{
+ "actions": [],
+ "creation": "2026-05-11 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-INV-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "field_order": [
+  "section_main",
+  "investigation_date",
+  "investigation_type",
+  "status",
+  "column_break_1",
+  "triggered_by",
+  "triggered_at",
+  "section_scope",
+  "item",
+  "item_name",
+  "warehouse",
+  "batch",
+  "column_break_scope",
+  "period_start",
+  "period_end",
+  "filter_user",
+  "section_desc",
+  "description",
+  "section_comparison",
+  "theoretical_qty",
+  "actual_qty",
+  "column_break_comp",
+  "variance_qty",
+  "variance_value",
+  "section_findings",
+  "anomalies_detected",
+  "findings",
+  "section_actions",
+  "suspended_users_log",
+  "system_error_adjustment",
+  "section_resolution",
+  "recommendation",
+  "conclusion",
+  "section_approval",
+  "approved_by",
+  "approved_at",
+  "amended_from",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Điều tra"
+  },
+  {
+   "fieldname": "investigation_date",
+   "fieldtype": "Date",
+   "label": "Ngày bắt đầu điều tra",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "investigation_type",
+   "fieldtype": "Select",
+   "options": "Stock Loss\nDiscrepancy\nFraud\nSystem Error\nOther",
+   "label": "Loại sự cố",
+   "reqd": 1,
+   "default": "Discrepancy",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "Draft\nInvestigating\nResolved\nClosed",
+   "label": "Status",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "triggered_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người mở điều tra",
+   "read_only": 1
+  },
+  {
+   "fieldname": "triggered_at",
+   "fieldtype": "Datetime",
+   "label": "Thời điểm mở",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_scope",
+   "fieldtype": "Section Break",
+   "label": "Phạm vi điều tra"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "options": "SC Item",
+   "label": "Vật tư",
+   "in_standard_filter": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Tên vật tư",
+   "fetch_from": "item.item_name",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "options": "SC Warehouse",
+   "label": "Kho",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "options": "SC Batch",
+   "label": "Batch"
+  },
+  {
+   "fieldname": "column_break_scope",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "period_start",
+   "fieldtype": "Date",
+   "label": "Từ ngày",
+   "reqd": 1
+  },
+  {
+   "fieldname": "period_end",
+   "fieldtype": "Date",
+   "label": "Đến ngày",
+   "reqd": 1,
+   "default": "Today"
+  },
+  {
+   "fieldname": "filter_user",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Filter user (SLE owner)"
+  },
+  {
+   "fieldname": "section_desc",
+   "fieldtype": "Section Break",
+   "label": "Mô tả sự cố"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Mô tả phát hiện ban đầu"
+  },
+  {
+   "fieldname": "section_comparison",
+   "fieldtype": "Section Break",
+   "label": "So sánh tồn kho"
+  },
+  {
+   "fieldname": "theoretical_qty",
+   "fieldtype": "Float",
+   "label": "Tồn lý thuyết",
+   "read_only": 1,
+   "description": "Cumulative SLE qty"
+  },
+  {
+   "fieldname": "actual_qty",
+   "fieldtype": "Float",
+   "label": "Tồn thực tế (manual count)"
+  },
+  {
+   "fieldname": "column_break_comp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "variance_qty",
+   "fieldtype": "Float",
+   "label": "Δ qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "variance_value",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Δ giá trị",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_findings",
+   "fieldtype": "Section Break",
+   "label": "Bất thường phát hiện"
+  },
+  {
+   "fieldname": "anomalies_detected",
+   "fieldtype": "Int",
+   "label": "Số bất thường",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "findings",
+   "fieldtype": "Table",
+   "options": "SC Investigation Finding",
+   "label": "Findings"
+  },
+  {
+   "fieldname": "section_actions",
+   "fieldtype": "Section Break",
+   "label": "Hành động đã thực hiện",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "suspended_users_log",
+   "fieldtype": "Long Text",
+   "label": "Log khóa user",
+   "read_only": 1,
+   "description": "Append-only log mỗi lần lock_user()"
+  },
+  {
+   "fieldname": "system_error_adjustment",
+   "fieldtype": "Link",
+   "options": "SC Stock Reconciliation",
+   "label": "Phiếu điều chỉnh (System Error)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_resolution",
+   "fieldtype": "Section Break",
+   "label": "Kết luận & Khuyến nghị"
+  },
+  {
+   "fieldname": "recommendation",
+   "fieldtype": "Long Text",
+   "label": "Biện pháp khắc phục đề xuất"
+  },
+  {
+   "fieldname": "conclusion",
+   "fieldtype": "Long Text",
+   "label": "Kết luận điều tra"
+  },
+  {
+   "fieldname": "section_approval",
+   "fieldtype": "Section Break",
+   "label": "Phê duyệt",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_at",
+   "fieldtype": "Datetime",
+   "label": "Thời điểm duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Investigation Report",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Executive",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-11 00:00:00",
+ "module": "M10 Traceability",
+ "name": "SC Investigation Report",
+ "search_fields": "item,warehouse,investigation_type,status",
+ "sort_field": "investigation_date",
+ "sort_order": "DESC"
+}

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WSS — Đặc tả Workflow & State Machine | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Đặc tả Workflow & State Machine</h1>
+  <div class="doc-meta">
+    <span>Mã: WSS-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Đặc tả Workflow & State Machine
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#doctype-list">1. Danh sách Workflow/DocType</a></li>
+        <li><a href="#states">2. Trạng thái & Chuyển trạng thái</a></li>
+        <li><a href="#permissions">3. Phân quyền theo trạng thái</a></li>
+        <li><a href="#notifications">4. Thông báo tự động</a></li>
+    </ol>
+  </nav>
+
+<h2 id="doctype-list">1. Danh sách 14 Workflow</h2><table>
+<thead><tr><th width="70">Mã WF</th><th width="70">Phân hệ</th><th>DocType</th><th>Chuỗi trạng thái</th></tr></thead>
+<tbody>
+<tr><td><code>WF-01</code></td><td>M1</td><td>Hợp đồng Khung Mua (SC Framework Contract)</td><td>Nháp → Chờ duyệt → Hiệu lực → Hết hạn → Thanh lý</td></tr>
+<tr><td><code>WF-02</code></td><td>M1</td><td>Lệnh Gọi Hàng (Release Order)</td><td>Nháp → Chờ duyệt → Đã duyệt → Đã nhập → Hủy</td></tr>
+<tr><td><code>WF-03</code></td><td>M2</td><td>Đề nghị Mua hàng (Material Request)</td><td>Nháp → Chờ duyệt → Đã duyệt → Đã tạo PO → Hủy</td></tr>
+<tr><td><code>WF-04</code></td><td>M2</td><td>Đơn Mua hàng (Purchase Order)</td><td>Nháp → Chờ duyệt → Đã duyệt → Đã nhận một phần → Hoàn tất → Hủy</td></tr>
+<tr><td><code>WF-05</code></td><td>M3</td><td>Phiếu Nhập kho (Purchase Receipt)</td><td>Nháp → Chờ QC → Đã ghi sổ → Hủy</td></tr>
+<tr><td><code>WF-06</code></td><td>M3</td><td>Phiếu Kiểm tra Chất lượng (QC)</td><td>Nháp → Đang kiểm → Đạt → Không đạt</td></tr>
+<tr><td><code>WF-07</code></td><td>M5</td><td>Lô hàng (Batch)</td><td>Hoạt động → Sắp hết hạn → Hết hạn → Thu hồi → Thanh lý</td></tr>
+<tr><td><code>WF-08</code></td><td>M6</td><td>Chuyển kho nội bộ (Stock Transfer)</td><td>Nháp → Chờ duyệt → Đang chuyển → Hoàn tất → Hủy</td></tr>
+<tr><td><code>WF-09</code></td><td>M7</td><td>Đơn đặt hàng của Khách (Sales Order)</td><td>Chờ duyệt → Đã duyệt → Đang xử lý → Đã bàn giao → Hoàn tất → Từ chối</td></tr>
+<tr><td><code>WF-10</code></td><td>M7</td><td>Phiếu Bàn giao (Delivery Note)</td><td>Nháp → Đã giao → Đã nghiệm thu → Đã xuất HĐ</td></tr>
+<tr><td><code>WF-11</code></td><td>M8</td><td>Hóa đơn Bán (Sales Invoice)</td><td>Nháp → Đã phát hành → Đã thu một phần → Đã thu đủ → Hủy</td></tr>
+<tr><td><code>WF-12</code></td><td>M8</td><td>Hóa đơn Mua (Purchase Invoice)</td><td>Nháp → Chờ duyệt → Đã ghi sổ → Đã thanh toán → Hủy</td></tr>
+<tr><td><code>WF-13</code></td><td>M9</td><td>Đối soát Kiểm kê (Stock Reconciliation)</td><td>Nháp → Chờ duyệt → Đã điều chỉnh → Hủy</td></tr>
+<tr><td><code>WF-14</code></td><td>M10</td><td>Thu hồi Vật tư (Recall Notice)</td><td>Nháp → Đang thu hồi → Hoàn tất → Đóng</td></tr>
+</tbody>
+</table><h2 id="states">2. Trạng thái & Chuyển trạng thái (chi tiết)</h2><h3 id="wf-01">WF-01 — Hợp đồng Khung Mua (SC Framework Contract)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ duyệt</td><td><code>TR-1</code></td><td>Hiệu lực</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Hiệu lực</td><td><code>TR-2</code></td><td>Hết hạn</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Hết hạn</td><td><code>TR-3</code></td><td>Thanh lý</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-02">WF-02 — Lệnh Gọi Hàng (Release Order)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ duyệt</td><td><code>TR-1</code></td><td>Đã duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã duyệt</td><td><code>TR-2</code></td><td>Đã nhập</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Đã nhập</td><td><code>TR-3</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-03">WF-03 — Đề nghị Mua hàng (Material Request)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ duyệt</td><td><code>TR-1</code></td><td>Đã duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã duyệt</td><td><code>TR-2</code></td><td>Đã tạo PO</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Đã tạo PO</td><td><code>TR-3</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-04">WF-04 — Đơn Mua hàng (Purchase Order)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ duyệt</td><td><code>TR-1</code></td><td>Đã duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã duyệt</td><td><code>TR-2</code></td><td>Đã nhận một phần</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Đã nhận một phần</td><td><code>TR-3</code></td><td>Hoàn tất</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-4</code></td><td>Hoàn tất</td><td><code>TR-4</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-05">WF-05 — Phiếu Nhập kho (Purchase Receipt)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ QC</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ QC</td><td><code>TR-1</code></td><td>Đã ghi sổ</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã ghi sổ</td><td><code>TR-2</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-06">WF-06 — Phiếu Kiểm tra Chất lượng (QC)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Đang kiểm</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Đang kiểm</td><td><code>TR-1</code></td><td>Đạt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đạt</td><td><code>TR-2</code></td><td>Không đạt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-07">WF-07 — Lô hàng (Batch)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Hoạt động</td><td><code>TR-0</code></td><td>Sắp hết hạn</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Sắp hết hạn</td><td><code>TR-1</code></td><td>Hết hạn</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Hết hạn</td><td><code>TR-2</code></td><td>Thu hồi</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Thu hồi</td><td><code>TR-3</code></td><td>Thanh lý</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-08">WF-08 — Chuyển kho nội bộ (Stock Transfer)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ duyệt</td><td><code>TR-1</code></td><td>Đang chuyển</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đang chuyển</td><td><code>TR-2</code></td><td>Hoàn tất</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Hoàn tất</td><td><code>TR-3</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-09">WF-09 — Đơn đặt hàng của Khách (Sales Order)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Chờ duyệt</td><td><code>TR-0</code></td><td>Đã duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Đã duyệt</td><td><code>TR-1</code></td><td>Đang xử lý</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đang xử lý</td><td><code>TR-2</code></td><td>Đã bàn giao</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Đã bàn giao</td><td><code>TR-3</code></td><td>Hoàn tất</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-4</code></td><td>Hoàn tất</td><td><code>TR-4</code></td><td>Từ chối</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-10">WF-10 — Phiếu Bàn giao (Delivery Note)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Đã giao</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Đã giao</td><td><code>TR-1</code></td><td>Đã nghiệm thu</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã nghiệm thu</td><td><code>TR-2</code></td><td>Đã xuất HĐ</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-11">WF-11 — Hóa đơn Bán (Sales Invoice)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Đã phát hành</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Đã phát hành</td><td><code>TR-1</code></td><td>Đã thu một phần</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã thu một phần</td><td><code>TR-2</code></td><td>Đã thu đủ</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Đã thu đủ</td><td><code>TR-3</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-12">WF-12 — Hóa đơn Mua (Purchase Invoice)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ duyệt</td><td><code>TR-1</code></td><td>Đã ghi sổ</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã ghi sổ</td><td><code>TR-2</code></td><td>Đã thanh toán</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-3</code></td><td>Đã thanh toán</td><td><code>TR-3</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-13">WF-13 — Đối soát Kiểm kê (Stock Reconciliation)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Chờ duyệt</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Chờ duyệt</td><td><code>TR-1</code></td><td>Đã điều chỉnh</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Đã điều chỉnh</td><td><code>TR-2</code></td><td>Hủy</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h3 id="wf-14">WF-14 — Thu hồi Vật tư (Recall Notice)</h3><table>
+<thead><tr><th width="70">State</th><th>Tên trạng thái</th><th width="70">Transition</th><th>Sang trạng thái</th><th>Điều kiện</th></tr></thead>
+<tbody>
+<tr><td><code>ST-0</code></td><td>Nháp</td><td><code>TR-0</code></td><td>Đang thu hồi</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-1</code></td><td>Đang thu hồi</td><td><code>TR-1</code></td><td>Hoàn tất</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+<tr><td><code>ST-2</code></td><td>Hoàn tất</td><td><code>TR-2</code></td><td>Đóng</td><td>Người dùng đủ quyền submit/duyệt</td></tr>
+</tbody>
+</table><h2 id="permissions">3. Phân quyền theo trạng thái</h2><table>
+<thead><tr><th>Trạng thái</th><th>Ai được thao tác</th></tr></thead>
+<tbody>
+<tr><td>Nháp</td><td>Người lập (tạo/sửa/xóa nháp)</td></tr>
+<tr><td>Chờ duyệt</td><td>Người duyệt (Quản lý/Thương mại)</td></tr>
+<tr><td>Đã duyệt / Hiệu lực</td><td>Kho/Kế toán xử lý bước tiếp</td></tr>
+<tr><td>Hoàn tất / Đã thu đủ</td><td>Chỉ đọc; kiểm soát/audit</td></tr>
+<tr><td>Hủy / Từ chối</td><td>Ghi log lý do; không tái sử dụng</td></tr>
+</tbody>
+</table><h2 id="notifications">4. Thông báo tự động</h2><table>
+<thead><tr><th>Sự kiện</th><th>Người nhận</th><th>Kênh</th></tr></thead>
+<tbody>
+<tr><td>Đơn khách chờ duyệt</td><td>Phòng Thương Mại</td><td>Thông báo hệ thống</td></tr>
+<tr><td>Đã bàn giao/nghiệm thu</td><td>Kế Toán + Khách (Portal)</td><td>Portal + email</td></tr>
+<tr><td>Hóa đơn phát hành</td><td>Khách hàng</td><td>Portal + email</td></tr>
+<tr><td>Lô sắp hết hạn</td><td>Kho + Thương mại</td><td>Cảnh báo M11</td></tr>
+<tr><td>Công nợ vượt hạn mức</td><td>Kế Toán + Quản lý</td><td>Cảnh báo M11</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: WSS | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

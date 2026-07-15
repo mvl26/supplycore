@@ -1,0 +1,47 @@
+# guest/compose.override.yml
+# Chồng lên deploy/compose.yml: ép dữ liệu bền nằm trên disk1 (/data), KHÔNG trên disk0.
+#
+# Docker Compose gộp danh sách `volumes` theo ĐƯỜNG DẪN ĐÍCH trong container.
+# Vì vậy khai báo bind /data/sites tại cùng target sẽ thay named volume `sites`
+# bằng bind mount, còn volume `logs` của service vẫn giữ nguyên.
+#
+# LƯU Ý: phải khai báo CHO TẤT CẢ service có mount thư mục sites — kể cả
+# configurator và create-site (chúng nhận `sites` qua anchor &backend_defaults).
+# Nếu thiếu, create-site sẽ tạo site trên named volume cũ trong khi backend đọc
+# /data/sites (rỗng) -> hỏng quá trình khởi tạo.
+services:
+  db:
+    volumes:
+      - /data/mariadb:/var/lib/mysql
+
+  configurator:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites
+
+  create-site:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites
+
+  backend:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites
+
+  websocket:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites
+
+  queue-short:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites
+
+  queue-long:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites
+
+  scheduler:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites
+
+  frontend:
+    volumes:
+      - /data/sites:/home/frappe/frappe-bench/sites

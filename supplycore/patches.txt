@@ -1,0 +1,37 @@
+# Patches chạy 1 lần khi `bench migrate`
+# Format: supplycore.patches.<package>.<module>
+supplycore.patches.v0_1.create_supplycore_roles
+supplycore.patches.v0_1.create_m1_custom_fields
+supplycore.patches.v0_1.fix_fc_status
+supplycore.patches.v0_1.create_m2_custom_fields
+supplycore.patches.v0_1.create_m3_custom_fields
+supplycore.patches.v0_1.create_m4_custom_fields
+supplycore.patches.v0_1.create_m5_custom_fields
+supplycore.patches.v0_1.init_supplycore_settings
+supplycore.patches.v0_2.seed_master_data
+supplycore.patches.v0_2.init_uc05_fields
+supplycore.patches.v0_2.seed_uc10_default_qc_template
+supplycore.patches.v0_2.backfill_barcode
+supplycore.patches.v0_2.backfill_qi_supplier
+supplycore.patches.v0_2.rebuild_warehouse_tree
+supplycore.patches.v0_2.rebuild_tree_doctypes
+supplycore.patches.v0_2.add_perf_indexes
+supplycore.patches.v0_3.backfill_se_valuation
+supplycore.patches.v0_3.backfill_user_full_name
+supplycore.patches.v0_3.dedup_alerts
+supplycore.patches.v0_4.fc_exhausted_backfill
+supplycore.patches.v0_4.cleanup_test_data
+supplycore.patches.v0_5.cleanup_test_data_v3
+supplycore.patches.v0_5.backfill_bin_status
+supplycore.patches.v0_6.remove_hospital_domain
+supplycore.patches.v0_7.remove_hospital_roles
+supplycore.patches.v0_8.seed_sales_gl_accounts
+supplycore.patches.v0_9.create_portal_role
+supplycore.patches.v0_10.rebrand_miyano
+supplycore.patches.v0_11.backfill_credit_control
+supplycore.patches.v0_11.backfill_sfc_validity
+supplycore.patches.v0_11.create_tt99_print_formats
+supplycore.patches.v0_12.backfill_pr_warehouse_in
+supplycore.patches.v0_12.create_pr_print_formats
+supplycore.patches.v0_12.backfill_sfc_contract_fields
+supplycore.patches.v0_12.backfill_display_names

@@ -1,0 +1,16 @@
+# guest/first-boot.service
+[Unit]
+Description=SupplyCore first-boot provisioning
+After=docker.service network-online.target ensure-data.service
+Wants=network-online.target
+Requires=docker.service ensure-data.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/opt/supplycore/supplycore.env
+ExecStart=/opt/supplycore/first-boot.sh
+# Đưa echo marker ra cả serial console (/dev/ttyS0) để smoke.sh assert được;
+# mặc định systemd chỉ ghi journal, `-serial file:` không bắt được.
+StandardOutput=journal+console
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+# guest/cloud-init/meta-data
+instance-id: supplycore-vm
+local-hostname: supplycore

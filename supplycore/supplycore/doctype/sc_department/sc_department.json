@@ -1,0 +1,24 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "field:department_name", "track_changes": 1,
+ "field_order": ["department_name", "department_code", "department_type",
+                 "column_break_1", "head_user", "phone", "disabled", "remarks"],
+ "fields": [
+  {"fieldname": "department_name", "fieldtype": "Data", "label": "Tên khoa/phòng", "reqd": 1, "unique": 1, "in_list_view": 1},
+  {"fieldname": "department_code", "fieldtype": "Data", "label": "Mã KP", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "department_type", "fieldtype": "Select", "options": "\nClinical\nSurgical\nLab\nPharmacy\nAdmin\nOther",
+   "label": "Loại", "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "head_user", "fieldtype": "Link", "options": "User", "label": "Trưởng khoa"},
+  {"fieldname": "phone", "fieldtype": "Data", "label": "Điện thoại"},
+  {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0"},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC Department", "title_field": "department_name",
+ "sort_field": "modified", "sort_order": "DESC"
+}

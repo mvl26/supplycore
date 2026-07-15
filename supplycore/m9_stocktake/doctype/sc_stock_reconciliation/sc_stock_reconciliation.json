@@ -1,0 +1,244 @@
+{
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-SR-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "field_order": [
+  "section_main",
+  "posting_date",
+  "posting_time",
+  "warehouse",
+  "column_break_1",
+  "count_sheet",
+  "expense_account",
+  "section_items",
+  "items",
+  "section_total",
+  "total_difference_qty",
+  "total_difference_value",
+  "column_break_total",
+  "status",
+  "section_other",
+  "rejection_reason",
+  "requires_investigation",
+  "investigation_notes",
+  "investigated_by",
+  "investigated_at",
+  "amended_from",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Đối soát kho"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Ngày đối soát",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Giờ"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "options": "SC Warehouse",
+   "label": "Kho",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "count_sheet",
+   "fieldtype": "Link",
+   "options": "SC Inventory Count Sheet",
+   "label": "Phiếu kiểm kê nguồn",
+   "in_standard_filter": 1,
+   "read_only": 0
+  },
+  {
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "options": "SC GL Account",
+   "label": "TK chi phí điều chỉnh",
+   "description": "TK đối ứng cho difference (vd 642 CP QLDN). Để trống → dùng default 642"
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Items điều chỉnh"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "SC SR Item",
+   "reqd": 1,
+   "label": "Items"
+  },
+  {
+   "fieldname": "section_total",
+   "fieldtype": "Section Break",
+   "label": "Tổng hợp"
+  },
+  {
+   "fieldname": "total_difference_qty",
+   "fieldtype": "Float",
+   "label": "Tổng Δ qty",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "total_difference_value",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Tổng Δ giá trị",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Dương = thừa (tăng tồn kho) / âm = thiếu (giảm)"
+  },
+  {
+   "fieldname": "column_break_total",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "Draft\nApproved\nRejected\nCancelled",
+   "label": "Status",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "section_other",
+   "fieldtype": "Section Break",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Lý do từ chối",
+   "read_only": 1,
+   "depends_on": "eval:doc.status=='Rejected'"
+  },
+  {
+   "fieldname": "requires_investigation",
+   "fieldtype": "Check",
+   "label": "Yêu cầu điều tra",
+   "read_only": 1,
+   "default": "0",
+   "description": "Auto-set khi |total_difference_value| > Settings.large_variance_threshold"
+  },
+  {
+   "fieldname": "investigation_notes",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú điều tra",
+   "depends_on": "requires_investigation",
+   "description": "Bắt buộc khi requires_investigation=1"
+  },
+  {
+   "fieldname": "investigated_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người điều tra",
+   "read_only": 1,
+   "depends_on": "requires_investigation"
+  },
+  {
+   "fieldname": "investigated_at",
+   "fieldtype": "Datetime",
+   "label": "Thời điểm điều tra",
+   "read_only": 1,
+   "depends_on": "requires_investigation"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Stock Reconciliation",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "Warehouse Officer",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M9 Stocktake",
+ "name": "SC Stock Reconciliation",
+ "search_fields": "warehouse,count_sheet,status",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

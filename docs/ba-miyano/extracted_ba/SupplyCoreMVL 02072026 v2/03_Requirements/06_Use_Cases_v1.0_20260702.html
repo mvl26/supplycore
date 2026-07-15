@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UC — Đặc tả Use Case | SupplyCore MVL</title>
+  
+<style>
+  /* === RESET & BASE === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11pt;
+    color: #222;
+    background: #fff;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* === HEADER BAR === */
+  .doc-header {
+    background: #1F4E79;
+    color: #fff;
+    padding: 18px 32px 14px;
+  }
+  .doc-header h1 { font-size: 18pt; font-weight: bold; margin-bottom: 6px; }
+  .doc-header .doc-meta {
+    font-size: 9pt;
+    opacity: 0.88;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .doc-header .doc-meta span::before { content: "● "; opacity: 0.6; }
+
+  /* === BREADCRUMB === */
+  .breadcrumb {
+    background: #E9EFF7;
+    padding: 6px 32px;
+    font-size: 9pt;
+    color: #1F4E79;
+    border-bottom: 1px solid #c8d8ee;
+  }
+  .breadcrumb a { color: #1F4E79; text-decoration: none; font-weight: bold; }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  /* === MAIN CONTENT === */
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+
+  /* === HEADINGS === */
+  h2 {
+    color: #1F4E79;
+    font-size: 14pt;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin: 32px 0 14px;
+  }
+  h3 { color: #2E75B6; font-size: 12pt; margin: 22px 0 8px; }
+  h4 { color: #333; font-size: 11pt; margin: 16px 0 6px; font-style: italic; }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 10pt;
+  }
+  th {
+    background: #1F4E79;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid #17375E;
+    vertical-align: middle;
+  }
+  td {
+    padding: 7px 10px;
+    border: 1px solid #BFBFBF;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F2F2F2; }
+  tr:hover td { background: #EBF3FB; }
+  td code { background: #F0F0F0; padding: 1px 4px; border-radius: 2px; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 8.5pt;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .badge-must     { background: #C00000; color: #fff; }
+  .badge-should   { background: #E36C09; color: #fff; }
+  .badge-could    { background: #375623; color: #fff; }
+  .badge-wont     { background: #7F7F7F; color: #fff; }
+  .badge-draft    { background: #7F7F7F; color: #fff; }
+  .badge-review   { background: #E36C09; color: #fff; }
+  .badge-approved { background: #375623; color: #fff; }
+  .badge-active   { background: #1F4E79; color: #fff; }
+  .badge-done     { background: #375623; color: #fff; }
+  .badge-pending  { background: #7F7F7F; color: #fff; }
+
+  /* === CODE BLOCKS === */
+  pre, code {
+    font-family: 'Courier New', monospace;
+    font-size: 9.5pt;
+    background: #F5F5F5;
+    border: 1px solid #DDD;
+    border-radius: 3px;
+  }
+  pre { padding: 12px 16px; overflow-x: auto; margin: 10px 0; white-space: pre-wrap; }
+  code { padding: 1px 5px; }
+
+  /* === CALL-OUT BOXES === */
+  .callout {
+    border-left: 4px solid #1F4E79;
+    background: #EBF3FB;
+    padding: 10px 16px;
+    margin: 14px 0;
+    font-size: 10pt;
+  }
+  .callout.warning { border-color: #C00000; background: #FFF2F2; }
+  .callout.note    { border-color: #375623; background: #F2F7EE; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+
+  /* === TABLE OF CONTENTS === */
+  .toc {
+    background: #F9FBFD;
+    border: 1px solid #C8D8EE;
+    padding: 16px 20px;
+    margin: 16px 0 28px;
+    border-radius: 4px;
+    max-width: 700px;
+  }
+  .toc h3 { color: #1F4E79; margin: 0 0 10px; font-size: 10.5pt; border: none; }
+  .toc ol { padding-left: 22px; }
+  .toc li { margin: 4px 0; font-size: 10pt; }
+  .toc a  { color: #1F4E79; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* === STATUS INDICATOR === */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 20px; font-size: 9.5pt; color: #555; }
+  .status-row span { background: #F0F4FA; border: 1px solid #C8D8EE; padding: 3px 10px; border-radius: 3px; }
+
+  /* === FOOTER === */
+  .doc-footer {
+    background: #F2F2F2;
+    border-top: 2px solid #1F4E79;
+    padding: 10px 32px;
+    font-size: 9pt;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 48px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .breadcrumb, .doc-footer { display: none; }
+    body { font-size: 10pt; }
+    h2 { page-break-before: auto; }
+    a { color: inherit; text-decoration: none; }
+    .toc { display: none; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .content { padding: 16px; }
+    .doc-header { padding: 14px 16px; }
+    .doc-header .doc-meta { flex-direction: column; gap: 4px; }
+    table { font-size: 9pt; }
+    td, th { padding: 5px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <h1>Đặc tả Use Case</h1>
+  <div class="doc-meta">
+    <span>Mã: UC-v1.0</span>
+    <span>Dự án: SupplyCore MVL</span>
+    <span>Ngày: 02/07/2026</span>
+    <span>Tác giả: BA Team (Anita)</span>
+    <span>Trạng thái: <span class="badge badge-review">Đang Review</span></span>
+  </div>
+</div>
+
+<!-- ══ BREADCRUMB ════════════════════════════════════════════════ -->
+<div class="breadcrumb">
+  <a href="../index.html">← Trang chủ tài liệu</a> &rsaquo; Đặc tả Use Case
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h3>📋 Mục lục</h3>
+    <ol>
+        <li><a href="#tong-quan">1. Danh sách Use Case</a></li>
+        <li><a href="#matrix">2. Ma trận Actor–UC</a></li>
+        <li><a href="#chi-tiet">3. Chi tiết Use Case</a></li>
+    </ol>
+  </nav>
+
+<h2 id="tong-quan">1. Danh sách 43 Use Case</h2><table>
+<thead><tr><th width="70">Mã</th><th width="70">Phân hệ</th><th>Tên Use Case</th><th>Tác nhân chính</th></tr></thead>
+<tbody>
+<tr><td><code>UC-01</code></td><td>M1</td><td>Tìm kiếm & Đánh giá Nhà cung cấp</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-02</code></td><td>M1</td><td>Tạo / Cập nhật Nhà cung cấp</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-03</code></td><td>M1</td><td>Tạo & Quản lý Hợp đồng Khung Mua (FC)</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-04</code></td><td>M1</td><td>Theo dõi & Gia hạn / Thanh lý Hợp đồng</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-05</code></td><td>M1</td><td>Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-06</code></td><td>M2</td><td>Lập Kế hoạch Mua hàng Định kỳ</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-07</code></td><td>M2</td><td>Tạo Đề nghị Mua hàng (Material Request)</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-08</code></td><td>M2</td><td>Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-09</code></td><td>M3</td><td>Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-10</code></td><td>M3</td><td>Kiểm tra Chất lượng (QC) Hàng nhập</td><td>QC Officer</td></tr>
+<tr><td><code>UC-11</code></td><td>M3</td><td>Xử lý hàng trả lại Nhà cung cấp</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-12</code></td><td>M4</td><td>Quản lý Bin Location & Putaway Rules</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-13</code></td><td>M4</td><td>Nhập / Xuất kho thủ công (Batch + Bin)</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-14</code></td><td>M4</td><td>Tra cứu tồn kho theo vị trí</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-15</code></td><td>M4</td><td>Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-16</code></td><td>M4</td><td>Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-17</code></td><td>M4</td><td>Quét mã vạch để tra cứu & thao tác</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-18</code></td><td>M5</td><td>Quản lý Thông tin Lô hàng (Batch)</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-19</code></td><td>M5</td><td>Xuất kho theo FEFO</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-20</code></td><td>M5</td><td>Cảnh báo sắp hết hạn</td><td>Hệ thống / Scheduler</td></tr>
+<tr><td><code>UC-21</code></td><td>M6</td><td>Chuyển kho nội bộ (Stock Transfer)</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td><code>UC-22</code></td><td>M7</td><td>Quản lý Khách hàng & Tài khoản đăng nhập</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-23</code></td><td>M7</td><td>Tạo & Quản lý Hợp đồng Khung Bán hàng</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-24</code></td><td>M7</td><td>Tiếp nhận & Duyệt Đơn đặt hàng của Khách</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td><code>UC-25</code></td><td>M7</td><td>Xuất kho bán & Lập Phiếu Bàn giao</td><td>Nhân viên Bán hàng / Giao nhận</td></tr>
+<tr><td><code>UC-26</code></td><td>M7</td><td>Bàn giao & Nghiệm thu tại Khách hàng</td><td>Nhân viên Bán hàng / Giao nhận</td></tr>
+<tr><td><code>UC-27</code></td><td>M8</td><td>Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</td><td>Kế toán vật tư</td></tr>
+<tr><td><code>UC-28</code></td><td>M8</td><td>Thanh toán Nhà cung cấp (Payment Entry)</td><td>Kế toán vật tư</td></tr>
+<tr><td><code>UC-29</code></td><td>M8</td><td>Xuất Hóa đơn Bán cho Khách hàng</td><td>Kế toán vật tư</td></tr>
+<tr><td><code>UC-30</code></td><td>M8</td><td>Ghi nhận Thu tiền từ Khách hàng</td><td>Kế toán vật tư</td></tr>
+<tr><td><code>UC-31</code></td><td>M8</td><td>Báo cáo Tài chính Vật tư</td><td>Kế toán vật tư</td></tr>
+<tr><td><code>UC-32</code></td><td>M9</td><td>Lập kế hoạch & thực hiện kiểm kê</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-33</code></td><td>M9</td><td>Đối soát kho & Biên bản (Stock Reconciliation)</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-34</code></td><td>M10</td><td>Truy xuất nguồn gốc lô (Batch Trace)</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-35</code></td><td>M10</td><td>Thu hồi Vật tư (Recall Management)</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-36</code></td><td>M10</td><td>Điều tra Thất thoát Vật tư (Investigation)</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-37</code></td><td>M11</td><td>Dashboard Điều hành Tổng thể</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-38</code></td><td>M11</td><td>Cấu hình & Quản lý Cảnh báo Tự động</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-39</code></td><td>M11</td><td>Xem & Xử lý Cảnh báo Hành động</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td><code>UC-40</code></td><td>M12</td><td>Khách hàng Đăng nhập Portal</td><td>Khách hàng (qua Portal)</td></tr>
+<tr><td><code>UC-41</code></td><td>M12</td><td>Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</td><td>Khách hàng (qua Portal)</td></tr>
+<tr><td><code>UC-42</code></td><td>M12</td><td>Đặt hàng theo HĐ khung (Portal)</td><td>Khách hàng (qua Portal)</td></tr>
+<tr><td><code>UC-43</code></td><td>M12</td><td>Theo dõi Đơn hàng & Lịch sử (Portal)</td><td>Khách hàng (qua Portal)</td></tr>
+</tbody>
+</table><h2 id="matrix">2. Ma trận Actor–Use Case</h2><table>
+<thead><tr><th width="70">Actor</th><th width="200">Tên</th><th>Use Case phụ trách</th></tr></thead>
+<tbody>
+<tr><td><code>ACT-01</code></td><td>Nhân viên Thương mại (Purchaser)</td><td>UC-01, UC-02, UC-05, UC-07, UC-08, UC-22, UC-23, UC-24</td></tr>
+<tr><td><code>ACT-02</code></td><td>Thủ kho / Nhân viên Kho</td><td>UC-09, UC-11, UC-12, UC-13, UC-14, UC-15, UC-16, UC-17, UC-18, UC-19, UC-21</td></tr>
+<tr><td><code>ACT-03</code></td><td>QC Officer</td><td>UC-10</td></tr>
+<tr><td><code>ACT-04</code></td><td>Kế toán vật tư</td><td>UC-27, UC-28, UC-29, UC-30, UC-31</td></tr>
+<tr><td><code>ACT-05</code></td><td>Nhân viên Bán hàng / Giao nhận</td><td>UC-25, UC-26</td></tr>
+<tr><td><code>ACT-06</code></td><td>Ban Giám đốc / Kiểm soát nội bộ</td><td>UC-03, UC-04, UC-06, UC-32, UC-33, UC-34, UC-35, UC-36, UC-37, UC-38, UC-39</td></tr>
+<tr><td><code>ACT-07</code></td><td>Hệ thống / Scheduler</td><td>UC-20</td></tr>
+<tr><td><code>ACT-08</code></td><td>Khách hàng (qua Portal)</td><td>UC-40, UC-41, UC-42, UC-43</td></tr>
+</tbody>
+</table><h2 id="chi-tiet">3. Chi tiết Use Case (24 trường/UC)</h2><h3 id="uc-01">UC-01 — Tìm kiếm & Đánh giá Nhà cung cấp</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-01</code></td></tr>
+<tr><td>Tên</td><td>Tìm kiếm & Đánh giá Nhà cung cấp</td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Archetype màn hình</td><td>list</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Nhân viên Thương mại tìm kiếm nhà cung cấp theo nhóm hàng, năng lực, lịch sử giao dịch và điểm đánh giá, phục vụ chọn nguồn cho hợp đồng khung mua.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở danh sách Nhà cung cấp<br>2) Lọc theo nhóm hàng / trạng thái / điểm đánh giá<br>3) Xem hồ sơ năng lực & lịch sử giao dịch<br>4) Chấm điểm đánh giá theo tiêu chí (giá, chất lượng, giao hàng)<br>5) Đánh dấu NCC ưu tiên / vào shortlist</td></tr>
+<tr><td>Luồng thay thế</td><td>• Không có NCC phù hợp → tạo mới (UC-02)<br>• Xuất shortlist ra Excel</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Thiếu dữ liệu đánh giá → cảnh báo, cho phép lưu nháp</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M1-01</code></td></tr>
+<tr><td>User Story</td><td><code>US-01</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-01-01</code>, <code>TC-01-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-01</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-02">UC-02 — Tạo / Cập nhật Nhà cung cấp</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-02</code></td></tr>
+<tr><td>Tên</td><td>Tạo / Cập nhật Nhà cung cấp</td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Archetype màn hình</td><td>master</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Tạo mới hoặc cập nhật hồ sơ nhà cung cấp gồm pháp nhân, mã số thuế, nhóm hàng cung cấp, điều khoản thanh toán và tài liệu năng lực.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form Nhà cung cấp<br>2) Nhập pháp nhân, MST, liên hệ<br>3) Khai báo nhóm hàng cung cấp (child table)<br>4) Đính kèm tài liệu năng lực<br>5) Lưu & kích hoạt NCC</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp chờ bổ sung hồ sơ<br>• Vô hiệu hóa NCC ngừng hợp tác</td></tr>
+<tr><td>Ngoại lệ</td><td>• Trùng MST → chặn & báo lỗi<br>• Sai định dạng MST → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M1-02</code></td></tr>
+<tr><td>User Story</td><td><code>US-02</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-02-01</code>, <code>TC-02-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-01</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-03">UC-03 — Tạo & Quản lý Hợp đồng Khung Mua (FC)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-03</code></td></tr>
+<tr><td>Tên</td><td>Tạo & Quản lý Hợp đồng Khung Mua (FC)</td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Ban Giám đốc / Thương mại lập hợp đồng khung mua với NCC: danh mục mặt hàng, đơn giá, hạn mức, hiệu lực; là căn cứ phát hành Lệnh gọi hàng.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Tạo HĐ khung mua, chọn NCC<br>2) Nhập danh mục mặt hàng, đơn giá, hạn mức (child)<br>3) Thiết lập hiệu lực & điều khoản<br>4) Trình phê duyệt<br>5) Duyệt & kích hoạt hợp đồng</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Sao chép từ hợp đồng cũ để gia hạn</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền phê duyệt → chặn<br>• Đơn giá vượt ngân sách → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-FC-001, BRU-FC-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M1-03</code></td></tr>
+<tr><td>User Story</td><td><code>US-03</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-03-01</code>, <code>TC-03-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-01</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-04">UC-04 — Theo dõi & Gia hạn / Thanh lý Hợp đồng</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-04</code></td></tr>
+<tr><td>Tên</td><td>Theo dõi & Gia hạn / Thanh lý Hợp đồng</td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Theo dõi & Gia hạn / Thanh lý Hợp đồng — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M1 — Hợp đồng & Nhà cung cấp.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-FC-001, BRU-FC-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M1-04</code></td></tr>
+<tr><td>User Story</td><td><code>US-04</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-04-01</code>, <code>TC-04-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-01</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-05">UC-05 — Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-05</code></td></tr>
+<tr><td>Tên</td><td>Tạo & Phê duyệt Lệnh Gọi Hàng (Release Order)</td></tr>
+<tr><td>Phân hệ</td><td>M1 — Hợp đồng & Nhà cung cấp</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Phát hành Lệnh gọi hàng (Release Order) trên nền hợp đồng khung mua đã ký, chốt số lượng cần lấy trong kỳ và ràng theo hạn mức còn lại.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Chọn HĐ khung mua còn hiệu lực<br>2) Chọn mặt hàng & số lượng gọi<br>3) Hệ thống kiểm tra hạn mức còn lại<br>4) Trình duyệt Lệnh gọi hàng<br>5) Duyệt & chuyển mua sắm/nhập kho</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp<br>• Hủy lệnh khi chưa nhập hàng</td></tr>
+<tr><td>Ngoại lệ</td><td>• Vượt hạn mức hợp đồng → chặn<br>• Hợp đồng hết hạn → không cho phát hành</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M1-05</code></td></tr>
+<tr><td>User Story</td><td><code>US-05</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-05-01</code>, <code>TC-05-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-01</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-06">UC-06 — Lập Kế hoạch Mua hàng Định kỳ</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-06</code></td></tr>
+<tr><td>Tên</td><td>Lập Kế hoạch Mua hàng Định kỳ</td></tr>
+<tr><td>Phân hệ</td><td>M2 — Kế hoạch & Mua sắm</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Lập Kế hoạch Mua hàng Định kỳ — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M2 — Kế hoạch & Mua sắm.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M2-06</code></td></tr>
+<tr><td>User Story</td><td><code>US-06</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-06-01</code>, <code>TC-06-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-03</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-07">UC-07 — Tạo Đề nghị Mua hàng (Material Request)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-07</code></td></tr>
+<tr><td>Tên</td><td>Tạo Đề nghị Mua hàng (Material Request)</td></tr>
+<tr><td>Phân hệ</td><td>M2 — Kế hoạch & Mua sắm</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Phòng ban lập Đề nghị Mua hàng (Material Request) khi phát sinh nhu cầu bổ sung tồn hoặc theo điểm đặt hàng lại (min/max).</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở Đề nghị Mua hàng<br>2) Chọn vật tư & số lượng đề nghị<br>3) Ghi lý do / mức tồn hiện tại<br>4) Trình duyệt<br>5) Duyệt → chuyển tạo PO</td></tr>
+<tr><td>Luồng thay thế</td><td>• Tự sinh từ cảnh báo tồn tối thiểu<br>• Gộp nhiều đề nghị</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vật tư ngừng kinh doanh → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M2-07</code></td></tr>
+<tr><td>User Story</td><td><code>US-07</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-07-01</code>, <code>TC-07-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-03</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-08">UC-08 — Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-08</code></td></tr>
+<tr><td>Tên</td><td>Tạo và Phê duyệt Đơn mua hàng (Purchase Order)</td></tr>
+<tr><td>Phân hệ</td><td>M2 — Kế hoạch & Mua sắm</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Tạo và Phê duyệt Đơn mua hàng (Purchase Order) — thực hiện bởi Nhân viên Thương mại (Purchaser) trong phân hệ M2 — Kế hoạch & Mua sắm.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M2-08</code></td></tr>
+<tr><td>User Story</td><td><code>US-08</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-08-01</code>, <code>TC-08-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-03</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-09">UC-09 — Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-09</code></td></tr>
+<tr><td>Tên</td><td>Tiếp nhận hàng & Tạo Phiếu Nhập (Purchase Receipt)</td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Thủ kho tiếp nhận hàng từ NCC theo PO, lập Phiếu Nhập kho (Purchase Receipt), ghi nhận số lô, hạn dùng và số lượng thực nhận.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Chọn PO cần nhận<br>2) Đối chiếu số lượng thực nhận<br>3) Nhập số lô & hạn dùng từng dòng<br>4) Xác nhận vị trí lưu (bin) đề xuất<br>5) Ghi sổ nhập & cập nhật tồn</td></tr>
+<tr><td>Luồng thay thế</td><td>• Nhận thiếu → nhận một phần<br>• Lưu nháp chờ QC</td></tr>
+<tr><td>Ngoại lệ</td><td>• Số lượng vượt PO → chặn<br>• Thiếu số lô/HSD với hàng quản lý lô → chặn</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M3-09</code></td></tr>
+<tr><td>User Story</td><td><code>US-09</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-09-01</code>, <code>TC-09-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-05</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-10">UC-10 — Kiểm tra Chất lượng (QC) Hàng nhập</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-10</code></td></tr>
+<tr><td>Tên</td><td>Kiểm tra Chất lượng (QC) Hàng nhập</td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>QC Officer</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>QC Officer kiểm tra chất lượng hàng nhập theo checklist template, ghi kết quả đạt/không đạt và quyết định cho nhập kho hay trả lại.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở phiếu QC gắn với Phiếu Nhập<br>2) Thực hiện checklist kiểm tra<br>3) Ghi kết quả từng chỉ tiêu (đạt/không đạt)<br>4) Kết luận QC & đính kèm bằng chứng<br>5) Chuyển trạng thái cho nhập/không nhập</td></tr>
+<tr><td>Luồng thay thế</td><td>• Kiểm mẫu xác suất<br>• Yêu cầu kiểm lại</td></tr>
+<tr><td>Ngoại lệ</td><td>• Không đạt → chặn nhập, chuyển trả hàng (UC-11)<br>• Thiếu checklist template → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-QC-001, BRU-QC-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M3-10</code></td></tr>
+<tr><td>User Story</td><td><code>US-10</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-10-01</code>, <code>TC-10-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-05</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-11">UC-11 — Xử lý hàng trả lại Nhà cung cấp</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-11</code></td></tr>
+<tr><td>Tên</td><td>Xử lý hàng trả lại Nhà cung cấp</td></tr>
+<tr><td>Phân hệ</td><td>M3 — Tiếp nhận & QC</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Xử lý hàng trả lại Nhà cung cấp — thực hiện bởi Thủ kho / Nhân viên Kho trong phân hệ M3 — Tiếp nhận & QC.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M3-11</code></td></tr>
+<tr><td>User Story</td><td><code>US-11</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-11-01</code>, <code>TC-11-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-05</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-12">UC-12 — Quản lý Bin Location & Putaway Rules</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-12</code></td></tr>
+<tr><td>Tên</td><td>Quản lý Bin Location & Putaway Rules</td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Archetype màn hình</td><td>master</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Quản lý Bin Location & Putaway Rules — thực hiện bởi Thủ kho / Nhân viên Kho trong phân hệ M4 — WMS, PDA & Mã vạch.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form quản lý dữ liệu chủ<br>2) Nhập/chỉnh thông tin & bảng con<br>3) Hệ thống kiểm tra ràng buộc dữ liệu<br>4) Lưu bản ghi<br>5) Kích hoạt / cập nhật trạng thái</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp<br>• Vô hiệu hóa bản ghi</td></tr>
+<tr><td>Ngoại lệ</td><td>• Trùng khóa → chặn<br>• Sai định dạng → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M4-12</code></td></tr>
+<tr><td>User Story</td><td><code>US-12</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-12-01</code>, <code>TC-12-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-13">UC-13 — Nhập / Xuất kho thủ công (Batch + Bin)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-13</code></td></tr>
+<tr><td>Tên</td><td>Nhập / Xuất kho thủ công (Batch + Bin)</td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Nhập / Xuất kho thủ công (Batch + Bin) — thực hiện bởi Thủ kho / Nhân viên Kho trong phân hệ M4 — WMS, PDA & Mã vạch.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M4-13</code></td></tr>
+<tr><td>User Story</td><td><code>US-13</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-13-01</code>, <code>TC-13-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-14">UC-14 — Tra cứu tồn kho theo vị trí</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-14</code></td></tr>
+<tr><td>Tên</td><td>Tra cứu tồn kho theo vị trí</td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Archetype màn hình</td><td>list</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Tra cứu tồn kho theo vị trí — thực hiện bởi Thủ kho / Nhân viên Kho trong phân hệ M4 — WMS, PDA & Mã vạch.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở danh sách chức năng<br>2) Nhập điều kiện lọc / tìm kiếm<br>3) Hệ thống truy vấn & hiển thị kết quả<br>4) Xem chi tiết bản ghi<br>5) Xuất dữ liệu / chuyển thao tác tiếp theo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu bộ lọc thường dùng<br>• Sắp xếp theo cột</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Không có dữ liệu → hiển thị trạng thái rỗng</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M4-14</code></td></tr>
+<tr><td>User Story</td><td><code>US-14</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-14-01</code>, <code>TC-14-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-15">UC-15 — Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-15</code></td></tr>
+<tr><td>Tên</td><td>Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt)</td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Archetype màn hình</td><td>master</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Cấu hình Mẫu nhãn & Máy in mã vạch (khổ linh hoạt) — thực hiện bởi Thủ kho / Nhân viên Kho trong phân hệ M4 — WMS, PDA & Mã vạch.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form quản lý dữ liệu chủ<br>2) Nhập/chỉnh thông tin & bảng con<br>3) Hệ thống kiểm tra ràng buộc dữ liệu<br>4) Lưu bản ghi<br>5) Kích hoạt / cập nhật trạng thái</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp<br>• Vô hiệu hóa bản ghi</td></tr>
+<tr><td>Ngoại lệ</td><td>• Trùng khóa → chặn<br>• Sai định dạng → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M4-15</code></td></tr>
+<tr><td>User Story</td><td><code>US-15</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-15-01</code>, <code>TC-15-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-16">UC-16 — Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-16</code></td></tr>
+<tr><td>Tên</td><td>Tạo & In nhãn mã vạch cho vật tư (in lẻ & hàng loạt)</td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>In nhãn mã vạch cho vật tư/lô theo mẫu nhãn (SC Label Template) khổ linh hoạt, hỗ trợ in lẻ và in hàng loạt theo lô nhập.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Chọn vật tư / lô cần in<br>2) Chọn mẫu nhãn (khổ, dpi, loại mã)<br>3) Xem preview nhãn<br>4) Chọn số lượng & máy in đích<br>5) Gửi ZPL in & ghi log</td></tr>
+<tr><td>Luồng thay thế</td><td>• In hàng loạt theo GRN<br>• Tải file ZPL khi máy in offline</td></tr>
+<tr><td>Ngoại lệ</td><td>• Khổ nhãn không hợp lệ → chặn<br>• Máy in offline → báo lỗi & cho tải ZPL</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M4-16</code></td></tr>
+<tr><td>User Story</td><td><code>US-16</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-16-01</code>, <code>TC-16-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-17">UC-17 — Quét mã vạch để tra cứu & thao tác</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-17</code></td></tr>
+<tr><td>Tên</td><td>Quét mã vạch để tra cứu & thao tác</td></tr>
+<tr><td>Phân hệ</td><td>M4 — WMS, PDA & Mã vạch</td></tr>
+<tr><td>Archetype màn hình</td><td>pda</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Nhân viên kho quét mã vạch trên vật tư (nhãn thực dán) bằng thiết bị PDA để phân giải Item/Lô/Bin và gợi ý thao tác nhập/xuất/chuyển/kiểm.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở màn quét trên PDA<br>2) Quét barcode/QR<br>3) Hệ thống phân giải Item/Lô/Bin<br>4) Hiển thị thông tin & tồn hiện tại<br>5) Chọn thao tác gợi ý (nhập/xuất/chuyển/kiểm)</td></tr>
+<tr><td>Luồng thay thế</td><td>• Nhập mã thủ công khi nhãn mờ<br>• Quét liên tục nhiều mã</td></tr>
+<tr><td>Ngoại lệ</td><td>• Mã không nhận dạng → thông báo<br>• Mất mạng → lưu tạm, đồng bộ sau</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M4-17</code></td></tr>
+<tr><td>User Story</td><td><code>US-17</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-17-01</code>, <code>TC-17-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-18">UC-18 — Quản lý Thông tin Lô hàng (Batch)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-18</code></td></tr>
+<tr><td>Tên</td><td>Quản lý Thông tin Lô hàng (Batch)</td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Archetype màn hình</td><td>master</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Quản lý Thông tin Lô hàng (Batch) — thực hiện bởi Thủ kho / Nhân viên Kho trong phân hệ M5 — Lô, Hạn dùng & FEFO.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form quản lý dữ liệu chủ<br>2) Nhập/chỉnh thông tin & bảng con<br>3) Hệ thống kiểm tra ràng buộc dữ liệu<br>4) Lưu bản ghi<br>5) Kích hoạt / cập nhật trạng thái</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp<br>• Vô hiệu hóa bản ghi</td></tr>
+<tr><td>Ngoại lệ</td><td>• Trùng khóa → chặn<br>• Sai định dạng → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M5-18</code></td></tr>
+<tr><td>User Story</td><td><code>US-18</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-18-01</code>, <code>TC-18-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-07</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-19">UC-19 — Xuất kho theo FEFO</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-19</code></td></tr>
+<tr><td>Tên</td><td>Xuất kho theo FEFO</td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Hệ thống đề xuất và thực hiện xuất kho theo nguyên tắc FEFO (hết hạn trước xuất trước), ưu tiên lô có hạn dùng gần nhất.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Chọn vật tư cần xuất<br>2) Hệ thống gợi ý lô theo FEFO<br>3) Xác nhận lô & số lượng xuất<br>4) Ghi sổ xuất & trừ tồn theo lô<br>5) Cập nhật trạng thái lô</td></tr>
+<tr><td>Luồng thay thế</td><td>• Ghi đè thủ công khi có lý do (ghi log)<br>• Xuất nhiều lô cho một dòng</td></tr>
+<tr><td>Ngoại lệ</td><td>• Chọn lô sai FEFO → cảnh báo & yêu cầu lý do<br>• Âm tồn → chặn</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-FEFO-001</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M5-19</code></td></tr>
+<tr><td>User Story</td><td><code>US-19</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-19-01</code>, <code>TC-19-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-07</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-20">UC-20 — Cảnh báo sắp hết hạn</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-20</code></td></tr>
+<tr><td>Tên</td><td>Cảnh báo sắp hết hạn</td></tr>
+<tr><td>Phân hệ</td><td>M5 — Lô, Hạn dùng & FEFO</td></tr>
+<tr><td>Archetype màn hình</td><td>dashboard</td></tr>
+<tr><td>Tác nhân chính</td><td>Hệ thống / Scheduler</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Scheduler quét định kỳ, phát sinh cảnh báo lô sắp hết hạn theo ngưỡng cấu hình để kho & thương mại xử lý sớm.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Scheduler chạy định kỳ<br>2) Quét lô theo ngưỡng cảnh báo (vd 30/60/90 ngày)<br>3) Tạo cảnh báo & gán người phụ trách<br>4) Gửi thông báo<br>5) Ghi nhận trạng thái xử lý</td></tr>
+<tr><td>Luồng thay thế</td><td>• Cấu hình ngưỡng theo nhóm hàng<br>• Bỏ qua lô đã thanh lý</td></tr>
+<tr><td>Ngoại lệ</td><td>• Không có người phụ trách → gán mặc định Quản lý<br>• Lỗi job → ghi log & báo quản trị</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M5-20</code></td></tr>
+<tr><td>User Story</td><td><code>US-20</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-20-01</code>, <code>TC-20-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-07</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-21">UC-21 — Chuyển kho nội bộ (Stock Transfer)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-21</code></td></tr>
+<tr><td>Tên</td><td>Chuyển kho nội bộ (Stock Transfer)</td></tr>
+<tr><td>Phân hệ</td><td>M6 — Luân chuyển Nội bộ</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Thủ kho / Nhân viên Kho</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Chuyển kho nội bộ (Stock Transfer) — thực hiện bởi Thủ kho / Nhân viên Kho trong phân hệ M6 — Luân chuyển Nội bộ.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M6-21</code></td></tr>
+<tr><td>User Story</td><td><code>US-21</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-21-01</code>, <code>TC-21-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-08</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-22">UC-22 — Quản lý Khách hàng & Tài khoản đăng nhập</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-22</code></td></tr>
+<tr><td>Tên</td><td>Quản lý Khách hàng & Tài khoản đăng nhập</td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>master</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Phòng Thương Mại tạo/cập nhật hồ sơ Khách hàng (công ty) và bắt buộc gắn tài khoản đăng nhập Portal cho khách.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form Khách hàng<br>2) Nhập pháp nhân, MST, địa chỉ, liên hệ<br>3) Thiết lập hạn mức công nợ & điều khoản<br>4) Tạo & gắn tài khoản Portal (User)<br>5) Kích hoạt khách hàng & gửi thông tin đăng nhập</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp chờ duyệt hồ sơ<br>• Khóa/tạm ngưng khách hàng</td></tr>
+<tr><td>Ngoại lệ</td><td>• Trùng MST → chặn<br>• Thiếu tài khoản Portal → chặn kích hoạt</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M7-22</code></td></tr>
+<tr><td>User Story</td><td><code>US-22</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-22-01</code>, <code>TC-22-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-09</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-23">UC-23 — Tạo & Quản lý Hợp đồng Khung Bán hàng</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-23</code></td></tr>
+<tr><td>Tên</td><td>Tạo & Quản lý Hợp đồng Khung Bán hàng</td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Lập hợp đồng khung bán hàng cho khách: danh mục mặt hàng, đơn giá bán, hạn mức số lượng, hiệu lực; là căn cứ để khách đặt hàng qua Portal.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Tạo HĐ khung bán, chọn Khách hàng<br>2) Nhập danh mục mặt hàng, đơn giá bán, hạn mức (child)<br>3) Thiết lập hiệu lực & điều khoản<br>4) Trình phê duyệt<br>5) Duyệt & kích hoạt (hiển thị lên Portal khách)</td></tr>
+<tr><td>Luồng thay thế</td><td>• Sao chép hợp đồng để gia hạn<br>• Điều chỉnh giá giữa kỳ (tạo phụ lục)</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Đơn giá bán thấp hơn giá vốn → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-FC-001, BRU-FC-002, BRU-SO-001, BRU-SO-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M7-23</code></td></tr>
+<tr><td>User Story</td><td><code>US-23</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-23-01</code>, <code>TC-23-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-09</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-24">UC-24 — Tiếp nhận & Duyệt Đơn đặt hàng của Khách</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-24</code></td></tr>
+<tr><td>Tên</td><td>Tiếp nhận & Duyệt Đơn đặt hàng của Khách</td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Thương mại (Purchaser)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Phòng Thương Mại tiếp nhận đơn đặt hàng do khách gửi từ Portal, kiểm tra hạn mức & tồn kho rồi phê duyệt để chuyển kho xuất bán.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Nhận đơn từ Portal (trạng thái Chờ duyệt)<br>2) Kiểm tra ràng buộc HĐ khung (giá, hạn mức)<br>3) Kiểm tra khả năng đáp ứng tồn kho<br>4) Phê duyệt / từ chối / điều chỉnh<br>5) Chuyển kho lập phiếu xuất bán</td></tr>
+<tr><td>Luồng thay thế</td><td>• Duyệt một phần theo tồn khả dụng<br>• Trả đơn cho khách bổ sung thông tin</td></tr>
+<tr><td>Ngoại lệ</td><td>• Vượt hạn mức HĐ khung → chặn<br>• Vượt hạn mức công nợ → cảnh báo & chờ duyệt cấp cao</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M7-24</code></td></tr>
+<tr><td>User Story</td><td><code>US-24</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-24-01</code>, <code>TC-24-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-09</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-25">UC-25 — Xuất kho bán & Lập Phiếu Bàn giao</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-25</code></td></tr>
+<tr><td>Tên</td><td>Xuất kho bán & Lập Phiếu Bàn giao</td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Bán hàng / Giao nhận</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Kho lập phiếu xuất kho bán & Phiếu Bàn giao trên nền đơn hàng đã duyệt, chọn lô theo FEFO và chuẩn bị hàng giao.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Chọn đơn hàng đã duyệt<br>2) Hệ thống gợi ý lô theo FEFO<br>3) Xác nhận số lượng & lô xuất<br>4) Lập Phiếu Bàn giao (Delivery Note)<br>5) Ghi sổ xuất bán & trừ tồn</td></tr>
+<tr><td>Luồng thay thế</td><td>• Xuất nhiều đợt cho một đơn<br>• In phiếu bàn giao & nhãn</td></tr>
+<tr><td>Ngoại lệ</td><td>• Âm tồn → chặn<br>• Lô hết hạn → chặn xuất</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-DEL-001</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M7-25</code></td></tr>
+<tr><td>User Story</td><td><code>US-25</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-25-01</code>, <code>TC-25-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-09</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-26">UC-26 — Bàn giao & Nghiệm thu tại Khách hàng</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-26</code></td></tr>
+<tr><td>Tên</td><td>Bàn giao & Nghiệm thu tại Khách hàng</td></tr>
+<tr><td>Phân hệ</td><td>M7 — Bán hàng & Bàn giao Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Nhân viên Bán hàng / Giao nhận</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Ghi nhận bàn giao thực tế và nghiệm thu tại khách hàng; cập nhật cột mốc 'Đã bàn giao – nghiệm thu' hiển thị trên Portal.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Giao hàng & thu thập ký nhận<br>2) Cập nhật Phiếu Bàn giao trạng thái Đã giao<br>3) Đính kèm biên bản nghiệm thu/ảnh ký nhận<br>4) Xác nhận nghiệm thu<br>5) Cập nhật cột mốc trên Portal & chuyển kế toán xuất HĐ</td></tr>
+<tr><td>Luồng thay thế</td><td>• Giao một phần, nghiệm thu từng đợt<br>• Khách từ chối nhận → tạo trả hàng</td></tr>
+<tr><td>Ngoại lệ</td><td>• Thiếu biên bản nghiệm thu → chưa cho chuyển xuất hóa đơn<br>• Sai lệch số lượng → lập biên bản chênh lệch</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-CUS-001, BRU-CUS-002, BRU-DEL-001</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M7-26</code></td></tr>
+<tr><td>User Story</td><td><code>US-26</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-26-01</code>, <code>TC-26-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-09</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-27">UC-27 — Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-27</code></td></tr>
+<tr><td>Tên</td><td>Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice)</td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Kế toán vật tư</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Tạo và đối chiếu Hóa đơn Mua (Purchase Invoice) — thực hiện bởi Kế toán vật tư trong phân hệ M8 — Kế toán & Thanh toán.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M8-27</code></td></tr>
+<tr><td>User Story</td><td><code>US-27</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-27-01</code>, <code>TC-27-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-11</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-28">UC-28 — Thanh toán Nhà cung cấp (Payment Entry)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-28</code></td></tr>
+<tr><td>Tên</td><td>Thanh toán Nhà cung cấp (Payment Entry)</td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Kế toán vật tư</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Thanh toán Nhà cung cấp (Payment Entry) — thực hiện bởi Kế toán vật tư trong phân hệ M8 — Kế toán & Thanh toán.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M8-28</code></td></tr>
+<tr><td>User Story</td><td><code>US-28</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-28-01</code>, <code>TC-28-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-11</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-29">UC-29 — Xuất Hóa đơn Bán cho Khách hàng</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-29</code></td></tr>
+<tr><td>Tên</td><td>Xuất Hóa đơn Bán cho Khách hàng</td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Kế toán vật tư</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Kế toán lập hóa đơn bán cho khách hàng trên nền phiếu bàn giao đã nghiệm thu; cập nhật cột mốc 'Đã cấp hóa đơn' trên Portal.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Chọn phiếu bàn giao đã nghiệm thu<br>2) Lập hóa đơn bán (đối chiếu số lượng & đơn giá HĐ khung)<br>3) Tính thuế & tổng tiền<br>4) Phát hành hóa đơn<br>5) Cập nhật cột mốc Portal & ghi sổ cái phải thu</td></tr>
+<tr><td>Luồng thay thế</td><td>• Gộp nhiều phiếu bàn giao vào 1 hóa đơn<br>• Điều chỉnh hóa đơn (ghi log)</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai lệch giá so với HĐ khung → chặn<br>• Chưa nghiệm thu → không cho xuất HĐ</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M8-29</code></td></tr>
+<tr><td>User Story</td><td><code>US-29</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-29-01</code>, <code>TC-29-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-11</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-30">UC-30 — Ghi nhận Thu tiền từ Khách hàng</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-30</code></td></tr>
+<tr><td>Tên</td><td>Ghi nhận Thu tiền từ Khách hàng</td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Kế toán vật tư</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Kế toán ghi nhận khoản thu tiền từ khách hàng, đối chiếu công nợ và cập nhật cột mốc 'Đã thu tiền' trên Portal.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Chọn hóa đơn bán cần thu<br>2) Ghi nhận khoản thu & phương thức<br>3) Đối chiếu công nợ phải thu<br>4) Xác nhận & ghi sổ cái<br>5) Cập nhật cột mốc Portal & trạng thái đơn Hoàn tất</td></tr>
+<tr><td>Luồng thay thế</td><td>• Thu một phần (công nợ còn lại)<br>• Thu cho nhiều hóa đơn</td></tr>
+<tr><td>Ngoại lệ</td><td>• Thu vượt công nợ → cảnh báo<br>• Kỳ kế toán đã chốt → chặn</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M8-30</code></td></tr>
+<tr><td>User Story</td><td><code>US-30</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-30-01</code>, <code>TC-30-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-11</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-31">UC-31 — Báo cáo Tài chính Vật tư</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-31</code></td></tr>
+<tr><td>Tên</td><td>Báo cáo Tài chính Vật tư</td></tr>
+<tr><td>Phân hệ</td><td>M8 — Kế toán & Thanh toán</td></tr>
+<tr><td>Archetype màn hình</td><td>dashboard</td></tr>
+<tr><td>Tác nhân chính</td><td>Kế toán vật tư</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Báo cáo Tài chính Vật tư — thực hiện bởi Kế toán vật tư trong phân hệ M8 — Kế toán & Thanh toán.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở dashboard/bảng theo dõi<br>2) Chọn kỳ & bộ lọc<br>3) Hệ thống tổng hợp số liệu<br>4) Xem biểu đồ & chỉ số KPI<br>5) Drill-down chi tiết / xuất báo cáo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Đổi khoảng thời gian<br>• Ghim widget ưa thích</td></tr>
+<tr><td>Ngoại lệ</td><td>• Không đủ quyền xem KPI → ẩn widget<br>• Lỗi tổng hợp → hiển thị cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M8-31</code></td></tr>
+<tr><td>User Story</td><td><code>US-31</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-31-01</code>, <code>TC-31-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-11</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-32">UC-32 — Lập kế hoạch & thực hiện kiểm kê</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-32</code></td></tr>
+<tr><td>Tên</td><td>Lập kế hoạch & thực hiện kiểm kê</td></tr>
+<tr><td>Phân hệ</td><td>M9 — Kiểm kê & Đối soát</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Lập kế hoạch & thực hiện kiểm kê — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M9 — Kiểm kê & Đối soát.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M9-32</code></td></tr>
+<tr><td>User Story</td><td><code>US-32</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-32-01</code>, <code>TC-32-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-13</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-33">UC-33 — Đối soát kho & Biên bản (Stock Reconciliation)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-33</code></td></tr>
+<tr><td>Tên</td><td>Đối soát kho & Biên bản (Stock Reconciliation)</td></tr>
+<tr><td>Phân hệ</td><td>M9 — Kiểm kê & Đối soát</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Đối soát kho & Biên bản (Stock Reconciliation) — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M9 — Kiểm kê & Đối soát.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M9-33</code></td></tr>
+<tr><td>User Story</td><td><code>US-33</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-33-01</code>, <code>TC-33-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-13</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-34">UC-34 — Truy xuất nguồn gốc lô (Batch Trace)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-34</code></td></tr>
+<tr><td>Tên</td><td>Truy xuất nguồn gốc lô (Batch Trace)</td></tr>
+<tr><td>Phân hệ</td><td>M10 — Truy xuất & Điều tra</td></tr>
+<tr><td>Archetype màn hình</td><td>list</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Truy xuất nguồn gốc lô (Batch Trace) — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M10 — Truy xuất & Điều tra.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở danh sách chức năng<br>2) Nhập điều kiện lọc / tìm kiếm<br>3) Hệ thống truy vấn & hiển thị kết quả<br>4) Xem chi tiết bản ghi<br>5) Xuất dữ liệu / chuyển thao tác tiếp theo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu bộ lọc thường dùng<br>• Sắp xếp theo cột</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Không có dữ liệu → hiển thị trạng thái rỗng</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M10-34</code></td></tr>
+<tr><td>User Story</td><td><code>US-34</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-34-01</code>, <code>TC-34-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-14</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-35">UC-35 — Thu hồi Vật tư (Recall Management)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-35</code></td></tr>
+<tr><td>Tên</td><td>Thu hồi Vật tư (Recall Management)</td></tr>
+<tr><td>Phân hệ</td><td>M10 — Truy xuất & Điều tra</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Thu hồi Vật tư (Recall Management) — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M10 — Truy xuất & Điều tra.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-REC-001</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M10-35</code></td></tr>
+<tr><td>User Story</td><td><code>US-35</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-35-01</code>, <code>TC-35-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-14</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-36">UC-36 — Điều tra Thất thoát Vật tư (Investigation)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-36</code></td></tr>
+<tr><td>Tên</td><td>Điều tra Thất thoát Vật tư (Investigation)</td></tr>
+<tr><td>Phân hệ</td><td>M10 — Truy xuất & Điều tra</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Điều tra Thất thoát Vật tư (Investigation) — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M10 — Truy xuất & Điều tra.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form chứng từ<br>2) Chọn/nhập dữ liệu nguồn<br>3) Hệ thống kiểm tra quy tắc nghiệp vụ<br>4) Lưu & ghi sổ<br>5) Cập nhật trạng thái & thông báo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp; chỉnh sửa trước khi submit<br>• Hủy chứng từ hợp lệ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Vi phạm quy tắc (âm tồn, hết hạn, kỳ đã chốt) → chặn & báo lỗi</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M10-36</code></td></tr>
+<tr><td>User Story</td><td><code>US-36</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-36-01</code>, <code>TC-36-02</code></td></tr>
+<tr><td>Workflow</td><td><code>WF-14</code></td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-37">UC-37 — Dashboard Điều hành Tổng thể</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-37</code></td></tr>
+<tr><td>Tên</td><td>Dashboard Điều hành Tổng thể</td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Archetype màn hình</td><td>dashboard</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Dashboard Điều hành Tổng thể — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M11 — Dashboard & Cảnh báo.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở dashboard/bảng theo dõi<br>2) Chọn kỳ & bộ lọc<br>3) Hệ thống tổng hợp số liệu<br>4) Xem biểu đồ & chỉ số KPI<br>5) Drill-down chi tiết / xuất báo cáo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Đổi khoảng thời gian<br>• Ghim widget ưa thích</td></tr>
+<tr><td>Ngoại lệ</td><td>• Không đủ quyền xem KPI → ẩn widget<br>• Lỗi tổng hợp → hiển thị cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M11-37</code></td></tr>
+<tr><td>User Story</td><td><code>US-37</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-37-01</code>, <code>TC-37-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-38">UC-38 — Cấu hình & Quản lý Cảnh báo Tự động</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-38</code></td></tr>
+<tr><td>Tên</td><td>Cấu hình & Quản lý Cảnh báo Tự động</td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Archetype màn hình</td><td>master</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Cấu hình & Quản lý Cảnh báo Tự động — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M11 — Dashboard & Cảnh báo.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở form quản lý dữ liệu chủ<br>2) Nhập/chỉnh thông tin & bảng con<br>3) Hệ thống kiểm tra ràng buộc dữ liệu<br>4) Lưu bản ghi<br>5) Kích hoạt / cập nhật trạng thái</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu nháp<br>• Vô hiệu hóa bản ghi</td></tr>
+<tr><td>Ngoại lệ</td><td>• Trùng khóa → chặn<br>• Sai định dạng → cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M11-38</code></td></tr>
+<tr><td>User Story</td><td><code>US-38</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-38-01</code>, <code>TC-38-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-39">UC-39 — Xem & Xử lý Cảnh báo Hành động</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-39</code></td></tr>
+<tr><td>Tên</td><td>Xem & Xử lý Cảnh báo Hành động</td></tr>
+<tr><td>Phân hệ</td><td>M11 — Dashboard & Cảnh báo</td></tr>
+<tr><td>Archetype màn hình</td><td>dashboard</td></tr>
+<tr><td>Tác nhân chính</td><td>Ban Giám đốc / Kiểm soát nội bộ</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Xem & Xử lý Cảnh báo Hành động — thực hiện bởi Ban Giám đốc / Kiểm soát nội bộ trong phân hệ M11 — Dashboard & Cảnh báo.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở dashboard/bảng theo dõi<br>2) Chọn kỳ & bộ lọc<br>3) Hệ thống tổng hợp số liệu<br>4) Xem biểu đồ & chỉ số KPI<br>5) Drill-down chi tiết / xuất báo cáo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Đổi khoảng thời gian<br>• Ghim widget ưa thích</td></tr>
+<tr><td>Ngoại lệ</td><td>• Không đủ quyền xem KPI → ẩn widget<br>• Lỗi tổng hợp → hiển thị cảnh báo</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M11-39</code></td></tr>
+<tr><td>User Story</td><td><code>US-39</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-39-01</code>, <code>TC-39-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-40">UC-40 — Khách hàng Đăng nhập Portal</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-40</code></td></tr>
+<tr><td>Tên</td><td>Khách hàng Đăng nhập Portal</td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Khách hàng (qua Portal)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Khách hàng đăng nhập cổng Portal bằng tài khoản riêng; hệ thống chỉ nạp dữ liệu thuộc về khách đó (cô lập dữ liệu).</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Khách mở trang Portal<br>2) Nhập tài khoản & mật khẩu<br>3) Hệ thống xác thực & nạp phạm vi dữ liệu của khách<br>4) Hiển thị trang chủ Portal (HĐ khung, đơn, thông báo)<br>5) Ghi log đăng nhập</td></tr>
+<tr><td>Luồng thay thế</td><td>• Quên mật khẩu → đặt lại qua email<br>• Đổi mật khẩu lần đầu</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai thông tin → khóa tạm sau N lần<br>• Tài khoản bị vô hiệu → từ chối</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU-CUS-001, BRU-CUS-002</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M12-40</code></td></tr>
+<tr><td>User Story</td><td><code>US-40</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-40-01</code>, <code>TC-40-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-41">UC-41 — Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-41</code></td></tr>
+<tr><td>Tên</td><td>Tra cứu HĐ khung, Vật tư & Bảng giá (Portal)</td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>list</td></tr>
+<tr><td>Tác nhân chính</td><td>Khách hàng (qua Portal)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Tra cứu HĐ khung, Vật tư & Bảng giá (Portal) — thực hiện bởi Khách hàng (qua Portal) trong phân hệ M12 — Portal Khách hàng.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Mở danh sách chức năng<br>2) Nhập điều kiện lọc / tìm kiếm<br>3) Hệ thống truy vấn & hiển thị kết quả<br>4) Xem chi tiết bản ghi<br>5) Xuất dữ liệu / chuyển thao tác tiếp theo</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu bộ lọc thường dùng<br>• Sắp xếp theo cột</td></tr>
+<tr><td>Ngoại lệ</td><td>• Sai quyền → từ chối<br>• Không có dữ liệu → hiển thị trạng thái rỗng</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M12-41</code></td></tr>
+<tr><td>User Story</td><td><code>US-41</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-41-01</code>, <code>TC-41-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-42">UC-42 — Đặt hàng theo HĐ khung (Portal)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-42</code></td></tr>
+<tr><td>Tên</td><td>Đặt hàng theo HĐ khung (Portal)</td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>form</td></tr>
+<tr><td>Tác nhân chính</td><td>Khách hàng (qua Portal)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Khách hàng đặt hàng qua Portal dựa trên hợp đồng khung của mình; hệ thống ràng theo đơn giá và hạn mức đã ký.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Khách chọn HĐ khung còn hiệu lực<br>2) Chọn mặt hàng & số lượng<br>3) Hệ thống kiểm tra hạn mức & đơn giá HĐ khung<br>4) Xác nhận & gửi đơn<br>5) Đơn chuyển nội bộ trạng thái Chờ duyệt (UC-24)</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lưu giỏ hàng để đặt sau<br>• Đặt lại từ đơn cũ</td></tr>
+<tr><td>Ngoại lệ</td><td>• Vượt hạn mức HĐ khung → chặn<br>• Mặt hàng ngoài HĐ khung → không hiển thị</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M12-42</code></td></tr>
+<tr><td>User Story</td><td><code>US-42</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-42-01</code>, <code>TC-42-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table><h3 id="uc-43">UC-43 — Theo dõi Đơn hàng & Lịch sử (Portal)</h3><table>
+<thead><tr><th>Trường</th><th>Nội dung</th></tr></thead>
+<tbody>
+<tr><td>Mã UC</td><td><code>UC-43</code></td></tr>
+<tr><td>Tên</td><td>Theo dõi Đơn hàng & Lịch sử (Portal)</td></tr>
+<tr><td>Phân hệ</td><td>M12 — Portal Khách hàng</td></tr>
+<tr><td>Archetype màn hình</td><td>dashboard</td></tr>
+<tr><td>Tác nhân chính</td><td>Khách hàng (qua Portal)</td></tr>
+<tr><td>Tác nhân phụ</td><td>Quản lý phê duyệt (khi cần)</td></tr>
+<tr><td>Bên liên quan</td><td>Kho, Kế Toán, Khách hàng (tùy nghiệp vụ)</td></tr>
+<tr><td>Mức ưu tiên</td><td>Must</td></tr>
+<tr><td>Tần suất</td><td>Thường xuyên</td></tr>
+<tr><td>Mô tả</td><td>Khách hàng theo dõi tiến độ đơn theo 4 cột mốc: Đã đặt → Đã bàn giao/nghiệm thu → Đã cấp hóa đơn → Đã thu tiền, và xem lịch sử đặt hàng.</td></tr>
+<tr><td>Kích hoạt (Trigger)</td><td>Người dùng mở chức năng hoặc scheduler kích hoạt</td></tr>
+<tr><td>Tiền điều kiện</td><td>Đã đăng nhập, đủ vai trò; dữ liệu master sẵn sàng</td></tr>
+<tr><td>Luồng chính</td><td>1) Khách mở danh sách đơn hàng<br>2) Xem tiến độ theo 4 cột mốc<br>3) Mở chi tiết đơn & chứng từ liên quan<br>4) Tra cứu lịch sử đặt hàng theo thời gian<br>5) Tải chứng từ được phép (phiếu bàn giao, hóa đơn)</td></tr>
+<tr><td>Luồng thay thế</td><td>• Lọc theo trạng thái/khoảng thời gian<br>• Xuất lịch sử ra Excel</td></tr>
+<tr><td>Ngoại lệ</td><td>• Không có đơn → hiển thị trạng thái rỗng<br>• Chứng từ chưa phát hành → ẩn nút tải</td></tr>
+<tr><td>Hậu điều kiện</td><td>Chứng từ tạo/cập nhật; sổ kho/sổ cái ghi nhận; audit trail lưu vết</td></tr>
+<tr><td>Dữ liệu vào</td><td>Thông tin nghiệp vụ trên form + bảng con</td></tr>
+<tr><td>Dữ liệu ra</td><td>Chứng từ + bản ghi sổ + thông báo trạng thái</td></tr>
+<tr><td>Business Rule</td><td>BRU liên quan phân hệ</td></tr>
+<tr><td>FR truy vết</td><td><code>FR-M12-43</code></td></tr>
+<tr><td>User Story</td><td><code>US-43</code></td></tr>
+<tr><td>Test Case</td><td><code>TC-43-01</code>, <code>TC-43-02</code></td></tr>
+<tr><td>Workflow</td><td>—</td></tr>
+<tr><td>Ghi chú</td><td>Tuân thủ phân quyền & audit</td></tr>
+</tbody>
+</table>
+
+</div><!-- /content -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<div class="doc-footer">
+  <span>SupplyCore MVL — Tài liệu BA</span>
+  <span>Mã: UC | Phiên bản v1.0 | 02/07/2026</span>
+  <span>Bảo mật: Nội bộ</span>
+</div>
+
+</body>
+</html>

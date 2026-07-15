@@ -1,0 +1,20 @@
+{
+ "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "field:uom_name", "track_changes": 1,
+ "field_order": ["uom_name", "abbreviation", "must_be_whole_number", "disabled"],
+ "fields": [
+  {"fieldname": "uom_name", "fieldtype": "Data", "label": "UOM Name", "reqd": 1, "unique": 1, "in_list_view": 1},
+  {"fieldname": "abbreviation", "fieldtype": "Data", "label": "Viết tắt", "in_list_view": 1},
+  {"fieldname": "must_be_whole_number", "fieldtype": "Check", "label": "Phải là số nguyên", "default": "0"},
+  {"fieldname": "disabled", "fieldtype": "Check", "label": "Disabled", "default": "0"}
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1},
+  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1},
+  {"role": "SupplyCore Storekeeper", "read": 1},
+  {"role": "Warehouse Officer", "read": 1}
+ ],
+ "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
+ "module": "Supplycore", "name": "SC UOM", "title_field": "uom_name",
+ "sort_field": "modified", "sort_order": "DESC"
+}

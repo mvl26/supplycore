@@ -1,0 +1,12 @@
+Supplycore
+M1 Contract
+M2 Planning
+M3 Receiving
+M4 WMS
+M5 FEFO
+M6 Transfer
+M7 Sales
+M8 Accounting
+M9 Stocktake
+M10 Traceability
+M11 Dashboard
