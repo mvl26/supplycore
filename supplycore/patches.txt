@@ -28,3 +28,10 @@ supplycore.patches.v0_7.remove_hospital_roles
 supplycore.patches.v0_8.seed_sales_gl_accounts
 supplycore.patches.v0_9.create_portal_role
 supplycore.patches.v0_10.rebrand_miyano
+supplycore.patches.v0_11.backfill_credit_control
+supplycore.patches.v0_11.backfill_sfc_validity
+supplycore.patches.v0_11.create_tt99_print_formats
+supplycore.patches.v0_12.backfill_pr_warehouse_in
+supplycore.patches.v0_12.create_pr_print_formats
+supplycore.patches.v0_12.backfill_sfc_contract_fields
+supplycore.patches.v0_12.backfill_display_names

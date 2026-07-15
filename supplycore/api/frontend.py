@@ -55,10 +55,36 @@ def list_docs(doctype, fields=None, filters=None, order_by=None, limit=20, start
         )
         if or_filters:
             kwargs["or_filters"] = or_filters
-        return frappe.db.get_all(doctype, **kwargs)
+        rows = frappe.db.get_all(doctype, **kwargs)
+        _attach_list_customer_names(doctype, rows)
+        return rows
     except Exception as e:
         frappe.log_error(message=f"list_docs({doctype}): {e}", title="frontend.list_docs")
         frappe.throw(_("Lỗi truy vấn {0}: {1}").format(doctype, str(e)[:200]))
+
+
+# Doctype bán hàng hiện cột "Khách hàng" — cần TÊN thay vì mã (không lưu
+# customer_name, chỉ có link customer). displayKey='customer_name' ở modules.js.
+_LIST_CUSTOMER_NAME_DTS = {
+    "SC Sales Order", "SC Delivery Note", "SC Sales Invoice", "SC Sales Receipt",
+    "SC Acceptance Record", "SC Sales Framework Contract",
+}
+
+
+def _attach_list_customer_names(doctype, rows):
+    """Đính kèm customer_name cho mỗi dòng list bán hàng (1 truy vấn batch)."""
+    if doctype not in _LIST_CUSTOMER_NAME_DTS or not rows:
+        return
+    codes = {r.get("customer") for r in rows if r.get("customer")}
+    if not codes:
+        return
+    names = dict(frappe.db.get_all(
+        "SC Customer", filters={"name": ["in", list(codes)]},
+        fields=["name", "customer_name"], as_list=True))
+    for r in rows:
+        c = r.get("customer")
+        if c:
+            r["customer_name"] = names.get(c) or c
 
 
 @frappe.whitelist()
@@ -91,15 +117,112 @@ def search_framework_contract(q=None, limit=20):
 
 
 @frappe.whitelist()
+def search_sales_framework_contract(q=None, limit=20):
+    """M7 UX: tìm HĐ khung BÁN theo TÊN khách hàng (chính), mã HĐ, mã khách,
+    và mã/tên vật tư trong danh mục (child) — trả kèm customer_name để hiển thị
+    tường minh (SFC không có field tên riêng, chỉ định danh bằng khách + kỳ).
+    Mirror search_framework_contract (chiều mua)."""
+    # SQL thô bỏ qua permission_query_conditions → chặn Portal (nếu không, portal
+    # user thấy HĐ + tên KH của MỌI khách — rò chéo BRU-SEC-001). Nội bộ SPA dùng.
+    block_portal()
+    if not frappe.has_permission("SC Sales Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung bán"), frappe.PermissionError)
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = """WHERE sfc.name LIKE %(like)s
+                  OR sfc.customer LIKE %(like)s
+                  OR cust.customer_name LIKE %(like)s
+                  OR EXISTS (
+                     SELECT 1 FROM `tabSFC Item` sfci
+                     WHERE sfci.parent = sfc.name
+                       AND sfci.item LIKE %(like)s
+                  )"""
+    return frappe.db.sql(f"""
+        SELECT sfc.name, sfc.customer, cust.customer_name,
+               sfc.valid_from, sfc.valid_to, sfc.status
+        FROM `tabSC Sales Framework Contract` sfc
+        LEFT JOIN `tabSC Customer` cust ON cust.name = sfc.customer
+        {cond}
+        ORDER BY sfc.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
+
+
+# M7 UX: các chứng từ bán hàng tham chiếu (SO/DN/SI) — hiện TÊN khách + ngày
+# thay vì chỉ mã doc. field (date, amount) lấy từ whitelist này (an toàn khỏi
+# SQL injection vì doctype + field đều từ config server-side, không từ client).
+_SALES_DOC_SEARCH = {
+    "SC Sales Order":   ("order_date",   "total_amount"),
+    "SC Delivery Note": ("delivery_date", None),
+    "SC Sales Invoice": ("invoice_date", "grand_total"),
+}
+
+
+@frappe.whitelist()
+def search_sales_doc(doctype, q=None, limit=20):
+    """Tìm chứng từ bán hàng (SO/DN/SI) theo mã, mã khách, hoặc TÊN khách —
+    trả kèm customer_name + ngày + số tiền để hiển thị tường minh trong droplist."""
+    cfg = _SALES_DOC_SEARCH.get(doctype)
+    if not cfg:
+        frappe.throw(_("Doctype {0} không hỗ trợ tìm kiếm bán hàng").format(doctype))
+    # SQL thô bỏ qua permission_query → chặn Portal (rò chéo khách, BRU-SEC-001).
+    block_portal()
+    if not frappe.has_permission(doctype, "read"):
+        frappe.throw(_("Không có quyền đọc {0}").format(doctype), frappe.PermissionError)
+    date_field, amount_field = cfg
+    q = (q or "").strip()
+    params = {"lim": int(limit or 20)}
+    cond = ""
+    if q:
+        params["like"] = f"%{q}%"
+        cond = ("WHERE d.name LIKE %(like)s OR d.customer LIKE %(like)s "
+                "OR cust.customer_name LIKE %(like)s")
+    amount_sel = f"d.`{amount_field}` AS amount" if amount_field else "NULL AS amount"
+    return frappe.db.sql(f"""
+        SELECT d.name, d.customer, cust.customer_name,
+               d.`{date_field}` AS ref_date, {amount_sel}, d.status
+        FROM `tab{doctype}` d
+        LEFT JOIN `tabSC Customer` cust ON cust.name = d.customer
+        {cond}
+        ORDER BY d.modified DESC
+        LIMIT %(lim)s
+    """, params, as_dict=True)
+
+
+@frappe.whitelist()
 def get_doc(doctype, name):
     """Get full doc + child tables."""
     if not frappe.has_permission(doctype, "read", doc=name):
         frappe.throw(_("Không có quyền đọc {0} {1}").format(doctype, name), frappe.PermissionError)
-    return frappe.get_doc(doctype, name).as_dict()
+    d = frappe.get_doc(doctype, name).as_dict()
+    _attach_display_names(doctype, d)
+    return d
+
+
+def _attach_display_names(doctype, d):
+    """M7 UX: đính kèm TÊN hiển thị cho các link chính (khách hàng, HĐ khung bán)
+    để MÀN CHI TIẾT hiện tên thay vì mã doc. SO/DN/SI/SR không lưu customer_name
+    (chỉ có link customer) nên phải resolve tại đây. Chỉ 1-2 truy vấn nhẹ khi mở
+    chi tiết; không đụng doctype mua (framework_contract của bên mua trỏ
+    'Framework Contract' khác — exists() bên dưới trả False nên bỏ qua)."""
+    if doctype != "SC Customer" and d.get("customer") and not d.get("customer_name"):
+        d["customer_name"] = frappe.db.get_value("SC Customer", d["customer"], "customer_name")
+    fc = d.get("framework_contract")
+    if fc and frappe.db.exists("SC Sales Framework Contract", fc):
+        row = frappe.db.get_value(
+            "SC Sales Framework Contract", fc, ["customer", "valid_to"], as_dict=True)
+        if row:
+            cn = frappe.db.get_value("SC Customer", row.customer, "customer_name") or row.customer
+            # Hiện TÊN khách + SỐ HĐ (fc = SC-SFC-YYYY-#####) + kỳ hiệu lực.
+            d["framework_contract_display"] = (
+                f"{cn} — {fc} (đến {row.valid_to})" if row.valid_to else f"{cn} — {fc}")
 
 
 @frappe.whitelist()
-def count_docs(doctype, filters=None):
+def count_docs(doctype, filters=None, or_filters=None):
     """Count docs.
 
     GĐ4 Task 5 (security sweep): `frappe.db.count()` KHÔNG áp
@@ -117,6 +240,13 @@ def count_docs(doctype, filters=None):
     import json
     if isinstance(filters, str):
         filters = json.loads(filters)
+    if isinstance(or_filters, str):
+        or_filters = json.loads(or_filters)
+    if or_filters:
+        # frappe.db.count không nhận or_filters → dùng get_all (áp cả
+        # permission_query_conditions) rồi đếm. App quy mô nhỏ nên OK.
+        return len(frappe.get_all(doctype, filters=filters or {}, or_filters=or_filters,
+                                  pluck="name", limit=0))
     return frappe.db.count(doctype, filters=filters or {})
 
 

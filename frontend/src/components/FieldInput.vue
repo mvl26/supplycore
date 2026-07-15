@@ -2,11 +2,13 @@
 import { computed } from 'vue'
 import { statusLabel } from '../modules'
 import Icon from './Icon.vue'
+import LinkAutocomplete from './LinkAutocomplete.vue'
 
 const props = defineProps({
   modelValue: [String, Number, Boolean, Date],
   label:    String,
   type:     { type: String, default: 'text' },  // text/number/date/select/textarea/check/link
+  linkTo:   String,  // doctype cho type='link' (dropdown tìm kiếm)
   options:  Array,   // for select
   required: Boolean,
   readonly: Boolean,
@@ -44,7 +46,11 @@ function update(v) {
         <Icon v-if="prefixIcon" :name="prefixIcon" :size="16" />
         <template v-else>{{ prefix }}</template>
       </span>
-      <textarea v-if="type === 'textarea'"
+      <LinkAutocomplete v-if="type === 'link'"
+        :model-value="modelValue || ''" :link-to="linkTo"
+        :placeholder="placeholder" :required="required" :readonly="readonly"
+        @update:model-value="v => emit('update:modelValue', v)" />
+      <textarea v-else-if="type === 'textarea'"
         :id="inputId" :value="modelValue || ''" :readonly="readonly"
         :placeholder="placeholder" rows="3"
         @input="e => update(e.target.value)" class="sc-input"

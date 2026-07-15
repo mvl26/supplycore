@@ -9,9 +9,28 @@ from frappe.utils import getdate, today, flt
 class SCSalesFrameworkContract(Document):
 
     def validate(self):
+        self._default_contract_fields()
+        self._check_validity_dates()
         self._compute_items()
         self._compute_totals()
         self._derive_status()
+
+    def _default_contract_fields(self):
+        # contract_number / contract_date là bắt buộc (giống HĐ khung mua) — nhân
+        # viên nhập trên form. Với caller lập trình (seed/API/test) không truyền,
+        # tự điền để không vỡ luồng: số HĐ = tên phiếu, ngày ký = ngày hiệu lực.
+        if not self.contract_number:
+            self.contract_number = self.name
+        if not self.contract_date:
+            self.contract_date = self.valid_from or today()
+
+    def _check_validity_dates(self):
+        # valid_from/valid_to là reqd (schema) — chốt thêm thứ tự ngày để không
+        # tạo HĐ khung có khoảng hiệu lực âm (BRU-SFC-001 dựa trên 2 ngày này).
+        if self.valid_from and self.valid_to and getdate(self.valid_to) < getdate(self.valid_from):
+            frappe.throw(_(
+                "Ngày hết hạn ({0}) phải >= ngày hiệu lực ({1})."
+            ).format(self.valid_to, self.valid_from), title="BRU-SFC-001")
 
     def on_submit(self):
         self.db_set("status", "Hiệu lực")
@@ -30,6 +49,31 @@ class SCSalesFrameworkContract(Document):
 
     def _compute_totals(self):
         self.total_value = sum(flt(r.contract_qty) * flt(r.unit_price) for r in self.items)
+        # Theo dõi giá trị (song song HĐ khung mua):
+        #  - used_value  = Đã bán  = Σ SL đã bán × đơn giá (sold_qty do recalculate_sold_qty duy trì)
+        #  - committed_value = Đang gọi = Σ SL trên SO 'Chờ duyệt' × đơn giá (chưa chốt)
+        #  - remaining_value = Còn lại khả dụng = tổng − đã bán − đang gọi
+        self.used_value = sum(flt(r.sold_qty) * flt(r.unit_price) for r in self.items)
+        self.committed_value = self._compute_committed_value()
+        self.remaining_value = flt(self.total_value) - flt(self.used_value) - flt(self.committed_value)
+
+    def _compute_committed_value(self):
+        """Giá trị đang gọi = các SO tham chiếu HĐ này, còn 'Chờ duyệt' (chưa chốt bán)."""
+        if not self.name or not frappe.db.table_exists("SC Sales Order"):
+            return 0
+        price = {r.item: flt(r.unit_price) for r in self.items}
+        if not price:
+            return 0
+        rows = frappe.db.sql("""
+            SELECT soi.item AS item, COALESCE(SUM(soi.qty), 0) AS qty
+            FROM `tabSO Item` soi
+            JOIN `tabSC Sales Order` so ON so.name = soi.parent
+            WHERE so.framework_contract = %s
+              AND so.docstatus = 0
+              AND so.status = 'Chờ duyệt'
+            GROUP BY soi.item
+        """, (self.name,), as_dict=True)
+        return sum(flt(r.qty) * price.get(r.item, 0) for r in rows)
 
     def _derive_status(self):
         if self.docstatus == 0:
@@ -57,6 +101,7 @@ class SCSalesFrameworkContract(Document):
         from supplycore.utils.permissions import block_portal
         block_portal()
         has_so = frappe.db.table_exists("SC Sales Order")
+        used = 0
         for row in self.items:
             sold = 0
             if has_so:
@@ -66,6 +111,7 @@ class SCSalesFrameworkContract(Document):
                     JOIN `tabSC Sales Order` so ON so.name = soi.parent
                     WHERE so.framework_contract = %s
                       AND so.docstatus = 1
+                      AND so.status != 'Từ chối'
                       AND soi.item = %s
                 """, (self.name, row.item))[0][0]
             sold = flt(sold)
@@ -73,3 +119,12 @@ class SCSalesFrameworkContract(Document):
                 "sold_qty": sold,
                 "remaining_qty": flt(row.contract_qty) - sold,
             })
+            used += sold * flt(row.unit_price)
+        # Đồng bộ giá trị theo dõi ở HĐ cha (used/committed/remaining) sau khi cập
+        # nhật sold_qty — dùng db.set_value nên không đụng docstatus/validate.
+        committed = self._compute_committed_value()
+        frappe.db.set_value("SC Sales Framework Contract", self.name, {
+            "used_value": used,
+            "committed_value": committed,
+            "remaining_value": flt(self.total_value) - used - committed,
+        }, update_modified=False)

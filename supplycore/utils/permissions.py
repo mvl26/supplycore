@@ -59,6 +59,13 @@ def sales_fc_portal_query(user=None):
     return _portal_customer_scope("SC Sales Framework Contract", user or frappe.session.user)
 
 
+def acceptance_record_portal_query(user=None):
+    # GĐ MVL b6 — SC Acceptance Record được lộ cho Portal (KH xem biên bản nghiệm
+    # thu). PHẢI scope theo customer y hệt 5 doctype cha, nếu không KH thấy biên
+    # bản của MỌI khách. Có field `customer` (fetch_from delivery_note.customer).
+    return _portal_customer_scope("SC Acceptance Record", user or frappe.session.user)
+
+
 # ---------------------------------------------------------------------------
 # Child-table isolation (RSK-01 caveat): `permission_query_conditions` được
 # Frappe tra theo `self.doctype` CỦA TRUY VẤN, không phải theo doctype cha.

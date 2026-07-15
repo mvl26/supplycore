@@ -287,6 +287,12 @@ function removeAttachAt(idx) {
       <span v-if="uploadErr" class="text-xs text-sc-danger block">{{ uploadErr }}</span>
     </div>
 
+    <!-- Password (masked) -->
+    <input v-else-if="field.type === 'Password'" type="password"
+      :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"
+      autocomplete="new-password"
+      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+
     <!-- Default: text/data -->
     <input v-else type="text"
       :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"

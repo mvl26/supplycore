@@ -10,6 +10,7 @@
   "section_main",
   "delivery_note",
   "customer",
+  "customer_name",
   "column_break_1",
   "acceptance_date",
   "accepted_by",
@@ -19,33 +20,169 @@
   "amended_from"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Biên bản nghiệm thu"},
-  {"fieldname": "delivery_note", "fieldtype": "Link", "options": "SC Delivery Note", "label": "Phiếu giao hàng", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "customer", "fieldtype": "Link", "options": "SC Customer", "label": "Khách hàng", "read_only": 1, "fetch_from": "delivery_note.customer", "in_standard_filter": 1},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "acceptance_date", "fieldtype": "Date", "label": "Ngày nghiệm thu", "default": "Today"},
-  {"fieldname": "accepted_by", "fieldtype": "Data", "label": "Người nhận (phía khách)"},
-  {"fieldname": "status", "fieldtype": "Select", "options": "Nháp\nĐã nghiệm thu", "label": "Trạng thái", "default": "Nháp", "in_list_view": 1, "in_standard_filter": 1, "read_only": 1, "search_index": 1},
-
-  {"fieldname": "section_note", "fieldtype": "Section Break", "label": "Ghi chú"},
-  {"fieldname": "note", "fieldtype": "Small Text", "label": "Ghi chú"},
-
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Acceptance Record", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Biên bản nghiệm thu"
+  },
+  {
+   "fieldname": "delivery_note",
+   "fieldtype": "Link",
+   "options": "SC Delivery Note",
+   "label": "Phiếu giao hàng",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "options": "SC Customer",
+   "label": "Khách hàng",
+   "read_only": 1,
+   "fetch_from": "delivery_note.customer",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Tên khách hàng",
+   "fetch_from": "customer.customer_name",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "acceptance_date",
+   "fieldtype": "Date",
+   "label": "Ngày nghiệm thu",
+   "default": "Today"
+  },
+  {
+   "fieldname": "accepted_by",
+   "fieldtype": "Data",
+   "label": "Người nhận (phía khách)"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "Nháp\nĐã nghiệm thu",
+   "label": "Trạng thái",
+   "default": "Nháp",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_note",
+   "fieldtype": "Section Break",
+   "label": "Ghi chú"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Acceptance Record",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1, "share": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Purchaser", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Accountant", "read": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Purchaser",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SC Customer Portal",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  }
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",
  "modified": "2026-07-07 00:00:00",
  "module": "M7 Sales",
  "name": "SC Acceptance Record",
- "title_field": "delivery_note",
+ "title_field": "customer_name",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "show_title_field_in_link": 1
 }

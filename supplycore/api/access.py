@@ -86,7 +86,7 @@ TRACKED_DOCTYPES: list[str] = [
     # M1
     "Framework Contract",
     # M2
-    "SC Material Request", "SC Purchase Order",
+    "Procurement Plan", "SC Material Request", "SC Purchase Order",
     # M3
     "SC Purchase Receipt", "SC Quality Inspection",
     # M4

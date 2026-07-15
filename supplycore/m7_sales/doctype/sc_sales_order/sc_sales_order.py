@@ -17,7 +17,7 @@ Business rules:
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import flt, getdate, today
 
 from supplycore.utils.permissions import block_portal
 
@@ -42,6 +42,24 @@ class SCSalesOrder(Document):
         if not self.framework_contract:
             return
         fc = frappe.get_doc("SC Sales Framework Contract", self.framework_contract)
+
+        # BRU-SFC-001 (hiệu lực theo NGÀY): không được đặt đơn trên HĐ khung
+        # CHƯA tới ngày hiệu lực hoặc ĐÃ hết hạn. KHÔNG tin `fc.status` cho việc
+        # này — SFC không có scheduler tự chuyển "Hiệu lực"→"Hết hạn", và
+        # on_submit set cứng status="Hiệu lực" bất kể valid_from tương lai, nên
+        # status có thể stale. Kiểm ngày ở write-path đóng mọi đường (portal/
+        # desk/API) vì mọi SC Sales Order đều chạy validate().
+        today_d = getdate(today())
+        if fc.valid_from and getdate(fc.valid_from) > today_d:
+            frappe.throw(_(
+                "BRU-SFC-001: Hợp đồng khung {0} chưa tới ngày hiệu lực ({1}) — "
+                "không thể đặt đơn."
+            ).format(self.framework_contract, fc.valid_from), title="BRU-SFC-001")
+        if fc.valid_to and getdate(fc.valid_to) < today_d:
+            frappe.throw(_(
+                "BRU-SFC-001: Hợp đồng khung {0} đã hết hạn ({1}) — không thể đặt đơn."
+            ).format(self.framework_contract, fc.valid_to), title="BRU-SFC-001")
+
         sfc_items_by_item = {r.item: r for r in fc.items}
 
         for row in self.items:
@@ -72,6 +90,7 @@ class SCSalesOrder(Document):
                 JOIN `tabSC Sales Order` so ON so.name = soi.parent
                 WHERE so.framework_contract = %s
                   AND so.docstatus = 1
+                  AND so.status != 'Từ chối'
                   AND so.name != %s
                   AND soi.item = %s
             """, (self.framework_contract, self.name or "", item_code))[0][0])
@@ -86,27 +105,72 @@ class SCSalesOrder(Document):
         self.total_amount = sum(flt(r.amount) for r in self.items)
 
     # ------------------------------------------------------------------
+    # BRU-INV-002 — chặn tồn ngay lúc gọi hàng (Q1: chặn sớm)
+    # ------------------------------------------------------------------
+    def check_stock_availability(self):
+        """Chặn đặt hàng khi tồn khả dụng < SL đặt — chốt chặn SỚM lúc khách gọi
+        hàng qua Portal (khác BRU-INV-001 chỉ chặn ở khâu lập phiếu giao). Gọi
+        TƯỜNG MINH từ `portal_order_place` (KHÔNG nằm trong validate) để chỉ áp
+        cho đường khách gọi hàng — nhân viên tạo SO nội bộ/đặt trước vẫn qua chốt
+        cứng ở DN, không bị chặn sớm. Tính tổng tồn khả dụng của item trên TẤT CẢ
+        kho (chưa chọn kho xuất lúc này), loại lô QC Pending/Rejected/blocked.
+        Bật/tắt qua Settings.block_order_on_insufficient_stock (không hard-code).
+        """
+        from supplycore.utils.receivables import is_stock_block_enabled
+        if not is_stock_block_enabled():
+            return
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import (
+            SCStockLedgerEntry,
+        )
+        qty_by_item = {}
+        for row in self.items:
+            qty_by_item[row.item] = qty_by_item.get(row.item, 0) + flt(row.qty)
+        for item_code, qty in qty_by_item.items():
+            avail = SCStockLedgerEntry.get_available_qty(item_code)
+            if flt(qty) > flt(avail):
+                item_name = frappe.db.get_value("SC Item", item_code, "item_name") or item_code
+                frappe.throw(_(
+                    "BRU-INV-002: Tồn kho khả dụng của vật tư {0} không đủ — cần {1}, "
+                    "còn {2}. Vui lòng giảm số lượng hoặc liên hệ nhà cung cấp."
+                ).format(item_name, qty, avail), title="BRU-INV-002")
+
+    # ------------------------------------------------------------------
     # BRU-AR-001
     # ------------------------------------------------------------------
     def _check_credit_limit(self):
-        from supplycore.supplycore.doctype.sc_gl_entry.sc_gl_entry import SCGLEntry
+        # GĐ MVL — dùng HÀM CHUẨN DUY NHẤT get_customer_outstanding/credit_limit
+        # (utils.receivables), KHÔNG tự resolve TK 131 hay tự SUM (đóng finding
+        # audit D: rule cũ fail-open khi default_receivable_account trống → bỏ
+        # lọt dư nợ; và lệch số với portal). Cờ bật/tắt + ngưỡng mặc định lấy từ
+        # SupplyCore Settings (không hard-code).
+        from supplycore.utils.receivables import (
+            is_credit_check_enabled, get_customer_outstanding,
+            get_customer_credit_limit, get_min_payment,
+        )
 
-        credit_limit = flt(frappe.db.get_value("SC Customer", self.customer, "credit_limit"))
-        if not credit_limit or credit_limit <= 0:
+        if not is_credit_check_enabled():
             self.db_set("credit_hold", 0)
             return
 
-        ar_account = frappe.db.get_single_value("SupplyCore Settings", "default_receivable_account")
-        bal = flt(SCGLEntry.get_balance(ar_account, self.customer)) if ar_account else 0
+        credit_limit = get_customer_credit_limit(self.customer)
+        if credit_limit <= 0:
+            # Không đặt ngưỡng (khách không có hạn mức riêng và Settings không đặt
+            # default) → không chặn. Đặt Settings.default_credit_limit > 0 để chặn
+            # cả khách tự đăng ký (credit_limit=0).
+            self.db_set("credit_hold", 0)
+            return
 
+        bal = get_customer_outstanding(self.customer)
         if (bal + flt(self.total_amount)) > credit_limit:
+            min_pay = get_min_payment(self.customer, self.total_amount)
             self.credit_hold = 1
             self.db_set("credit_hold", 1)
             frappe.throw(_(
                 "BRU-AR-001: Đơn hàng {0} (tổng {1}) cộng dư nợ hiện tại ({2}) vượt hạn "
-                "mức công nợ của khách hàng ({3}). Đơn bị giữ (credit_hold) — cần lãnh đạo "
-                "duyệt bổ sung hạn mức hoặc điều chỉnh trước khi submit."
-            ).format(self.name, self.total_amount, bal, credit_limit), title="BRU-AR-001")
+                "mức công nợ của khách hàng ({3}). Cần thanh toán tối thiểu {4} trước khi "
+                "gọi hàng. Đơn bị giữ (credit_hold)."
+            ).format(self.name, flt(self.total_amount), bal, credit_limit, min_pay),
+                title="BRU-AR-001")
 
         self.db_set("credit_hold", 0)
 

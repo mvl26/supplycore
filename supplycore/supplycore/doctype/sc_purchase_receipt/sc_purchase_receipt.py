@@ -114,24 +114,147 @@ class SCPurchaseReceipt(Document):
                 "SC-E-PR-BATCH-MISSING: Các dòng {0} chưa được gán lô tự động. "
                 "Đây là lỗi hệ thống, vui lòng liên hệ admin."
             ).format(missing_batch), title="SC-E-PR-BATCH-MISSING")
-        self._post_stock_ledger()
-        if self.qc_required and not self.is_return:
-            self._auto_create_qi()
+        # 2 BƯỚC (GĐ MVL): phiếu THƯỜNG khi submit chỉ "Đã tiếp nhận" — CHƯA ghi sổ
+        # kho (tồn khả dụng KHÔNG tăng, kể cả item không quản lý lô). SLE chỉ được
+        # post khi bấm "Xác nhận nhập kho" (confirm_warehouse_in) sau khi QC Pass.
+        # Phiếu TRẢ HÀNG (is_return) vẫn xuất kho ngay khi submit (không qua 2 bước).
+        if self.is_return:
+            self._post_stock_ledger()
+        else:
+            self.db_set("receipt_status", "Đã tiếp nhận")
+            if self.qc_required:
+                self._auto_create_qi()
         self._update_po_received_qty()
         if self.is_return:
             if not self.return_status:
                 self.db_set("return_status", "Pending Supplier Response")
             self._send_return_notification()
-            # Auto-tạo Debit Note (skip nếu đã có)
+            # Auto-tạo Debit Note (skip nếu đã có). NGOẠI LỆ: phiếu trả do QC TỪ CHỐI
+            # (auto từ QI — remarks có "Original PR:") có hàng bị loại TRƯỚC khi lập hoá
+            # đơn (xem make_invoice_from_pr) nên CHƯA hề được ghi công nợ; tạo Debit Note
+            # sẽ trừ khống (double-count). Với các phiếu trả này, chỉ auto-DN khi hàng
+            # THỰC SỰ đã lên một hoá đơn mua đã submit; nếu chưa, để ACC tạo tay.
             if not self.debit_note:
-                try:
-                    self.make_debit_note()
-                except Exception as e:
-                    frappe.log_error(message=str(e)[:1000], title="UC-11 auto make_debit_note")
+                qc_auto_return = bool(self.remarks and "Original PR:" in self.remarks)
+                if qc_auto_return and not self._returned_items_were_invoiced():
+                    frappe.msgprint(
+                        _("Không tự tạo Debit Note: hàng trả này bị QC loại trước khi lập hoá "
+                          "đơn (chưa ghi công nợ). Nếu đã thanh toán/ứng trước, bấm 'Tạo Debit "
+                          "Note' thủ công."),
+                        indicator="orange", alert=True)
+                else:
+                    try:
+                        self.make_debit_note()
+                    except Exception as e:
+                        frappe.log_error(message=str(e)[:1000], title="UC-11 auto make_debit_note")
+
+    def before_cancel(self):
+        # Huỷ các SC Quality Inspection đã submit liên kết trước — nếu không
+        # Frappe chặn cancel (LinkExistsError, QI.purchase_receipt trỏ về PR).
+        # QI không có on_cancel; batch.qc_status đã set bằng db_set nên không đảo.
+        for qi in frappe.get_all("SC Quality Inspection",
+                                 {"purchase_receipt": self.name, "docstatus": 1}, pluck="name"):
+            frappe.get_doc("SC Quality Inspection", qi).cancel()
 
     def on_cancel(self):
-        self._reverse_stock_ledger()
+        # Chỉ đảo sổ kho nếu đã THỰC SỰ ghi sổ (phiếu trả, hoặc phiếu thường đã
+        # "Đã nhập kho"). Phiếu "Đã tiếp nhận" chưa post SLE nên không có gì để đảo.
+        if self.is_return or self.receipt_status == "Đã nhập kho":
+            self._check_not_consumed_before_reverse()
+            self._reverse_stock_ledger()
         self._update_po_received_qty()
+
+    def _check_not_consumed_before_reverse(self):
+        """Q4: cho phép huỷ phiếu đã nhập kho (đảo SLE), nhưng CHẶN nếu hàng đã bị
+        xuất/tiêu thụ (tồn khả dụng của lô/kho < SL đã nhập) — tránh tồn âm."""
+        if self.is_return:
+            return
+        from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        for r in self.items:
+            wh = r.warehouse or self.to_warehouse
+            avail = SCStockLedgerEntry.get_available_qty(r.item, wh, r.batch_no)
+            if flt(avail) < flt(r.qty):
+                frappe.throw(_(
+                    "SC-E-PR-CONSUMED: Không thể huỷ — vật tư {0}{1} tại kho {2} đã "
+                    "được xuất/tiêu thụ (còn {3} < đã nhập {4}). Điều chỉnh qua phiếu "
+                    "trả hàng hoặc kiểm kê."
+                ).format(r.item, f" lô {r.batch_no}" if r.batch_no else "", wh,
+                          avail, r.qty), title="SC-E-PR-CONSUMED")
+
+    # ------------------------------------------------------------------
+    # GĐ MVL — Bước 2: Xác nhận nhập kho (post SLE tại thời điểm xác nhận)
+    # ------------------------------------------------------------------
+    _WAREHOUSE_IN_ROLES = {
+        "System Manager", "SupplyCore Manager", "SupplyCore Storekeeper", "Warehouse Officer",
+    }
+
+    @frappe.whitelist()
+    def print_document(self):
+        """Trả HTML bản in:
+        - Phiếu TRẢ NCC (is_return): mẫu 'Phiếu trả NCC' — in các dòng hàng trả lại.
+        - Đã nhập kho: 'Phiếu nhập kho (TT99)' (chỉ in vật tư ĐẠT + lô + hạn).
+        - Còn lại: 'Phiếu tiếp nhận tạm' (ghi rõ chưa nhập kho)."""
+        if self.is_return:
+            fmt = "PR - Phiếu trả NCC"
+        elif self.receipt_status == "Đã nhập kho":
+            fmt = "PR - Phiếu nhập kho (TT99)"
+        else:
+            fmt = "PR - Phiếu tiếp nhận tạm"
+        return {"html": frappe.get_print("SC Purchase Receipt", self.name, print_format=fmt),
+                "print_format": fmt}
+
+    @frappe.whitelist()
+    def find_return_pr(self):
+        """Tìm/điều hướng phiếu Trả NCC được TỰ TẠO khi QC reject dòng của phiếu này.
+        QI auto-tạo phiếu trả (is_return, nháp) với remarks chứa 'Original PR: <name>'.
+        Trả {url} để UI mở phiếu trả; nếu chưa có -> báo rõ."""
+        ret = frappe.db.get_value("SC Purchase Receipt",
+            {"is_return": 1, "remarks": ["like", f"%Original PR: {self.name}%"], "docstatus": ["!=", 2]},
+            "name")
+        if not ret:
+            frappe.throw(_(
+                "Chưa có phiếu Trả NCC cho phiếu này. Phiếu trả chỉ tự tạo khi có dòng "
+                "QC bị Từ chối (Rejected)."
+            ), title="Không có phiếu trả")
+        return {"return_pr": ret, "url": f"/supplycore/doc/SC Purchase Receipt/{ret}"}
+
+    @frappe.whitelist()
+    def confirm_warehouse_in(self, warehouse_in_date=None):
+        """Xác nhận nhập kho: ghi SLE (hàng vào tồn khả dụng) tại NGÀY XÁC NHẬN.
+        Chỉ khi QC Pass, chỉ role thủ kho/quản lý, idempotent (không ghi sổ đúp)."""
+        if self.docstatus != 1:
+            frappe.throw(_("Phiếu phải ở trạng thái đã submit (Đã tiếp nhận)."))
+        if self.is_return:
+            frappe.throw(_("Phiếu trả hàng không có bước xác nhận nhập kho."))
+        # Quyền: chỉ thủ kho / quản lý (QC Officer chỉ kết luận QC, không nhập kho).
+        if not (set(frappe.get_roles()) & self._WAREHOUSE_IN_ROLES):
+            frappe.throw(_("Bạn không có quyền xác nhận nhập kho (chỉ Thủ kho/Quản lý kho/Quản lý)."),
+                         frappe.PermissionError)
+        # Idempotent CHẶT: đã có SLE của phiếu → đã nhập kho, không ghi lần 2.
+        if self.receipt_status == "Đã nhập kho" or frappe.db.exists(
+                "SC Stock Ledger Entry", {"voucher_type": "SC Purchase Receipt", "voucher_no": self.name}):
+            frappe.throw(_("Phiếu {0} đã nhập kho — không thể xác nhận lần nữa.").format(self.name),
+                         title="SC-E-PR-ALREADY-IN")
+        # Cổng QC: cho nhập kho khi QC đã kết luận và KHÔNG phải hỏng toàn bộ.
+        #  - Pass (đạt hết) hoặc Partial Pass (một số dòng đạt) -> cho nhập kho:
+        #    dòng ĐẠT vào tồn khả dụng; dòng HỎNG (batch qc_status=Rejected) vẫn ghi
+        #    sổ nhưng bị CÁCH LY (get_available_qty tự loại) chờ Trả NCC.
+        #  - Pending (chưa QC xong) / Fail (hỏng hết) -> chặn.
+        if self.qc_required and self.qc_status not in ("Pass", "Partial Pass"):
+            frappe.throw(_(
+                "SC-E-PR-QC-NOT-PASS: Chưa thể nhập kho — QC chưa kết luận Đạt (hiện: {0}). "
+                "Cần QC kết luận Đạt (hoặc Đạt một phần) trước khi nhập kho. Nếu hỏng toàn "
+                "bộ, xử lý bằng phiếu Trả NCC."
+            ).format(self.qc_status or "Chờ QC"), title="SC-E-PR-QC-NOT-PASS")
+
+        d = getdate(warehouse_in_date) if warehouse_in_date else getdate(today())
+        self._post_stock_ledger(posting_date=d)   # ghi sổ tại NGÀY XÁC NHẬN
+        self.db_set("warehouse_in_date", d)
+        self.db_set("confirmed_by", frappe.session.user)
+        self.db_set("officially_received_at", frappe.utils.now())
+        self.db_set("receipt_status", "Đã nhập kho")
+        return {"receipt_status": "Đã nhập kho", "warehouse_in_date": str(d),
+                "confirmed_by": frappe.session.user}
 
     def _compute_totals(self):
         total_qty = 0; total_value = 0
@@ -161,6 +284,27 @@ class SCPurchaseReceipt(Document):
     # ------------------------------------------------------------------
     # UC-11 — Return handling
     # ------------------------------------------------------------------
+    def _returned_items_were_invoiced(self):
+        """True nếu có ÍT NHẤT 1 dòng hàng trả (item + lô) đã xuất hiện trên một
+        SC Purchase Invoice ĐÃ submit (không phải debit note). Dùng để quyết định
+        có auto-tạo Debit Note không — tránh trừ khống công nợ cho hàng QC loại
+        (chưa từng lên hoá đơn). Không dựa vào remarks (fragile), soi trực tiếp PI."""
+        for r in self.items:
+            piis = frappe.get_all(
+                "SC PI Item",
+                filters={"item": r.item},
+                fields=["parent", "batch_no"],
+            )
+            for pii in piis:
+                if r.batch_no and pii.batch_no and pii.batch_no != r.batch_no:
+                    continue
+                inv = frappe.db.get_value(
+                    "SC Purchase Invoice", pii.parent,
+                    ["docstatus", "is_debit_note"], as_dict=True)
+                if inv and inv.docstatus == 1 and not inv.is_debit_note:
+                    return True
+        return False
+
     @frappe.whitelist()
     def make_debit_note(self):
         if self.docstatus != 1:
@@ -433,8 +577,11 @@ class SCPurchaseReceipt(Document):
                 indicator="orange", alert=True, title="SC-W-PR-MISSING-EXPIRY",
             )
 
-    def _post_stock_ledger(self):
+    def _post_stock_ledger(self, posting_date=None):
+        # posting_date: mặc định = ngày tiếp nhận (phiếu trả); ở bước "Xác nhận nhập
+        # kho" truyền NGÀY XÁC NHẬN vào để ghi sổ đúng thời điểm nhập kho.
         from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import SCStockLedgerEntry
+        pd = posting_date or self.posting_date
         for r in self.items:
             qty_sign = -1 if self.is_return else 1
             SCStockLedgerEntry.post(
@@ -442,7 +589,7 @@ class SCPurchaseReceipt(Document):
                 qty_change=qty_sign * flt(r.qty), valuation_rate=flt(r.rate),
                 voucher_type="SC Purchase Receipt", voucher_no=self.name, voucher_detail_no=r.name,
                 batch=r.batch_no, bin_location=r.target_bin,
-                posting_date=self.posting_date,
+                posting_date=pd,
             )
 
     def _reverse_stock_ledger(self):

@@ -9,6 +9,7 @@
  "field_order": [
   "section_main",
   "customer",
+  "customer_name",
   "framework_contract",
   "column_break_1",
   "order_date",
@@ -23,39 +24,188 @@
   "amended_from"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Đơn hàng bán"},
-  {"fieldname": "customer", "fieldtype": "Link", "options": "SC Customer", "label": "Khách hàng", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "framework_contract", "fieldtype": "Link", "options": "SC Sales Framework Contract", "label": "Hợp đồng khung", "reqd": 1, "in_standard_filter": 1},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "order_date", "fieldtype": "Date", "label": "Ngày đặt hàng", "default": "Today"},
-  {"fieldname": "status", "fieldtype": "Select", "options": "Chờ duyệt\nĐã duyệt\nĐang xử lý\nĐã bàn giao\nHoàn tất\nTừ chối", "label": "Trạng thái", "default": "Chờ duyệt", "in_list_view": 1, "in_standard_filter": 1, "read_only": 1, "search_index": 1},
-
-  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Danh mục vật tư đặt hàng"},
-  {"fieldname": "items", "fieldtype": "Table", "options": "SO Item", "label": "Items", "reqd": 1},
-
-  {"fieldname": "section_total", "fieldtype": "Section Break", "label": "Tổng hợp"},
-  {"fieldname": "total_amount", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Tổng giá trị (VND)", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "column_break_total", "fieldtype": "Column Break"},
-  {"fieldname": "credit_hold", "fieldtype": "Check", "label": "Giữ do vượt hạn mức công nợ", "read_only": 1, "default": "0"},
-  {"fieldname": "approval_by", "fieldtype": "Link", "options": "User", "label": "Người duyệt", "read_only": 1},
-
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Sales Order", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Đơn hàng bán"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "options": "SC Customer",
+   "label": "Khách hàng",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Tên khách hàng",
+   "fetch_from": "customer.customer_name",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "framework_contract",
+   "fieldtype": "Link",
+   "options": "SC Sales Framework Contract",
+   "label": "Hợp đồng khung",
+   "in_standard_filter": 1,
+   "description": "Bỏ trống = đơn bán lẻ theo giá niêm yết (Portal tự đăng ký); có HĐ = giá theo hợp đồng khung"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "order_date",
+   "fieldtype": "Date",
+   "label": "Ngày đặt hàng",
+   "default": "Today"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "Chờ duyệt\nĐã duyệt\nĐang xử lý\nĐã bàn giao\nHoàn tất\nTừ chối",
+   "label": "Trạng thái",
+   "default": "Chờ duyệt",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Danh mục vật tư đặt hàng"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "SO Item",
+   "label": "Items",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_total",
+   "fieldtype": "Section Break",
+   "label": "Tổng hợp"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Tổng giá trị (VND)",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_total",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "credit_hold",
+   "fieldtype": "Check",
+   "label": "Giữ do vượt hạn mức công nợ",
+   "read_only": 1,
+   "default": "0"
+  },
+  {
+   "fieldname": "approval_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Sales Order",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1, "share": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Purchaser", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Accountant", "read": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1},
-  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1},
-  {"role": "SC Customer Portal", "read": 1, "report": 1, "print": 1, "email": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Purchaser",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SC Customer Portal",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  }
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",
  "modified": "2026-07-07 00:00:00",
  "module": "M7 Sales",
  "name": "SC Sales Order",
- "title_field": "customer",
+ "title_field": "customer_name",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "show_title_field_in_link": 1
 }

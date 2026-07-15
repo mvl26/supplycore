@@ -120,17 +120,20 @@ def test_qi_all_accepted_sets_pr_pass():
         return {"pass": False, "msg": "X no QI"}
     for r in qi.readings:
         r.status = "Accepted"
+    qi.action_taken = "Accept"   # GĐ MVL: kết luận QC = Hành động (bỏ dropdown "Kết quả tổng")
     qi.save()
     qi.submit()
     qi.reload()
     pr.reload()
+    # GĐ MVL 2 bước: QC Pass -> PR "Đã tiếp nhận" (chờ Xác nhận nhập kho), CHƯA set
+    # officially_received_at (nay set ở bước xác nhận nhập kho, không ở QC Pass).
     ok = (qi.overall_status == "Accepted"
           and pr.qc_status == "Pass"
-          and pr.officially_received_at is not None)
+          and pr.receipt_status == "Đã tiếp nhận")
     frappe.db.rollback()
     if ok:
-        return {"pass": True, "msg": f"OK QC Pass, officially_received_at set"}
-    return {"pass": False, "msg": f"X qi={qi.overall_status} pr.qc={pr.qc_status} off_at={pr.officially_received_at}"}
+        return {"pass": True, "msg": "OK QC Pass -> PR Đã tiếp nhận (chờ nhập kho)"}
+    return {"pass": False, "msg": f"X qi={qi.overall_status} pr.qc={pr.qc_status} receipt={pr.receipt_status}"}
 
 
 def test_qi_any_rejected_sets_pr_fail():
@@ -151,6 +154,7 @@ def test_qi_any_rejected_sets_pr_fail():
         for r in qi.readings[1:]:
             r.status = "Accepted"
     qi.failure_reason = "Bao bì hỏng"
+    qi.action_taken = "Return to Supplier"  # GĐ MVL: kết luận QC = Hành động (Trả NCC = Không đạt)
     qi.save()
     qi.submit()
     qi.reload()

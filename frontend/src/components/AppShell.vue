@@ -1,7 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { MODULES } from '../modules'
+import { NAV_BLOCKS } from '../nav-blocks'
 import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
 import Icon from './Icon.vue'
@@ -30,55 +31,58 @@ function toggleCollapse() {
 // There is intentionally no switcher: persona is RBAC, not preference.
 const persona = computed(() => access.activePersona)
 
-// Primary navigation (admin/fallback) — "không có phận sự thì không thấy"
-const primaryNav = computed(() => [
-  { to: '/dashboard',        icon: 'layout-dashboard', label: 'Tổng quan',          show: true },
-  { to: '/alerts',           icon: 'bell',             label: 'Cảnh báo',           show: access.canFeature('alerts') },
-  { to: '/stock-balance',    icon: 'package',          label: 'Tồn kho',            show: access.canFeature('stock_balance') },
-  { to: '/putaway',          icon: 'package-plus',     label: 'Xếp hàng lên kệ',    show: access.canFeature('putaway') },
-  { to: '/batch-trace',      icon: 'file-search',      label: 'Truy xuất lô',       show: access.canFeature('batch_trace') },
-  { to: '/warehouse-map',    icon: 'map',              label: 'Bản đồ kho',         show: access.canFeature('warehouse_map') },
-  { to: '/map-editor',       icon: 'map-pinned',       label: 'Thiết kế bản đồ',    show: access.canFeature('map_editor') },
-  { to: '/financial-reports',icon: 'wallet',           label: 'Báo cáo tài chính',  show: access.canFeature('financial_reports') },
-  { to: '/users',            icon: 'users',            label: 'Người dùng & Quyền', show: access.canFeature('users') },
-].filter(i => i.show))
-
-// Module groups in deliberate operational order (admin/fallback view)
-const moduleGroups = computed(() => {
-  const order = ['Thiết lập', 'Chiến lược', 'Kinh doanh', 'Vận hành', 'Tài chính', 'Chất lượng', 'Báo cáo']
-  const g = {}
-  MODULES.filter(m => access.canModule(m.id)).forEach(m => { (g[m.group] ||= []).push(m) })
-  return order.filter(k => g[k]).map(k => ({ label: k, items: g[k] }))
-})
-
-// Persona-curated nav: groups + items, items gated by access store.
-// Returns array of { group, items: [...] } where empty groups are dropped.
-const personaNav = computed(() => {
-  if (!persona.value?.nav) return []
-  const passes = (item) => {
-    if (item.requireModule  && !access.canModule(item.requireModule))   return false
-    if (item.requireFeature && !access.canFeature(item.requireFeature)) return false
-    if (item.requireDoctype && !access.canDoctype(item.requireDoctype)) return false
-    return true
-  }
-  const out = []
-  let current = null
-  for (const item of persona.value.nav) {
-    if (item.group) {
-      if (current && current.items.length) out.push(current)
-      current = { label: item.group, items: [] }
-    } else if (passes(item)) {
-      (current ||= { label: '', items: [] }).items.push(item)
-    }
-  }
-  if (current && current.items.length) out.push(current)
-  return out
-})
-
-function isActive(path, exact = true) {
-  if (path === '/dashboard') return route.path === '/' || route.path === '/dashboard'
-  return exact ? route.path === path : route.path.startsWith(path)
+// ---------------------------------------------------------------------------
+// 3 khối phân hệ (MUA HÀNG / BÁN HÀNG / DÙNG CHUNG) — "không có phận sự thì
+// không thấy": mục gate theo quyền doctype/feature, khối rỗng bị ẩn.
+// ---------------------------------------------------------------------------
+function itemVisible(item) {
+  if (item.always) return true
+  if (item.dt) return access.canDoctype(item.dt)
+  if (item.feat) return access.canFeature(item.feat)
+  return false
 }
+// Khối hiện khi: (a) vai user thuộc block.roles (hoặc block không giới hạn / user
+// là admin) VÀ (b) có >=1 mục qua item-gate. Tách phân hệ theo vai (điểm 4 spec).
+function blockAllowed(b) {
+  if (access.is_admin) return true
+  if (!b.roles || !b.roles.length) return true
+  const roles = access.roles || []
+  return b.roles.some(r => roles.includes(r))
+}
+const visibleBlocks = computed(() =>
+  NAV_BLOCKS
+    .filter(blockAllowed)
+    .map(b => ({ ...b, items: b.items.filter(itemVisible) }))
+    .filter(b => b.items.length)
+)
+
+// Route so khớp mục nav (dùng cho active + auto-expand + chip page-header).
+const decode = (p) => { try { return decodeURIComponent(p) } catch { return p } }
+function isActive(path) {
+  if (path === '/dashboard') return route.path === '/' || route.path === '/dashboard'
+  return decode(route.path) === decode(path)
+}
+function blockHasActive(b) { return b.items.some(i => isActive(i.to)) }
+
+// Khối chứa trang đang mở — cho chip phân hệ ở page-header.
+const activeBlock = computed(() =>
+  visibleBlocks.value.find(blockHasActive) || null
+)
+
+// Collapse/expand từng khối — nhớ localStorage; mặc định MỞ; khối chứa trang
+// đang mở luôn được coi là mở (không ẩn mục active).
+const blockCollapsed = reactive(
+  JSON.parse(localStorage.getItem('sc-nav-blocks') || '{}')
+)
+function toggleBlock(id) {
+  blockCollapsed[id] = !blockCollapsed[id]
+  localStorage.setItem('sc-nav-blocks', JSON.stringify(blockCollapsed))
+}
+function isBlockOpen(b) {
+  if (blockHasActive(b)) return true
+  return !blockCollapsed[b.id]
+}
+function isDashboardActive() { return route.path === '/' || route.path === '/dashboard' }
 
 const currentTitle = computed(() => {
   if (route.name === 'module') {
@@ -164,79 +168,57 @@ async function logout() {
         </div>
       </div>
 
-      <!-- Nav -->
+      <!-- Nav — 3 khối phân hệ (Mua hàng / Bán hàng / Dùng chung) -->
       <nav class="flex-1 overflow-y-auto overflow-x-hidden py-3 sc-nav-scroll">
 
-        <!-- ====== Persona-curated layout (named personas) ====== -->
-        <template v-if="persona && !persona.flat">
-          <div v-for="grp in personaNav" :key="grp.label" class="mb-3 last:mb-0">
-            <div v-if="!collapsed && grp.label" class="px-5 mb-1.5 text-[10px] font-bold uppercase
-              tracking-[0.16em] text-white/35">
-              {{ grp.label }}
-            </div>
-            <div v-else-if="collapsed && grp.label" class="mx-4 my-2.5 border-t border-white/8" />
-            <div class="space-y-0.5">
-              <router-link v-for="item in grp.items" :key="item.to"
-                :to="item.to" @click="closeDrawer" :title="collapsed ? item.label : ''"
-                class="sc-nav-item group"
-                :class="[
-                  isActive(item.to) ? 'sc-nav-active' : 'sc-nav-idle',
-                  collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
-                ]">
-                <span v-if="isActive(item.to)" class="sc-nav-bar" />
-                <Icon :name="item.icon" :size="19"
-                  class="transition-transform duration-200 ease-sc group-hover:scale-110" />
-                <span v-if="!collapsed" class="text-[13.5px] font-medium truncate">{{ item.label }}</span>
-              </router-link>
-            </div>
-          </div>
-        </template>
+        <!-- Ghim: Tổng quan (luôn hiện) -->
+        <div class="space-y-0.5 mb-1.5">
+          <router-link to="/dashboard" @click="closeDrawer" :title="collapsed ? 'Tổng quan' : ''"
+            class="sc-nav-item group"
+            :class="[ isDashboardActive() ? 'sc-nav-active' : 'sc-nav-idle',
+                      collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5' ]">
+            <span v-if="isDashboardActive()" class="sc-nav-bar" style="background:#7FB4E0" />
+            <Icon name="layout-dashboard" :size="19"
+              class="transition-transform duration-200 ease-sc group-hover:scale-110" />
+            <span v-if="!collapsed" class="text-[13.5px] font-medium truncate">Tổng quan</span>
+          </router-link>
+        </div>
 
-        <!-- ====== Admin / fallback layout — full module list ====== -->
-        <template v-else>
-          <!-- Primary -->
-          <div class="space-y-0.5">
-            <router-link v-for="item in primaryNav" :key="item.to"
+        <div v-for="b in visibleBlocks" :key="b.id" class="mt-3 first:mt-1.5">
+          <!-- Header nhóm (không phải link — bấm để collapse) -->
+          <button v-if="!collapsed" type="button" @click="toggleBlock(b.id)"
+            class="w-full flex items-center gap-2 px-4 mb-1 group/hd select-none">
+            <span class="text-[13px] leading-none">{{ b.emoji }}</span>
+            <span class="text-[10.5px] font-extrabold uppercase tracking-[0.15em]"
+              :style="{ color: b.accent }">{{ b.label }}</span>
+            <span class="ml-auto flex items-center gap-1.5">
+              <span class="h-[3px] w-6 rounded-full opacity-70" :style="{ background: b.accent }" />
+              <Icon name="chevron-down" :size="14"
+                class="text-white/35 group-hover/hd:text-white/70 transition-transform duration-200"
+                :class="isBlockOpen(b) ? '' : '-rotate-90'" />
+            </span>
+          </button>
+          <!-- Chế độ thu gọn: chỉ 1 dải màu phân cách khối -->
+          <div v-else class="mx-3 my-2 h-[3px] rounded-full opacity-70" :style="{ background: b.accent }" />
+
+          <div v-show="collapsed || isBlockOpen(b)" class="space-y-0.5">
+            <router-link v-for="item in b.items" :key="item.to"
               :to="item.to" @click="closeDrawer" :title="collapsed ? item.label : ''"
               class="sc-nav-item group"
-              :class="[
-                isActive(item.to) ? 'sc-nav-active' : 'sc-nav-idle',
-                collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
-              ]">
-              <span v-if="isActive(item.to)" class="sc-nav-bar" />
-              <Icon :name="item.icon" :size="19"
-                class="transition-transform duration-200 ease-sc group-hover:scale-110" />
+              :class="[ isActive(item.to) ? 'sc-nav-on' : 'sc-nav-idle',
+                        collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5' ]"
+              :style="isActive(item.to)
+                ? { background: `linear-gradient(90deg, ${b.tint}, ${b.tintSoft})`, color: '#fff' }
+                : null">
+              <span v-if="isActive(item.to)" class="sc-nav-bar"
+                :style="{ background: b.accent, boxShadow: `0 0 10px ${b.accent}` }" />
+              <Icon :name="item.icon" :size="18.5"
+                class="transition-transform duration-200 ease-sc group-hover:scale-110"
+                :style="isActive(item.to) ? { color: b.accent } : null" />
               <span v-if="!collapsed" class="text-[13.5px] font-medium truncate">{{ item.label }}</span>
             </router-link>
           </div>
-
-          <!-- Module groups -->
-          <div v-for="grp in moduleGroups" :key="grp.label" class="mt-4">
-            <div v-if="!collapsed" class="px-5 mb-1.5 text-[10px] font-bold uppercase
-              tracking-[0.16em] text-white/35">
-              {{ grp.label }}
-            </div>
-            <div v-else class="mx-4 my-2.5 border-t border-white/8" />
-            <div class="space-y-0.5">
-              <router-link v-for="m in grp.items" :key="m.id"
-                :to="m.route" @click="closeDrawer" :title="collapsed ? `${m.code} — ${m.name}` : ''"
-                class="sc-nav-item group"
-                :class="[
-                  isActive(m.route) ? 'sc-nav-active' : 'sc-nav-idle',
-                  collapsed ? 'justify-center px-0 mx-2' : 'px-3 mx-2.5',
-                ]">
-                <span v-if="isActive(m.route)" class="sc-nav-bar" />
-                <Icon :name="m.icon" :size="19"
-                  class="transition-transform duration-200 ease-sc group-hover:scale-110" />
-                <span v-if="!collapsed" class="flex items-baseline gap-1.5 min-w-0">
-                  <span class="font-mono text-[10px] text-white/40 group-hover:text-white/60
-                    transition-colors flex-shrink-0">{{ m.code }}</span>
-                  <span class="text-[13.5px] font-medium truncate">{{ m.name }}</span>
-                </span>
-              </router-link>
-            </div>
-          </div>
-        </template>
+        </div>
       </nav>
 
       <!-- Scope note (named persona only) -->
@@ -282,7 +264,16 @@ async function logout() {
         </button>
 
         <div class="flex items-center gap-2.5 min-w-0">
-          <span class="hidden sm:inline-flex h-7 w-7 items-center justify-center rounded-md
+          <!-- Chip phân hệ: emoji + tên khối + màu — luôn biết đang ở phân hệ nào -->
+          <span v-if="activeBlock"
+            class="inline-flex items-center gap-1.5 h-7 pl-2 pr-2.5 rounded-md text-[11.5px] font-bold"
+            :style="{ background: activeBlock.accentBase + '1A', color: activeBlock.accentBase,
+                      boxShadow: `inset 3px 0 0 ${activeBlock.accentBase}` }"
+            :title="`Phân hệ: ${activeBlock.label}`">
+            <span>{{ activeBlock.emoji }}</span>
+            <span class="hidden sm:inline">{{ activeBlock.label }}</span>
+          </span>
+          <span v-else class="hidden sm:inline-flex h-7 w-7 items-center justify-center rounded-md
             bg-sc-royal-50 text-sc-royal">
             <Icon name="circle-dot" :size="15" />
           </span>
@@ -415,6 +406,17 @@ async function logout() {
   background: linear-gradient(90deg, rgba(91, 155, 213, 0.30), rgba(91, 155, 213, 0.07));
 }
 .sc-nav-active :deep(.sc-icon) { color: #9CC5E8; }
+/* Mục active trong khối: nền + màu icon set inline theo màu khối; class chỉ giữ chữ trắng + hover nhẹ. */
+.sc-nav-on { color: #fff; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) {
+  .sc-nav-item, .sc-nav-item :deep(.sc-icon) { transition: none !important; }
+  .sc-nav-bar { animation: none !important; }
+}
+/* Focus bàn phím rõ ràng (a11y) */
+.sc-nav-item:focus-visible {
+  outline: 2px solid rgba(255,255,255,0.55);
+  outline-offset: -2px;
+}
 
 /* Sliding accent bar */
 .sc-nav-bar {

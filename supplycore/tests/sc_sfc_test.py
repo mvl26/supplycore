@@ -35,6 +35,8 @@ def _make_item(suffix):
 def _make_sfc(customer, items, **kwargs):
     sfc = frappe.new_doc("SC Sales Framework Contract")
     sfc.customer = customer
+    sfc.contract_number = f"HD-{random_string(6)}"
+    sfc.contract_date = today()
     sfc.valid_from = today()
     sfc.valid_to = add_days(today(), 365)
     for it in items:

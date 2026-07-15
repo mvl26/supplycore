@@ -17,6 +17,9 @@
   "section_qc",
   "qc_required",
   "qc_status",
+  "receipt_status",
+  "confirmed_by",
+  "warehouse_in_date",
   "officially_received_at",
   "section_return",
   "is_return",
@@ -111,6 +114,30 @@
    "read_only": 1,
    "in_list_view": 1,
    "in_standard_filter": 1
+  },
+  {
+   "fieldname": "receipt_status",
+   "fieldtype": "Select",
+   "options": "\nĐã tiếp nhận\nChờ xử lý\nĐã nhập kho",
+   "label": "Trạng thái nhập kho",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Đã tiếp nhận (chờ QC, chưa vào tồn) → Đã nhập kho (sau khi bấm Xác nhận nhập kho). Controller quản lý, không sửa tay."
+  },
+  {
+   "fieldname": "confirmed_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người xác nhận nhập kho",
+   "read_only": 1
+  },
+  {
+   "fieldname": "warehouse_in_date",
+   "fieldtype": "Date",
+   "label": "Ngày nhập kho (ghi sổ)",
+   "read_only": 1,
+   "description": "Ngày ghi sổ kho = ngày bấm Xác nhận nhập kho (không phải ngày tiếp nhận)."
   },
   {
    "fieldname": "officially_received_at",
@@ -342,5 +369,7 @@
  "module": "Supplycore",
  "name": "SC Purchase Receipt",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "supplier_name",
+ "show_title_field_in_link": 1
 }

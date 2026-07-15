@@ -348,5 +348,7 @@
  "module": "Supplycore",
  "name": "SC Purchase Order",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "supplier_name",
+ "show_title_field_in_link": 1
 }

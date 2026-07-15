@@ -295,9 +295,11 @@ def make_invoice_from_pr(pr_name: str) -> str:
     pr = frappe.get_doc("SC Purchase Receipt", pr_name)
     if pr.docstatus != 1:
         frappe.throw(_("PR {0} chưa submit").format(pr_name), title="SC-E-PR")
-    if pr.qc_status == "Rejected":
-        frappe.throw(_("PR {0} bị QC Rejected — không tạo PI").format(pr_name),
-                      title="SC-E007 QC_REJECTED")
+    # Hỏng TOÀN BỘ (PR.qc_status = "Fail") -> không tạo hoá đơn (mọi dòng trả NCC).
+    # (Trước đây check "Rejected" là giá trị PR không bao giờ có -> check chết.)
+    if pr.qc_status == "Fail":
+        frappe.throw(_("PR {0} bị QC Từ chối toàn bộ — không tạo hoá đơn (xử lý bằng Trả NCC).")
+                      .format(pr_name), title="SC-E007 QC_REJECTED")
     # Check duplicate
     existing = frappe.db.get_value("SC Purchase Invoice",
                                      {"purchase_receipt": pr_name, "docstatus": ["!=", 2]}, "name")
@@ -316,7 +318,14 @@ def make_invoice_from_pr(pr_name: str) -> str:
     pi.vat_rate = 10  # default VAT VN
     pi.remarks = _("Tự tạo từ PR {0} (kho nhập: {1})").format(
         pr_name, pr.to_warehouse or "—")
+    skipped = []
     for r in pr.items:
+        # LOẠI dòng có lô bị QC Từ chối (Rejected) — hàng này đã/đang TRẢ NCC nên
+        # KHÔNG đưa vào hoá đơn mua (không trả tiền hàng đã trả lại). Chỉ lập hoá
+        # đơn cho phần ĐẠT (Accepted/Conditional) hoặc dòng không có lô/không QC.
+        if r.batch_no and frappe.db.get_value("SC Batch", r.batch_no, "qc_status") == "Rejected":
+            skipped.append(r.item)
+            continue
         pi.append("items", {
             "item": r.item,
             "item_name": getattr(r, "item_name", None) or
@@ -330,6 +339,11 @@ def make_invoice_from_pr(pr_name: str) -> str:
             "po_item_ref": r.po_item_ref,
             "pr_item_ref": r.name,
         })
+    if not pi.items:
+        frappe.throw(_("Không có dòng vật tư ĐẠT để lập hoá đơn (mọi dòng đã bị QC từ chối / trả NCC)."),
+                      title="SC-E007 QC_REJECTED")
+    if skipped:
+        pi.remarks += _(" · Đã LOẠI khỏi hoá đơn (QC từ chối, trả NCC): {0}").format(", ".join(skipped))
     pi.flags.ignore_permissions = True
     pi.insert()
     return pi.name

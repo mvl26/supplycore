@@ -84,6 +84,8 @@ permission_query_conditions = {
     "SC Sales Invoice": "supplycore.utils.permissions.sales_invoice_portal_query",
     "SC Sales Receipt": "supplycore.utils.permissions.sales_receipt_portal_query",
     "SC Sales Framework Contract": "supplycore.utils.permissions.sales_fc_portal_query",
+    # GĐ MVL b6 — biên bản nghiệm thu lộ cho Portal, scope theo customer.
+    "SC Acceptance Record": "supplycore.utils.permissions.acceptance_record_portal_query",
     # Child tables (RSK-01 caveat — xem permissions.py::_portal_child_scope):
     # permission_query_conditions tra theo doctype của truy vấn, không kế thừa
     # từ doctype cha, nên phải đăng ký riêng để chặn truy vấn thẳng child.
@@ -99,6 +101,7 @@ has_permission = {
     "SC Sales Invoice": "supplycore.utils.permissions.portal_doc_permission",
     "SC Sales Receipt": "supplycore.utils.permissions.portal_doc_permission",
     "SC Sales Framework Contract": "supplycore.utils.permissions.portal_doc_permission",
+    "SC Acceptance Record": "supplycore.utils.permissions.portal_doc_permission",
     # Defense-in-depth (Task 2 review, Minor 1) — KHÔNG phải đường đi
     # enforcement chính, xem docstring `portal_child_permission`: Frappe
     # resolve has_permission của child doctype thẳng về cha thật qua
@@ -118,13 +121,14 @@ fixtures = [
         "SupplyCore Storekeeper",
         "SupplyCore Accountant", "SupplyCore Executive", "SupplyCore Purchaser",
         "Warehouse Officer", "QC Officer",
+        "SC Customer Portal", "Khách hàng",
     ]]]},
     {"dt": "Workflow",       "filters": [["name", "like", "SupplyCore%"]]},
     {"dt": "Workflow State", "filters": [["name", "like", "SupplyCore%"]]},
     {"dt": "Workflow Action Master", "filters": [["name", "like", "SupplyCore%"]]},
     {"dt": "Print Format",   "filters": [["module", "in", [
         "Supplycore", "M1 Contract", "M2 Planning", "M3 Receiving",
-        "M4 WMS", "M5 FEFO", "M6 Transfer",
+        "M4 WMS", "M5 FEFO", "M6 Transfer", "M7 Sales",
         "M8 Accounting", "M9 Stocktake", "M10 Traceability", "M11 Dashboard"]]]},
     {"dt": "Email Template", "filters": [["module", "like", "%Supplycore%"]]},
 ]
@@ -158,6 +162,14 @@ override_whitelisted_methods = {
 before_request = [
     "supplycore.utils.permissions.portal_block_rest_child",
 ]
+
+# Jinja helpers cho Print Format TT99 (số tiền bằng chữ + thông tin người bán)
+jinja = {
+    "methods": [
+        "supplycore.utils.print_helpers.sc_seller_info",
+        "supplycore.utils.print_helpers.sc_dong_in_words",
+    ]
+}
 
 boot_session = "supplycore.boot.boot_session"
 after_install = "supplycore.install.after_install"

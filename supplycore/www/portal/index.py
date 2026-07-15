@@ -25,17 +25,16 @@ def get_context(context):
 
     user = frappe.session.user if frappe.session else "Guest"
 
-    if user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect-to=/portal"
-        raise frappe.Redirect
+    # Khách vãng lai (Guest): KHÔNG redirect nữa — hiển thị màn Đăng ký / Đăng
+    # nhập ngay trên /portal (thương mại điện tử: tự đăng ký rồi tự đăng nhập
+    # qua supplycore.api.portal.portal_register — allow_guest).
+    context.is_guest = (user == "Guest")
 
-    context.access_denied = PORTAL_ROLE not in frappe.get_roles(user)
+    # Chỉ user đăng nhập mà KHÔNG có role Portal mới là "access_denied".
+    context.access_denied = (not context.is_guest) and (
+        PORTAL_ROLE not in frappe.get_roles(user))
 
-    if context.access_denied:
-        # Không truy vấn/trả bất kỳ dữ liệu SC Customer/nội bộ nào cho user
-        # không có role Portal — chỉ hiển thị thông báo chung.
-        return context
-
+    # csrf_token cấp cho cả guest (phiên guest có token) để POST đăng ký hợp lệ.
     try:
         context.csrf_token = frappe.sessions.get_csrf_token()
     except Exception:

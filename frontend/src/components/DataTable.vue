@@ -16,6 +16,30 @@ const props = defineProps({
 
 const emit = defineEmits(['rowClick', 'sort'])
 
+// Rút gọn mã kỹ thuật: "SC-DN-2026-04161" -> "DN-04161" (bỏ tiền tố SC- và năm
+// lặp lại cả bảng). Giữ nguyên nếu không khớp khuôn naming-series.
+function shortenCode(v) {
+  if (!v) return ''
+  const m = String(v).match(/^(?:SC-)?([A-Za-z]+)-(\d{4})-(\w+)$/)
+  return m ? `${m[1]}-${m[3]}` : String(v)
+}
+
+// Nội dung hiển thị của cell thường:
+//  - cột có displayKey (hiện TÊN): tên nghiệp vụ; nếu trống -> rút gọn mã làm dự phòng.
+//  - cột type='code': mã rút gọn.
+//  - còn lại: format thường.
+function cellText(r, c) {
+  if (c.type === 'code') return shortenCode(r[c.key])
+  if (c.displayKey) return r[c.displayKey] || shortenCode(r[c.key])
+  return fmt(r[c.displayKey || c.key], c)
+}
+// Tooltip = mã đầy đủ (để xem/copy) cho cột mã hoặc cột tên có mã nền.
+function cellTitle(r, c) {
+  if (c.type === 'code') return r[c.key] || ''
+  if (c.displayKey) return r[c.key] || ''
+  return ''
+}
+
 function fmt(value, col) {
   if (value == null) return ''
   if (col.format) return col.format(value)
@@ -87,7 +111,8 @@ function onHeaderClick(c) {
             :class="rowClickable ? 'cursor-pointer' : ''"
             @click="rowClickable && emit('rowClick', r)">
             <td v-for="c in columns" :key="c.key"
-              :class="[c.align === 'right' ? 'text-right' : '', c.mono ? 'font-mono text-xs' : '']">
+              :class="[c.align === 'right' ? 'text-right' : '',
+                       (c.mono || c.type === 'code') ? 'font-mono text-xs' : '']">
               <template v-if="c.type === 'badge'">
                 <span v-html="fmt(r[c.key], c).__html"></span>
               </template>
@@ -96,7 +121,7 @@ function onHeaderClick(c) {
                 <span v-else class="text-sc-border-strong">—</span>
               </template>
               <template v-else>
-                {{ fmt(r[c.key], c) }}
+                <span :title="cellTitle(r, c)">{{ cellText(r, c) }}</span>
               </template>
             </td>
           </tr>

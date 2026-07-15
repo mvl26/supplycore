@@ -51,7 +51,7 @@ const FIELD_LABEL = {
   // Contract
   contract_number: 'Số HĐ',
   // PO/PR/MR
-  purchase_order: 'Đơn mua', purchase_receipt: 'Phiếu nhập',
+  purchase_order: 'Đơn mua', purchase_receipt: 'Phiếu tiếp nhận tạm',
   material_request: 'YC mua', request_type: 'Loại YC',
   is_return: 'Là trả hàng',
   // QC

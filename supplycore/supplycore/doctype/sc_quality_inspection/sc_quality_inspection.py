@@ -22,14 +22,27 @@ class SCQualityInspection(Document):
             self.overall_status = "On Hold"
             return
 
-        # Auto-derive overall_status từ readings
-        if self.readings:
-            statuses = [r.status for r in self.readings if r.status]
-            if statuses and (not self.overall_status or self.overall_status == "Pending"):
-                if any(s == "Rejected" for s in statuses):
-                    self.overall_status = "Rejected"
-                elif all(s == "Accepted" for s in statuses) and len(statuses) == len(self.readings):
-                    self.overall_status = "Accepted"
+        # GĐ MVL — bỏ dropdown "Kết quả tổng" (trùng với "Hành động"). Kết quả QC
+        # (overall_status) nay DERIVE từ Hành động (action_taken) — nguồn duy nhất
+        # KCS chọn. Mọi logic sau (batch qc_status, rollup PR.qc_status, cổng "Xác
+        # nhận nhập kho") vẫn dùng overall_status như cũ, chỉ khác là được suy ra.
+        self._derive_overall_from_action()
+
+    def _derive_overall_from_action(self):
+        a = self.action_taken
+        if a in ("Accept", "Conditional Accept"):
+            self.overall_status = "Accepted"   # Conditional Accept → batch=Conditional ở on_submit
+        elif a in ("Return to Supplier", "Request Replacement"):
+            self.overall_status = "Rejected"
+        else:
+            # Chưa chọn Hành động (nháp): gợi ý từ readings để hiển thị, chưa kết luận.
+            statuses = [r.status for r in self.readings if r.status] if self.readings else []
+            if statuses and any(s == "Rejected" for s in statuses):
+                self.overall_status = "Rejected"
+            elif statuses and all(s == "Accepted" for s in statuses) and len(statuses) == len(self.readings):
+                self.overall_status = "Accepted"
+            else:
+                self.overall_status = "Pending"
 
     def _sync_from_receipt(self):
         """L20/T06: ép item / lô / SL nhận theo dòng phiếu nhập gốc (read-only thật
@@ -60,7 +73,13 @@ class SCQualityInspection(Document):
         set_count = sum(1 for r in self.readings if r.status)
         if set_count == 0:
             frappe.throw(_("SC-E-QI-READINGS: Phải nhập kết quả cho ít nhất 1 tiêu chí trước khi submit"))
-        self._validate_result_action()
+        # Bắt buộc chọn Hành động (kết luận QC) trước khi submit — đây nay là
+        # trạng thái QC duy nhất (đã bỏ dropdown "Kết quả tổng").
+        if not self.action_taken or self.action_taken == "Pending":
+            frappe.throw(_(
+                "SC-E-QI-ACTION: Phải chọn 'Hành động / Kết luận QC' (Chấp nhận / Trả NCC / …) "
+                "trước khi submit."
+            ), title="SC-E-QI-ACTION")
 
     def _validate_result_action(self):
         """L17: chặn cặp Kết quả ↔ Hành động mâu thuẫn.
@@ -127,9 +146,11 @@ class SCQualityInspection(Document):
         else:
             new_status = "Partial Pass"
         frappe.db.set_value("SC Purchase Receipt", pr.name, "qc_status", new_status)
-        if new_status == "Pass":
-            frappe.db.set_value("SC Purchase Receipt", pr.name,
-                                 "officially_received_at", now())
+        # GĐ MVL (2 bước): QC Pass KHÔNG còn tự "nhập kho" — chỉ mở cổng cho phép bấm
+        # "Xác nhận nhập kho" (officially_received_at set ở bước xác nhận, không ở đây).
+        # QC Fail → phiếu chuyển "Chờ xử lý" (trả NCC/huỷ) nếu chưa nhập kho.
+        if new_status == "Fail" and pr.receipt_status == "Đã tiếp nhận":
+            frappe.db.set_value("SC Purchase Receipt", pr.name, "receipt_status", "Chờ xử lý")
 
     def _handle_rejected(self):
         # 1. Auto block batch

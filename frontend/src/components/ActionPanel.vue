@@ -60,6 +60,16 @@ const visible = computed(() => {
 })
 
 function openAction(a) {
+  // In phiếu: mở printview của Frappe ở tab mới NGAY trong tick click (đồng bộ)
+  // để không bị popup-blocker chặn. Mẫu in do a.printFormat quyết định theo doc.
+  if (a.printFormat) {
+    const fmt = typeof a.printFormat === 'function' ? a.printFormat(props.doc || {}) : a.printFormat
+    const url = `/printview?doctype=${encodeURIComponent(props.doctype)}`
+      + `&name=${encodeURIComponent(props.doc.name)}`
+      + `&format=${encodeURIComponent(fmt)}&no_letterhead=1&trigger_print=1`
+    window.open(url, '_blank')
+    return
+  }
   // Nút navigate thuần — không call server, chỉ router.push
   if (a.route) {
     const r = typeof a.route === 'function' ? a.route(props.doc || {}) : a.route
@@ -179,6 +189,7 @@ const btnClass = {
       <FieldInput v-for="f in selected?.args || []" :key="f.key"
         v-model="args[f.key]"
         :label="f.label" :type="f.type || 'text'"
+        :link-to="f.linkTo" :placeholder="f.placeholder"
         :options="f.options" :required="f.required" :hint="f.hint" />
     </div>
     <template #footer>

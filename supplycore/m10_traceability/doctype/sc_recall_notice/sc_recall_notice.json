@@ -1,79 +1,340 @@
 {
- "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB",
- "autoname": "format:SC-RCL-{YYYY}-{#####}", "is_submittable": 1, "track_changes": 1,
+ "actions": [],
+ "creation": "2026-05-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "autoname": "format:SC-RCL-{YYYY}-{#####}",
+ "is_submittable": 1,
+ "track_changes": 1,
  "field_order": [
-  "section_main", "recall_date", "recall_type", "severity",
-  "column_break_1", "item", "batch_no", "supplier",
-  "section_reason", "recall_reason", "regulatory_reference",
-  "section_affected", "affected_items",
-  "section_summary", "total_affected_qty", "recovered_qty", "destroyed_qty",
-  "column_break_summary", "outstanding_qty", "recall_resolution_pct",
-  "section_action", "resolution", "resolution_date",
-  "column_break_action", "approved_by", "approved_at",
-  "section_disposal", "return_pr", "write_off_entry", "clinical_notified_at",
-  "section_status", "status", "amended_from", "remarks"
+  "section_main",
+  "recall_date",
+  "recall_type",
+  "severity",
+  "column_break_1",
+  "item",
+  "item_name",
+  "batch_no",
+  "supplier",
+  "section_reason",
+  "recall_reason",
+  "regulatory_reference",
+  "section_affected",
+  "affected_items",
+  "section_summary",
+  "total_affected_qty",
+  "recovered_qty",
+  "destroyed_qty",
+  "column_break_summary",
+  "outstanding_qty",
+  "recall_resolution_pct",
+  "section_action",
+  "resolution",
+  "resolution_date",
+  "column_break_action",
+  "approved_by",
+  "approved_at",
+  "section_disposal",
+  "return_pr",
+  "write_off_entry",
+  "clinical_notified_at",
+  "section_status",
+  "status",
+  "amended_from",
+  "remarks"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông báo thu hồi"},
-  {"fieldname": "recall_date", "fieldtype": "Date", "label": "Ngày thu hồi", "reqd": 1, "default": "Today", "in_list_view": 1},
-  {"fieldname": "recall_type", "fieldtype": "Select",
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Thông báo thu hồi"
+  },
+  {
+   "fieldname": "recall_date",
+   "fieldtype": "Date",
+   "label": "Ngày thu hồi",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "recall_type",
+   "fieldtype": "Select",
    "options": "Voluntary\nMandatory\nPrecautionary",
-   "label": "Loại thu hồi", "reqd": 1, "default": "Voluntary", "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "severity", "fieldtype": "Select",
+   "label": "Loại thu hồi",
+   "reqd": 1,
+   "default": "Voluntary",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "severity",
+   "fieldtype": "Select",
    "options": "Class I (Critical)\nClass II (High)\nClass III (Low)",
-   "label": "Mức độ", "default": "Class II (High)", "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Vật tư", "reqd": 1, "in_list_view": 1, "search_index": 1},
-  {"fieldname": "batch_no", "fieldtype": "Link", "options": "SC Batch", "label": "Lô bị thu hồi", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "supplier", "fieldtype": "Link", "options": "SC Supplier", "label": "NCC", "fetch_from": "batch_no.supplier", "in_standard_filter": 1},
-
-  {"fieldname": "section_reason", "fieldtype": "Section Break", "label": "Lý do thu hồi"},
-  {"fieldname": "recall_reason", "fieldtype": "Small Text", "label": "Lý do", "reqd": 1},
-  {"fieldname": "regulatory_reference", "fieldtype": "Data", "label": "Tham chiếu pháp lý",
-   "description": "VD: CV BYT số ..., TT ..."},
-
-  {"fieldname": "section_affected", "fieldtype": "Section Break", "label": "Items bị ảnh hưởng (auto từ batch trace)"},
-  {"fieldname": "affected_items", "fieldtype": "Table", "options": "SC Recall Affected Item", "label": "Items"},
-
-  {"fieldname": "section_summary", "fieldtype": "Section Break", "label": "Tổng hợp thu hồi"},
-  {"fieldname": "total_affected_qty", "fieldtype": "Float", "label": "Tổng SL ảnh hưởng", "read_only": 1, "in_list_view": 1},
-  {"fieldname": "recovered_qty", "fieldtype": "Float", "label": "SL đã thu hồi", "read_only": 1},
-  {"fieldname": "destroyed_qty", "fieldtype": "Float", "label": "SL đã hủy", "read_only": 1},
-  {"fieldname": "column_break_summary", "fieldtype": "Column Break"},
-  {"fieldname": "outstanding_qty", "fieldtype": "Float", "label": "SL chưa thu hồi", "read_only": 1},
-  {"fieldname": "recall_resolution_pct", "fieldtype": "Percent", "label": "Tỷ lệ giải quyết", "read_only": 1},
-
-  {"fieldname": "section_action", "fieldtype": "Section Break", "label": "Hành động"},
-  {"fieldname": "resolution", "fieldtype": "Select",
+   "label": "Mức độ",
+   "default": "Class II (High)",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "options": "SC Item",
+   "label": "Vật tư",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Tên vật tư",
+   "fetch_from": "item.item_name",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "batch_no",
+   "fieldtype": "Link",
+   "options": "SC Batch",
+   "label": "Lô bị thu hồi",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "options": "SC Supplier",
+   "label": "NCC",
+   "fetch_from": "batch_no.supplier",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "section_reason",
+   "fieldtype": "Section Break",
+   "label": "Lý do thu hồi"
+  },
+  {
+   "fieldname": "recall_reason",
+   "fieldtype": "Small Text",
+   "label": "Lý do",
+   "reqd": 1
+  },
+  {
+   "fieldname": "regulatory_reference",
+   "fieldtype": "Data",
+   "label": "Tham chiếu pháp lý",
+   "description": "VD: CV BYT số ..., TT ..."
+  },
+  {
+   "fieldname": "section_affected",
+   "fieldtype": "Section Break",
+   "label": "Items bị ảnh hưởng (auto từ batch trace)"
+  },
+  {
+   "fieldname": "affected_items",
+   "fieldtype": "Table",
+   "options": "SC Recall Affected Item",
+   "label": "Items"
+  },
+  {
+   "fieldname": "section_summary",
+   "fieldtype": "Section Break",
+   "label": "Tổng hợp thu hồi"
+  },
+  {
+   "fieldname": "total_affected_qty",
+   "fieldtype": "Float",
+   "label": "Tổng SL ảnh hưởng",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "recovered_qty",
+   "fieldtype": "Float",
+   "label": "SL đã thu hồi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "destroyed_qty",
+   "fieldtype": "Float",
+   "label": "SL đã hủy",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_summary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "outstanding_qty",
+   "fieldtype": "Float",
+   "label": "SL chưa thu hồi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recall_resolution_pct",
+   "fieldtype": "Percent",
+   "label": "Tỷ lệ giải quyết",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_action",
+   "fieldtype": "Section Break",
+   "label": "Hành động"
+  },
+  {
+   "fieldname": "resolution",
+   "fieldtype": "Select",
    "options": "\nReturn to Supplier\nDestroy\nQuarantine\nPending",
-   "label": "Phương án xử lý", "default": "Pending"},
-  {"fieldname": "resolution_date", "fieldtype": "Date", "label": "Ngày xử lý"},
-  {"fieldname": "column_break_action", "fieldtype": "Column Break"},
-  {"fieldname": "approved_by", "fieldtype": "Link", "options": "User", "label": "Người duyệt", "read_only": 1},
-  {"fieldname": "approved_at", "fieldtype": "Datetime", "label": "Thời điểm duyệt", "read_only": 1},
-
-  {"fieldname": "section_disposal", "fieldtype": "Section Break", "label": "Phiếu xử lý", "collapsible": 1},
-  {"fieldname": "return_pr", "fieldtype": "Link", "options": "SC Purchase Receipt", "label": "Phiếu trả NCC", "read_only": 1, "description": "Auto-link khi gọi create_return_to_supplier()"},
-  {"fieldname": "write_off_entry", "fieldtype": "Link", "options": "SC Stock Entry", "label": "Phiếu hủy (Write Off)", "read_only": 1, "description": "Auto-link khi gọi create_write_off()"},
-  {"fieldname": "clinical_notified_at", "fieldtype": "Datetime", "label": "Thời điểm báo BS điều trị", "read_only": 1, "description": "UC-30 3a: set khi notify_clinical_staff() được gọi"},
-
-  {"fieldname": "section_status", "fieldtype": "Section Break", "label": "Trạng thái"},
-  {"fieldname": "status", "fieldtype": "Select",
+   "label": "Phương án xử lý",
+   "default": "Pending"
+  },
+  {
+   "fieldname": "resolution_date",
+   "fieldtype": "Date",
+   "label": "Ngày xử lý"
+  },
+  {
+   "fieldname": "column_break_action",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_at",
+   "fieldtype": "Datetime",
+   "label": "Thời điểm duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_disposal",
+   "fieldtype": "Section Break",
+   "label": "Phiếu xử lý",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "return_pr",
+   "fieldtype": "Link",
+   "options": "SC Purchase Receipt",
+   "label": "Phiếu trả NCC",
+   "read_only": 1,
+   "description": "Auto-link khi gọi create_return_to_supplier()"
+  },
+  {
+   "fieldname": "write_off_entry",
+   "fieldtype": "Link",
+   "options": "SC Stock Entry",
+   "label": "Phiếu hủy (Write Off)",
+   "read_only": 1,
+   "description": "Auto-link khi gọi create_write_off()"
+  },
+  {
+   "fieldname": "clinical_notified_at",
+   "fieldtype": "Datetime",
+   "label": "Thời điểm báo BS điều trị",
+   "read_only": 1,
+   "description": "UC-30 3a: set khi notify_clinical_staff() được gọi"
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Trạng thái"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
    "options": "Draft\nIssued\nIn Progress\nCompleted\nCancelled",
-   "label": "Status", "default": "Draft", "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Recall Notice", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1},
-  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú"}
+   "label": "Status",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Recall Notice",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Executive", "read": 1, "submit": 1, "cancel": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "write": 1, "report": 1, "print": 1},
-  {"role": "QC Officer", "read": 1, "report": 1},
-  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Executive",
+   "read": 1,
+   "submit": 1,
+   "cancel": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "write": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "QC Officer",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
  ],
- "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-07 00:00:00",
- "module": "M10 Traceability", "name": "SC Recall Notice",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-05-07 00:00:00",
+ "module": "M10 Traceability",
+ "name": "SC Recall Notice",
  "search_fields": "batch_no,item,recall_type",
- "sort_field": "recall_date", "sort_order": "DESC"
+ "sort_field": "recall_date",
+ "sort_order": "DESC"
 }

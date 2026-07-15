@@ -70,12 +70,22 @@ class SCSalesInvoice(Document):
     def _check_dn_status(self):
         if not self.delivery_note:
             return
-        dn_status = frappe.db.get_value("SC Delivery Note", self.delivery_note, "status")
-        if dn_status != "Đã nghiệm thu":
+        dn = frappe.db.get_value(
+            "SC Delivery Note", self.delivery_note, ["status", "customer"], as_dict=True)
+        if dn.status != "Đã nghiệm thu":
             frappe.throw(_(
                 "BRU-DEL-001: Phiếu giao hàng {0} chưa được nghiệm thu (trạng thái "
                 "hiện tại: {1}) — không thể lập hóa đơn bán hàng."
-            ).format(self.delivery_note, dn_status), title="BRU-DEL-001")
+            ).format(self.delivery_note, dn.status), title="BRU-DEL-001")
+        # BRU-INVC-001 (party): hóa đơn phải đúng khách của Phiếu giao hàng. Trên
+        # đường Desk, `customer` là field reqd độc lập — kế toán có thể chọn DN
+        # của khách A nhưng đặt customer=B → Dr131 party=B treo phải thu nhầm
+        # khách. Ép khớp để bút toán phải thu luôn về đúng khách của DN.
+        if dn.customer and self.customer and self.customer != dn.customer:
+            frappe.throw(_(
+                "BRU-INVC-001: Khách hàng hóa đơn ({0}) không khớp khách hàng của "
+                "Phiếu giao hàng {1} ({2})."
+            ).format(self.customer, self.delivery_note, dn.customer), title="BRU-INVC-001")
 
     # ------------------------------------------------------------------
     # BRU-INVC-001

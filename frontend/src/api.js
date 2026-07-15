@@ -198,8 +198,10 @@ export async function deleteDoc(doctype, name) {
   })
 }
 
-export async function count(doctype, filters = {}) {
-  return call('supplycore.api.frontend.count_docs', { doctype, filters })
+export async function count(doctype, filters = {}, or_filters = null) {
+  const payload = { doctype, filters }
+  if (or_filters && or_filters.length) payload.or_filters = or_filters
+  return call('supplycore.api.frontend.count_docs', payload)
 }
 
 export async function submitDoc(doctype, name) {

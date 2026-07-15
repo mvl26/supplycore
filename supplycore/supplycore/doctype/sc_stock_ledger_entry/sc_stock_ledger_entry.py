@@ -79,7 +79,7 @@ class SCStockLedgerEntry(Document):
         return flt(frappe.db.sql(sql, tuple(params))[0][0])
 
     @staticmethod
-    def get_available_qty(item, warehouse, batch=None) -> float:
+    def get_available_qty(item, warehouse=None, batch=None) -> float:
         """BUG-002: tồn kho KHẢ DỤNG — loại trừ batch QC Pending/Rejected.
 
         Dùng cho mọi nghiệp vụ xuất kho (Material Issue/Transfer).
@@ -88,18 +88,24 @@ class SCStockLedgerEntry(Document):
         Logic: JOIN SC Batch on qc_status. SLE không có batch (item chưa
         track lô) coi như available luôn — vì chỉ batch-tracked item mới
         cần QC enforcement.
+
+        `warehouse=None` → tổng tồn khả dụng của item trên TẤT CẢ kho (dùng cho
+        chốt chặn sớm lúc khách gọi hàng — BRU-INV-002, chưa biết kho xuất).
         """
         from frappe.utils import flt
         sql = """
             SELECT COALESCE(SUM(sle.qty_change), 0)
             FROM `tabSC Stock Ledger Entry` sle
             LEFT JOIN `tabSC Batch` b ON b.name = sle.batch
-            WHERE sle.item = %s AND sle.warehouse = %s AND sle.is_cancelled = 0
+            WHERE sle.item = %s AND sle.is_cancelled = 0
               AND (sle.batch IS NULL OR sle.batch = ''
                    OR b.qc_status NOT IN ('Pending', 'Rejected'))
               AND (b.blocked IS NULL OR b.blocked = 0)
         """
-        params = [item, warehouse]
+        params = [item]
+        if warehouse is not None:
+            sql += " AND sle.warehouse = %s"
+            params.append(warehouse)
         if batch is not None:
             sql += " AND sle.batch = %s"
             params.append(batch)

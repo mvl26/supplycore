@@ -122,6 +122,29 @@ def sales_order_approve(name) -> dict:
 # 4. Delivery Note create + submit
 # ---------------------------------------------------------------------------
 @frappe.whitelist()
+def make_delivery(sales_order, from_warehouse=None, delivery_date=None) -> dict:
+    """Nút 'Tạo phiếu giao' trên SC Sales Order (GĐ MVL b5 — bán tự động).
+
+    Wrapper kwargs-phẳng cho ActionPanel (delivery_create nhận dict `data` không
+    hợp injection phẳng). Copy đầy đủ dòng hàng/SL từ SO; batch do controller DN
+    tự FEFO auto-pick. from_warehouse rỗng → lấy Settings.default_warehouse.
+    Trả {name} để ActionPanel navigate sang DN vừa tạo.
+    """
+    if not from_warehouse:
+        # Fallback: kho SC Warehouse không-group đầu tiên (Settings.default_warehouse
+        # là Link 'Warehouse' ERPNext — không dùng ở app no-ERPNext). Nhân viên nên
+        # nhập kho xuất rõ ràng; fallback chỉ để nút không lỗi khi bỏ trống.
+        from_warehouse = frappe.db.get_value(
+            "SC Warehouse", {"is_group": 0, "disabled": 0}, "name", order_by="name")
+    dn_name = delivery_create({
+        "sales_order": sales_order,
+        "from_warehouse": from_warehouse,
+        "delivery_date": delivery_date,
+    })
+    return {"name": dn_name}
+
+
+@frappe.whitelist()
 def delivery_create(data) -> str:
     """Tạo + submit SC Delivery Note từ SC Sales Order.
 

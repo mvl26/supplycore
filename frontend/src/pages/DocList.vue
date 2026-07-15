@@ -107,11 +107,29 @@ function hasFilterValue(v) {
   return true
 }
 
+// Các field text để ô tìm kiếm quét: mã (name) + mọi cột hiện TÊN (displayKey)
+// + cột tên/số hợp đồng trực tiếp. Chỉ lấy field có trong listFields (query được).
+// L3: gõ tên KH hay mã đầy đủ đều ra kết quả.
+const searchFields = computed(() => {
+  const lf = new Set(cfg.value?.listFields || [])
+  const out = new Set(['name'])
+  for (const c of (cfg.value?.listColumns || [])) {
+    if (c.displayKey && lf.has(c.displayKey)) out.add(c.displayKey)
+    if (/_name$/.test(c.key) && lf.has(c.key)) out.add(c.key)
+    if (c.key === 'contract_number' && lf.has(c.key)) out.add(c.key)
+  }
+  return [...out]
+})
+
+// Tìm kiếm dạng OR trên các field text (tách khỏi buildFilters vì filters là AND).
+function buildSearchOr() {
+  if (!search.value) return []
+  const q = `%${search.value}%`
+  return searchFields.value.map(f => [f, 'like', q])
+}
+
 function buildFilters() {
   const filters = []
-  if (search.value) {
-    filters.push(['name', 'like', `%${search.value}%`])
-  }
   for (const [k, v] of Object.entries(columnFilters.value)) {
     if (!hasFilterValue(v)) continue
     // Pair: __range__startField__endField → overlap với period [v.from, v.to]
@@ -159,16 +177,18 @@ async function load() {
   loading.value = true
   try {
     const filters = buildFilters()
+    const orFilters = buildSearchOr()
     const start = (page.value - 1) * pageSize.value
     const [data, cnt] = await Promise.all([
       getList(doctype.value, {
         fields: cfg.value.listFields,
         filters,
+        or_filters: orFilters,
         order_by: buildOrderBy(),
         limit: pageSize.value,
         start,
       }),
-      count(doctype.value, filters).catch(() => 0),
+      count(doctype.value, filters, orFilters).catch(() => 0),
     ])
     rows.value = data
     total.value = cnt
@@ -180,6 +200,7 @@ async function load() {
       rows.value = await getList(doctype.value, {
         fields: cfg.value.listFields,
         filters,
+        or_filters: orFilters,
         order_by: buildOrderBy(),
         limit: pageSize.value,
         start: startFix,

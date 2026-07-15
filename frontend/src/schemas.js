@@ -458,22 +458,16 @@ export const FORM_SCHEMAS = {
       ]},
       { title: 'Kết quả', fields: [
         { name: 'manual_inspection', label: 'Kiểm thủ công', type: 'Check' },
-        { name: 'overall_status', label: 'Kết quả tổng', type: 'Select',
-          options: [
-            { value: 'Pending', label: 'Chờ kiểm' },
-            { value: 'Accepted', label: 'Đạt' },
-            { value: 'Rejected', label: 'Không đạt' },
-            { value: 'Conditional', label: 'Đạt có điều kiện' },
-            { value: 'On Hold', label: 'Tạm giữ' },
-          ],
-          default: 'Pending' },
-        { name: 'action_taken', label: 'Hành động', type: 'Select',
+        // GĐ MVL — bỏ "Kết quả tổng" (trùng với Hành động). Kết luận QC chọn 1 nơi
+        // duy nhất ở đây; hệ thống tự suy Đạt/Không đạt cho lô & phiếu nhập.
+        { name: 'action_taken', label: 'Kết luận QC (Hành động)', type: 'Select', required: true,
+          hint: 'Chấp nhận → hàng đạt; Trả NCC / Yêu cầu đổi hàng → hàng không đạt',
           options: [
             { value: 'Pending', label: 'Chờ xử lý' },
-            { value: 'Accept', label: 'Chấp nhận' },
+            { value: 'Accept', label: 'Chấp nhận (Đạt)' },
             { value: 'Conditional Accept', label: 'Chấp nhận có điều kiện' },
-            { value: 'Return to Supplier', label: 'Trả NCC' },
-            { value: 'Request Replacement', label: 'Yêu cầu đổi hàng' },
+            { value: 'Return to Supplier', label: 'Trả NCC (Không đạt)' },
+            { value: 'Request Replacement', label: 'Yêu cầu đổi hàng (Không đạt)' },
           ] },
         { name: 'remarks', label: 'Ghi chú KCS', type: 'Small Text' },
       ]},
@@ -619,6 +613,11 @@ export const FORM_SCHEMAS = {
       { title: 'Thông tin khách hàng', fields: [
         { name: 'customer_name', label: 'Tên khách hàng', type: 'Data', required: true },
         { name: 'tax_code', label: 'Mã số thuế', type: 'Data', required: true },
+        { name: 'email', label: 'Tài khoản đăng nhập (email)', type: 'Data',
+          hint: 'Email khách dùng để đăng nhập cổng — sẽ tạo tài khoản Portal khi lưu' },
+        { name: 'portal_password', label: 'Mật khẩu Portal', type: 'Password',
+          hint: 'Đặt mật khẩu đăng nhập cho khách (tối thiểu 6 ký tự). Cấp lại cho khách sau khi tạo. Không lưu lại trên hồ sơ.' },
+        { name: 'phone', label: 'Điện thoại', type: 'Data' },
         { name: 'status', label: 'Trạng thái', type: 'Select', required: true,
           options: [
             { value: 'Tạm ngưng', label: 'Tạm ngưng' },
@@ -627,8 +626,8 @@ export const FORM_SCHEMAS = {
           hint: 'Khách hàng mới mặc định Tạm ngưng — chỉ chuyển Hoạt động sau khi có tài khoản Portal' },
         { name: 'credit_limit', label: 'Hạn mức nợ (VND)', type: 'Currency' },
         { name: 'payment_terms', label: 'Điều khoản thanh toán', type: 'Data' },
-        { name: 'portal_user', label: 'Tài khoản Portal', type: 'Link', linkTo: 'User',
-          hint: 'Bắt buộc có trước khi chuyển trạng thái sang Hoạt động (BRU-CUS-001)' },
+        { name: 'portal_user', label: 'Tài khoản Portal (tự tạo)', type: 'Data', readonly: true,
+          hint: 'Tự tạo từ tài khoản + mật khẩu ở trên khi lưu — không cần chọn thủ công' },
       ]},
       { title: 'Địa chỉ', fields: [
         { name: 'billing_address', label: 'Địa chỉ hoá đơn', type: 'Small Text' },
@@ -640,8 +639,18 @@ export const FORM_SCHEMAS = {
     sections: [
       { title: 'Thông tin HĐ khung', fields: [
         { name: 'customer', label: 'Khách hàng', type: 'Link', linkTo: 'SC Customer', required: true },
+        { name: 'contract_number', label: 'Số hợp đồng', type: 'Data', required: true },
+        { name: 'contract_date', label: 'Ngày ký', type: 'Date', required: true, default: 'today' },
         { name: 'valid_from', label: 'Hiệu lực từ', type: 'Date', required: true, default: 'today' },
         { name: 'valid_to', label: 'Hiệu lực đến', type: 'Date', required: true },
+      ]},
+      { title: 'Điều khoản', fields: [
+        { name: 'payment_terms', label: 'Điều khoản thanh toán', type: 'Data' },
+        { name: 'delivery_terms', label: 'Điều khoản giao hàng', type: 'Small Text' },
+      ]},
+      { title: 'Hồ sơ & Ghi chú', fields: [
+        { name: 'attachment', label: 'File hợp đồng (PDF)', type: 'Attach' },
+        { name: 'remarks', label: 'Ghi chú', type: 'Small Text' },
       ]},
     ],
     items: {
@@ -1126,6 +1135,16 @@ export const QUICK_CREATE = {
     prefillField: 'department_name',
     fields: [
       { name: 'department_name', label: 'Tên khoa/phòng', type: 'Data', required: true },
+    ],
+  },
+  'SC Customer': {
+    title: 'Tạo nhanh Khách hàng',
+    prefillField: 'customer_name',
+    fields: [
+      { name: 'customer_name', label: 'Tên khách hàng', type: 'Data', required: true },
+      { name: 'tax_code', label: 'Mã số thuế', type: 'Data', required: true },
+      { name: 'credit_limit', label: 'Hạn mức nợ (VND)', type: 'Currency' },
+      { name: 'billing_address', label: 'Địa chỉ hoá đơn', type: 'Small Text' },
     ],
   },
 }

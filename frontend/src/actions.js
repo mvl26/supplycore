@@ -37,7 +37,8 @@ export const ACTIONS = {
   'Procurement Plan': [
     { method: 'auto_load_items', label: 'Tự nạp theo tiêu thụ', icon: 'clipboard-list', variant: 'primary',
       when: (d) => d.docstatus === 0 && d.warehouse,
-      args: [{ key: 'item_filter', label: 'Lọc theo nhóm VT (tuỳ chọn)', type: 'text' }] },
+      args: [{ key: 'item_filter', label: 'Lọc theo nhóm VT (tuỳ chọn)', type: 'link',
+               linkTo: 'SC Item Group', placeholder: '— Tất cả nhóm (để trống) —' }] },
     { method: 'auto_load_reorder_items', label: 'Tự nạp theo tồn tối thiểu', icon: 'download', variant: 'secondary',
       when: (d) => d.docstatus === 0 && d.warehouse },
     { method: 'make_material_request', label: 'Tạo Yêu cầu mua (MR)', icon: 'file-text', variant: 'primary',
@@ -84,13 +85,39 @@ export const ACTIONS = {
   // Sau khi QC hoàn tất (qc_status='Pass' hoặc không cần QC) → 2 hành
   // động chính: tạo Hoá đơn mua + Xếp hàng lên kệ.
   'SC Purchase Receipt': [
+    // GĐ MVL — Bước 2: Xác nhận nhập kho (ghi sổ kho tại ngày xác nhận). Chỉ hiện
+    // khi đã tiếp nhận + QC Pass (hoặc không cần QC) + chưa nhập kho. Role thủ kho/
+    // quản lý mới bấm được (backend chặn 403). Ghi sổ ở NGÀY xác nhận (mặc định hôm nay).
+    { method: 'confirm_warehouse_in',
+      label: 'Xác nhận nhập kho', icon: 'package-check', variant: 'success',
+      when: (d) => d.docstatus === 1 && d.is_return === 0
+        && d.receipt_status === 'Đã tiếp nhận'
+        && (!d.qc_required || d.qc_status === 'Pass' || d.qc_status === 'Partial Pass'),
+      args: [{ key: 'warehouse_in_date', label: 'Ngày nhập kho (để trống = hôm nay)', type: 'date' }] },
+    // QC có dòng Từ chối -> điều hướng sang phiếu Trả NCC (nháp, tự tạo).
+    { method: 'find_return_pr',
+      label: 'Xem phiếu trả NCC', icon: 'undo-2', variant: 'warning',
+      when: (d) => d.docstatus === 1 && d.is_return === 0
+        && (d.qc_status === 'Fail' || d.qc_status === 'Partial Pass') },
     // UC-24 step 1: Tạo Hoá đơn mua từ PR
     { apiMethod: 'supplycore.m8_accounting.doctype.sc_purchase_invoice.sc_purchase_invoice.make_invoice_from_pr',
       apiNameArg: 'pr_name',
       label: 'Tạo Hoá đơn mua (PI)', icon: 'receipt', variant: 'primary',
       when: (d) => d.docstatus === 1 && d.is_return === 0
-        && (!d.qc_required || d.qc_status === 'Pass'),
+        && (!d.qc_required || d.qc_status === 'Pass' || d.qc_status === 'Partial Pass'),
       navigateOnSuccess: { type: 'doc', dt: 'SC Purchase Invoice', from: 'result' } },
+    // In phiếu — backend tự chọn mẫu: "Phiếu nhập kho" khi Đã nhập kho, ngược lại
+    // "Phiếu tiếp nhận tạm" (ghi rõ chưa nhập kho). Mở bản in HTML ở tab mới.
+    // In phiếu — mở printview (tab mới): mẫu "Phiếu nhập kho (TT99)" khi đã nhập kho
+    // (in vật tư + lô + hạn), ngược lại "Phiếu tiếp nhận tạm".
+    { printFormat: (d) => d.receipt_status === 'Đã nhập kho'
+        ? 'PR - Phiếu nhập kho (TT99)' : 'PR - Phiếu tiếp nhận tạm',
+      label: 'In phiếu (tiếp nhận / nhập kho)', icon: 'printer', variant: 'secondary',
+      when: (d) => d.docstatus === 1 && d.is_return === 0 },
+    // In phiếu TRẢ NCC — chỉ các dòng hàng trả lại (lô QC không đạt).
+    { printFormat: () => 'PR - Phiếu trả NCC',
+      label: 'In phiếu trả NCC', icon: 'printer', variant: 'secondary',
+      when: (d) => d.docstatus === 1 && d.is_return === 1 },
     // Xếp hàng lên kệ — chỉ hiện khi QC đã xong (hoặc không cần QC)
     { route: (d) => `/putaway?warehouse=${encodeURIComponent(d.to_warehouse || '')}`,
       label: 'Xếp hàng lên kệ', icon: 'package-plus', variant: 'success',
@@ -104,15 +131,40 @@ export const ACTIONS = {
       when: (d) => d.is_return === 1 && d.docstatus === 1 && !d.notification_sent_at },
     { method: 'link_replacement',    label: 'Liên kết PR đổi hàng',   icon: 'link', variant: 'secondary',
       when: (d) => d.is_return === 1 && d.docstatus === 1,
-      args: [{ key: 'replacement_pr_name', label: 'Mã PR đổi hàng', type: 'text', required: true }] },
+      args: [{ key: 'replacement_pr_name', label: 'PR đổi hàng', type: 'link',
+               linkTo: 'SC Purchase Receipt', required: true, placeholder: '— Chọn phiếu nhập đổi hàng —' }] },
   ],
 
   // === M7 Sales — O2C (SO duyệt → DN → nghiệm thu → SI → thu tiền) ===
+  'SC Customer': [
+    // GĐ MVL — cấp tài khoản Portal cho khách (role SC Customer Portal). Chỉ
+    // hiện khi chưa có portal_user. Nhập email → tạo Website User + link + gửi
+    // email đặt mật khẩu để khách đăng nhập gọi hàng.
+    { apiMethod: 'supplycore.api.portal.portal_provision',
+      apiNameArg: 'customer',
+      label: 'Cấp tài khoản Portal', icon: 'user-plus', variant: 'primary',
+      when: (d) => d.docstatus !== 2 && !d.portal_user,
+      args: [
+        { key: 'email', label: 'Email đăng nhập của khách', type: 'text', required: true },
+        { key: 'send_invite', label: 'Gửi email đặt mật khẩu (1/0)', type: 'number', default: 1 },
+      ] },
+  ],
   'SC Sales Order': [
     { method: 'approve', label: 'Duyệt', icon: 'check', variant: 'success',
       when: (d) => d.docstatus === 1 && d.status === 'Chờ duyệt' },
     { method: 'reject',  label: 'Từ chối', icon: 'x', variant: 'danger',
       when: (d) => d.docstatus === 1 && d.status === 'Chờ duyệt' },
+    // GĐ MVL b5 — bán tự động: sau khi duyệt, nhân viên bấm tạo phiếu giao.
+    { apiMethod: 'supplycore.api.sales.make_delivery',
+      apiNameArg: 'sales_order',
+      label: 'Tạo phiếu giao', icon: 'truck', variant: 'primary',
+      when: (d) => d.docstatus === 1 && d.status === 'Đã duyệt',
+      args: [
+        { key: 'from_warehouse', label: 'Kho xuất (để trống = kho mặc định)', type: 'link',
+          linkTo: 'SC Warehouse', placeholder: '— Chọn kho (để trống = kho mặc định) —' },
+        { key: 'delivery_date', label: 'Ngày giao', type: 'date' },
+      ],
+      navigateOnSuccess: { type: 'doc', dt: 'SC Delivery Note', from: 'name' } },
   ],
   'SC Delivery Note': [
     // Lập biên bản nghiệm thu (create+submit qua sales API) — param: delivery_note
@@ -164,7 +216,8 @@ export const ACTIONS = {
       label: 'Auto-load PI chưa thanh toán', icon: 'clipboard-list', variant: 'primary',
       when: (d) => d.docstatus === 0 && d.supplier,
       args: [
-        { key: 'supplier', label: 'NCC', type: 'text', required: true },
+        { key: 'supplier', label: 'NCC', type: 'link', linkTo: 'SC Supplier', required: true,
+          placeholder: '— Chọn nhà cung cấp —' },
         { key: 'limit', label: 'Số PI tối đa', type: 'number', default: 50 },
       ]},
   ],
@@ -243,7 +296,8 @@ export const ACTIONS = {
     { method: 'lock_user',           label: 'Khóa user (Fraud)',    icon: 'lock', variant: 'danger',
       when: () => true,
       args: [
-        { key: 'user', label: 'Email user cần khóa', type: 'text', required: true },
+        { key: 'user', label: 'User cần khóa', type: 'link', linkTo: 'User', required: true,
+          placeholder: '— Chọn user —' },
         { key: 'reason', label: 'Lý do', type: 'textarea', required: true },
       ]},
     { method: 'create_system_error_adjustment', label: 'Tạo SR điều chỉnh',
@@ -274,7 +328,8 @@ export const ACTIONS = {
     { method: 'assign_alert', label: 'Phân công', icon: 'user', variant: 'secondary',
       when: (d) => !d.resolved,
       args: [
-        { key: 'user', label: 'Email user', type: 'text', required: true },
+        { key: 'user', label: 'User', type: 'link', linkTo: 'User', required: true,
+          placeholder: '— Chọn user —' },
         { key: 'note', label: 'Ghi chú',    type: 'textarea' },
       ]},
 

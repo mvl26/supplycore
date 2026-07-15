@@ -9,51 +9,308 @@
  "field_order": [
   "section_main",
   "customer",
+  "customer_name",
+  "contract_number",
   "column_break_1",
+  "contract_date",
   "valid_from",
   "valid_to",
   "section_value",
   "total_value",
+  "used_value",
+  "committed_value",
+  "remaining_value",
   "column_break_2",
-  "status",
-  "approved_by",
+  "payment_terms",
+  "delivery_terms",
   "section_items",
   "items",
+  "section_status",
+  "status",
+  "column_break_status",
+  "approved_by",
+  "section_termination",
+  "termination_date",
+  "termination_reason",
+  "termination_minutes",
+  "section_other",
+  "attachment",
+  "attachments",
+  "remarks",
   "amended_from"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin chung"},
-  {"fieldname": "customer", "fieldtype": "Link", "options": "SC Customer", "label": "Khách hàng", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "valid_from", "fieldtype": "Date", "label": "Hiệu lực từ"},
-  {"fieldname": "valid_to", "fieldtype": "Date", "label": "Hết hạn"},
-
-  {"fieldname": "section_value", "fieldtype": "Section Break", "label": "Giá trị hợp đồng"},
-  {"fieldname": "total_value", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Tổng giá trị (VND)", "read_only": 1, "description": "Tự động tính = Σ thành tiền các dòng vật tư bên dưới"},
-  {"fieldname": "column_break_2", "fieldtype": "Column Break"},
-  {"fieldname": "status", "fieldtype": "Select", "options": "Nháp\nChờ duyệt\nHiệu lực\nHết hạn\nThanh lý", "label": "Trạng thái", "default": "Nháp", "in_list_view": 1, "in_standard_filter": 1, "read_only": 1, "search_index": 1},
-  {"fieldname": "approved_by", "fieldtype": "Link", "options": "User", "label": "Người duyệt", "read_only": 1},
-
-  {"fieldname": "section_items", "fieldtype": "Section Break", "label": "Danh mục vật tư trong hợp đồng"},
-  {"fieldname": "items", "fieldtype": "Table", "options": "SFC Item", "label": "Danh mục vật tư", "reqd": 1},
-
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Sales Framework Contract", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Thông tin chung"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "options": "SC Customer",
+   "label": "Khách hàng",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Tên khách hàng",
+   "fetch_from": "customer.customer_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contract_number",
+   "fieldtype": "Data",
+   "label": "Số hợp đồng",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contract_date",
+   "fieldtype": "Date",
+   "label": "Ngày ký",
+   "reqd": 1
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "label": "Hiệu lực từ",
+   "reqd": 1
+  },
+  {
+   "fieldname": "valid_to",
+   "fieldtype": "Date",
+   "label": "Hết hạn",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_value",
+   "fieldtype": "Section Break",
+   "label": "Giá trị hợp đồng"
+  },
+  {
+   "fieldname": "total_value",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Tổng giá trị (VND)",
+   "read_only": 1,
+   "description": "Tự động tính = Σ thành tiền các dòng vật tư bên dưới"
+  },
+  {
+   "fieldname": "used_value",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Đã bán (SO đã chốt)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "committed_value",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Đang gọi (SO chờ duyệt)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remaining_value",
+   "fieldtype": "Currency",
+   "precision": "0",
+   "options": "VND",
+   "label": "Còn lại khả dụng",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_terms",
+   "fieldtype": "Data",
+   "label": "Điều khoản thanh toán"
+  },
+  {
+   "fieldname": "delivery_terms",
+   "fieldtype": "Small Text",
+   "label": "Điều khoản giao hàng"
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Danh mục vật tư trong hợp đồng"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "SFC Item",
+   "label": "Danh mục vật tư",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Trạng thái"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "options": "Nháp\nChờ duyệt\nHiệu lực\nHết hạn\nThanh lý",
+   "label": "Trạng thái",
+   "default": "Nháp",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Người duyệt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_termination",
+   "fieldtype": "Section Break",
+   "label": "Thanh lý hợp đồng",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "termination_date",
+   "fieldtype": "Date",
+   "label": "Ngày thanh lý"
+  },
+  {
+   "fieldname": "termination_reason",
+   "fieldtype": "Small Text",
+   "label": "Lý do thanh lý"
+  },
+  {
+   "fieldname": "termination_minutes",
+   "fieldtype": "Attach",
+   "label": "Biên bản thanh lý (PDF)"
+  },
+  {
+   "fieldname": "section_other",
+   "fieldtype": "Section Break",
+   "label": "Khác",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "File hợp đồng (PDF)"
+  },
+  {
+   "fieldname": "attachments",
+   "fieldtype": "Long Text",
+   "label": "Tài liệu đính kèm (nhiều tệp)"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Ghi chú"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Sales Framework Contract",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1, "share": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Purchaser", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Accountant", "read": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1},
-  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1},
-  {"role": "SC Customer Portal", "read": 1, "report": 1, "print": 1, "email": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Purchaser",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "report": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SC Customer Portal",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  }
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",
- "modified": "2026-07-06 00:00:00",
+ "modified": "2026-07-14 00:00:00",
  "module": "M7 Sales",
  "name": "SC Sales Framework Contract",
- "title_field": "customer",
+ "title_field": "customer_name",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "show_title_field_in_link": 1
 }

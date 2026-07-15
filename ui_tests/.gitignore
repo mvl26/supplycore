@@ -1,0 +1,6 @@
+node_modules/
+artifacts/
+report/
+test-results/
+.auth/
+seed-state.json

@@ -237,7 +237,7 @@ export const DETAIL_CONFIGS = {
   // ===== Financial: PR ======================================================
   'SC Purchase Receipt': {
     icon: 'package-check',
-    accentLabel: 'Phiếu nhập kho',
+    accentLabel: 'Phiếu tiếp nhận tạm',
     title: (d) => d.supplier_name || d.supplier || '—',
     subtitleMono: (d) => d.name,
     meta: [
@@ -249,12 +249,16 @@ export const DETAIL_CONFIGS = {
     status: (d) => {
       if (d.docstatus === 2) return { label: 'Đã huỷ', cls: 'sc-badge-neutral', icon: 'x-circle' }
       if (d.docstatus === 0) return { label: 'Bản nháp', cls: 'sc-badge-neutral', icon: 'file' }
-      if (d.qc_required && d.qc_status === 'Pending') return { label: 'Chờ QC', cls: 'sc-badge-warning', icon: 'shield-alert' }
-      // PR rollup ghi 'Pass' / 'Fail' / 'Partial Pass' (không phải Accepted/Rejected).
+      if (d.is_return) return { label: 'Trả NCC', cls: 'sc-badge-info', icon: 'undo-2' }
+      // GĐ MVL — lifecycle 2 bước theo receipt_status.
+      if (d.receipt_status === 'Đã nhập kho') return { label: 'Đã nhập kho', cls: 'sc-badge-success', icon: 'check-circle-2' }
+      if (d.receipt_status === 'Chờ xử lý') return { label: 'Chờ xử lý (QC không đạt)', cls: 'sc-badge-critical', icon: 'shield-x' }
+      // Đã tiếp nhận — phân theo QC (rollup 'Pass'/'Fail'/'Partial Pass').
+      if (d.qc_required && (!d.qc_status || d.qc_status === 'Pending')) return { label: 'Đã tiếp nhận · Chờ QC', cls: 'sc-badge-warning', icon: 'shield-alert' }
       if (d.qc_status === 'Fail' || d.qc_status === 'Rejected') return { label: 'QC không đạt', cls: 'sc-badge-critical', icon: 'shield-x' }
       if (d.qc_status === 'Partial Pass') return { label: 'QC đạt một phần', cls: 'sc-badge-warning', icon: 'shield-alert' }
-      if (d.is_return) return { label: 'Trả NCC', cls: 'sc-badge-info', icon: 'undo-2' }
-      return { label: 'Đã nhập kho', cls: 'sc-badge-success', icon: 'check-circle-2' }
+      // Đã tiếp nhận + QC đạt → chờ bấm "Xác nhận nhập kho".
+      return { label: 'Chờ nhập kho', cls: 'sc-badge-info', icon: 'package-plus' }
     },
     tiles: [
       { icon: 'wallet', label: 'Tổng giá trị', value: (d) => d.total_value, fmt: 'moneyShort' },
@@ -820,6 +824,7 @@ export const DETAIL_CONFIGS = {
     title: (d) => d.customer_name || d.customer || d.name,
     subtitleMono: (d) => d.name,
     meta: [
+      { icon: 'hash', text: (d) => d.contract_number ? `Số ${d.contract_number}` : null },
       { icon: 'calendar', text: (d) => d.valid_from ? `Từ ${fmtDate(d.valid_from)}` : null },
       { icon: 'calendar', text: (d) => d.valid_to ? `Đến ${fmtDate(d.valid_to)}` : null },
     ],
@@ -835,14 +840,30 @@ export const DETAIL_CONFIGS = {
     },
     tiles: [
       { icon: 'wallet', label: 'Tổng giá trị', value: (d) => d.total_value, fmt: 'moneyShort' },
-      { icon: 'list', label: 'Số dòng', value: (d) => (d.items || []).length, fmt: 'number' },
+      { icon: 'trending-up', label: 'Đã bán', value: (d) => d.used_value, fmt: 'moneyShort' },
+      { icon: 'clock', label: 'Đang gọi', value: (d) => d.committed_value, fmt: 'moneyShort' },
+      { icon: 'piggy-bank', label: 'Còn lại', value: (d) => d.remaining_value, fmt: 'moneyShort' },
     ],
     sections: [
-      { title: 'Hiệu lực', icon: 'calendar', fields: [
-        { label: 'Khách hàng', value: (d) => d.customer,
+      { title: 'Thông tin hợp đồng', icon: 'file-text', fields: [
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
-        { label: 'Từ ngày', value: (d) => d.valid_from ? fmtDate(d.valid_from) : '—' },
-        { label: 'Đến ngày', value: (d) => d.valid_to ? fmtDate(d.valid_to) : '—' },
+        { label: 'Số hợp đồng', value: (d) => d.contract_number || '—' },
+        { label: 'Ngày ký', value: (d) => d.contract_date ? fmtDate(d.contract_date) : '—' },
+        { label: 'Hiệu lực từ', value: (d) => d.valid_from ? fmtDate(d.valid_from) : '—' },
+        { label: 'Hết hạn', value: (d) => d.valid_to ? fmtDate(d.valid_to) : '—' },
+        { label: 'Người duyệt', value: (d) => d.approved_by || '—' },
+      ]},
+      { title: 'Điều khoản', icon: 'scroll-text', fields: [
+        { label: 'Điều khoản thanh toán', value: (d) => d.payment_terms || '—' },
+        { label: 'Điều khoản giao hàng', value: (d) => d.delivery_terms || '—' },
+      ]},
+      { title: 'Hồ sơ & Ghi chú', icon: 'paperclip', fields: [
+        { label: 'File hợp đồng', value: (d) => d.attachment ? 'Đã đính kèm' : '—',
+          link: (d) => d.attachment || null },
+        { label: 'Ghi chú', value: (d) => d.remarks || '—' },
+        { label: 'Ngày thanh lý', value: (d) => d.termination_date ? fmtDate(d.termination_date) : '—' },
+        { label: 'Lý do thanh lý', value: (d) => d.termination_reason || '—' },
       ]},
     ],
     items: {
@@ -893,9 +914,9 @@ export const DETAIL_CONFIGS = {
     ],
     sections: [
       { title: 'Tham chiếu', icon: 'link', fields: [
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
-        { label: 'HĐ khung', value: (d) => d.framework_contract,
+        { label: 'HĐ khung', value: (d) => d.framework_contract_display || d.framework_contract,
           link: (d) => d.framework_contract ? `/doc/SC Sales Framework Contract/${d.framework_contract}` : null },
         { label: 'Người duyệt', value: (d) => d.approval_by },
       ]},
@@ -944,7 +965,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Tham chiếu', icon: 'link', fields: [
         { label: 'Sales Order', value: (d) => d.sales_order,
           link: (d) => d.sales_order ? `/doc/SC Sales Order/${d.sales_order}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Kho xuất', value: (d) => d.from_warehouse },
       ]},
@@ -990,7 +1011,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Thông tin nghiệm thu', icon: 'info', fields: [
         { label: 'Delivery Note', value: (d) => d.delivery_note,
           link: (d) => d.delivery_note ? `/doc/SC Delivery Note/${d.delivery_note}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Người nhận hàng', value: (d) => d.accepted_by },
         { label: 'Ghi chú', value: (d) => d.note, pre: true },
@@ -1036,7 +1057,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Tham chiếu', icon: 'link', fields: [
         { label: 'Delivery Note', value: (d) => d.delivery_note,
           link: (d) => d.delivery_note ? `/doc/SC Delivery Note/${d.delivery_note}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Tiền thuế', value: (d) => d.tax_amount != null ? fmtVND(d.tax_amount) : '—' },
       ]},
@@ -1079,7 +1100,7 @@ export const DETAIL_CONFIGS = {
       { title: 'Tham chiếu', icon: 'link', fields: [
         { label: 'Hoá đơn bán', value: (d) => d.sales_invoice,
           link: (d) => d.sales_invoice ? `/doc/SC Sales Invoice/${d.sales_invoice}` : null },
-        { label: 'Khách hàng', value: (d) => d.customer,
+        { label: 'Khách hàng', value: (d) => d.customer_name || d.customer,
           link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Ngày thu', value: (d) => d.receipt_date ? fmtDate(d.receipt_date) : '—' },
       ]},

@@ -9,6 +9,7 @@
  "field_order": [
   "section_main",
   "customer",
+  "customer_name",
   "sales_invoice",
   "column_break_1",
   "receipt_date",
@@ -17,31 +18,153 @@
   "amended_from"
  ],
  "fields": [
-  {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Phiếu thu"},
-  {"fieldname": "customer", "fieldtype": "Link", "options": "SC Customer", "label": "Khách hàng", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "sales_invoice", "fieldtype": "Link", "options": "SC Sales Invoice", "label": "Hóa đơn bán hàng", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1, "search_index": 1},
-  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
-  {"fieldname": "receipt_date", "fieldtype": "Date", "label": "Ngày thu", "default": "Today"},
-  {"fieldname": "amount", "fieldtype": "Currency", "options": "VND", "precision": "0", "label": "Số tiền thu", "reqd": 1, "in_list_view": 1},
-  {"fieldname": "mode", "fieldtype": "Select", "options": "Tiền mặt\nChuyển khoản", "label": "Hình thức thu", "default": "Chuyển khoản", "in_list_view": 1},
-
-  {"fieldname": "amended_from", "fieldtype": "Link", "options": "SC Sales Receipt", "label": "Amended From", "no_copy": 1, "print_hide": 1, "read_only": 1}
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break",
+   "label": "Phiếu thu"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "options": "SC Customer",
+   "label": "Khách hàng",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Tên khách hàng",
+   "fetch_from": "customer.customer_name",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "options": "SC Sales Invoice",
+   "label": "Hóa đơn bán hàng",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "receipt_date",
+   "fieldtype": "Date",
+   "label": "Ngày thu",
+   "default": "Today"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "options": "VND",
+   "precision": "0",
+   "label": "Số tiền thu",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "options": "Tiền mặt\nChuyển khoản",
+   "label": "Hình thức thu",
+   "default": "Chuyển khoản",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "SC Sales Receipt",
+   "label": "Amended From",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
  ],
  "permissions": [
-  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1, "share": 1},
-  {"role": "SupplyCore Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Accountant", "read": 1, "write": 1, "create": 1, "delete": 1, "submit": 1, "cancel": 1, "amend": 1, "report": 1, "export": 1, "print": 1, "email": 1},
-  {"role": "SupplyCore Purchaser", "read": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Storekeeper", "read": 1, "report": 1, "print": 1},
-  {"role": "SupplyCore Auditor", "read": 1, "report": 1, "print": 1},
-  {"role": "SC Customer Portal", "read": 1, "report": 1, "print": 1, "email": 1}
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "SupplyCore Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Accountant",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "SupplyCore Purchaser",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Storekeeper",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SupplyCore Auditor",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "SC Customer Portal",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1
+  }
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",
  "modified": "2026-07-07 00:00:00",
  "module": "M7 Sales",
  "name": "SC Sales Receipt",
- "title_field": "customer",
+ "title_field": "customer_name",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "show_title_field_in_link": 1
 }

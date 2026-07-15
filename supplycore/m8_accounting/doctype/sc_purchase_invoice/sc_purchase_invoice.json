@@ -365,5 +365,7 @@
  "name": "SC Purchase Invoice",
  "search_fields": "supplier,supplier_invoice_no,purchase_order",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "supplier_name",
+ "show_title_field_in_link": 1
 }

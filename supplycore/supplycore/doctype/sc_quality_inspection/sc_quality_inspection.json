@@ -15,6 +15,7 @@
   "item",
   "item_name",
   "supplier",
+  "supplier_name",
   "batch",
   "received_qty",
   "section_inspector",
@@ -92,6 +93,14 @@
    "fetch_from": "purchase_receipt.supplier",
    "read_only": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "label": "Tên NCC",
+   "fetch_from": "supplier.supplier_name",
+   "read_only": 1,
    "in_standard_filter": 1
   },
   {
@@ -270,5 +279,7 @@
  "module": "Supplycore",
  "name": "SC Quality Inspection",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "item_name",
+ "show_title_field_in_link": 1
 }

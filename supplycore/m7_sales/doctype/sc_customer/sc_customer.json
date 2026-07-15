@@ -1,12 +1,17 @@
 {
  "actions": [], "creation": "2026-07-06 00:00:00", "doctype": "DocType", "engine": "InnoDB",
  "autoname": "format:SC-CUS-{#####}",
- "field_order": ["customer_name", "tax_code", "status",
+ "field_order": ["customer_name", "tax_code", "email", "portal_password", "phone", "status",
                  "column_break_1", "billing_address", "shipping_address",
                  "credit_limit", "payment_terms", "portal_user"],
  "fields": [
   {"fieldname": "customer_name", "fieldtype": "Data", "label": "Tên khách hàng", "reqd": 1, "in_list_view": 1},
   {"fieldname": "tax_code", "fieldtype": "Data", "label": "Mã số thuế", "unique": 1, "in_list_view": 1},
+  {"fieldname": "email", "fieldtype": "Data", "options": "Email", "label": "Tài khoản đăng nhập (email)",
+   "description": "Email khách dùng đăng nhập cổng — tự tạo Tài khoản Portal khi lưu (nhân viên Miyano tạo khách mới)."},
+  {"fieldname": "portal_password", "fieldtype": "Password", "label": "Mật khẩu Portal",
+   "description": "Mật khẩu đăng nhập cấp cho khách (>=6 ký tự). Dùng để tạo tài khoản rồi XOÁ, không lưu lại trên hồ sơ khách."},
+  {"fieldname": "phone", "fieldtype": "Data", "label": "Điện thoại", "in_list_view": 1},
   {"fieldname": "status", "fieldtype": "Select", "options": "Hoạt động\nTạm ngưng",
    "label": "Trạng thái", "default": "Tạm ngưng", "in_list_view": 1, "in_standard_filter": 1,
    "description": "GĐ3/BRU-CUS-001: khách hàng mới mặc định Tạm ngưng — chỉ chuyển Hoạt động sau khi có tài khoản Portal"},
@@ -17,6 +22,7 @@
    "label": "Hạn mức công nợ", "default": "0", "description": "0 = không giới hạn"},
   {"fieldname": "payment_terms", "fieldtype": "Data", "label": "Điều khoản thanh toán"},
   {"fieldname": "portal_user", "fieldtype": "Link", "options": "User", "label": "Tài khoản Portal",
+   "unique": 1,
    "description": "Tài khoản Portal — bắt buộc & 1-1 ở GĐ3/M12"}
  ],
  "permissions": [

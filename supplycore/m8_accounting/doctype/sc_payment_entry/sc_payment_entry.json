@@ -241,5 +241,7 @@
  "name": "SC Payment Entry",
  "search_fields": "supplier,reference_no",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "title_field": "supplier_name",
+ "show_title_field_in_link": 1
 }

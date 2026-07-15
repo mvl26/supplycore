@@ -240,6 +240,10 @@ def test_portal_order_place():
     orig_user = frappe.session.user
     try:
         cust, email, sfc, item = _seed_customer_with_contract("PLACE", contract_qty=50, unit_price=3000)
+        # BRU-INV-002 (Q1): portal_order_place giờ chặn tồn không đủ -> seed tồn
+        # khả dụng là precondition hợp lệ để đặt hàng (over-qty vẫn throw BRU-SO-001
+        # ở insert TRƯỚC khi check tồn nên không bị che).
+        _seed_stock(item, _pick_warehouse(), _make_batch(item, add_days(today(), 365)).name, 100, rate=3000)
 
         from supplycore.api.portal import portal_order_place
 
@@ -277,6 +281,9 @@ def test_order_place_zero_qty_rejected():
     orig_user = frappe.session.user
     try:
         cust, email, sfc, item = _seed_customer_with_contract("ZEROQ", contract_qty=50, unit_price=1000)
+        # BRU-INV-002 (Q1): seed tồn để nhánh qty>0 đặt hàng thành công (qty<=0 vẫn
+        # bị chặn ở bước validate qty của portal_order_place, trước check tồn).
+        _seed_stock(item, _pick_warehouse(), _make_batch(item, add_days(today(), 365)).name, 100, rate=1000)
 
         from supplycore.api.portal import portal_order_place
 

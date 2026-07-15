@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="csrf-token" content="{{ csrf_token }}" />
+<meta name="theme-color" content="#1F4E79" />
+<title>Đăng nhập — Cổng khách hàng Miyano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1F4E79; --navy-dk:#153A5C; --accent:#2E75B6; --accent-dk:#1F5C94;
+    --ink:#16232E; --muted:#5B6B7C; --bg:#EEF2F7; --surface:#FFFFFF; --border:#DCE4EC;
+    --danger:#B3261E; --danger-soft:#FBE9E7; --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif; color:var(--ink);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#1F4E79 0%,#153A5C 55%,#0E2A44 100%);
+    padding:20px;
+  }
+  .card{
+    width:100%; max-width:400px; background:var(--surface);
+    border-radius:22px; box-shadow:0 18px 50px rgba(9,30,52,.35);
+    padding:34px 28px 28px; position:relative;
+  }
+  .brand{display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:6px;}
+  .brand-mark{
+    width:46px; height:46px; border-radius:13px;
+    background:linear-gradient(135deg,var(--accent),#59A0E0);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; color:#fff;
+  }
+  .brand-text .co{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;}
+  .brand-text .sub{font-size:11.5px; color:var(--muted);}
+  h1{font-family:'Space Grotesk',sans-serif; font-size:20px; text-align:center; margin:16px 0 4px;}
+  .lead{text-align:center; color:var(--muted); font-size:13px; margin-bottom:20px;}
+  label{display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin:14px 0 6px;}
+  input{
+    width:100%; padding:12px 14px; border:1.5px solid var(--border);
+    border-radius:11px; font-size:15px; outline:none; transition:border-color .15s;
+  }
+  input:focus{border-color:var(--accent);}
+  .btn{
+    width:100%; margin-top:20px; padding:13px; border:none; border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-dk));
+    color:#fff; font-size:15px; font-weight:700; cursor:pointer; transition:opacity .15s;
+  }
+  .btn:disabled{opacity:.6; cursor:default;}
+  .alert{
+    margin-top:16px; padding:11px 13px; border-radius:11px; font-size:13px;
+    background:var(--danger-soft); color:var(--danger); display:none;
+  }
+  .alert.show{display:block;}
+  .foot{text-align:center; margin-top:20px; font-size:13px; color:var(--muted);}
+  .foot a{color:var(--accent); font-weight:600; text-decoration:none;}
+  .row-between{display:flex; justify-content:space-between; align-items:center;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <div class="brand-text">
+        <div class="co">MIYANO VIỆT NAM</div>
+        <div class="sub">Cổng khách hàng</div>
+      </div>
+    </div>
+    <h1>Đăng nhập</h1>
+    <div class="lead">Đăng nhập để gọi hàng theo hợp đồng khung, xem phiếu giao, hoá đơn và công nợ.</div>
+
+    <form id="login-form" autocomplete="on">
+      <label for="email">Email đăng nhập</label>
+      <input id="email" name="email" type="email" required placeholder="tenkhach@congty.vn" autocomplete="username" />
+      <label for="password">Mật khẩu</label>
+      <input id="password" name="password" type="password" required placeholder="••••••••" autocomplete="current-password" />
+      <button class="btn" id="submit" type="submit">Đăng nhập vào cổng</button>
+      <div class="alert" id="err"></div>
+    </form>
+
+    <div class="foot">Chưa có tài khoản? <a href="/portal">Đăng ký khách hàng</a></div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var CSRF = "{{ csrf_token }}";
+  var form = document.getElementById("login-form");
+  var btn = document.getElementById("submit");
+  var err = document.getElementById("err");
+
+  function showErr(msg){ err.textContent = msg; err.classList.add("show"); }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    err.classList.remove("show");
+    var usr = document.getElementById("email").value.trim();
+    var pwd = document.getElementById("password").value;
+    if(!usr || !pwd){ showErr("Vui lòng nhập email và mật khẩu."); return; }
+    btn.disabled = true; btn.textContent = "Đang đăng nhập…";
+
+    fetch("/api/method/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": CSRF },
+      body: JSON.stringify({ usr: usr, pwd: pwd }),
+      credentials: "same-origin",
+    }).then(function(res){
+      if(res.ok){
+        // Đăng nhập thành công -> vào cổng khách hàng.
+        window.location.href = "/portal";
+        return;
+      }
+      return res.json().catch(function(){ return {}; }).then(function(){
+        throw new Error(res.status === 401
+          ? "Email hoặc mật khẩu không đúng."
+          : "Đăng nhập thất bại. Vui lòng thử lại.");
+      });
+    }).catch(function(ex){
+      showErr(ex.message || "Đăng nhập thất bại.");
+      btn.disabled = false; btn.textContent = "Đăng nhập vào cổng";
+    });
+  });
+})();
+</script>
+</body>
+</html>

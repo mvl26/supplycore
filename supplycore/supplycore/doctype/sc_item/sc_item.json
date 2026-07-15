@@ -12,7 +12,8 @@
   "column_break_planning", "standard_order_qty", "lead_time_days",
   "min_shelf_life_days", "default_supplier",
   "section_reorder_overrides", "reorder_levels",
-  "section_wms", "default_bin_location", "default_warehouse"
+  "section_wms", "default_bin_location", "default_warehouse",
+  "section_sales_online", "selling_price", "available_online"
  ],
  "fields": [
   {"fieldname": "section_main", "fieldtype": "Section Break", "label": "Thông tin chính"},
@@ -57,7 +58,10 @@
 
   {"fieldname": "section_wms", "fieldtype": "Section Break", "label": "WMS", "collapsible": 1},
   {"fieldname": "default_bin_location", "fieldtype": "Link", "options": "Bin Location", "label": "Bin mặc định"},
-  {"fieldname": "default_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho mặc định"}
+  {"fieldname": "default_warehouse", "fieldtype": "Link", "options": "SC Warehouse", "label": "Kho mặc định"},
+  {"fieldname": "section_sales_online", "fieldtype": "Section Break", "label": "Bán online (Portal khách)", "collapsible": 1},
+  {"fieldname": "selling_price", "fieldtype": "Currency", "label": "Giá bán (VND)", "non_negative": 1, "description": "Giá niêm yết trên danh mục Portal khách hàng"},
+  {"fieldname": "available_online", "fieldtype": "Check", "label": "Bán online", "default": "0", "in_standard_filter": 1, "description": "Bật để mặt hàng hiện trên danh mục chung của Portal (cần có Giá bán > 0)"}
  ],
  "permissions": [
   {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "export": 1, "print": 1},
