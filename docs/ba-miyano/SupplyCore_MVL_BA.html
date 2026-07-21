@@ -1,0 +1,1074 @@
+<title>SupplyCore MVL — Tài liệu Phân tích Nghiệp vụ (BA)</title>
+<style>
+  :root{
+    --ground:#F5F7FB; --surface:#FFFFFF; --surface-2:#EEF2F9; --surface-3:#E5EBF6;
+    --ink:#15233F; --ink-soft:#48577A; --ink-faint:#7C89A6;
+    --accent:#2456C9; --accent-2:#123A86; --accent-soft:#E7EEFC;
+    --navy:#0F2244;
+    --border:#DBE2EE; --border-strong:#C4CEE0;
+    --crit:#BE3A3A; --crit-soft:#FBEBEB;
+    --warn:#9C6511; --warn-soft:#F8EFDC;
+    --ok:#1B7A4E; --ok-soft:#E2F1E9;
+    --info:#3663C4; --info-soft:#E8EEFB;
+    /* Sans cho cả display lẫn body — bảo đảm dấu tiếng Việt chồng (ố/ế/ộ…) hiển thị đúng
+       trên mọi máy; font serif fallback trên Linux/đa nền tảng dựng sai các glyph này. */
+    --font-display:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --maxw:900px; --sidew:284px;
+    --shadow:0 1px 2px rgba(15,34,68,.06),0 6px 20px rgba(15,34,68,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#0C1424; --surface:#131E36; --surface-2:#182644; --surface-3:#1E2E52;
+      --ink:#E6ECF7; --ink-soft:#A9B6D2; --ink-faint:#76849F;
+      --accent:#6E9BFF; --accent-2:#9FBEFF; --accent-soft:#1C2B4E;
+      --navy:#0A162C;
+      --border:#25344F; --border-strong:#334764;
+      --crit:#F08A8A; --crit-soft:#33202A;
+      --warn:#E6B872; --warn-soft:#332A1D;
+      --ok:#7FD3A6; --ok-soft:#1B3029;
+      --info:#8FB0FF; --info-soft:#1C2A4C;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0C1424; --surface:#131E36; --surface-2:#182644; --surface-3:#1E2E52;
+    --ink:#E6ECF7; --ink-soft:#A9B6D2; --ink-faint:#76849F;
+    --accent:#6E9BFF; --accent-2:#9FBEFF; --accent-soft:#1C2B4E; --navy:#0A162C;
+    --border:#25344F; --border-strong:#334764;
+    --crit:#F08A8A; --crit-soft:#33202A; --warn:#E6B872; --warn-soft:#332A1D;
+    --ok:#7FD3A6; --ok-soft:#1B3029; --info:#8FB0FF; --info-soft:#1C2A4C;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.28);
+  }
+  :root[data-theme="light"]{
+    --ground:#F5F7FB; --surface:#FFFFFF; --surface-2:#EEF2F9; --surface-3:#E5EBF6;
+    --ink:#15233F; --ink-soft:#48577A; --ink-faint:#7C89A6;
+    --accent:#2456C9; --accent-2:#123A86; --accent-soft:#E7EEFC; --navy:#0F2244;
+    --border:#DBE2EE; --border-strong:#C4CEE0;
+    --crit:#BE3A3A; --crit-soft:#FBEBEB; --warn:#9C6511; --warn-soft:#F8EFDC;
+    --ok:#1B7A4E; --ok-soft:#E2F1E9; --info:#3663C4; --info-soft:#E8EEFB;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font-body);
+    font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{display:grid;grid-template-columns:var(--sidew) minmax(0,1fr);
+    gap:0;max-width:1320px;margin:0 auto;align-items:start}
+
+  /* ---------- Sidebar TOC ---------- */
+  .toc{position:sticky;top:0;max-height:100vh;overflow-y:auto;padding:26px 18px 40px;
+    border-right:1px solid var(--border);background:var(--ground)}
+  .toc summary{display:none}
+  .toc .brand{font-family:var(--font-display);font-weight:700;font-size:1.02rem;
+    color:var(--ink);letter-spacing:-.01em;line-height:1.25;margin-bottom:2px}
+  .toc .brand small{display:block;font-family:var(--font-body);font-weight:600;
+    font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-top:6px}
+  .toc nav{margin-top:20px}
+  .toc a{display:block;text-decoration:none;color:var(--ink-soft);font-size:.83rem;
+    padding:5px 10px;border-radius:7px;border-left:2px solid transparent;line-height:1.35}
+  .toc a:hover{color:var(--ink);background:var(--surface-2)}
+  .toc a.active{color:var(--accent);background:var(--accent-soft);border-left-color:var(--accent);font-weight:600}
+  .toc a .n{font-family:var(--font-mono);font-size:.72rem;color:var(--ink-faint);margin-right:7px}
+  .toc a.active .n{color:var(--accent)}
+  .toc .grp{font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ink-faint);margin:16px 10px 6px;font-weight:700}
+
+  /* ---------- Main ---------- */
+  main{padding:0 clamp(20px,4vw,64px) 120px;min-width:0}
+  .hero{padding:56px 0 30px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  .eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:16px}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,4.4vw,3rem);
+    line-height:1.08;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance;max-width:16ch}
+  .lede{font-size:1.12rem;color:var(--ink-soft);max-width:60ch;margin:0}
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:24px;font-size:.82rem;color:var(--ink-faint)}
+  .meta-row b{color:var(--ink-soft);font-weight:600}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:14px;margin:30px 0 8px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+  .stat .v{font-family:var(--font-display);font-weight:700;font-size:1.7rem;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+  .stat .l{font-size:.74rem;color:var(--ink-soft);margin-top:8px;line-height:1.3}
+
+  section{padding-top:46px;scroll-margin-top:20px}
+  h2{font-family:var(--font-display);font-weight:700;font-size:1.62rem;letter-spacing:-.01em;
+    line-height:1.2;margin:0 0 6px;padding-bottom:12px;border-bottom:2px solid var(--border-strong);text-wrap:balance}
+  h2 .h2n{font-family:var(--font-mono);font-size:.9rem;color:var(--accent);font-weight:600;margin-right:12px;
+    vertical-align:middle}
+  h3{font-family:var(--font-body);font-weight:700;font-size:1.14rem;letter-spacing:-.005em;margin:30px 0 10px;color:var(--ink)}
+  h4{font-weight:700;font-size:.96rem;margin:22px 0 8px;color:var(--ink)}
+  p{margin:12px 0}
+  a{color:var(--accent)}
+  strong{font-weight:650;color:var(--ink)}
+  ul,ol{padding-left:22px;margin:12px 0}
+  li{margin:5px 0}
+  code,.mono{font-family:var(--font-mono);font-size:.86em;background:var(--surface-2);
+    padding:.08em .38em;border-radius:5px;color:var(--accent-2);border:1px solid var(--border)}
+
+  .lead-card{background:linear-gradient(180deg,var(--surface),var(--surface-2));border:1px solid var(--border);
+    border-radius:14px;padding:22px 24px;box-shadow:var(--shadow);margin:18px 0}
+
+  /* callouts */
+  .note{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;
+    padding:13px 18px;margin:18px 0;font-size:.92rem;color:var(--ink)}
+  .note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+  .note.crit{border-left-color:var(--crit);background:var(--crit-soft)}
+  .note b{display:block;margin-bottom:3px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+
+  /* tables */
+  .tw{overflow-x:auto;margin:16px 0;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:520px}
+  thead th{background:var(--surface-2);text-align:left;font-weight:700;font-size:.72rem;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--ink-soft);padding:11px 14px;border-bottom:1px solid var(--border-strong);white-space:nowrap}
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--ink-soft)}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:var(--surface-2)}
+  td strong,td b{color:var(--ink)}
+  table.matrix td,table.matrix th{text-align:center}
+  table.matrix td:first-child,table.matrix th:first-child{text-align:left;font-weight:600;color:var(--ink);position:sticky;left:0;background:var(--surface)}
+  table.matrix tbody tr:hover td:first-child{background:var(--surface-2)}
+  .yes{color:var(--ok);font-weight:700}
+  .ltd{color:var(--warn);font-weight:700}
+  .no{color:var(--ink-faint)}
+
+  /* chips */
+  .chip{display:inline-block;font-family:var(--font-mono);font-size:.72rem;font-weight:600;padding:2px 8px;
+    border-radius:6px;background:var(--surface-2);color:var(--accent-2);border:1px solid var(--border);white-space:nowrap}
+  .sev{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+    padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .sev.block{background:var(--crit-soft);color:var(--crit);border:1px solid var(--crit)}
+  .sev.warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+  .sev.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+  .sev.info{background:var(--info-soft);color:var(--info);border:1px solid var(--info)}
+
+  /* pipeline / status flow */
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0;font-size:.83rem}
+  .flow .st{background:var(--surface);border:1px solid var(--border-strong);border-radius:999px;padding:5px 13px;font-weight:600;color:var(--ink);box-shadow:var(--shadow)}
+  .flow .ar{color:var(--accent);font-weight:700}
+
+  /* mermaid */
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin:20px 0;
+    overflow-x:auto;box-shadow:var(--shadow)}
+  .diagram .cap{font-size:.75rem;color:var(--ink-faint);text-align:center;margin-top:10px;font-style:italic}
+  pre.mermaid{background:transparent;text-align:center;line-height:1.4;min-width:520px}
+
+  .modcard{border:1px solid var(--border);border-radius:14px;padding:2px 22px 20px;margin:20px 0;background:var(--surface);box-shadow:var(--shadow)}
+  .modcard>h3:first-child{margin-top:20px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.86rem;margin:10px 0}
+  .kv dt{color:var(--ink-faint);font-weight:600}
+  .kv dd{margin:0;color:var(--ink-soft)}
+
+  .foot{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:.8rem;color:var(--ink-faint)}
+
+  a.up{position:fixed;right:20px;bottom:20px;background:var(--accent);color:#fff;text-decoration:none;
+    width:42px;height:42px;border-radius:50%;display:none;align-items:center;justify-content:center;
+    font-size:1.1rem;box-shadow:var(--shadow);z-index:20}
+  a.up.show{display:flex}
+
+  @media (max-width:1000px){
+    .wrap{grid-template-columns:1fr}
+    .toc{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border);padding:14px 20px}
+    .toc summary{display:block;cursor:pointer;font-weight:700;color:var(--accent);font-size:.8rem;
+      letter-spacing:.08em;text-transform:uppercase;list-style:none;padding:6px 0}
+    .toc summary::-webkit-details-marker{display:none}
+    .toc summary::after{content:"▾";float:right}
+    .toc[open] summary::after{content:"▴"}
+    .toc nav{max-height:60vh;overflow-y:auto}
+    main{padding:0 20px 80px}
+    .hero{padding:34px 0 24px}
+  }
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<details class="toc" open id="toc">
+  <summary>Mục lục</summary>
+  <div class="brand">SupplyCore <span style="color:var(--accent)">MVL</span><small>Tài liệu BA · Miyano</small></div>
+  <nav id="tocnav">
+    <div class="grp">Tổng quan</div>
+    <a href="#gioi-thieu"><span class="n">01</span>Giới thiệu &amp; Bối cảnh</a>
+    <a href="#kien-truc"><span class="n">02</span>Kiến trúc tổng thể</a>
+    <a href="#chuoi-gia-tri"><span class="n">03</span>Chuỗi giá trị end-to-end</a>
+    <a href="#vai-tro"><span class="n">04</span>Vai trò &amp; Phân quyền</a>
+    <div class="grp">Phân hệ nghiệp vụ</div>
+    <a href="#m0"><span class="n">05</span>M0 · Dữ liệu nền</a>
+    <a href="#m1"><span class="n">06</span>M1 · Hợp đồng khung</a>
+    <a href="#m2"><span class="n">07</span>M2 · Kế hoạch &amp; Mua</a>
+    <a href="#m3"><span class="n">08</span>M3 · Tiếp nhận &amp; QC</a>
+    <a href="#m4"><span class="n">09</span>M4 · Quản lý kho</a>
+    <a href="#m5"><span class="n">10</span>M5 · Lô &amp; FEFO</a>
+    <a href="#m6"><span class="n">11</span>M6 · Chuyển kho</a>
+    <a href="#m7"><span class="n">12</span>M7 · Bán hàng (O2C)</a>
+    <a href="#m8"><span class="n">13</span>M8 · Kế toán</a>
+    <a href="#m9"><span class="n">14</span>M9 · Kiểm kê</a>
+    <a href="#m10"><span class="n">15</span>M10 · Truy xuất &amp; Thu hồi</a>
+    <a href="#m11"><span class="n">16</span>M11 · Dashboard &amp; Cảnh báo</a>
+    <a href="#m12"><span class="n">17</span>M12 · Cổng khách hàng</a>
+    <div class="grp">Chuyên đề</div>
+    <a href="#business-rules"><span class="n">18</span>Danh mục Business Rules</a>
+    <a href="#du-lieu"><span class="n">19</span>Sổ kho &amp; sổ cái tự quản</a>
+    <a href="#bao-mat"><span class="n">20</span>Bảo mật &amp; cô lập Portal</a>
+    <a href="#phi-chuc-nang"><span class="n">21</span>Yêu cầu phi chức năng</a>
+    <a href="#tu-dong-hoa"><span class="n">22</span>Tự động hóa &amp; lịch chạy</a>
+    <a href="#trang-thai"><span class="n">23</span>Trạng thái hoàn thiện</a>
+    <a href="#thuat-ngu"><span class="n">24</span>Thuật ngữ &amp; Phụ lục</a>
+  </nav>
+</details>
+
+<main>
+  <header class="hero">
+    <div class="eyebrow">Tài liệu Phân tích Nghiệp vụ (Business Analysis)</div>
+    <h1>SupplyCore MVL</h1>
+    <p class="lede">Hệ thống quản trị chuỗi cung ứng &amp; phân phối vật tư — từ hợp đồng khung, mua hàng, nhập kho &amp; kiểm định, quản lý lô theo hạn dùng (FEFO), đến bán hàng, giao nhận, xuất hóa đơn, thu tiền và cổng tự phục vụ cho khách hàng.</p>
+    <div class="meta-row">
+      <span><b>Chủ đầu tư:</b> Công ty Miyano Việt Nam (MVL)</span>
+      <span><b>Nền tảng:</b> Frappe v15 (thuần, không ERPNext)</span>
+      <span><b>Nhánh:</b> feat/mvl-distributor</span>
+      <span><b>Phiên bản tài liệu:</b> 1.0 · 2026-07-21</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v">12</div><div class="l">phân hệ nghiệp vụ (M0–M12)</div></div>
+      <div class="stat"><div class="v">~40</div><div class="l">DocType nghiệp vụ</div></div>
+      <div class="stat"><div class="v">21</div><div class="l">chứng từ có luồng duyệt</div></div>
+      <div class="stat"><div class="v">12</div><div class="l">vai trò hệ thống</div></div>
+      <div class="stat"><div class="v">60+</div><div class="l">quy tắc nghiệp vụ mã hóa</div></div>
+      <div class="stat"><div class="v">9</div><div class="l">tác vụ tự động (scheduler)</div></div>
+    </div>
+  </header>
+
+  <!-- ============ 01 ============ -->
+  <section id="gioi-thieu">
+    <h2><span class="h2n">01</span>Giới thiệu &amp; Bối cảnh</h2>
+    <p><strong>SupplyCore MVL</strong> là phần mềm quản trị chuỗi cung ứng cho doanh nghiệp phân phối vật tư/hóa chất y tế của <strong>Công ty Miyano Việt Nam</strong>. Phần mềm bao trùm toàn bộ dòng chảy vật tư và dòng tiền: <em>mua vào → nhận &amp; kiểm định chất lượng → nhập kho theo lô/hạn dùng → bán ra → giao nhận &amp; nghiệm thu → xuất hóa đơn → thu tiền</em>, kèm truy xuất nguồn gốc lô, thu hồi sản phẩm và cổng đặt hàng cho khách.</p>
+
+    <h3>1.1 Nguồn gốc &amp; định vị sản phẩm</h3>
+    <p>SupplyCore MVL được <strong>dẫn xuất từ một bản "bệnh viện"</strong> (quản lý vật tư nội bộ + cấp phát bệnh nhân + BHYT). Theo quyết định kiến trúc đã chốt (03/07/2026), bản MVL <strong>thay thế in-place</strong> bản bệnh viện: gỡ hẳn phân hệ Cấp phát/BHYT/Bệnh nhân/tích hợp HIS, thay bằng <strong>phân hệ Bán hàng (M7)</strong> và bổ sung <strong>Cổng khách hàng (M12)</strong>. Khoảng 80% lõi (M1–M6, M8–M11) được tái sử dụng.</p>
+
+    <div class="tw"><table>
+      <thead><tr><th>Tiêu chí</th><th>Bản bệnh viện (nguồn gốc)</th><th>Bản MVL (hiện tại)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Chủ thể</strong></td><td>Bệnh viện dùng nội bộ</td><td>Công ty phân phối, bán ra ngoài</td></tr>
+        <tr><td><strong>Đầu ra M7</strong></td><td>Cấp phát khoa/bệnh nhân + BHYT</td><td>Bán hàng, bàn giao, nghiệm thu</td></tr>
+        <tr><td><strong>Khách hàng</strong></td><td>Bệnh nhân (SC Patient)</td><td>Doanh nghiệp (SC Customer) + Portal</td></tr>
+        <tr><td><strong>Tích hợp ngoài</strong></td><td>HIS/EMR, Cổng BHYT</td><td>Bỏ hết; thêm Portal + máy in nhãn</td></tr>
+        <tr><td><strong>Kế toán</strong></td><td>Phải trả (mua)</td><td>Phải trả <strong>+ phải thu</strong> (công nợ khách)</td></tr>
+        <tr><td><strong>Số phân hệ</strong></td><td>11 (M1–M11)</td><td><strong>12</strong> (thêm M12 Portal)</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>1.2 Mục tiêu hệ thống</h3>
+    <ul>
+      <li><strong>Kiểm soát mua hàng theo hợp đồng khung</strong>: khóa giá &amp; hạn mức số lượng/giá trị, phê duyệt nhiều cấp theo ngưỡng.</li>
+      <li><strong>Chất lượng &amp; an toàn lô</strong>: kiểm định QC bắt buộc, quản lý hạn dùng, ép xuất theo FEFO, chặn lô hết hạn/bị khóa.</li>
+      <li><strong>Tồn kho chính xác thời gian thực</strong>: sổ kho tự quản (Stock Ledger) append-only, quản lý vị trí (bin), kiểm kê &amp; đối soát.</li>
+      <li><strong>Bán hàng khép kín (Order-to-Cash)</strong>: từ đơn khách đến thu tiền, hạch toán công nợ phải thu tự động.</li>
+      <li><strong>Truy xuất &amp; thu hồi</strong>: truy vết một lô đến tận khách hàng đã mua; phát lệnh thu hồi có kiểm soát.</li>
+      <li><strong>Tự phục vụ cho khách</strong>: cổng đặt hàng, theo dõi đơn, tải chứng từ — với cô lập dữ liệu tuyệt đối giữa các khách.</li>
+      <li><strong>Điều hành theo dữ liệu</strong>: KPI, cảnh báo chủ động đa kênh, dashboard theo vai trò.</li>
+    </ul>
+
+    <h3>1.3 Nguyên tắc thiết kế nền tảng</h3>
+    <ul>
+      <li><strong>Frappe thuần, không phụ thuộc ERPNext</strong> — mọi DocType nghiệp vụ tự xây với tiền tố <code>SC&nbsp;</code>.</li>
+      <li><strong>Sổ kho &amp; sổ cái tự quản</strong> — <code>SC Stock Ledger Entry</code> và <code>SC GL Entry</code> là hai sổ append-only; tồn kho &amp; số dư luôn tính từ sổ, không lưu cache cứng.</li>
+      <li><strong>Máy trạng thái bằng controller</strong> — luồng duyệt dùng trường <code>status</code>/<code>approval_stage</code> + logic Python, không dùng Frappe Workflow engine.</li>
+      <li><strong>"Code sống là chuẩn"</strong> — khi tài liệu BA gốc lệch với hệ thống, lấy hành vi code làm chuẩn. Tài liệu này được trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section id="kien-truc">
+    <h2><span class="h2n">02</span>Kiến trúc tổng thể</h2>
+    <p>Hệ thống gồm một backend Frappe và <strong>hai giao diện tách biệt</strong>: SPA nội bộ cho nhân viên và cổng web riêng cho khách hàng.</p>
+
+    <div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  subgraph FE["Giao diện người dùng"]
+    SPA["SPA nội bộ Vue 3<br/>tại /supplycore/*<br/>PWA · offline-aware"]
+    POR["Cổng khách /portal<br/>web page riêng · mobile-first"]
+    PDA["Trang PDA /pda<br/>thiết bị cầm tay kho"]
+  end
+  subgraph BE["Backend Frappe v15"]
+    API["API whitelisted<br/>supplycore/api/*"]
+    CTRL["Controller nghiệp vụ<br/>m1..m11 + doctype"]
+    SLE["Sổ kho SLE<br/>append-only"]
+    GL["Sổ cái GL<br/>append-only"]
+    DB[("MariaDB")]
+  end
+  SPA --> API
+  POR --> API
+  PDA --> API
+  API --> CTRL
+  CTRL --> SLE
+  CTRL --> GL
+  SLE --> DB
+  GL --> DB
+  CTRL --> DB
+</pre>
+      <div class="cap">Kiến trúc phân lớp — hai giao diện tiêu thụ chung một backend Frappe với sổ kho và sổ cái tự quản.</div>
+    </div>
+
+    <h3>2.1 Thành phần chính</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Lớp</th><th>Công nghệ</th><th>Vai trò</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Backend</strong></td><td>Frappe v15, Python 3.11, MariaDB 10.6, Redis 7</td><td>DocType nghiệp vụ, controller, API whitelisted, sổ kho/sổ cái, scheduler.</td></tr>
+        <tr><td><strong>SPA nội bộ</strong></td><td>Vue 3 + Vite, Pinia, Vue Router</td><td>UI cho toàn bộ nhân viên tại <code>/supplycore/*</code>; <strong>không dùng Frappe Desk</strong>. Build bằng <code>yarn build</code> ra <code>public/frontend/</code>.</td></tr>
+        <tr><td><strong>Cổng khách</strong></td><td>Frappe web page (<code>www/portal</code>)</td><td>Trang mobile-first riêng; khách tiêu thụ dữ liệu qua <code>api/portal.py</code> với cô lập theo từng khách.</td></tr>
+        <tr><td><strong>PWA</strong></td><td>vite-plugin-pwa (Workbox)</td><td>Cài như app (standalone), service worker phục vụ ở gốc <code>/sw.js</code> (scope <code>/supplycore</code>); shell NetworkFirst, API NetworkOnly.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="note"><b>Quan hệ Desk ↔ SPA</b>Truy cập gốc <code>/</code> được redirect 302 sang <code>/supplycore/</code> — người dùng không bao giờ thấy Frappe Desk mặc định. Vai trò khách (<code>SC Customer Portal</code>) có <code>desk_access=0</code> nên chỉ là Website User, không vào Desk.</div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section id="chuoi-gia-tri">
+    <h2><span class="h2n">03</span>Chuỗi giá trị end-to-end</h2>
+    <p>SupplyCore MVL vận hành hai dòng chảy lớn, gặp nhau tại kho: <strong>Mua-đến-Trả (Procure-to-Pay)</strong> ở đầu vào và <strong>Đặt-đến-Thu (Order-to-Cash)</strong> ở đầu ra.</p>
+
+    <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  subgraph P2P["Procure-to-Pay · đầu vào"]
+    direction LR
+    FC["Hợp đồng khung<br/>NCC"] --> RO["Lệnh gọi hàng"]
+    RO --> PO["Đơn mua PO"]
+    PP["Kế hoạch mua"] -.-> MR["Yêu cầu vật tư"] -.-> PO
+    PO --> PR["Phiếu nhập PR"]
+    PR --> QC["Kiểm định QC"]
+    PR --> PI["Hóa đơn NCC"]
+    PI --> PE["Thanh toán NCC"]
+  end
+  QC --> WH[("Kho<br/>Batch · Bin · SLE")]
+  PR --> WH
+  subgraph O2C["Order-to-Cash · đầu ra"]
+    direction LR
+    SFC["HĐ khung bán"] --> SO["Đơn hàng<br/>khách"]
+    SO --> DN["Phiếu giao<br/>FEFO"]
+    DN --> AR["Nghiệm thu"]
+    AR --> SI["Hóa đơn bán"]
+    SI --> SR["Thu tiền"]
+  end
+  WH --> DN
+</pre>
+      <div class="cap">Hai dòng chảy chính gặp nhau tại kho. FEFO điều phối lô xuất; nghiệm thu là điều kiện mở khóa xuất hóa đơn.</div>
+    </div>
+
+    <div class="tw"><table>
+      <thead><tr><th>Giai đoạn</th><th>Phân hệ</th><th>Chứng từ chính</th><th>Kết quả</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1. Chiến lược nguồn hàng</strong></td><td>M1</td><td>Framework Contract → Release Order</td><td>Khóa giá &amp; hạn mức với NCC</td></tr>
+        <tr><td><strong>2. Lập kế hoạch &amp; mua</strong></td><td>M2</td><td>Procurement Plan → Material Request → Purchase Order</td><td>Đơn mua đã duyệt</td></tr>
+        <tr><td><strong>3. Nhận &amp; kiểm định</strong></td><td>M3</td><td>Purchase Receipt → Quality Inspection</td><td>Hàng nhập kho, lô có kết quả QC</td></tr>
+        <tr><td><strong>4. Lưu kho &amp; quản lý lô</strong></td><td>M4·M5</td><td>Batch · Bin Location · Stock Ledger</td><td>Tồn kho thời gian thực theo lô/vị trí</td></tr>
+        <tr><td><strong>5. Bán &amp; giao</strong></td><td>M7</td><td>Sales Order → Delivery Note (FEFO) → Acceptance</td><td>Hàng đến khách, có biên bản nghiệm thu</td></tr>
+        <tr><td><strong>6. Hóa đơn &amp; thu tiền</strong></td><td>M7·M8</td><td>Sales Invoice → Sales Receipt</td><td>Ghi nhận doanh thu, tất toán công nợ</td></tr>
+        <tr><td><strong>7. Kiểm soát &amp; điều hành</strong></td><td>M9·M10·M11</td><td>Kiểm kê · Truy xuất · Thu hồi · KPI/Cảnh báo</td><td>Đảm bảo chính xác, an toàn, minh bạch</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ============ 04 ============ -->
+  <section id="vai-tro">
+    <h2><span class="h2n">04</span>Vai trò &amp; Phân quyền</h2>
+
+    <h3>4.1 Danh sách vai trò</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Vai trò</th><th>Tên tiếng Việt</th><th>Trách nhiệm chính</th><th>Desk</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip">System Manager</span></td><td>Quản trị Frappe</td><td>Siêu quyền: toàn bộ DocType/user/role, cấu hình hệ thống; không bị lọc dữ liệu.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Manager</span></td><td>Quản lý SupplyCore</td><td>Duyệt HĐ khung/PO lớn, cấu hình alert/FEFO/putaway, xem mọi KPI &amp; module; là <code>is_admin</code> phía FE.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Executive</span></td><td>Lãnh đạo / phê duyệt cấp cao</td><td>Duyệt cấp 2 HĐ/PO/PE giá trị lớn; duyệt phát hành thu hồi; xem dashboard điều hành. Không tạo phiếu trực tiếp.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Purchaser</span></td><td>Cán bộ mua &amp; bán hàng</td><td>Tạo MR/PO, gửi PO cho NCC; tạo Khách hàng/HĐ khung bán/Đơn hàng + duyệt đơn.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Storekeeper</span></td><td>Thủ kho</td><td>Nhập PR từ PO, putaway/phân bin, chuyển kho, giao hàng &amp; nghiệm thu; bị lọc theo kho được gán.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">Warehouse Officer</span></td><td>Phụ trách kho vận hành</td><td>Quản lý bin/putaway, hỗ trợ nhập/chuyển kho, đọc tồn thời gian thực.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">QC Officer</span></td><td>Cán bộ kiểm định</td><td>Lấy mẫu &amp; <strong>kết luận QC</strong> (Accept/Reject/Conditional), khóa lô hỏng. (BRU-QC-002)</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Accountant</span></td><td>Kế toán</td><td>Hóa đơn mua (3-way match), thanh toán NCC, hóa đơn bán &amp; phiếu thu, sổ cái. Bị chặn sửa giá &amp; ghi vào kỳ khóa sổ.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Auditor</span></td><td>Kiểm toán</td><td><strong>Chỉ đọc</strong> toàn bộ dữ liệu lịch sử + audit log, xuất báo cáo.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore User</span></td><td>Người dùng cơ bản</td><td>Đọc master, tạo/sửa phiếu ở mức Nháp; không duyệt/submit/cấu hình.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SC Customer Portal</span></td><td>Khách hàng (chức năng)</td><td>Vai trò gating thật của khách: cô lập dữ liệu theo customer, cho thao tác cổng. <strong>Không vào Desk.</strong></td><td class="no">✗</td></tr>
+        <tr><td><span class="chip">Khách hàng</span></td><td>Khách hàng (nhãn)</td><td>Thuần nhãn hiển thị, gán kèm role Portal; <strong>không cấp quyền DocType nào</strong> (tránh rò rỉ chéo).</td><td class="no">✗</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.2 Persona — lăng kính UI</h3>
+    <p>Phía SPA, <strong>Persona</strong> quyết định menu và widget dashboard nào hiển thị. Persona <strong>suy dẫn 100% từ role Frappe</strong> (không chọn thủ công); nav của persona vẫn bị lọc lần nữa qua quyền thực. Ánh xạ: System Manager/Executive → <em>admin</em>; Manager → <em>lan (Trưởng phòng)</em>; Accountant → <em>phong (Kế toán)</em>; Storekeeper/Warehouse Officer → <em>tam (Thủ kho)</em>.</p>
+
+    <h3>4.3 Mô hình phân quyền nhiều lớp</h3>
+    <p>Hàm <code>access.menu()</code> gọi một lần lúc đăng nhập, trả về ba nhóm quyền cho FE: <strong>modules</strong> (m0–m11 hiện/ẩn), <strong>features</strong> (trang top-level như dashboard, batch_trace…), và <strong>doctypes</strong> (read/write/create/submit/cancel/delete + is_submittable cho ~35 doctype). FE dùng ba lớp gate theo phương châm <em>"không có phận sự thì không thấy"</em>:</p>
+    <ol>
+      <li><strong>Sidebar/menu</strong> — ẩn item nếu thiếu module/feature/doctype tương ứng.</li>
+      <li><strong>Route guard</strong> — chặn điều hướng, chuyển hướng trang 403 kèm lý do.</li>
+      <li><strong>Nút hành động</strong> — ẩn nút Gửi duyệt/Submit/Cancel/Xóa theo quyền &amp; tính submittable.</li>
+    </ol>
+    <div class="note"><b>Phòng thủ nhiều lớp (backend)</b>Quyền UI chỉ là lớp tiện dụng. Backend enforce thật bằng: DocPerm theo role; <code>permission_query_conditions</code> + <code>has_permission</code> (cô lập Portal); override <code>frappe.client.get</code>; chặn REST child-row ở <code>before_request</code>; và guard <code>before_delete</code> (chỉ cho xóa phiếu Nháp) trên toàn bộ 21 doctype có luồng duyệt.</div>
+
+    <h3>4.4 Ma trận vai trò × phân hệ (tóm tắt)</h3>
+    <div class="tw"><table class="matrix">
+      <thead><tr><th>Vai trò \ Phân hệ</th><th>M1 HĐ</th><th>M2 Mua</th><th>M3 QC</th><th>M4–6 Kho</th><th>M7 Bán</th><th>M8 KT</th><th>M9 KK</th><th>M10 TX</th><th>M11 KPI</th></tr></thead>
+      <tbody>
+        <tr><td>SupplyCore Manager</td><td class="yes">✎</td><td class="yes">✎</td><td class="yes">✎</td><td class="yes">✎</td><td class="yes">✎</td><td class="yes">✎</td><td class="yes">✎</td><td class="yes">✎</td><td class="yes">✎</td></tr>
+        <tr><td>SupplyCore Executive</td><td class="ltd">✓duyệt</td><td class="ltd">✓duyệt</td><td class="no">·</td><td class="no">·</td><td class="no">·</td><td class="ltd">✓duyệt</td><td class="no">·</td><td class="ltd">✓duyệt</td><td class="yes">◉</td></tr>
+        <tr><td>SupplyCore Purchaser</td><td class="ltd">◉</td><td class="yes">✎</td><td class="no">·</td><td class="no">·</td><td class="yes">✎</td><td class="no">·</td><td class="no">·</td><td class="no">·</td><td class="no">·</td></tr>
+        <tr><td>SupplyCore Storekeeper</td><td class="no">·</td><td class="ltd">◉</td><td class="ltd">◉</td><td class="yes">✎</td><td class="yes">✎</td><td class="no">·</td><td class="yes">✎</td><td class="ltd">◉</td><td class="ltd">◉</td></tr>
+        <tr><td>Warehouse Officer</td><td class="no">·</td><td class="no">·</td><td class="ltd">◉</td><td class="yes">✎</td><td class="no">·</td><td class="no">·</td><td class="yes">✎</td><td class="no">·</td><td class="ltd">◉</td></tr>
+        <tr><td>QC Officer</td><td class="no">·</td><td class="no">·</td><td class="yes">✎+QC</td><td class="ltd">◉</td><td class="no">·</td><td class="no">·</td><td class="no">·</td><td class="ltd">◉</td><td class="no">·</td></tr>
+        <tr><td>SupplyCore Accountant</td><td class="ltd">◉</td><td class="ltd">◉</td><td class="no">·</td><td class="ltd">◉</td><td class="yes">✎</td><td class="yes">✎</td><td class="ltd">✎duyệt</td><td class="no">·</td><td class="ltd">◉</td></tr>
+        <tr><td>SupplyCore Auditor</td><td class="ltd">◉</td><td class="ltd">◉</td><td class="ltd">◉</td><td class="ltd">◉</td><td class="no">·</td><td class="ltd">◉</td><td class="ltd">◉</td><td class="ltd">◉</td><td class="ltd">◉</td></tr>
+        <tr><td>SC Customer Portal</td><td class="no">·</td><td class="no">·</td><td class="no">·</td><td class="no">·</td><td class="ltd">◉ đơn của mình</td><td class="no">·</td><td class="no">·</td><td class="no">·</td><td class="no">·</td></tr>
+      </tbody>
+    </table></div>
+    <p style="font-size:.8rem;color:var(--ink-faint)"><span class="yes">✎</span> tạo/sửa/duyệt · <span class="ltd">◉</span> đọc hoặc quyền giới hạn · <span class="no">·</span> không truy cập. Ma trận tóm lược; quyền chi tiết ở từng phân hệ.</p>
+  </section>
+
+  <!-- ============ M0 ============ -->
+  <section id="m0">
+    <h2><span class="h2n">05</span>M0 · Dữ liệu nền (Master Data)</h2>
+    <p>Nền dữ liệu dùng chung cho toàn hệ thống, cấu hình một lần và tham chiếu khắp các phân hệ.</p>
+    <div class="tw"><table>
+      <thead><tr><th>DocType</th><th>Mục đích</th><th>Trường/điểm chính</th></tr></thead>
+      <tbody>
+        <tr><td><strong>SC Item</strong></td><td>Danh mục vật tư</td><td><code>item_group</code>, <code>uom</code>, <code>selling_price</code> (bán lẻ portal), <code>disabled</code>, mức reorder theo kho (child <code>SC Item Reorder</code>)</td></tr>
+        <tr><td><strong>SC Item Group</strong></td><td>Nhóm vật tư</td><td>Gắn template QC mặc định, phân nhóm reorder/putaway</td></tr>
+        <tr><td><strong>SC UOM</strong></td><td>Đơn vị tính</td><td>—</td></tr>
+        <tr><td><strong>SC Supplier</strong></td><td>Nhà cung cấp</td><td><code>tax_id</code>, điều khoản thanh toán 30/60/90, nhóm hàng cung cấp, blacklist, scorecard</td></tr>
+        <tr><td><strong>SC Warehouse</strong></td><td>Kho / khu</td><td>Phân cấp kho; kho cách ly QC; kho phòng ban phân phối</td></tr>
+        <tr><td><strong>Bin Location</strong></td><td>Vị trí lưu trong kho</td><td><code>bin_code</code>, sức chứa, cách ly, barcode (chi tiết ở M4)</td></tr>
+        <tr><td><strong>SC GL Account</strong></td><td>Tài khoản kế toán</td><td>Danh mục TK cho sổ cái tự quản (131, 331, 511, 632, 156/152…)</td></tr>
+        <tr><td><strong>SupplyCore Settings</strong> (Single)</td><td>Tham số hệ thống</td><td>Ngưỡng duyệt HĐ/PO, số ngày cảnh báo HSD/HĐ, kho mặc định, ngày khóa sổ, gateway SMS…</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ============ M1 ============ -->
+  <section id="m1">
+    <h2><span class="h2n">06</span>M1 · Hợp đồng khung (Contract)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Quản lý <strong>Hợp đồng khung với nhà cung cấp</strong> và <strong>Lệnh gọi hàng</strong> theo hợp đồng: kiểm soát hạn mức giá trị/số lượng còn lại, phê duyệt 3 cấp theo ngưỡng, gia hạn và thanh lý.</p>
+
+      <h3>DocType</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Trạng thái / trường chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Framework Contract</strong> <span class="chip">SC-FC-…</span></td><td class="yes">✓</td><td>HĐ khung NCC</td><td><code>status</code>: Draft→Active→Expired/Exhausted/Terminated · <code>approval_stage</code>: Draft→Manager Review→Executive Review→Approved/Rejected · <code>total/used/committed/remaining_value</code></td></tr>
+          <tr><td>FC Item <span class="chip">child</span></td><td>—</td><td>Dòng vật tư HĐ</td><td><code>contract_qty</code>, <code>ordered_qty</code>, <code>remaining_qty</code>, <code>unit_price</code></td></tr>
+          <tr><td><strong>Release Order</strong> <span class="chip">SC-RO-…</span></td><td class="yes">✓</td><td>Lệnh gọi hàng theo HĐ</td><td><code>status</code>: Draft→Approved→Converted→Cancelled · sinh Purchase Order</td></tr>
+          <tr><td>RO Item <span class="chip">child</span></td><td>—</td><td>Dòng cần gọi</td><td><code>qty</code>, <code>available_qty</code>, <code>unit_price</code> (từ HĐ)</td></tr>
+          <tr><td>FC Renewal History <span class="chip">child</span></td><td>—</td><td>Lịch sử gia hạn</td><td><code>old/new_valid_to</code>, <code>approval_status</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Quy trình duyệt 3 cấp</h3>
+      <div class="flow">
+        <span class="st">Draft</span><span class="ar">→</span>
+        <span class="st">Manager Review</span><span class="ar">→</span>
+        <span class="st">Executive Review*</span><span class="ar">→</span>
+        <span class="st">Approved</span><span class="ar">→</span>
+        <span class="st">Submit → Active</span>
+      </div>
+      <p><small>* Chỉ khi <code>total_value ≥ ngưỡng</code> (mặc định 100 triệu, cấu hình <code>fc_executive_threshold</code>). Dưới ngưỡng: Manager duyệt thẳng sang Approved. Mọi cấp có thể Reject (bắt buộc lý do). Sau khi Approved (chưa submit) HĐ bị <strong>khóa sửa</strong>. Cancel → Terminated.</small></p>
+      <p><strong>Gia hạn &amp; thanh lý:</strong> yêu cầu gia hạn (bắt buộc lý do + ngày mới) → Manager/Executive duyệt → cập nhật <code>valid_to</code>; không cho gia hạn hồi tố quá 90 ngày. Thanh lý (bắt buộc lý do + biên bản) chặn mọi Lệnh gọi hàng nháp đang tham chiếu.</p>
+
+      <h3>Business rules tiêu biểu</h3>
+      <ul>
+        <li><span class="chip">SC-E-FC-LOCKED</span> HĐ đã Approved: chặn sửa, chỉ cho Submit/Reject.</li>
+        <li><span class="chip">SC-E-FC-NOT-APPROVED</span> Chưa qua 3 cấp thì không được Submit.</li>
+        <li><span class="chip">SC-E-FC-BLACKLIST</span> NCC trong blacklist phải có cờ <code>executive_override_blacklist</code>.</li>
+        <li><span class="chip">SC-E026</span> Ý kiến duyệt phải ≥ 10 ký tự.</li>
+        <li><span class="chip">SC-E002 FC_EXCEEDED</span> Lệnh gọi hàng không vượt <code>remaining_qty</code>/<code>remaining_value</code> của HĐ.</li>
+        <li><span class="chip">QA-BUG-M1-02</span> <code>remaining_value ≤ 0</code> → status Exhausted, không tạo PO mới.</li>
+      </ul>
+
+      <h3>Tự động hóa</h3>
+      <p><code>check_contract_expiry</code> (hằng ngày): đánh dấu <code>expiring_soon</code> khi còn 30/15/7 ngày, tự chuyển HĐ quá hạn sang Expired, gửi email tổng hợp.</p>
+    </div>
+  </section>
+
+  <!-- ============ M2 ============ -->
+  <section id="m2">
+    <h2><span class="h2n">07</span>M2 · Kế hoạch &amp; Mua hàng (Planning)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Lập <strong>kế hoạch mua sắm định kỳ</strong>, tự gợi ý số lượng cần mua theo tiêu thụ lịch sử hoặc mức tái đặt hàng, sinh Yêu cầu vật tư (MR) và cầu nối MR → Đơn mua (PO).</p>
+
+      <h3>DocType</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Trường chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Procurement Plan</strong> <span class="chip">SC-PP-…</span></td><td class="yes">✓</td><td>Kế hoạch mua định kỳ</td><td><code>period_type</code>, <code>consumption_lookback_months</code>, <code>safety_stock_factor</code>, <code>budget</code>, <code>auto_create_mr</code> · Draft→Approved→Generated</td></tr>
+          <tr><td>Procurement Plan Item <span class="chip">child</span></td><td>—</td><td>Dòng đề xuất mua</td><td><code>current_stock</code>, <code>avg_monthly_consumption</code>, <code>lead_time_days</code>, <code>planned_qty</code>, <code>preferred_supplier</code></td></tr>
+          <tr><td>SC Item Reorder <span class="chip">child của SC Item</span></td><td>—</td><td>Ngưỡng tái đặt theo kho</td><td><code>safety_stock</code>, <code>reorder_level</code>, <code>max_stock</code>, <code>standard_order_qty</code> (EOQ)</td></tr>
+          <tr><td><strong>SC Material Request</strong> <span class="chip">SC-MR-…</span></td><td class="yes">✓</td><td>Yêu cầu vật tư</td><td>Submit → Approved; nguồn cho gợi ý PO</td></tr>
+          <tr><td><strong>SC Purchase Order</strong> <span class="chip">SC-PO-…</span></td><td class="yes">✓</td><td>Đơn mua NCC</td><td>Duyệt theo ngưỡng; gửi NCC; nhận hàng qua PR</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Cơ chế gợi ý mua</h3>
+      <p>Công thức đề xuất: <code>SL = max(0, TB_tháng × (lead_time/30) × (1 + safety%) + safety_item − tồn_hiện − PO_đang_về)</code>. Ngưỡng tái đặt ưu tiên override theo kho (SC Item Reorder) trên mức item-level.</p>
+      <p>Cầu nối <strong>MR → PO</strong>: gom dòng MR theo (NCC, HĐ khung); dòng chưa gán HĐ thì chọn HĐ Active có <strong>đơn giá rẻ nhất</strong> đủ hạn mức; dòng không khớp đưa vào <code>unmatched_items</code>. Kiểm toàn vẹn số dòng (<span class="chip">SC-E-MR-PO-ROW-LOSS</span>).</p>
+
+      <h3>Business rules &amp; tự động hóa</h3>
+      <ul>
+        <li><span class="chip">SC-E-BUDGET-EXCEEDED</span> Chi phí ước tính vượt ngân sách mà chưa tick xác nhận → chặn Submit.</li>
+        <li><span class="chip">SC-E002 FC_BUDGET</span> Tổng PO đề xuất trên 1 HĐ khung vượt <code>remaining_value</code> → chặn.</li>
+        <li><code>check_reorder_levels</code> (hằng ngày): quét (item, kho) dưới ngưỡng → tự tạo MR nháp, email tổng hợp.</li>
+        <li><code>check_po_response</code> (hằng ngày): nhắc NCC khi PO đã gửi quá số ngày chưa phản hồi.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ M3 ============ -->
+  <section id="m3">
+    <h2><span class="h2n">08</span>M3 · Tiếp nhận &amp; Kiểm định (Receiving &amp; QC)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Nhận hàng theo đơn mua (<strong>Purchase Receipt</strong>), tự tạo lô &amp; <strong>Kiểm định chất lượng (Quality Inspection)</strong>, quản lý bộ tiêu chí QC theo nhóm vật tư, và xử lý trả hàng NCC.</p>
+
+      <h3>DocType</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Purchase Receipt</strong> <span class="chip">SC-PR-…</span></td><td class="yes">✓</td><td>Phiếu nhập hàng</td><td>Submit → tự sinh SC Batch + Quality Inspection + ghi SLE; hỗ trợ trả hàng (<code>is_return=1</code>)</td></tr>
+          <tr><td><strong>SC Quality Inspection</strong> <span class="chip">SC-QI-…</span></td><td class="yes">✓</td><td>Kết luận kiểm định</td><td><code>overall_status</code>: Accepted/Rejected/Conditional · rollup vào <code>PR.qc_status</code> &amp; <code>Batch.qc_status</code></td></tr>
+          <tr><td>QC Checklist Template <span class="chip">SC-QCT-…</span></td><td>—</td><td>Bộ tiêu chí theo nhóm hàng</td><td><code>is_default_for_group</code> (chỉ 1 default/nhóm), <code>criteria</code></td></tr>
+          <tr><td>QC Checklist Item <span class="chip">child</span></td><td>—</td><td>1 tiêu chí</td><td><code>is_critical</code> (fail tiêu chí này → fail toàn bộ QC)</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="note crit"><b>BRU-QC-002 — Chỉ QC kết luận QC</b>Chỉ <strong>QC Officer / QC Manager</strong> được submit Quality Inspection. Thủ kho &amp; Warehouse Officer được chuẩn bị/nhập liệu nhưng <strong>không được kết luận</strong>. Kết quả QC chảy vào truy xuất nguồn gốc và cờ <code>qc_status</code> của lô — lô Pending/Rejected bị loại khỏi tồn khả dụng.</div>
+
+      <h3>Xử lý trả hàng &amp; tự động hóa</h3>
+      <p>Khi QI kết luận <em>Rejected</em>, hệ thống tự tạo phiếu trả NCC (PR <code>is_return</code>). <code>check_return_responses</code> (hằng ngày) escalate các phiếu trả quá 7 ngày chưa phản hồi lên Manager.</p>
+    </div>
+  </section>
+
+  <!-- ============ M4 ============ -->
+  <section id="m4">
+    <h2><span class="h2n">09</span>M4 · Quản lý kho (WMS)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Quản lý vị trí lưu trữ chi tiết (bin), sức chứa, gợi ý xếp hàng, và là nơi định nghĩa <strong>sổ kho tự quản</strong> — nền tính tồn cho toàn hệ thống.</p>
+
+      <h3>DocType</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Stock Ledger Entry (SLE)</strong></td><td>Sổ kho append-only</td><td>Bất biến; mỗi phát sinh 1 dòng <code>qty_change</code> ± có <code>batch/warehouse/bin</code>; cancel = chèn dòng đối ứng (không sửa dòng gốc)</td></tr>
+          <tr><td><strong>SC Stock Entry</strong></td><td>Chứng từ nhập/xuất/chuyển</td><td><code>entry_type</code>: Material Receipt/Issue/Transfer; Submit → ghi SLE</td></tr>
+          <tr><td><strong>SC Batch</strong></td><td>Lô hàng</td><td><code>expiry_date</code>, <code>qc_status</code>, <code>blocked</code>, NSX, xuất xứ, <code>barcode</code></td></tr>
+          <tr><td><strong>Bin Location</strong></td><td>Vị trí vật lý</td><td><code>bin_code</code> unique, sức chứa, <code>occupancy_pct</code>, cách ly, kiểm soát nhiệt độ</td></tr>
+          <tr><td><strong>Putaway Rule</strong></td><td>Gợi ý bin đích</td><td>Theo item HOẶC item_group, <code>priority</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Cơ chế tính tồn kho</h3>
+      <p>Không doctype nào lưu "số tồn" cố định — tồn luôn là <code>SUM(qty_change)</code> theo filter. Hai hàm phân biệt:</p>
+      <ul>
+        <li><code>get_qty()</code> — tồn <strong>tổng</strong> (kể cả lô QC Pending) → dùng cho kiểm kê/kế toán.</li>
+        <li><code>get_available_qty()</code> — tồn <strong>khả dụng</strong>: loại lô QC Pending/Rejected và lô blocked → dùng cho mọi nghiệp vụ xuất, chốt chặn tồn âm (<span class="chip">SC-E010</span>).</li>
+      </ul>
+      <div class="note warn"><b>Bất biến sổ kho</b>Hủy chứng từ <strong>chèn dòng đối ứng đảo dấu</strong>, cả hai dòng giữ <code>is_cancelled=0</code> để tự triệt tiêu — tránh lỗi "đảo kép". Mỗi SLE có bin sẽ tự cập nhật <code>current_qty</code>/<code>status</code> của bin.</div>
+    </div>
+  </section>
+
+  <!-- ============ M5 ============ -->
+  <section id="m5">
+    <h2><span class="h2n">10</span>M5 · Lô vật tư &amp; FEFO</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Quản lý lô &amp; hạn dùng, thuật toán chọn lô <strong>First-Expiry-First-Out</strong>, chặn xuất lô sai FEFO/hết hạn, cảnh báo &amp; xử lý lô sắp hết hạn.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>DocType</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>FEFO Picker Rule</strong></td><td>Cấu hình FEFO theo phạm vi</td><td><code>strict_mode</code>, <code>min_shelf_life_days</code>, <code>warning_days</code> (90), <code>critical_days</code> (30)</td></tr>
+          <tr><td><strong>Batch Expiry Alert</strong></td><td>Cảnh báo lô sắp hết hạn</td><td><code>severity</code> (Critical/Warning/Info), <code>resolution_action</code> (Priority Issue/Return/Write Off/No Action)</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Thuật toán chọn lô FEFO</h3>
+      <p>Sắp lô theo <code>expiry_date</code> tăng dần (lô không hạn xếp cuối), rồi <code>creation</code>. Chỉ chọn lô <strong>đủ điều kiện</strong>: không disabled/blocked, chưa hết hạn, <code>qc_status</code> ∈ {rỗng, Accepted, Conditional}, còn tồn khả dụng. Trả về danh sách kèm <code>suggested_qty</code> tích lũy (thêm tối đa 5 lô để xem thay thế), cờ <code>fully_satisfied</code>/<code>shortfall</code> và <code>severity</code>.</p>
+
+      <h3>Business rules &amp; tự động hóa</h3>
+      <ul>
+        <li><span class="chip">SC-E001 FEFO_OVERRIDE</span> Xuất lô khi còn lô gần hết hạn hơn: strict → chặn, phải tick Override + ghi lý do (yêu cầu role Manager — <span class="chip">SC-E-FEFO-MANAGER-REQUIRED</span>).</li>
+        <li><span class="chip">SC-E003</span> Không xuất lô đã hết hạn · <span class="chip">SC-E008</span> Lô bị block không được xuất.</li>
+        <li><code>scan_expiring_batches</code> (hằng ngày): quét lô có hạn trong 180 ngày còn tồn, tạo Batch Expiry Alert (chống trùng 7 ngày), email Thủ kho/Manager.</li>
+      </ul>
+      <p><em>Lưu ý phạm vi:</em> FEFO ép khi <strong>xuất bán/cấp (Material Issue)</strong>, không ép khi chuyển kho nội bộ (Material Transfer).</p>
+    </div>
+  </section>
+
+  <!-- ============ M6 ============ -->
+  <section id="m6">
+    <h2><span class="h2n">11</span>M6 · Chuyển kho (Transfer)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Luân chuyển nội bộ giữa các kho theo <strong>quy trình 2 bước</strong> (yêu cầu → sinh Stock Entry), có kiểm soát cross-tier cần Manager duyệt.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>DocType</th><th>Duyệt?</th><th>Mục đích</th><th>Trạng thái chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Transfer Request</strong> <span class="chip">SC-TR-…</span></td><td class="yes">✓</td><td>Phiếu yêu cầu chuyển kho</td><td>Draft→Pending Approval→Approved→In Transit→Received/Cancelled · <code>transfer_type</code> (Routine/Urgent/Replenishment/Return)</td></tr>
+          <tr><td>SC Transfer Request Item <span class="chip">child</span></td><td>—</td><td>Dòng vật tư chuyển</td><td><code>requested/approved/transferred_qty</code>, <code>available_at_source</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Quy trình 2 chứng từ</h3>
+      <div class="flow">
+        <span class="st">TR Draft</span><span class="ar">→ submit</span>
+        <span class="st">Approved</span><span class="ar">→ make_stock_entry</span>
+        <span class="st">In Transit</span><span class="ar">→ SE submit</span>
+        <span class="st">Received</span>
+      </div>
+      <p>Transfer Request chỉ là yêu cầu (chưa động tồn); khi tạo Stock Entry (Material Transfer) mới FEFO auto-pick lô nếu chưa chỉ định. Submit Stock Entry ghi 2 SLE (−kho nguồn, +kho đích) và cập nhật TR → Received. Cancel SE hoàn TR về Approved.</p>
+      <ul>
+        <li><span class="chip">SC-E024 SAME_WAREHOUSE</span> Kho nguồn phải khác kho đích.</li>
+        <li><span class="chip">SC-E-TRANSFER-INSUFFICIENT / -SHORTAGE</span> Không vượt tồn nguồn.</li>
+        <li><span class="chip">SC-E-TRANSFER-MANAGER-REQUIRED</span> Chuyển cross-tier (liên quan kho phòng ban) cần Manager duyệt.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ M7 ============ -->
+  <section id="m7">
+    <h2><span class="h2n">12</span>M7 · Bán hàng &amp; Bàn giao — Order-to-Cash</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Quản lý toàn bộ vòng đời bán hàng: <strong>hợp đồng khung bán → đơn khách → giao hàng (xuất FEFO) → nghiệm thu → hóa đơn → thu tiền</strong>, cùng kiểm soát tín dụng công nợ và hạch toán phải thu.</p>
+
+      <h3>DocType</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Trạng thái chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Customer</strong></td><td>—</td><td>Hồ sơ khách + khóa Portal</td><td><code>tax_code</code>, <code>credit_limit</code>, <strong><code>portal_user</code></strong> (trục cô lập dữ liệu)</td></tr>
+          <tr><td><strong>SC Sales Framework Contract</strong></td><td class="yes">✓</td><td>HĐ khung bán: khóa danh mục + giá + SL trần</td><td>Nháp→Chờ duyệt→Hiệu lực→Hết hạn/Thanh lý</td></tr>
+          <tr><td><strong>SC Sales Order</strong></td><td class="yes">✓</td><td>Đơn hàng khách</td><td>Chờ duyệt→Đã duyệt→Đang xử lý→Đã bàn giao→Hoàn tất/Từ chối · <code>credit_hold</code></td></tr>
+          <tr><td><strong>SC Delivery Note</strong></td><td class="yes">✓</td><td>Phiếu giao, xuất FEFO</td><td>Nháp→Đã giao→Đã nghiệm thu→Đã xuất HĐ</td></tr>
+          <tr><td><strong>SC Acceptance Record</strong></td><td class="yes">✓</td><td>Biên bản nghiệm thu</td><td>Nháp→Đã nghiệm thu (mở khóa lập hóa đơn)</td></tr>
+          <tr><td><strong>SC Sales Invoice</strong></td><td class="yes">✓</td><td>Hóa đơn bán</td><td>Nháp→Đã phát hành→Thu một phần→Thu đủ→Hủy · <code>outstanding_amount</code></td></tr>
+          <tr><td><strong>SC Sales Receipt</strong></td><td class="yes">✓</td><td>Phiếu thu công nợ</td><td><code>mode</code> Tiền mặt/Chuyển khoản; cập nhật trạng thái hóa đơn</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Quy trình O2C</h3>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  SFC["HĐ khung bán · Hiệu lực<br/>khóa giá + SL trần"] --> SO["Đơn hàng khách<br/>kiểm giá · hạn mức · tín dụng"]
+  SO -->|approve| SOA["Đơn Đã duyệt"]
+  SOA --> DN["Phiếu giao · FEFO<br/>ghi SLE trừ kho"]
+  DN --> AR["Biên bản nghiệm thu"]
+  AR --> SI["Hóa đơn bán<br/>Dr 131 / Cr 511 · Dr 632 / Cr 156"]
+  SI --> SR["Phiếu thu<br/>Dr tiền / Cr 131"]
+  SO -.->|reject| REJ["Từ chối<br/>chuỗi dừng"]
+</pre>
+        <div class="cap">Nghiệm thu là chốt bắt buộc trước khi lập hóa đơn (BRU-DEL-001). Giá luôn khóa theo HĐ khung.</div>
+      </div>
+
+      <h3>Ràng buộc lõi (Business rules)</h3>
+      <ul>
+        <li><span class="chip">BRU-SFC-001</span> Chỉ đặt đơn trên HĐ khung còn hiệu lực theo <strong>ngày</strong> (không tin status có thể stale).</li>
+        <li><span class="chip">BRU-SFC-002</span> Đơn giá luôn lấy từ HĐ khung; người dùng/kế toán <strong>không được sửa</strong>.</li>
+        <li><span class="chip">BRU-SO-001</span> Tổng SL đặt (gộp mọi đơn) không vượt SL trần HĐ khung — tính <em>live</em> chống tranh chấp đồng thời, kiểm lại khi duyệt.</li>
+        <li><span class="chip">BRU-SO-002</span> Chỉ lập Phiếu giao khi đơn ở <em>Đã duyệt</em>.</li>
+        <li><span class="chip">BRU-AR-001</span> Nếu (dư nợ + tổng đơn) vượt hạn mức tín dụng → <code>credit_hold</code> + chặn.</li>
+        <li><span class="chip">BRU-EXP-001</span> Không xuất lô hết hạn · <span class="chip">BRU-INV-001</span> tồn khả dụng phải đủ.</li>
+        <li><span class="chip">BRU-DEL-001</span> Chỉ lập hóa đơn khi Phiếu giao <em>Đã nghiệm thu</em>.</li>
+        <li><span class="chip">BRU-INVC-001</span> Item + số lượng trên hóa đơn phải khớp chính xác Phiếu giao; khách phải khớp.</li>
+      </ul>
+
+      <h3>Mốc hiển thị cho khách</h3>
+      <div class="flow">
+        <span class="st">① Đã đặt hàng</span><span class="ar">→</span>
+        <span class="st">② Đã bàn giao &amp; nghiệm thu</span><span class="ar">→</span>
+        <span class="st">③ Đã cấp hóa đơn</span><span class="ar">→</span>
+        <span class="st">④ Đã thu tiền</span>
+      </div>
+      <p><small>Mốc ② và ③ khi hoàn thành kèm liên kết tải chứng từ. Đơn bị Từ chối → không mốc nào là "hiện tại".</small></p>
+    </div>
+  </section>
+
+  <!-- ============ M8 ============ -->
+  <section id="m8">
+    <h2><span class="h2n">13</span>M8 · Kế toán (Accounting)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Xử lý <strong>hóa đơn NCC</strong> (3-way match PO↔PR↔PI), <strong>thanh toán NCC</strong>, và <strong>khóa kỳ tài chính</strong>. Đây là nhánh phải trả, đối xứng với nhánh phải thu của M7; cùng ghi vào sổ cái <code>SC GL Entry</code>.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Purchase Invoice</strong></td><td class="yes">✓</td><td>Hóa đơn NCC</td><td><code>three_way_match_status</code>, <code>payment_hold</code>, <code>outstanding_amount</code>; tolerance 1% / hard-cap PO +5%</td></tr>
+          <tr><td><strong>SC Payment Entry</strong></td><td class="yes">✓</td><td>Thanh toán NCC</td><td>Dr 331 / Cr tiền; duyệt theo ngưỡng (Executive ≥ 50 triệu)</td></tr>
+          <tr><td><strong>SC GL Entry</strong></td><td>—</td><td>Sổ cái append-only</td><td>Hủy = đảo bút toán vào đúng <code>posting_date</code> gốc</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="note crit"><b>BRU-PAY-001 — Khóa kỳ tài chính (fiscal lock)</b>Không được submit <em>hoặc</em> hủy chứng từ kế toán có ngày chứng từ <code>≤ fiscal_lock_date</code>. Áp trên <strong>4 doctype × 2 đường (submit + cancel)</strong>: SI, SR, PI, PE. Điểm mấu chốt: kiểm ở <code>before_cancel</code> — vì hủy chứng từ sẽ đảo bút toán vào lại đúng kỳ gốc; nếu kỳ đã khóa sau khi submit, việc hủy sẽ ghi vào kỳ khóa, phá bất biến "không ghi vào kỳ đã khóa". <span class="chip">SC-E-FISCAL-LOCK</span></div>
+
+      <h4>Bút toán tiêu biểu</h4>
+      <ul>
+        <li><strong>Hóa đơn bán:</strong> Dr 131 (phải thu) / Cr 511 (doanh thu) + Cr 3331 (thuế); giá vốn Dr 632 / Cr 156.</li>
+        <li><strong>Thu tiền khách:</strong> Dr 1111/1121 (tiền) / Cr 131.</li>
+        <li><strong>Thanh toán NCC:</strong> Dr 331 (phải trả) / Cr tiền.</li>
+      </ul>
+      <p><small>Số hiệu tài khoản theo cấu hình seed hiện tại; điều chỉnh qua danh mục SC GL Account.</small></p>
+    </div>
+  </section>
+
+  <!-- ============ M9 ============ -->
+  <section id="m9">
+    <h2><span class="h2n">14</span>M9 · Kiểm kê (Stocktake)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Kiểm kê định kỳ (<strong>Inventory Count Sheet</strong>) và đối soát/điều chỉnh tồn (<strong>Stock Reconciliation</strong>) — ghi SLE điều chỉnh + bút toán GL.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Trạng thái chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Inventory Count Sheet (ICS)</strong></td><td class="yes">✓</td><td>Phiếu kiểm kê</td><td>Draft→In Progress→Counted→Reconciled · <code>recount_threshold_pct</code>, <code>hide_system_qty</code>, <code>manager_witness</code></td></tr>
+          <tr><td>SC ICS Item <span class="chip">child</span></td><td>—</td><td>Dòng đếm</td><td><code>system_qty</code> (ẩn khi in), <code>actual_qty</code>, <code>needs_recount</code>, đếm lần 3</td></tr>
+          <tr><td><strong>SC Stock Reconciliation (SR)</strong></td><td class="yes">✓</td><td>Đối soát &amp; điều chỉnh</td><td>Draft→Approved/Rejected · <code>requires_investigation</code></td></tr>
+          <tr><td>SC SR Item <span class="chip">child</span></td><td>—</td><td>Dòng điều chỉnh</td><td><code>difference</code>, <code>reason</code> (Theft/Damage/System Error/…)</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Quy trình &amp; kiểm soát</h3>
+      <p>Nạp item tồn &gt;0 → snapshot <code>system_qty</code> từ SLE → đếm (in phiếu <strong>ẩn số hệ thống</strong> chống bias). Chênh lệch vượt ngưỡng → yêu cầu đếm lại; đếm lần 3 bắt buộc Manager chứng kiến. Submit ICS → Counted → tạo SR chỉ các dòng lệch. SR submit ghi SLE điều chỉnh + GL (thừa: Dr 152/Cr 642; thiếu: Dr 642/Cr 152).</p>
+      <ul>
+        <li><span class="chip">SC-E025</span> Chống can thiệp field tổng hợp — hệ thống ghi đè lại + log audit.</li>
+        <li><span class="chip">SC-E-ICS-WITNESS-REQUIRED</span> Đếm lần 3 phải có Manager chứng kiến.</li>
+        <li><span class="chip">SC-E-SR-INVESTIGATION-REQUIRED</span> Lệch giá trị &gt; ngưỡng lớn (mặc định 10 triệu) → phải điền ghi chú điều tra.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ M10 ============ -->
+  <section id="m10">
+    <h2><span class="h2n">15</span>M10 · Truy xuất nguồn gốc &amp; Thu hồi</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Truy vết toàn bộ vòng đời một lô (từ NCC/PO/QC đến khách hàng đã mua), vận hành quy trình <strong>Thu hồi</strong> và <strong>Điều tra</strong> thất thoát/sai lệch/gian lận tồn kho.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Recall Notice</strong> <span class="chip">SC-RCL-…</span></td><td class="yes">✓</td><td>Lệnh thu hồi 1 lô</td><td>Draft→Issued→In Progress→Completed · <code>recall_type</code>, <code>severity</code> (Class I/II/III), % giải quyết</td></tr>
+          <tr><td>SC Recall Affected Item <span class="chip">child</span></td><td>—</td><td>1 vị trí lô đã đến</td><td><code>location_type</code> Warehouse/Department/<strong>Customer</strong>; audit hủy (lý do + người chứng kiến + ngày)</td></tr>
+          <tr><td><strong>SC Investigation Report</strong> <span class="chip">SC-INV-…</span></td><td class="yes">✓</td><td>Điều tra thất thoát/sai lệch</td><td>Draft→Investigating→Resolved→Closed · <code>anomalies_detected</code>, khóa user nghi vấn</td></tr>
+          <tr><td>SC Investigation Finding <span class="chip">child</span></td><td>—</td><td>1 bất thường</td><td>Large Qty Change/Off-Hours/Modified After Submit/Balance Mismatch…</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Truy xuất theo lô (Batch Trace)</h3>
+      <p>Từ một mã lô, hệ thống dựng lại toàn bộ vòng đời dựa trên sổ kho SLE:</p>
+      <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  NCC["Nhà cung cấp"] --> PO2["Đơn mua PO"] --> PR2["Phiếu nhập PR"]
+  PR2 --> QC2["Kết quả QC"]
+  PR2 --> LO(("LÔ<br/>batch"))
+  QC2 --> LO
+  LO --> MOV["Dịch chuyển kho<br/>SLE movements"]
+  LO --> CUR["Tồn hiện tại<br/>theo kho"]
+  LO --> SOLD["Đã bán cho<br/>khách nào qua DN"]
+</pre>
+        <div class="cap">Backward: lô → PR → PO → NCC + kết quả QC. Forward: lô → dịch chuyển → tồn hiện tại → khách đã mua.</div>
+      </div>
+
+      <h3>Quy trình thu hồi (Recall)</h3>
+      <p><code>populate_affected_items()</code> tự nạp phạm vi ảnh hưởng từ SLE: tồn theo kho + <strong>khách đã mua</strong> (qua Phiếu giao). Submit → <strong>chặn lô</strong> (<code>Batch.blocked=1</code>). Thông báo theo khoa/khách (<span class="chip">BRU-REC-001</span> — mỗi khách 1 thư thu hồi). Khắc phục: cập nhật số thu hồi/hủy từng dòng; sinh phiếu trả NCC hoặc phiếu hủy (write-off); tự tính % giải quyết → Completed.</p>
+      <div class="note warn"><b>BUG-007 / SC-E016 — Audit tiêu hủy</b>Dòng thu hồi có số lượng hủy &gt; 0 bắt buộc đủ <strong>Lý do hủy + Người chứng kiến + Ngày hủy</strong> — chống gian lận tiêu hủy.</div>
+
+      <h3>Điều tra (Investigation)</h3>
+      <p>Heuristic phát hiện bất thường trên sổ kho: thay đổi lượng lớn, thao tác ngoài giờ, hủy không lý do, sửa sau submit, ghi lùi ngày, mẫu người dùng lặp, và <strong>lệch số dư (Balance Mismatch — Critical)</strong> bằng replay tích lũy. Có thể khóa user gian lận (loại trừ tài khoản hệ thống), sinh điều chỉnh tồn cho lỗi hệ thống, và kiểm toàn vẹn audit qua bản ghi phiên bản (không sửa được).</p>
+    </div>
+  </section>
+
+  <!-- ============ M11 ============ -->
+  <section id="m11">
+    <h2><span class="h2n">16</span>M11 · Dashboard &amp; Cảnh báo</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Tổng hợp KPI điều hành (cache 5 phút), dashboard theo vai trò, và quét cảnh báo chủ động theo bộ quy tắc — sinh cảnh báo khả-hành-động, tự resolve/escalate, gửi KPI hằng ngày.</p>
+
+      <div class="tw"><table>
+        <thead><tr><th>DocType</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
+        <tbody>
+          <tr><td><strong>SC Alert Rule</strong></td><td>Cấu hình quy tắc quét</td><td>7 <code>alert_type</code>; đa kênh email/in-app/SMS; ngưỡng; tần suất; recipient roles</td></tr>
+          <tr><td><strong>SC Alert</strong></td><td>Bản ghi 1 cảnh báo + workflow xử lý</td><td><code>resolved</code>, <code>snooze_until</code>, <code>assigned_to</code>, nút hành động 1-click, escalation</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>KPI điều hành</h3>
+      <p>8 chỉ số chính: giá trị tồn, chi phí tháng, công nợ NCC, PO đang chờ, lô sắp hết hạn, item dưới safety stock, HĐ khung sắp hết hạn, PO trễ hạn — mỗi KPI có drill-down; lọc theo kho/phòng ban; widget hiển thị theo vai trò.</p>
+
+      <h3>7 loại cảnh báo &amp; hành động 1-click</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Loại</th><th>Điều kiện</th><th>Hành động nhanh</th></tr></thead>
+        <tbody>
+          <tr><td><code>expiring_batch</code></td><td>Lô sắp hết hạn còn tồn</td><td>Chuyển lô vào kho cách ly QC</td></tr>
+          <tr><td><code>low_stock</code></td><td>Tồn dưới safety stock</td><td>Tạo Yêu cầu vật tư → Đơn mua</td></tr>
+          <tr><td><code>contract_expiring</code></td><td>HĐ khung sắp hết hạn</td><td>—</td></tr>
+          <tr><td><code>fc_remaining_low</code></td><td>HĐ khung còn ít hạn mức</td><td>—</td></tr>
+          <tr><td><code>overdue_payment</code></td><td>Hóa đơn NCC quá hạn</td><td>Tạo phiếu thanh toán</td></tr>
+          <tr><td><code>qc_pending</code></td><td>QC treo quá lâu</td><td>Nhắc NCC</td></tr>
+          <tr><td><code>recall_outstanding</code></td><td>Thu hồi còn dở dang</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Cơ chế:</strong> dedup theo (loại, đối tượng tham chiếu, 7 ngày) chống nhân đôi; auto-resolve khi điều kiện hết; escalate cảnh báo Critical/Warning quá 48h (bump severity, email lên cấp trên); gửi KPI snapshot hằng ngày cho Executive + Manager.</p>
+    </div>
+  </section>
+
+  <!-- ============ M12 ============ -->
+  <section id="m12">
+    <h2><span class="h2n">17</span>M12 · Cổng khách hàng (Portal)</h2>
+    <div class="modcard">
+      <h3>Mục đích</h3>
+      <p>Cổng self-service <code>/portal</code> (web page riêng, mobile-first) để khách xem hợp đồng/danh mục, tự đặt hàng, theo dõi đơn theo 4 mốc, tự xác nhận nhận hàng, xem hóa đơn/công nợ và tải chứng từ — với <strong>cô lập dữ liệu tuyệt đối</strong> theo từng khách.</p>
+
+      <h3>Khách hàng làm được gì</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Nhóm</th><th>Chức năng</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Hồ sơ</strong></td><td>Xem thông tin, hạn mức tín dụng, dư nợ</td></tr>
+          <tr><td><strong>Danh mục &amp; giá</strong></td><td>Xem HĐ khung còn hiệu lực + bảng giá; danh mục bán online chung</td></tr>
+          <tr><td><strong>Đặt hàng</strong></td><td>Đặt theo HĐ khung (giá server-side) hoặc đặt lẻ theo giá niêm yết</td></tr>
+          <tr><td><strong>Theo dõi đơn</strong></td><td>Tracker 4 mốc: Đã đặt → Bàn giao/nghiệm thu → Cấp hóa đơn → Thu tiền</td></tr>
+          <tr><td><strong>Tự nghiệm thu</strong></td><td>Khi phiếu giao "Đã giao", khách tự xác nhận → tạo &amp; submit Biên bản nghiệm thu</td></tr>
+          <tr><td><strong>Chứng từ</strong></td><td>Tải Hóa đơn / Phiếu giao / Biên bản nghiệm thu của chính mình</td></tr>
+          <tr><td><strong>Đăng ký</strong></td><td>Khách vãng lai tự đăng ký (tạo Website User + SC Customer + gán role)</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="note crit"><b>RSK-01 — Rủi ro rò rỉ dữ liệu chéo (cao nhất)</b>Trục cô lập là <code>SC Customer.portal_user == user đăng nhập</code>. Portal <strong>không bao giờ tin</strong> tham số <code>customer</code> do client gửi. Chi tiết ở mục Bảo mật (§20). Tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.</div>
+    </div>
+  </section>
+
+  <!-- ============ 18 Business Rules ============ -->
+  <section id="business-rules">
+    <h2><span class="h2n">18</span>Danh mục Business Rules</h2>
+    <p>Các quy tắc nghiệp vụ được <strong>mã hóa &amp; enforce trong controller</strong>. Mức độ: <span class="sev block">Chặn</span> ngăn hành động · <span class="sev warn">Điều kiện</span> yêu cầu bổ sung/quyền · <span class="sev info">Ràng buộc</span> tính toán/toàn vẹn.</p>
+
+    <h3>Mua hàng &amp; hợp đồng (M1–M2)</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Mã</th><th>Mức</th><th>Phát biểu</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip">SC-E-FC-LOCKED</span></td><td><span class="sev block">Chặn</span></td><td>HĐ khung đã Approved: chặn sửa, chỉ Submit/Reject.</td></tr>
+        <tr><td><span class="chip">SC-E-FC-NOT-APPROVED</span></td><td><span class="sev block">Chặn</span></td><td>Chưa qua duyệt 3 cấp thì không được Submit.</td></tr>
+        <tr><td><span class="chip">SC-E-FC-BLACKLIST</span></td><td><span class="sev warn">Điều kiện</span></td><td>NCC blacklist phải có cờ override của Executive.</td></tr>
+        <tr><td><span class="chip">SC-E026</span></td><td><span class="sev warn">Điều kiện</span></td><td>Ý kiến duyệt ≥ 10 ký tự.</td></tr>
+        <tr><td><span class="chip">SC-E002 FC_EXCEEDED</span></td><td><span class="sev block">Chặn</span></td><td>Lệnh gọi hàng không vượt hạn mức SL/giá trị còn lại của HĐ.</td></tr>
+        <tr><td><span class="chip">QA-BUG-M1-02</span></td><td><span class="sev info">Ràng buộc</span></td><td>Hạn mức ≤ 0 → HĐ Exhausted, không tạo PO mới.</td></tr>
+        <tr><td><span class="chip">SC-E-BUDGET-EXCEEDED</span></td><td><span class="sev block">Chặn</span></td><td>Kế hoạch mua vượt ngân sách chưa xác nhận → chặn Submit.</td></tr>
+        <tr><td><span class="chip">SC-E-MR-PO-ROW-LOSS</span></td><td><span class="sev info">Ràng buộc</span></td><td>Toàn vẹn: dòng gom + dòng chưa khớp phải bằng tổng dòng MR.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Kho, lô &amp; chuyển kho (M4–M6, M9)</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Mã</th><th>Mức</th><th>Phát biểu</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip">SC-E001 FEFO_OVERRIDE</span></td><td><span class="sev warn">Điều kiện</span></td><td>Xuất sai FEFO ở strict mode phải tick Override + lý do + quyền Manager.</td></tr>
+        <tr><td><span class="chip">SC-E003 EXPIRY_TOO_CLOSE</span></td><td><span class="sev block">Chặn</span></td><td>Không xuất lô đã hết hạn.</td></tr>
+        <tr><td><span class="chip">SC-E008 BATCH_RECALLED</span></td><td><span class="sev block">Chặn</span></td><td>Lô bị block/thu hồi không được xuất.</td></tr>
+        <tr><td><span class="chip">SC-E010 NEGATIVE_STOCK</span></td><td><span class="sev block">Chặn</span></td><td>Không làm tồn khả dụng âm.</td></tr>
+        <tr><td><span class="chip">SC-E024 SAME_WAREHOUSE</span></td><td><span class="sev block">Chặn</span></td><td>Kho nguồn phải khác kho đích.</td></tr>
+        <tr><td><span class="chip">SC-E-TRANSFER-INSUFFICIENT</span></td><td><span class="sev block">Chặn</span></td><td>Số duyệt chuyển không vượt tồn nguồn.</td></tr>
+        <tr><td><span class="chip">SC-E-ICS-WITNESS-REQUIRED</span></td><td><span class="sev warn">Điều kiện</span></td><td>Đếm kiểm kê lần 3 phải có Manager chứng kiến.</td></tr>
+        <tr><td><span class="chip">SC-E-SR-INVESTIGATION-REQUIRED</span></td><td><span class="sev warn">Điều kiện</span></td><td>Lệch giá trị lớn phải điền ghi chú điều tra.</td></tr>
+        <tr><td><span class="chip">SC-E025</span></td><td><span class="sev info">Ràng buộc</span></td><td>Chống can thiệp số tổng hợp phiếu kiểm kê (ghi đè + log).</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Bán hàng, kế toán &amp; QC (M3, M7–M8)</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Mã</th><th>Mức</th><th>Phát biểu</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip">BRU-QC-002</span></td><td><span class="sev warn">Điều kiện</span></td><td>Chỉ QC Officer/Manager được kết luận QC.</td></tr>
+        <tr><td><span class="chip">BRU-SFC-001</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ đặt đơn trên HĐ khung còn hiệu lực theo ngày.</td></tr>
+        <tr><td><span class="chip">BRU-SFC-002</span></td><td><span class="sev info">Ràng buộc</span></td><td>Giá khóa theo HĐ khung, không sửa tại đơn/hóa đơn.</td></tr>
+        <tr><td><span class="chip">BRU-SO-001</span></td><td><span class="sev block">Chặn</span></td><td>SL đặt không vượt SL trần HĐ khung (tính live).</td></tr>
+        <tr><td><span class="chip">BRU-SO-002</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ giao khi đơn Đã duyệt.</td></tr>
+        <tr><td><span class="chip">BRU-AR-001</span></td><td><span class="sev block">Chặn</span></td><td>Vượt hạn mức tín dụng → giữ đơn (credit hold).</td></tr>
+        <tr><td><span class="chip">BRU-DEL-001</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ lập hóa đơn khi đã nghiệm thu.</td></tr>
+        <tr><td><span class="chip">BRU-INVC-001</span></td><td><span class="sev block">Chặn</span></td><td>Hóa đơn phải khớp chính xác item+SL+khách của phiếu giao.</td></tr>
+        <tr><td><span class="chip">BRU-PAY-001</span></td><td><span class="sev block">Chặn</span></td><td>Không submit/hủy chứng từ kế toán trong kỳ đã khóa sổ.</td></tr>
+        <tr><td><span class="chip">BRU-REC-001</span></td><td><span class="sev info">Ràng buộc</span></td><td>Thu hồi phải truy được toàn bộ lô đã bán theo khách + thông báo từng khách.</td></tr>
+        <tr><td><span class="chip">BRU-CUS-002</span></td><td><span class="sev block">Chặn</span></td><td>Mỗi tài khoản Portal chỉ gắn đúng 1 khách hàng.</td></tr>
+        <tr><td><span class="chip">SC-E016</span></td><td><span class="sev warn">Điều kiện</span></td><td>Tiêu hủy thu hồi phải đủ audit (lý do + người chứng kiến + ngày).</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ============ 19 ============ -->
+  <section id="du-lieu">
+    <h2><span class="h2n">19</span>Sổ kho &amp; sổ cái tự quản</h2>
+    <p>Hai sổ append-only là xương sống dữ liệu, đảm bảo tính bất biến và truy vết:</p>
+    <div class="tw"><table>
+      <thead><tr><th>Sổ</th><th>Ghi khi</th><th>Nguyên tắc</th><th>Dùng cho</th></tr></thead>
+      <tbody>
+        <tr><td><strong>SC Stock Ledger Entry</strong></td><td>Submit Purchase Receipt / Stock Entry / Stock Reconciliation</td><td>Bất biến; tồn = SUM(qty_change); hủy = dòng đối ứng</td><td>Tính tồn, FEFO, truy xuất lô, kiểm kê</td></tr>
+        <tr><td><strong>SC GL Entry</strong></td><td>Submit Sales/Purchase Invoice, Payment/Receipt, Stock Reconciliation</td><td>Bất biến; hủy = đảo bút toán vào posting_date gốc</td><td>Công nợ, doanh thu, giá vốn, khóa kỳ</td></tr>
+      </tbody>
+    </table></div>
+    <p>Quan hệ dữ liệu cốt lõi (rút gọn):</p>
+    <div class="diagram">
+<pre class="mermaid">
+flowchart TB
+  ITEM["SC Item"] --> BATCH["SC Batch"]
+  SUP["SC Supplier"] --> FCq["Framework Contract"] --> ROq["Release Order"] --> POq["Purchase Order"]
+  POq --> PRq["Purchase Receipt"] --> BATCH
+  PRq --> QIq["Quality Inspection"] --> BATCH
+  BATCH --> SLEq["Stock Ledger Entry"]
+  WHq["SC Warehouse"] --> BINq["Bin Location"] --> SLEq
+  CUS["SC Customer"] --> SFCq["Sales Framework Contract"] --> SOq["Sales Order"] --> DNq["Delivery Note"]
+  DNq --> SLEq
+  DNq --> ARq["Acceptance Record"] --> SIq["Sales Invoice"] --> SRq["Sales Receipt"]
+  SIq --> GLq["GL Entry"]
+  SRq --> GLq
+</pre>
+      <div class="cap">Sơ đồ quan hệ rút gọn — mọi phát sinh kho hội tụ về SLE; mọi phát sinh tiền hội tụ về GL.</div>
+    </div>
+  </section>
+
+  <!-- ============ 20 ============ -->
+  <section id="bao-mat">
+    <h2><span class="h2n">20</span>Bảo mật &amp; cô lập dữ liệu Portal (RSK-01)</h2>
+    <p>Rủi ro nghiêm trọng nhất là <strong>rò rỉ dữ liệu chéo giữa các khách</strong>. Hệ thống phòng thủ nhiều lớp quanh trục <code>SC Customer.portal_user == frappe.session.user</code>:</p>
+    <div class="tw"><table>
+      <thead><tr><th>#</th><th>Lớp</th><th>Chặn gì</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>permission_query_conditions</code></td><td>Lọc list-query 6 doctype bán + 4 child theo customer của user. Child đăng ký riêng vì Frappe tra theo doctype của truy vấn, không kế thừa từ cha.</td></tr>
+        <tr><td>2</td><td><code>has_permission</code> → <code>portal_doc_permission</code></td><td>Chặn đọc single-doc của khách khác; chặn mọi ghi (write/create/submit/cancel/delete) cho role Portal.</td></tr>
+        <tr><td>3</td><td><code>guarded_client_get</code></td><td>Override <code>frappe.client.get</code> — chặn Portal đọc child-row đơn lẻ (bịt lỗ scoping của child).</td></tr>
+        <tr><td>4</td><td><code>portal_block_rest_child</code></td><td>Chặn ở request-path các REST <code>/api/resource</code>, <code>/api/v1/resource</code>, <code>/api/v2/document</code> cho 4 child.</td></tr>
+        <tr><td>5</td><td><code>block_portal()</code></td><td>Block-list chặn role Portal khỏi mọi API nội bộ (KPI, báo cáo tài chính, approve/reject, truy xuất, WMS, FEFO…).</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><b>Nguyên tắc vàng</b>Portal <strong>không bao giờ tin</strong> tham số do client gửi; mọi API portal gọi <code>_require_portal_customer()</code> để tự xác định khách từ session. Tạo chứng từ (đặt hàng, tự nghiệm thu) thực hiện với <code>ignore_permissions</code> sau khi đã tự kiểm ownership. Kiểm thử cô lập là UAT bắt buộc.</div>
+  </section>
+
+  <!-- ============ 21 ============ -->
+  <section id="phi-chuc-nang">
+    <h2><span class="h2n">21</span>Yêu cầu phi chức năng</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Nhóm</th><th>Yêu cầu</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Đa ngôn ngữ</strong></td><td>Giao diện tiếng Việt là chính; backend lưu key tiếng Anh, FE dịch qua bảng nhãn (status/field) + i18n. Manifest <code>lang: vi</code>.</td></tr>
+        <tr><td><strong>Hiển thị tên nghiệp vụ</strong></td><td>List view hiện <strong>TÊN</strong> (nhà cung cấp, khách, vật tư…), mã kỹ thuật chỉ phụ — giảm tải nhận thức.</td></tr>
+        <tr><td><strong>PWA / Offline</strong></td><td>Cài như app (standalone); service worker precache shell (NetworkFirst), API NetworkOnly; banner cảnh báo mất mạng.</td></tr>
+        <tr><td><strong>In ấn</strong></td><td>Print Format theo 12 module; hóa đơn theo mẫu TT99 (số tiền bằng chữ, thông tin bên bán).</td></tr>
+        <tr><td><strong>Barcode</strong></td><td>Bin Location &amp; SC Batch có barcode; hỗ trợ quét cho PDA/putaway.</td></tr>
+        <tr><td><strong>Thông báo</strong></td><td>Đa kênh email/in-app/SMS; tần suất Realtime/Hourly/Daily/Weekly; KPI hằng ngày qua scheduler.</td></tr>
+        <tr><td><strong>Bảo mật dữ liệu</strong></td><td>Cô lập dữ liệu Portal (RSK-01); tuân thủ NĐ 13/2023/NĐ-CP; audit trail bất biến qua bản ghi phiên bản.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ============ 22 ============ -->
+  <section id="tu-dong-hoa">
+    <h2><span class="h2n">22</span>Tự động hóa &amp; lịch chạy</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Tác vụ</th><th>Tần suất</th><th>Chức năng</th></tr></thead>
+      <tbody>
+        <tr><td><code>check_contract_expiry</code> (M1)</td><td>Hằng ngày</td><td>Đánh dấu HĐ sắp/đã hết hạn, email tổng hợp.</td></tr>
+        <tr><td><code>check_reorder_levels</code> (M2)</td><td>Hằng ngày</td><td>Quét tồn dưới ngưỡng → tạo MR nháp.</td></tr>
+        <tr><td><code>check_po_response</code> (M2)</td><td>Hằng ngày</td><td>Nhắc NCC khi PO gửi quá lâu chưa phản hồi.</td></tr>
+        <tr><td><code>check_return_responses</code> (M3)</td><td>Hằng ngày</td><td>Escalate phiếu trả NCC quá hạn.</td></tr>
+        <tr><td><code>scan_expiring_batches</code> (M5)</td><td>Hằng ngày</td><td>Quét lô sắp hết hạn → Batch Expiry Alert.</td></tr>
+        <tr><td><code>scan_alerts</code> (M11)</td><td>Hằng ngày</td><td>Quét toàn bộ quy tắc → tạo cảnh báo (dedup) + gửi kênh.</td></tr>
+        <tr><td><code>send_daily_kpi</code> (M11)</td><td>Hằng ngày</td><td>Email snapshot KPI cho Executive + Manager.</td></tr>
+        <tr><td><code>auto_resolve_alerts</code> (M11)</td><td>Hằng ngày</td><td>Tự đóng cảnh báo hết điều kiện.</td></tr>
+        <tr><td><code>escalate_overdue_alerts</code> (M11)</td><td>Hằng ngày</td><td>Escalate cảnh báo quá 48h.</td></tr>
+        <tr><td><code>generate_procurement_forecast</code> (M2)</td><td>Hằng tuần</td><td>Dự báo mua (hiện là placeholder — xem §23).</td></tr>
+        <tr><td><code>create_periodic_count</code> (M9)</td><td>Cron 01:00</td><td>Tạo phiếu kiểm kê định kỳ (hiện là stub — xem §23).</td></tr>
+      </tbody>
+    </table></div>
+    <p>Ngoài scheduler, hook sự kiện chính: <code>SC Batch after_insert → register_batch</code> (cảnh báo lô hết hạn ngay khi tạo); và guard <code>before_delete</code> chặn xóa chứng từ đã submit trên toàn bộ 21 doctype.</p>
+  </section>
+
+  <!-- ============ 23 ============ -->
+  <section id="trang-thai">
+    <h2><span class="h2n">23</span>Trạng thái hoàn thiện &amp; hạng mục defer</h2>
+    <p>Để minh bạch, các hạng mục sau <strong>chưa hoàn thiện</strong> trong code hiện tại (tài liệu phản ánh đúng thực trạng, không tô hồng):</p>
+    <div class="tw"><table>
+      <thead><tr><th>Hạng mục</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td>Dự báo mua tự động (M2)</td><td><span class="sev warn">Placeholder</span></td><td><code>generate_procurement_forecast</code> mới log; heuristic 3 tháng defer.</td></tr>
+        <tr><td>Kiểm kê định kỳ tự tạo (M9)</td><td><span class="sev warn">Stub</span></td><td><code>create_periodic_count</code> hiện là <code>pass</code>.</td></tr>
+        <tr><td>PDA offline (M4)</td><td><span class="sev warn">Một phần</span></td><td>Online hoạt động; đồng bộ offline IndexedDB defer.</td></tr>
+        <tr><td>PDA Session, Pick List (M4)</td><td><span class="sev block">Chưa có</span></td><td>Thư mục stub, chưa có schema/controller.</td></tr>
+        <tr><td>Báo cáo tài chính chi tiết (M8)</td><td><span class="sev warn">Một phần</span></td><td>KPI realtime có; Trial Balance/AP Aging cấu hình qua Report Builder.</td></tr>
+        <tr><td>SMS gateway (M11)</td><td><span class="sev info">Cấu hình</span></td><td>Kênh SMS cần khai báo <code>sms_gateway_endpoint</code>.</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note warn"><b>Lưu ý biên tập</b>Tài liệu UC gốc (<code>UC_COVERAGE.md</code>, 05/2026) còn phản ánh bản bệnh viện (BHYT/cấp phát/bệnh nhân). Bản MVL đã gỡ các phần này — tài liệu này lấy <strong>code hiện tại</strong> làm chuẩn.</div>
+  </section>
+
+  <!-- ============ 24 ============ -->
+  <section id="thuat-ngu">
+    <h2><span class="h2n">24</span>Thuật ngữ &amp; Phụ lục</h2>
+    <h3>24.1 Thuật ngữ</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Thuật ngữ</th><th>Ý nghĩa</th></tr></thead>
+      <tbody>
+        <tr><td><strong>FEFO</strong></td><td>First-Expiry-First-Out — ưu tiên xuất lô gần hết hạn nhất.</td></tr>
+        <tr><td><strong>SLE</strong></td><td>Stock Ledger Entry — sổ kho append-only, nền tính tồn.</td></tr>
+        <tr><td><strong>GL</strong></td><td>General Ledger — sổ cái kế toán tự quản.</td></tr>
+        <tr><td><strong>O2C / P2P</strong></td><td>Order-to-Cash (đặt→thu) / Procure-to-Pay (mua→trả).</td></tr>
+        <tr><td><strong>HĐ khung</strong></td><td>Hợp đồng khung — khóa giá &amp; hạn mức với NCC (mua) hoặc khách (bán).</td></tr>
+        <tr><td><strong>docstatus</strong></td><td>Trạng thái chứng từ Frappe: 0 Nháp · 1 Đã submit · 2 Đã hủy.</td></tr>
+        <tr><td><strong>Bin</strong></td><td>Vị trí lưu trữ chi tiết trong kho (kệ/ô).</td></tr>
+        <tr><td><strong>3-way match</strong></td><td>Đối chiếu Đơn mua ↔ Phiếu nhập ↔ Hóa đơn NCC.</td></tr>
+        <tr><td><strong>Persona</strong></td><td>Lăng kính UI suy dẫn từ role, quyết định menu/widget hiển thị.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>24.2 Phụ lục — Cài đặt &amp; triển khai</h3>
+    <div class="lead-card" style="font-family:var(--font-mono);font-size:.82rem;white-space:pre-wrap;line-height:1.7">bench get-app supplycore /path/to/supplycore
+bench --site &lt;site&gt; install-app supplycore   # tạo 10+ role mặc định
+bench --site &lt;site&gt; migrate                   # đồng bộ DocType/permission
+cd frontend &amp;&amp; yarn build                     # build SPA → public/frontend/  (KHÔNG dùng bench build)
+# Hard-refresh trình duyệt sau build (do PWA/service worker cache)</div>
+    <p style="font-size:.85rem"><strong>Stack:</strong> Frappe v15+, Python 3.11+, MariaDB 10.6+, Redis 7+. Không cần ERPNext. Cấu hình vận hành tập trung ở Single <code>SupplyCore Settings</code>.</p>
+
+    <div class="foot">
+      <p><strong>SupplyCore MVL</strong> — Tài liệu Phân tích Nghiệp vụ v1.0 · Công ty Miyano Việt Nam.<br>
+      Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code> (2026-07-21). Khi hệ thống thay đổi, code sống là chuẩn — tài liệu cần cập nhật theo.</p>
+    </div>
+  </section>
+</main>
+</div>
+
+<a href="#" class="up" id="up" aria-label="Lên đầu trang">↑</a>
+
+<script>
+(function(){
+  // Scrollspy: highlight active TOC link
+  var links = Array.prototype.slice.call(document.querySelectorAll('#tocnav a'));
+  var map = {};
+  links.forEach(function(a){ var id=a.getAttribute('href').slice(1); if(id) map[id]=a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('section[id]'));
+  var up = document.getElementById('up');
+  function onScroll(){
+    var y = window.scrollY + 120, cur = null;
+    for(var i=0;i<secs.length;i++){ if(secs[i].offsetTop <= y) cur = secs[i].id; }
+    links.forEach(function(a){ a.classList.remove('active'); });
+    if(cur && map[cur]) map[cur].classList.add('active');
+    if(window.scrollY > 600) up.classList.add('show'); else up.classList.remove('show');
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+  // Close mobile TOC after picking a link
+  links.forEach(function(a){ a.addEventListener('click', function(){
+    if(window.matchMedia('(max-width:1000px)').matches){
+      var d=document.getElementById('toc'); if(d) d.removeAttribute('open');
+    }
+  }); });
+})();
+</script>
