@@ -20,6 +20,8 @@ from frappe import _
 from frappe.utils import cint
 from frappe.utils.password import update_password
 
+from supplycore.utils.validators import validate_password_strength
+
 
 # ---------------------------------------------------------------------------
 # Role guide — chức năng + giới hạn cho người phân quyền
@@ -322,6 +324,11 @@ def create_user(email: str, full_name: str, roles=None,
     if frappe.db.exists("User", email):
         frappe.throw(_("Email {0} đã tồn tại").format(email))
 
+    # Nếu đặt mật khẩu khởi tạo → bắt buộc đủ mạnh (kiểm TRƯỚC khi tạo User để
+    # không tạo user rồi mới lỗi). Để trống = gửi email chào mừng, không kiểm.
+    if password:
+        validate_password_strength(password)
+
     if isinstance(roles, str):
         import json
         roles = json.loads(roles)
@@ -421,7 +428,67 @@ def reset_password(name: str) -> dict:
         frappe.throw(_("Không reset Administrator qua đây"))
     user = frappe.get_doc("User", name)
     try:
-        link = user.reset_password(send_email=True)
+        # Sinh reset-key qua Frappe (để verify hợp lệ) NHƯNG không dùng email/URL
+        # mặc định — trỏ link sang trang đặt lại mật khẩu của SPA nội bộ để
+        # đồng bộ giao diện, và reset xong quay về /supplycore/login.
+        default_link = user._reset_password(send_email=False)  # -> /update-password?key=KEY
+        key = default_link.split("key=", 1)[1].split("&", 1)[0]
+        link = frappe.utils.get_url("/supplycore/reset-password?key=" + key)
+        frappe.sendmail(
+            recipients=[user.email or name],
+            subject=_("SupplyCore — Đặt lại mật khẩu"),
+            message=_(
+                "<p>Xin chào {0},</p>"
+                "<p>Bạn (hoặc quản trị viên) vừa yêu cầu đặt lại mật khẩu SupplyCore. "
+                "Nhấn nút dưới đây để đặt mật khẩu mới:</p>"
+                "<p><a href='{1}' style='background:#2456C9;color:#ffffff;padding:10px 20px;"
+                "border-radius:8px;text-decoration:none;display:inline-block;font-weight:600'>"
+                "Đặt lại mật khẩu</a></p>"
+                "<p>Hoặc mở liên kết: <a href='{1}'>{1}</a></p>"
+                "<p style='color:#8a8a8a;font-size:12px'>Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>"
+            ).format(user.full_name or name, link),
+            now=True,
+        )
         return {"ok": 1, "link": link}
     except Exception as e:
         frappe.throw(_("Không gửi được email: {0}").format(e))
+
+
+@frappe.whitelist()
+def delete_user(name: str) -> dict:
+    """Xóa AN TOÀN 1 user (không force). Chặn Administrator, chính mình, và
+    System Manager hoạt động cuối cùng. Nếu user còn ràng buộc dữ liệu
+    (vd khách hàng Portal, bản ghi liên quan) → Frappe raise LinkExistsError,
+    ta báo rõ và khuyên Vô hiệu hóa thay vì xóa (giữ toàn vẹn dữ liệu)."""
+    _require_user_admin()
+    if not frappe.db.exists("User", name):
+        frappe.throw(_("User không tồn tại"))
+    if name == "Administrator":
+        frappe.throw(_("Không được xóa Administrator"))
+    if name == frappe.session.user:
+        frappe.throw(_("Không thể tự xóa tài khoản đang đăng nhập"))
+
+    # Chặn xóa System Manager hoạt động cuối cùng → tránh khóa cứng hệ thống.
+    if "System Manager" in frappe.get_roles(name):
+        others = frappe.get_all(
+            "Has Role",
+            filters={"role": "System Manager", "parenttype": "User",
+                     "parent": ["not in", [name, "Administrator"]]},
+            distinct=True, pluck="parent",
+        )
+        active_admins = [u for u in set(others) if frappe.db.get_value("User", u, "enabled")]
+        if not active_admins:
+            frappe.throw(_("Không thể xóa System Manager hoạt động cuối cùng"))
+
+    try:
+        frappe.delete_doc("User", name, ignore_permissions=False)  # KHÔNG force
+    except frappe.LinkExistsError:
+        frappe.db.rollback()
+        frappe.throw(
+            _("Không thể xóa: user {0} vẫn còn ràng buộc với dữ liệu khác "
+              "(vd khách hàng Portal, phân công, bản ghi liên quan). "
+              "Hãy Vô hiệu hóa user thay vì xóa để giữ toàn vẹn dữ liệu.").format(name),
+            title=_("User còn ràng buộc"),
+        )
+    frappe.db.commit()
+    return {"name": name, "deleted": True}

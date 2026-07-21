@@ -17,6 +17,8 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt, today
 
+from supplycore.utils.validators import validate_password_strength
+
 PORTAL_ROLE = "SC Customer Portal"
 # Role NHÃN khách hàng — gán KÈM PORTAL_ROLE (xem setup/ensure_customer_role.py).
 # PORTAL_ROLE vẫn là role chức năng gating; CUSTOMER_ROLE chỉ để hiển thị/nhóm.
@@ -107,7 +109,8 @@ def portal_provision(customer, email, send_invite=False):
         # tạo + link xong, admin có thể gửi lại sau.
         try:
             user_doc.reload()
-            user_doc.reset_password(send_email=True)
+            # Frappe v15: method là `_reset_password` (public `reset_password` đã bỏ).
+            user_doc._reset_password(send_email=True)
         except Exception:
             frappe.log_error(frappe.get_traceback(),
                              f"portal_provision: gửi email đặt mật khẩu thất bại cho {user_doc.name}")
@@ -556,8 +559,8 @@ def portal_register(customer_name, email, password, phone=None, tax_code=None):
         frappe.throw(_("Vui lòng nhập đầy đủ Tên khách hàng, Email và Mật khẩu"))
     if not _EMAIL_RE.match(email):
         frappe.throw(_("Email không hợp lệ"))
-    if len(password) < 6:
-        frappe.throw(_("Mật khẩu tối thiểu 6 ký tự"))
+    # Quy định mật khẩu mạnh, đồng nhất với tạo user nội bộ (api/users).
+    validate_password_strength(password)
     if frappe.db.exists("User", email):
         frappe.throw(_("Email {0} đã được đăng ký — vui lòng đăng nhập").format(email))
     if tax_code and frappe.db.exists("SC Customer", {"tax_code": tax_code}):

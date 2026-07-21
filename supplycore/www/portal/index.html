@@ -286,8 +286,10 @@
       <input id="reg-name" class="reg-inp" placeholder="VD: Công ty TNHH ABC" />
       <label class="reg-lbl">Email (dùng để đăng nhập) <span style="color:var(--danger)">*</span></label>
       <input id="reg-email" class="reg-inp" type="email" placeholder="ban@congty.vn" />
-      <label class="reg-lbl">Mật khẩu <span style="color:var(--danger)">*</span> <span style="font-weight:400;color:var(--faint)">(tối thiểu 6 ký tự)</span></label>
-      <input id="reg-pass" class="reg-inp" type="password" placeholder="••••••" />
+      <label class="reg-lbl">Mật khẩu <span style="color:var(--danger)">*</span> <span style="font-weight:400;color:var(--faint)">(≥8 ký tự, có chữ HOA, chữ thường, số &amp; ký tự đặc biệt)</span></label>
+      <input id="reg-pass" class="reg-inp" type="password" placeholder="••••••••" />
+      <label class="reg-lbl">Nhập lại mật khẩu <span style="color:var(--danger)">*</span></label>
+      <input id="reg-pass2" class="reg-inp" type="password" placeholder="Gõ lại đúng mật khẩu" />
       <div style="display:flex; gap:10px;">
         <div style="flex:1;"><label class="reg-lbl">Điện thoại</label><input id="reg-phone" class="reg-inp" placeholder="Tùy chọn" /></div>
         <div style="flex:1;"><label class="reg-lbl">Mã số thuế</label><input id="reg-tax" class="reg-inp" placeholder="Tùy chọn" /></div>
@@ -313,9 +315,16 @@
       }
       var btn = $("reg-submit");
       btn.addEventListener("click", function(){
-        var name=$("reg-name").value.trim(), email=$("reg-email").value.trim(), pass=$("reg-pass").value;
+        var name=$("reg-name").value.trim(), email=$("reg-email").value.trim(), pass=$("reg-pass").value, pass2=$("reg-pass2").value;
         if(!name||!email||!pass){ showAlert("Vui lòng nhập Tên, Email và Mật khẩu."); return; }
-        if(pass.length<6){ showAlert("Mật khẩu tối thiểu 6 ký tự."); return; }
+        var pwErrs=[];
+        if(pass.length<8) pwErrs.push("≥8 ký tự");
+        if(!/[A-Z]/.test(pass)) pwErrs.push("chữ HOA");
+        if(!/[a-z]/.test(pass)) pwErrs.push("chữ thường");
+        if(!/[0-9]/.test(pass)) pwErrs.push("chữ số");
+        if(!/[^A-Za-z0-9]/.test(pass)) pwErrs.push("ký tự đặc biệt");
+        if(pwErrs.length){ showAlert("Mật khẩu chưa đủ mạnh — cần có: "+pwErrs.join(", ")+"."); return; }
+        if(pass!==pass2){ showAlert("Mật khẩu nhập lại không khớp."); return; }
         btn.disabled=true; btn.textContent="Đang tạo tài khoản…"; $("reg-alert").innerHTML="";
         fetch("/api/method/supplycore.api.portal.portal_register", {
           method:"POST", credentials:"same-origin",

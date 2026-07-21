@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from supplycore.utils.validators import validate_password_strength
+
 # Role chức năng cổng + role nhãn (xem api/portal.py, setup/ensure_customer_role.py).
 PORTAL_ROLE = "SC Customer Portal"
 CUSTOMER_ROLE = "Khách hàng"
@@ -25,7 +27,8 @@ class SCCustomer(Document):
         invite_user = self.flags.get("_portal_invite_user")
         if invite_user:
             try:
-                frappe.get_doc("User", invite_user).reset_password(send_email=True)
+                # Frappe v15: method là `_reset_password` (public `reset_password` đã bỏ).
+                frappe.get_doc("User", invite_user)._reset_password(send_email=True)
             except Exception:
                 frappe.log_error(frappe.get_traceback(),
                                  f"SC Customer auto-provision: gửi email đặt mật khẩu thất bại ({invite_user})")
@@ -36,6 +39,9 @@ class SCCustomer(Document):
         portal_user + đặt mật khẩu nhân viên cấp. Idempotent. KHÔNG lưu mật khẩu
         trên hồ sơ khách (xoá sau khi dùng)."""
         password = (self.get("portal_password") or "").strip()
+        # Quy định mật khẩu mạnh, đồng nhất với api/users + api/portal.
+        if password:
+            validate_password_strength(password)
 
         # Khách đã có tài khoản: cho phép nhân viên đổi/đặt lại mật khẩu nếu nhập.
         if self.portal_user:
@@ -49,8 +55,6 @@ class SCCustomer(Document):
             self.portal_password = None
             return
         frappe.utils.validate_email_address(email, throw=True)
-        if password and len(password) < 6:
-            frappe.throw(_("Mật khẩu Portal tối thiểu 6 ký tự."))
 
         new_user = not frappe.db.exists("User", email)
         if new_user:

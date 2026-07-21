@@ -374,6 +374,8 @@ export const users = {
     call('supplycore.api.users.set_user_enabled', { name, enabled: enabled ? 1 : 0 }),
   resetPassword: (name) =>
     call('supplycore.api.users.reset_password', { name }),
+  remove: (name) =>
+    call('supplycore.api.users.delete_user', { name }),
 }
 
 // Trigger browser download từ {filename, content_b64, content_type}
