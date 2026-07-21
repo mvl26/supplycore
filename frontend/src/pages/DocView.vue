@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, call } from '../api'
+import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, deleteDoc, call } from '../api'
 import { DT } from '../modules'
 import { FORM_SCHEMAS, QUICK_CREATE } from '../schemas'
 import QuickCreateModal from '../components/QuickCreateModal.vue'
@@ -21,8 +21,10 @@ import BarcodeDisplay from '../components/BarcodeDisplay.vue'
 import FefoPickGuide from '../components/FefoPickGuide.vue'
 import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
 import DetailViewGeneric from '../components/DetailViewGeneric.vue'
+import Confirm from '../components/Confirm.vue'
 import { DETAIL_CONFIGS } from '../detail-configs'
 import { useToastStore } from '../stores/toast'
+import { useAccessStore } from '../stores/access'
 import { fmtDate, fmtDateTime, fmtNumber, today } from '../utils'
 import { statusLabel, isSubmittable } from '../modules'
 import { fieldLabel } from '../i18n'
@@ -30,6 +32,7 @@ import { fieldLabel } from '../i18n'
 const route = useRoute()
 const router = useRouter()
 const toast = useToastStore()
+const access = useAccessStore()
 
 const doctype = computed(() => decodeURIComponent(route.params.dt))
 const name = computed(() => decodeURIComponent(route.params.name))
@@ -47,6 +50,7 @@ watch(() => doc.value, () => { dirty.value = true })
 async function markClean() { await nextTick(); dirty.value = false }
 const batchItemName = ref('')   // tên vật tư của lô (fetch để in lên nhãn)
 const docFormRef = ref(null)  // expose validate() từ DocForm để highlight field thiếu
+const confirmRef = ref(null)  // hộp xác nhận đồng bộ design (thay confirm() native)
 
 const LINK_PENDING_KEY = 'sc-link-create-pending'
 const LINK_RESULT_KEY  = 'sc-link-create-result'
@@ -124,14 +128,17 @@ async function load() {
 // Đặt lại form (chỉ ở chế độ tạo mới): xoá hết dữ liệu user nhập, đưa phiếu về
 // trạng thái mới tinh (áp lại default như today). Dùng để chọn lại HĐ khung/NCC
 // khi PO đã bị khoá theo framework_contract.
-function resetForm() {
+async function resetForm() {
   if (!isNew.value) return
   const filled = Object.keys(doc.value || {}).filter(
     k => !['doctype', 'docstatus'].includes(k)
       && doc.value[k] != null && doc.value[k] !== ''
       && !(Array.isArray(doc.value[k]) && doc.value[k].length === 0)
   )
-  if (filled.length && !confirm('Đặt lại phiếu? Mọi thông tin đã nhập sẽ bị xoá về trắng.')) return
+  if (filled.length && !await confirmRef.value.ask({
+    title: 'Đặt lại phiếu', message: 'Mọi thông tin đã nhập sẽ bị xoá về trắng. Tiếp tục?',
+    confirmText: 'Đặt lại', variant: 'danger',
+  })) return
   const fresh = { doctype: doctype.value, docstatus: 0 }
   if (schema.value?.items) fresh[schema.value.items.field] = []
   for (const sec of (schema.value?.sections || [])) {
@@ -522,7 +529,10 @@ const POST_SUBMIT_NAV = {
 
 async function doSubmit() {
   if (!doc.value?.name) return
-  if (!confirm('Gửi bản ghi này vào quy trình duyệt? Sau khi gửi, bản ghi sẽ KHÔNG sửa được trừ khi Huỷ duyệt.')) return
+  if (!await confirmRef.value.ask({
+    title: 'Gửi duyệt', message: 'Gửi bản ghi này vào quy trình duyệt? Sau khi gửi, bản ghi sẽ KHÔNG sửa được trừ khi Huỷ duyệt.',
+    confirmText: 'Gửi duyệt',
+  })) return
   saving.value = true
   try {
     await submitDoc(doctype.value, name.value)
@@ -542,12 +552,37 @@ async function doSubmit() {
 }
 
 async function doCancel() {
-  if (!confirm('Hủy bản ghi này?')) return
+  if (!await confirmRef.value.ask({
+    title: 'Huỷ bản ghi', message: 'Huỷ bản ghi này?', confirmText: 'Huỷ bản ghi', variant: 'danger',
+  })) return
   saving.value = true
   try {
     await cancelDoc(doctype.value, name.value)
     toast.success('Đã hủy')
     await load()
+  } catch (e) {
+    toast.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+// Xóa phiếu nháp (docstatus 0). Guard backend chặn nếu đã Submit/Hủy.
+const canDelete = computed(() =>
+  !isNew.value && doc.value && (doc.value.docstatus ?? 0) === 0
+  && isSubmittable(doctype.value) && access.canDoctype(doctype.value, 'delete'))
+
+async function doDelete() {
+  if (!await confirmRef.value.ask({
+    title: 'Xóa phiếu nháp',
+    message: `Xóa vĩnh viễn ${cfg.value?.label || doctype.value} ${doc.value.name}? Không thể hoàn tác.`,
+    confirmText: 'Xóa', variant: 'danger',
+  })) return
+  saving.value = true
+  try {
+    await deleteDoc(doctype.value, name.value)
+    toast.success('Đã xóa phiếu nháp')
+    backToList()
   } catch (e) {
     toast.error(e.message)
   } finally {
@@ -589,8 +624,12 @@ function displayField(value, key) {
   if (/value|amount|total|cost|rate/.test(key) && typeof value === 'number') {
     return fmtNumber(value)
   }
-  if (value === 1) return 'Có'
-  if (value === 0) return ''
+  if (typeof value === 'number') {
+    // Cờ boolean (0/1) theo tên key → Có/Không; số thật giữ nguyên (0 hiển thị "0", KHÔNG để trống).
+    if ((value === 0 || value === 1) && /(^is_|^has_|^allow_|^auto_|^default_|enabled|require|active|blocked|_flag$)/i.test(key))
+      return value === 1 ? 'Có' : 'Không'
+    return String(value)
+  }
   return value
 }
 </script>
@@ -599,7 +638,7 @@ function displayField(value, key) {
   <div v-if="!cfg" class="sc-card p-10 text-center text-sc-text-muted">
     DocType {{ doctype }} không hỗ trợ
   </div>
-  <div v-else-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải...</div>
+  <div v-else-if="loading" class="sc-card p-4 space-y-2.5"><div v-for="n in 6" :key="n" class="sc-skeleton h-9 w-full" :style="{ opacity: 1 - n * 0.12 }" /></div>
   <div v-else-if="!doc" class="sc-card p-10 text-center text-sc-text-muted">
     Không tìm thấy {{ doctype }} {{ name }}
   </div>
@@ -629,7 +668,7 @@ function displayField(value, key) {
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
           <button v-if="doc.docstatus === 0 && isSubmittable(doctype) && !dirty" @click="doSubmit"
-            :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm"
+            :disabled="saving" class="bg-sc-success hover:brightness-110 text-white px-4 py-2 rounded-md font-medium text-sm"
             title="Gửi bản ghi vào quy trình duyệt. Sau khi gửi sẽ không sửa được trừ khi Huỷ duyệt.">
             <Icon name="upload" :size="14" /> Gửi duyệt
           </button>
@@ -639,15 +678,21 @@ function displayField(value, key) {
         <template v-else>
           <!-- Đã duyệt 3-tier nhưng chưa Submit → cho Submit kích hoạt -->
           <button v-if="approvalLocked" @click="doSubmit"
-            :disabled="saving" class="bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium text-sm">
+            :disabled="saving" class="bg-sc-success hover:brightness-110 text-white px-4 py-2 rounded-md font-medium text-sm">
             <template v-if="saving">Đang gửi...</template>
             <template v-else><Icon name="upload" :size="14" /> Submit kích hoạt</template>
           </button>
           <button v-if="doc.docstatus === 1" @click="doCancel"
-            :disabled="saving" class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium text-sm">
+            :disabled="saving" class="bg-sc-danger hover:brightness-110 text-white px-4 py-2 rounded-md font-medium text-sm">
             Hủy
           </button>
         </template>
+        <!-- Xóa phiếu nháp — hiện cho MỌI phiếu docstatus 0 (kể cả đã duyệt-khóa), gate quyền delete -->
+        <button v-if="canDelete" @click="doDelete" :disabled="saving"
+          class="border border-sc-danger text-sc-danger hover:bg-sc-danger hover:text-white px-3 py-2 rounded-md font-medium text-sm transition-colors"
+          title="Xóa vĩnh viễn phiếu nháp này.">
+          <Icon name="trash-2" :size="14" /> Xóa
+        </button>
       </template>
     </PageHeader>
 
@@ -684,7 +729,7 @@ function displayField(value, key) {
 
     <!-- Banner: HĐ đã duyệt 3-tier → khoá sửa -->
     <div v-if="approvalLocked"
-      class="sc-card border-l-4 border-sc-success bg-green-50 px-4 py-3 mb-4 text-sm">
+      class="sc-card border-l-4 border-sc-success bg-sc-success-50 px-4 py-3 mb-4 text-sm">
       <div class="font-semibold text-sc-navy"><Icon name="lock" :size="16" /> Hợp đồng đã được duyệt — đã khoá sửa</div>
       <div class="text-sc-text-muted mt-1">
         HĐ đã qua đủ 3-tier (Kế toán → Quản lý → Lãnh đạo). Bấm <b>Submit</b> để kích hoạt,
@@ -833,5 +878,7 @@ function displayField(value, key) {
 
     <!-- Related records (reverse lookups) — luôn hiển thị nếu doc tồn tại -->
     <RelatedDocs v-if="!isNew && doc?.name" :doctype="doctype" :name="doc.name" />
+
+    <Confirm ref="confirmRef" />
   </div>
 </template>

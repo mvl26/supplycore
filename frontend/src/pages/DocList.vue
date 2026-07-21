@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getList, count, VOUCHER_IO_DOCTYPES as VIO_LIST } from '../api'
-import { DT } from '../modules'
+import { getList, count, deleteDoc, VOUCHER_IO_DOCTYPES as VIO_LIST } from '../api'
+import { DT, isSubmittable } from '../modules'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
 import DataTable from '../components/DataTable.vue'
@@ -10,6 +10,7 @@ import FieldInput from '../components/FieldInput.vue'
 import Pagination from '../components/Pagination.vue'
 import ListImportExport from '../components/ListImportExport.vue'
 import VoucherIO from '../components/VoucherIO.vue'
+import Confirm from '../components/Confirm.vue'
 
 // Doctype hỗ trợ xuất/nhập Excel 2 sheet (phiếu cha-con) — khớp voucher_io.CONFIGS
 const VOUCHER_IO_DOCTYPES = new Set(VIO_LIST)
@@ -25,16 +26,22 @@ const toast = useToastStore()
 const doctype = computed(() => decodeURIComponent(route.params.dt))
 const cfg = computed(() => DT[doctype.value])
 
-// Columns trở thành sortable mặc định (server-side qua order_by SQL)
+// Columns sortable mặc định (server-side qua order_by SQL), TRỪ cột không có nghĩa
+// sắp xếp: badge (trạng thái), check (boolean), code (mã rút gọn hiển thị).
+const NO_SORT_TYPES = new Set(['badge', 'check', 'code'])
 const columns = computed(() => {
   if (!cfg.value) return []
-  return cfg.value.listColumns.map(c => ({ ...c, sortable: c.sortable !== false }))
+  return cfg.value.listColumns.map(c => ({
+    ...c,
+    sortable: c.sortable !== false && !NO_SORT_TYPES.has(c.type),
+  }))
 })
 
 // === State ===
 const rows = ref([])
 const total = ref(0)
 const loading = ref(false)
+const loadError = ref(null)
 const search = ref('')
 const page = ref(1)
 const pageSize = ref(20)
@@ -42,6 +49,20 @@ const sortKey = ref('')
 const sortDir = ref('desc')
 const showFilters = ref(false)
 const columnFilters = ref({})  // { fieldName: 'value' }
+
+// === Xóa phiếu nháp hàng loạt (chỉ doctype submittable + có quyền delete) ===
+const confirmRef = ref(null)
+const selectedKeys = ref([])
+const deleting = ref(false)
+const bulkDeletable = computed(() =>
+  !!cfg.value && isSubmittable(doctype.value) && access.canDoctype(doctype.value, 'delete'))
+const rowIsDraft = (r) => (r.docstatus ?? 0) === 0
+// Đảm bảo docstatus có trong data để gate checkbox từng dòng.
+const fetchFields = computed(() => {
+  const f = [...(cfg.value?.listFields || [])]
+  if (!f.includes('docstatus')) f.push('docstatus')
+  return f
+})
 
 const PAGE_SIZES = [10, 20, 50, 100]
 
@@ -175,13 +196,15 @@ function buildOrderBy() {
 async function load() {
   if (!cfg.value) return
   loading.value = true
+  loadError.value = null
+  selectedKeys.value = []   // đổi trang/lọc/doctype → bỏ chọn cũ
   try {
     const filters = buildFilters()
     const orFilters = buildSearchOr()
     const start = (page.value - 1) * pageSize.value
     const [data, cnt] = await Promise.all([
       getList(doctype.value, {
-        fields: cfg.value.listFields,
+        fields: fetchFields.value,
         filters,
         or_filters: orFilters,
         order_by: buildOrderBy(),
@@ -198,7 +221,7 @@ async function load() {
       page.value = maxPage
       const startFix = (page.value - 1) * pageSize.value
       rows.value = await getList(doctype.value, {
-        fields: cfg.value.listFields,
+        fields: fetchFields.value,
         filters,
         or_filters: orFilters,
         order_by: buildOrderBy(),
@@ -207,7 +230,8 @@ async function load() {
       })
     }
   } catch (e) {
-    toast.error(`Lỗi tải: ${e.message}`)
+    loadError.value = e.message || String(e)
+    toast.error(`Lỗi tải: ${loadError.value}`)
     rows.value = []
     total.value = 0
   } finally {
@@ -325,6 +349,30 @@ function openRow(r) {
 }
 function newDoc() {
   router.push(`/doc/${encodeURIComponent(doctype.value)}/new`)
+}
+
+// Xóa hàng loạt các phiếu nháp đã chọn. Backend guard vẫn chặn nếu lọt phiếu ≠ nháp.
+async function doBulkDelete() {
+  const keys = [...selectedKeys.value]
+  if (!keys.length) return
+  if (!await confirmRef.value.ask({
+    title: 'Xóa phiếu nháp',
+    message: `Xóa vĩnh viễn ${keys.length} phiếu nháp đã chọn? Không thể hoàn tác.`,
+    confirmText: `Xóa ${keys.length} phiếu`, variant: 'danger',
+  })) return
+  deleting.value = true
+  let ok = 0; const fails = []
+  try {
+    for (const k of keys) {
+      try { await deleteDoc(doctype.value, k); ok++ }
+      catch (e) { fails.push(k) }
+    }
+  } finally {
+    deleting.value = false
+  }
+  if (ok) toast.success(`Đã xóa ${ok} phiếu`)
+  if (fails.length) toast.error(`${fails.length} phiếu không xóa được (đã gửi/đã hủy hoặc thiếu quyền)`)
+  await load()
 }
 
 onMounted(() => {
@@ -468,15 +516,45 @@ onMounted(() => {
       </div>
     </div>
 
-    <DataTable :rows="rows" :columns="columns" :loading="loading"
-      empty="Chưa có bản ghi nào"
-      :sortKey="sortKey" :sortDir="sortDir"
-      @rowClick="openRow" @sort="onSort" />
+    <!-- Lỗi tải (khác với "không có dữ liệu") -->
+    <div v-if="loadError && !loading" class="sc-card p-8 text-center">
+      <Icon name="alert-triangle" :size="36" class="mx-auto text-sc-danger mb-3" />
+      <div class="font-semibold text-sc-text mb-1">Lỗi tải dữ liệu</div>
+      <div class="text-sm text-sc-text-muted mb-4 break-all">{{ loadError }}</div>
+      <button class="sc-btn-secondary text-sm mx-auto" @click="load">
+        <Icon name="refresh-cw" :size="15" /> Thử lại
+      </button>
+    </div>
 
-    <div class="mt-1">
+    <template v-else>
+      <!-- Thanh xóa hàng loạt — chỉ hiện khi có phiếu nháp được chọn -->
+      <div v-if="bulkDeletable && selectedKeys.length"
+        class="sc-card px-4 py-2.5 mb-2 flex items-center gap-3 border-sc-danger/40 bg-sc-danger/5">
+        <span class="text-sm font-medium text-sc-text">Đã chọn {{ selectedKeys.length }} phiếu nháp</span>
+        <button @click="doBulkDelete" :disabled="deleting"
+          class="bg-sc-danger hover:brightness-110 text-white px-3 py-1.5 rounded-md font-medium text-sm disabled:opacity-60">
+          <Icon name="trash-2" :size="14" />
+          {{ deleting ? 'Đang xóa...' : `Xóa ${selectedKeys.length} phiếu` }}
+        </button>
+        <button @click="selectedKeys = []" class="sc-btn-secondary text-sm">Bỏ chọn</button>
+      </div>
+
+      <DataTable :rows="rows" :columns="columns" :loading="loading"
+        empty="Chưa có bản ghi nào"
+        :sortKey="sortKey" :sortDir="sortDir"
+        :selectable="bulkDeletable"
+        :selectedKeys="selectedKeys"
+        :rowSelectable="rowIsDraft"
+        @update:selectedKeys="selectedKeys = $event"
+        @rowClick="openRow" @sort="onSort" />
+    </template>
+
+    <div v-if="!loadError" class="mt-1">
       <Pagination :total="total" :page="page" :pageSize="pageSize"
         :pageSizes="PAGE_SIZES" :loading="loading"
         @update:page="onPageChange" @update:pageSize="onPageSizeChange" />
     </div>
+
+    <Confirm ref="confirmRef" />
   </div>
 </template>

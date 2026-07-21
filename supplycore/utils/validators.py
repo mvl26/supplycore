@@ -12,8 +12,34 @@ trả về `values=None` → `if values:` False → không append invalid_links 
 Workaround: gọi explicit validators dưới đây trong `validate()` của các controller.
 """
 
+import re
+
 import frappe
 from frappe import _
+
+
+# ---------------------------------------------------------------------------
+# Chính sách mật khẩu dùng chung (nhân viên qua api/users + khách tự đăng ký
+# qua api/portal). Quy định: ≥ 8 ký tự, có chữ HOA + chữ thường + số + ký tự
+# đặc biệt. Enforce phía backend — FE chỉ là lớp tiện dụng.
+# ---------------------------------------------------------------------------
+def validate_password_strength(password: str) -> None:
+    errs = []
+    if len(password or "") < 8:
+        errs.append(_("ít nhất 8 ký tự"))
+    if not re.search(r"[A-Z]", password or ""):
+        errs.append(_("1 chữ in HOA"))
+    if not re.search(r"[a-z]", password or ""):
+        errs.append(_("1 chữ thường"))
+    if not re.search(r"[0-9]", password or ""):
+        errs.append(_("1 chữ số"))
+    if not re.search(r"[^A-Za-z0-9]", password or ""):
+        errs.append(_("1 ký tự đặc biệt (vd @ # ! $ %)"))
+    if errs:
+        frappe.throw(
+            _("Mật khẩu chưa đủ mạnh — cần có: {0}.").format(", ".join(errs)),
+            title=_("Mật khẩu không hợp lệ"),
+        )
 
 
 def validate_link(doctype: str, name: str, label: str = None,
@@ -68,3 +94,26 @@ def validate_item(name: str, *, allow_blank: bool = False):
     if name and frappe.db.get_value("SC Item", name, "disabled"):
         frappe.throw(_("Vật tư {0} đang bị vô hiệu hóa").format(name),
                       title="SC-E-ITEM")
+
+
+def block_non_draft_delete(doc, method=None):
+    """Guard xóa: chỉ cho xóa phiếu submittable khi còn Nháp (docstatus == 0).
+
+    Đăng ký qua hooks.doc_events["<dt>"]["before_delete"] cho mọi doctype
+    submittable. Là lớp phòng thủ nghiệp vụ song song với JSON delete-perm
+    ("ai được xóa") — hàm này quyết định "xóa cái gì".
+
+    - docstatus 1 (đã Submit): Frappe đã tự chặn ở tầng delete_doc; guard này
+      chỉ là backup + thông điệp tiếng Việt.
+    - docstatus 2 (đã Hủy): Frappe MẶC ĐỊNH cho xóa — guard chặn để giữ dấu vết.
+    - Lệnh xóa lập trình/test (ignore_permissions=True) được bỏ qua, tránh phá
+      cleanup trong tests/, setup/, patches/ (xem before_delete chạy cả khi force).
+    """
+    if getattr(doc.flags, "ignore_permissions", False):
+        return
+    if (doc.docstatus or 0) != 0:
+        frappe.throw(
+            _("Chỉ xóa được phiếu ở trạng thái Nháp. "
+              "Phiếu đã gửi hoặc đã hủy phải được giữ lại (có thể Hủy thay vì xóa)."),
+            title=_("Không thể xóa"),
+        )

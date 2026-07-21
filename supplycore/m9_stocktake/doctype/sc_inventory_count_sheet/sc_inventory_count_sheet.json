@@ -231,6 +231,7 @@
    "read": 1,
    "write": 1,
    "create": 1,
+   "delete": 1,
    "submit": 1,
    "cancel": 1,
    "amend": 1,
@@ -244,7 +245,8 @@
    "submit": 1,
    "report": 1,
    "print": 1,
-   "create": 1
+   "create": 1,
+   "delete": 1
   },
   {
    "role": "Warehouse Officer",
@@ -253,7 +255,8 @@
    "submit": 1,
    "report": 1,
    "print": 1,
-   "create": 1
+   "create": 1,
+   "delete": 1
   },
   {
    "role": "SupplyCore Accountant",

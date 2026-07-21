@@ -1,7 +1,8 @@
 <script setup>
+import { computed } from 'vue'
 import { statusLabel } from '../modules'
 import Icon from './Icon.vue'
-import { fmtDate, fmtDateTime } from '../utils'
+import { fmtDate, fmtDateTime, fmtVND, fmtNumber } from '../utils'
 
 const props = defineProps({
   rows:    { type: Array, default: () => [] },
@@ -12,9 +13,32 @@ const props = defineProps({
   rowClickable: { type: Boolean, default: true },
   sortKey: { type: String, default: '' },     // current sort column key
   sortDir: { type: String, default: 'desc' }, // 'asc' | 'desc'
+  // Chọn dòng — opt-in, mặc định tắt để không đổi hành vi list view khác.
+  selectable:    { type: Boolean, default: false },
+  selectedKeys:  { type: Array, default: () => [] },
+  rowSelectable: { type: Function, default: null }, // (row)=>bool; null = mọi dòng chọn được
 })
 
-const emit = defineEmits(['rowClick', 'sort'])
+const emit = defineEmits(['rowClick', 'sort', 'update:selectedKeys'])
+
+// --- Selection helpers (chỉ hoạt động khi selectable) ---
+function isRowSelectable(r) {
+  return props.selectable && (!props.rowSelectable || props.rowSelectable(r))
+}
+const selectableRows = computed(() => props.rows.filter(isRowSelectable))
+const allSelected = computed(() =>
+  selectableRows.value.length > 0 &&
+  selectableRows.value.every(r => props.selectedKeys.includes(r[props.rowKey])))
+function toggleRow(r) {
+  const k = r[props.rowKey]
+  const set = new Set(props.selectedKeys)
+  set.has(k) ? set.delete(k) : set.add(k)
+  emit('update:selectedKeys', [...set])
+}
+function toggleAll() {
+  emit('update:selectedKeys',
+    allSelected.value ? [] : selectableRows.value.map(r => r[props.rowKey]))
+}
 
 // Rút gọn mã kỹ thuật: "SC-DN-2026-04161" -> "DN-04161" (bỏ tiền tố SC- và năm
 // lặp lại cả bảng). Giữ nguyên nếu không khớp khuôn naming-series.
@@ -45,17 +69,24 @@ function fmt(value, col) {
   if (col.format) return col.format(value)
   if (col.type === 'date' && value) return fmtDate(value)
   if (col.type === 'datetime' && value) return fmtDateTime(value)
-  if (col.type === 'currency') return (Number(value) || 0).toLocaleString('vi-VN') + ' ₫'
-  if (col.type === 'int') return Number(value).toLocaleString('vi-VN')
-  if (col.type === 'badge') {
-    const map = col.badgeMap || {}
-    const cls = map[value] || 'sc-badge-neutral'
-    // QA-BUG-M3-01: truyền col.key để statusLabel pick field-aware label
-    // (vd qc_status='Pending' → 'Chờ QC' thay vì 'Chờ duyệt')
-    const text = statusLabel(value, col.key) || '—'
-    return { __html: `<span class="sc-badge ${cls}">${text}</span>` }
-  }
+  if (col.type === 'currency') return fmtVND(value)
+  if (col.type === 'int') return fmtNumber(value)
   return value
+}
+
+// Badge (M11): render span thật thay vì v-html.
+function badgeCls(value, col) {
+  return (col.badgeMap || {})[value] || 'sc-badge-neutral'
+}
+// QA-BUG-M3-01: truyền col.key để statusLabel pick field-aware label
+// (vd qc_status='Pending' → 'Chờ QC' thay vì 'Chờ duyệt')
+function badgeText(value, col) {
+  return statusLabel(value, col.key) || '—'
+}
+
+function onHeaderKey(c, e) {
+  e.preventDefault()
+  onHeaderClick(c)
 }
 
 function onHeaderClick(c) {
@@ -86,13 +117,24 @@ function onHeaderClick(c) {
       <table class="sc-table">
         <thead>
           <tr>
+            <th v-if="selectable" class="w-10 text-center">
+              <input type="checkbox" :checked="allSelected" :disabled="!selectableRows.length"
+                @change="toggleAll" @click.stop
+                aria-label="Chọn tất cả dòng nháp"
+                class="w-4 h-4 cursor-pointer accent-sc-royal align-middle disabled:opacity-40" />
+            </th>
             <th v-for="c in columns" :key="c.key"
               :style="c.width ? { width: c.width } : {}"
               :class="[
                 c.align === 'right' ? 'text-right' : '',
-                c.sortable ? 'cursor-pointer select-none hover:text-sc-navy transition-colors' : '',
+                c.sortable ? 'cursor-pointer select-none hover:text-sc-navy transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sc-royal/40 rounded' : '',
               ]"
-              @click="onHeaderClick(c)">
+              :tabindex="c.sortable ? 0 : undefined"
+              :role="c.sortable ? 'button' : undefined"
+              :aria-sort="sortKey === c.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined"
+              @click="onHeaderClick(c)"
+              @keydown.enter="c.sortable && onHeaderKey(c, $event)"
+              @keydown.space="c.sortable && onHeaderKey(c, $event)">
               <span class="inline-flex items-center gap-1"
                 :class="c.align === 'right' ? 'flex-row-reverse' : ''">
                 {{ c.label }}
@@ -108,13 +150,22 @@ function onHeaderClick(c) {
         </thead>
         <tbody>
           <tr v-for="r in rows" :key="r[rowKey]"
-            :class="rowClickable ? 'cursor-pointer' : ''"
-            @click="rowClickable && emit('rowClick', r)">
+            :class="rowClickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sc-royal/40' : ''"
+            :tabindex="rowClickable ? 0 : undefined"
+            @click="rowClickable && emit('rowClick', r)"
+            @keydown.enter="rowClickable && emit('rowClick', r)">
+            <td v-if="selectable" class="text-center" @click.stop>
+              <input type="checkbox" :checked="selectedKeys.includes(r[rowKey])"
+                :disabled="!isRowSelectable(r)" @change="toggleRow(r)"
+                :aria-label="`Chọn ${r[rowKey]}`"
+                :title="isRowSelectable(r) ? '' : 'Chỉ chọn được phiếu nháp'"
+                class="w-4 h-4 cursor-pointer accent-sc-royal align-middle disabled:opacity-30 disabled:cursor-not-allowed" />
+            </td>
             <td v-for="c in columns" :key="c.key"
               :class="[c.align === 'right' ? 'text-right' : '',
                        (c.mono || c.type === 'code') ? 'font-mono text-xs' : '']">
               <template v-if="c.type === 'badge'">
-                <span v-html="fmt(r[c.key], c).__html"></span>
+                <span class="sc-badge" :class="badgeCls(r[c.key], c)">{{ badgeText(r[c.key], c) }}</span>
               </template>
               <template v-else-if="c.type === 'check'">
                 <Icon v-if="r[c.key]" name="check" :size="16" class="text-sc-success" />

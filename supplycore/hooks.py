@@ -37,6 +37,26 @@ doc_events = {
 }
 
 # ---------------------------------------------------------------------------
+# Guard xóa: chỉ cho xóa phiếu submittable khi còn Nháp (docstatus == 0).
+# Gắn "before_delete" chung cho MỌI doctype submittable (đồng bộ với set
+# SUBMITTABLE_DOCTYPES ở frontend/src/modules.js). "Ai được xóa" do JSON
+# delete-perm quyết định; "xóa cái gì" do guard này quyết định.
+# ---------------------------------------------------------------------------
+_SUBMITTABLE_DOCTYPES = [
+    "Framework Contract", "Release Order", "Procurement Plan",
+    "SC Material Request", "SC Purchase Order", "SC Purchase Receipt",
+    "SC Quality Inspection", "SC Stock Entry", "SC Transfer Request",
+    "SC Inventory Count Sheet", "SC Stock Reconciliation",
+    "SC Recall Notice", "SC Investigation Report",
+    "SC Purchase Invoice", "SC Payment Entry",
+    "SC Sales Framework Contract", "SC Sales Order", "SC Delivery Note",
+    "SC Acceptance Record", "SC Sales Invoice", "SC Sales Receipt",
+]
+for _dt in _SUBMITTABLE_DOCTYPES:
+    doc_events.setdefault(_dt, {})["before_delete"] = \
+        "supplycore.utils.validators.block_non_draft_delete"
+
+# ---------------------------------------------------------------------------
 # Scheduler
 # ---------------------------------------------------------------------------
 scheduler_events = {
