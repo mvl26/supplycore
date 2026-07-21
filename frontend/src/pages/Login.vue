@@ -1,10 +1,13 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import Icon from '../components/Icon.vue'
 
 const router = useRouter()
+const route = useRoute()
+// Vừa đặt lại mật khẩu xong (?reset=1) → hiện lời chúc mừng, mời đăng nhập lại.
+const justReset = computed(() => route.query.reset === '1')
 const auth = useAuthStore()
 const usr = ref('')
 const pwd = ref('')
@@ -112,6 +115,12 @@ async function submit() {
             Sử dụng tài khoản nội bộ được cấp để tiếp tục.
           </p>
 
+          <div v-if="justReset"
+            class="flex items-start gap-2 bg-sc-success/10 border border-sc-success/40 text-[13px] text-sc-success px-3 py-2.5 rounded-lg mb-5">
+            <Icon name="check" :size="16" class="mt-px flex-shrink-0" />
+            <span>Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.</span>
+          </div>
+
           <form @submit.prevent="submit" class="space-y-4">
             <div>
               <label class="sc-label">Email / Tên đăng nhập</label>
@@ -144,7 +153,7 @@ async function submit() {
 
             <Transition name="sc-modal">
               <div v-if="auth.loginError"
-                class="flex items-start gap-2 bg-red-50 border border-red-200 text-[13px]
+                class="flex items-start gap-2 bg-sc-danger-50 border border-sc-danger/40 text-[13px]
                        text-sc-danger px-3 py-2.5 rounded-lg">
                 <Icon name="alert-triangle" :size="16" class="mt-px flex-shrink-0" />
                 <span>{{ auth.loginError }}</span>

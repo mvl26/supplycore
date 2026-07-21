@@ -5,6 +5,7 @@ import ModuleHub from './pages/ModuleHub.vue'
 import DocList from './pages/DocList.vue'
 import DocView from './pages/DocView.vue'
 import Login from './pages/Login.vue'
+import ResetPassword from './pages/ResetPassword.vue'
 import NotFound from './pages/NotFound.vue'
 import StockBalance from './pages/StockBalance.vue'
 import WarehouseList from './pages/WarehouseList.vue'
@@ -22,6 +23,7 @@ const router = createRouter({
   history: createWebHistory('/supplycore/'),
   routes: [
     { path: '/login',  name: 'login', component: Login, meta: { public: true, layout: 'blank', title: 'Đăng nhập' } },
+    { path: '/reset-password', name: 'resetPassword', component: ResetPassword, meta: { public: true, layout: 'blank', title: 'Đặt lại mật khẩu' } },
     { path: '/',       name: 'home', component: Dashboard, meta: { title: 'Dashboard' } },
     { path: '/dashboard', name: 'dashboard', component: Dashboard, meta: { title: 'Dashboard' } },
     { path: '/alerts', name: 'alerts', component: AlertCenter, meta: { title: 'Alert Center', requireFeature: 'alerts' } },
