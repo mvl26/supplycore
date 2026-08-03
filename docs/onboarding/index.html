@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tài liệu nhập môn — SupplyCore MVL</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px;
+    line-height: 1.65; color: #222; background: #fff;
+  }
+
+  /* ===== Thanh điều hướng dính (sticky) — DÙNG CHUNG mọi trang ===== */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: #14243A; border-bottom: 3px solid #1F4E79;
+    padding: 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  }
+  nav.topnav a {
+    color: #E8EEF6; text-decoration: none; font-size: 13px; font-weight: bold;
+    padding: 11px 13px; display: block; border-bottom: 3px solid transparent;
+  }
+  nav.topnav a:hover { background: #1F4E79; color: #fff; }
+  nav.topnav a.active { background: #2E75B6; color: #fff; border-bottom-color: #9CC3E8; }
+
+  header.pagehead {
+    background: #1F4E79; color: #fff; padding: 34px 28px 26px;
+  }
+  header.pagehead h1 { margin: 0 0 8px; font-size: 27px; }
+  header.pagehead p { margin: 0; font-size: 15px; color: #D6E4F2; max-width: 90ch; }
+  header.pagehead .kicker {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: #9CC3E8; margin-bottom: 10px; font-weight: bold;
+  }
+
+  main { padding: 0 28px 60px; max-width: 1180px; }
+
+  h2 {
+    font-size: 21px; color: #1F4E79; margin: 38px 0 12px; padding-bottom: 7px;
+    border-bottom: 2px solid #1F4E79;
+  }
+  h3 { font-size: 17px; color: #173A5C; margin: 26px 0 8px; }
+  p  { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  table {
+    border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14px;
+  }
+  th, td { border: 1px solid #C8D2DE; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #1F4E79; color: #fff; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #F2F5F9; }
+
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: 13px;
+    background: #EEF2F7; padding: 1px 5px; border-radius: 3px; color: #123A6B;
+  }
+  pre {
+    background: #14243A; color: #E8EEF6; padding: 13px 15px; border-radius: 5px;
+    overflow-x: auto; font-family: Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 1.55; margin: 12px 0;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+
+  .box { border-left: 5px solid #2E75B6; background: #EAF2FB; padding: 11px 16px; margin: 15px 0; }
+  .box.warn { border-left-color: #B8860B; background: #FBF3E0; }
+  .box.crit { border-left-color: #B03030; background: #FBEAEA; }
+  .box.ok   { border-left-color: #1B7A4E; background: #E6F3EC; }
+  .box b.lbl { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px;
+    border-radius: 3px; background: #E3E9F0; color: #123A6B; border: 1px solid #C8D2DE;
+  }
+  .tag.no  { background: #FBEAEA; color: #8B2020; border-color: #E0BABA; }
+  .tag.yes { background: #E6F3EC; color: #15603E; border-color: #B3D9C4; }
+
+  /* Thẻ tài liệu ở trang chủ */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; margin: 18px 0; }
+  .card {
+    border: 1px solid #C8D2DE; border-top: 5px solid #2E75B6; border-radius: 5px;
+    padding: 16px 18px; background: #fff;
+  }
+  .card.todo { border-top-color: #B8860B; background: #FDFBF5; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card h3 a { color: #1F4E79; text-decoration: none; }
+  .card h3 a:hover { text-decoration: underline; }
+  .card .num {
+    display: inline-block; background: #1F4E79; color: #fff; font-size: 12px;
+    font-weight: bold; padding: 2px 8px; border-radius: 3px; margin-bottom: 8px;
+  }
+  .card.todo .num { background: #B8860B; }
+  .card p { margin: 6px 0 0; font-size: 14px; color: #444; }
+  .card ul { margin: 8px 0 0; font-size: 13.5px; color: #444; }
+
+  footer.pagefoot {
+    background: #14243A; color: #A9BBD0; padding: 20px 28px; font-size: 13px;
+    border-top: 3px solid #1F4E79;
+  }
+  footer.pagefoot b { color: #E8EEF6; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="active">Trang chủ</a>
+  <a href="01-moi-truong-va-cong-cu.html">01 · Môi trường &amp; Công cụ</a>
+  <a href="02-kien-truc-va-cau-truc-code.html">02 · Kiến trúc &amp; Cấu trúc code</a>
+  <a href="03-tai-lieu-nghiep-vu-BA.html">03 · Nghiệp vụ (BA)</a>
+  <a href="04-quy-trinh-lap-trinh-voi-claude-code.html">04 · Lập trình với Claude Code</a>
+  <a href="05-lo-trinh-hoc-va-bat-chuoc.html">05 · Lộ trình học</a>
+</nav>
+
+<header class="pagehead">
+  <div class="kicker">Tài liệu nhập môn cho đồng nghiệp mới</div>
+  <h1>SupplyCore MVL</h1>
+  <p>Bộ tài liệu giúp bạn — kể cả khi chưa từng làm phần mềm — dựng lại được môi trường làm việc của nhóm, hiểu hệ thống đang làm gì, và bắt đầu đóng góp cùng trợ lý AI.</p>
+</header>
+
+<main>
+
+<h2>Dự án này là gì?</h2>
+
+<p><b>SupplyCore MVL</b> là phần mềm quản trị chuỗi cung ứng cho <b>Công ty Miyano Việt Nam</b> — một doanh nghiệp phân phối vật tư và hóa chất y tế.</p>
+
+<p>Phần mềm bao trọn hai dòng chảy lớn của doanh nghiệp, gặp nhau tại kho:</p>
+
+<table>
+  <thead><tr><th>Dòng chảy</th><th>Đi qua những bước nào</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Đầu vào</b><br>(Mua đến Trả tiền)</td>
+      <td>Hợp đồng khung với nhà cung cấp → Kế hoạch mua → Đơn mua → Nhận hàng &amp; kiểm định chất lượng → Nhập kho theo lô/hạn dùng → Hóa đơn nhà cung cấp → Thanh toán</td>
+    </tr>
+    <tr>
+      <td><b>Đầu ra</b><br>(Đặt đến Thu tiền)</td>
+      <td>Hợp đồng khung bán → Đơn hàng của khách → Soạn hàng &amp; quét xác nhận → Giao hàng → Nghiệm thu → Hóa đơn bán → Thu tiền</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Cộng thêm: quản lý lô theo hạn dùng (FEFO), kiểm kê, truy xuất nguồn gốc &amp; thu hồi sản phẩm, bảng chỉ số điều hành, và một <b>Cổng khách hàng</b> để khách tự đặt hàng và theo dõi đơn.</p>
+
+<h3>Vài con số để hình dung</h3>
+<table>
+  <thead><tr><th>Hạng mục</th><th>Số lượng</th></tr></thead>
+  <tbody>
+    <tr><td>Phân hệ nghiệp vụ</td><td>12 (M0 dữ liệu nền + M1–M12)</td></tr>
+    <tr><td>DocType (loại dữ liệu) chính</td><td>40, cộng 25 bảng con</td></tr>
+    <tr><td>Chứng từ có luồng duyệt</td><td>21</td></tr>
+    <tr><td>Vai trò người dùng</td><td>12</td></tr>
+    <tr><td>API mở cho giao diện gọi</td><td>103 trong <code>api/</code> · 217 toàn app</td></tr>
+    <tr><td>Tác vụ tự động theo lịch</td><td>11</td></tr>
+    <tr><td>File kiểm thử nghiệp vụ</td><td>68</td></tr>
+  </tbody>
+</table>
+
+<h3>Xây trên nền gì</h3>
+<ul>
+  <li><b>Frappe Framework v15</b> (Python) — bộ khung nền tảng</li>
+  <li><b>Vue 3 + Vite + Tailwind</b> — giao diện nội bộ dạng ứng dụng một trang (SPA), có thể cài như app điện thoại (PWA)</li>
+  <li><b>MariaDB</b> — cơ sở dữ liệu · <b>Redis</b> — bộ nhớ đệm &amp; hàng đợi</li>
+  <li><b>Docker</b> để triển khai cho khách, và một bản đóng gói thành <b>file .exe cho Windows</b> (bên trong là máy ảo Linux)</li>
+</ul>
+
+<div class="box">
+  <b class="lbl">Một điểm đặc biệt của dự án</b>
+  SupplyCore <b>tự xây lại</b> mọi loại dữ liệu nghiệp vụ với tiền tố <code>SC </code> (<code>SC Item</code>, <code>SC Warehouse</code>, <code>SC Batch</code>…)
+  thay vì dùng sẵn của ERPNext. Đổi lại là quyền kiểm soát hoàn toàn logic nghiệp vụ — nhưng cũng nghĩa là bạn không tra cứu được tài liệu ERPNext để hiểu code này.
+  <b>Tài liệu của nhóm chính là nguồn duy nhất.</b>
+</div>
+
+<h2>Năm tài liệu trong bộ này</h2>
+
+<div class="cards">
+
+  <div class="card">
+    <span class="num">TẬP 01</span>
+    <h3><a href="01-moi-truong-va-cong-cu.html">Môi trường &amp; Bộ công cụ</a></h3>
+    <p><b>Đọc đầu tiên.</b> Dựng lại môi trường từ máy trắng và biết nhóm dùng công cụ gì.</p>
+    <ul>
+      <li>Cách nhóm chạy Frappe: bench, Docker, hay file .exe</li>
+      <li>Bảng phiên bản chính xác (và ba chỗ lệch nhau cần biết)</li>
+      <li>10 bước cài từ máy trắng, kèm lỗi hay gặp</li>
+      <li>Toàn bộ công cụ: git, CI/CD, Docker, kiểm thử, Claude Code…</li>
+      <li>Từ điển 25 thuật ngữ</li>
+    </ul>
+  </div>
+
+  <div class="card todo">
+    <span class="num">TẬP 02</span>
+    <h3><a href="02-kien-truc-va-cau-truc-code.html">Kiến trúc &amp; Cấu trúc code</a></h3>
+    <p><span class="tag no">Chưa tạo — sẽ bổ sung</span></p>
+    <ul>
+      <li>Mã nguồn tổ chức theo module M1–M12 ra sao</li>
+      <li>DocType, controller, hooks, patches hoạt động thế nào</li>
+      <li>Sổ kho &amp; sổ cái chỉ-ghi-thêm — xương sống dữ liệu</li>
+      <li>Giao diện Vue nối với backend bằng cách nào</li>
+    </ul>
+  </div>
+
+  <div class="card todo">
+    <span class="num">TẬP 03</span>
+    <h3><a href="03-tai-lieu-nghiep-vu-BA.html">Tài liệu nghiệp vụ (BA)</a></h3>
+    <p><span class="tag no">Chưa tạo — sẽ bổ sung</span></p>
+    <ul>
+      <li>Hiện đã có bản đầy đủ tại <code>docs/ba-miyano/SupplyCore_MVL_BA.html</code> (v1.1)</li>
+      <li>Tập 03 sẽ là bản rút gọn theo hướng nhập môn</li>
+      <li>Toàn bộ quy tắc nghiệp vụ <code>BRU-*</code> và mã lỗi <code>SC-E*</code></li>
+    </ul>
+  </div>
+
+  <div class="card todo">
+    <span class="num">TẬP 04</span>
+    <h3><a href="04-quy-trinh-lap-trinh-voi-claude-code.html">Lập trình với Claude Code</a></h3>
+    <p><span class="tag no">Chưa tạo — sẽ bổ sung</span></p>
+    <ul>
+      <li>Cách nhóm giao việc cho AI và kiểm tra kết quả</li>
+      <li>Viết CLAUDE.md cho dự án (hiện <b>chưa có</b> — xem tập 01, mục 4b)</li>
+      <li>Quy trình: spec → kế hoạch → code → test → commit</li>
+      <li>Khi nào KHÔNG nên tin AI</li>
+    </ul>
+  </div>
+
+  <div class="card todo">
+    <span class="num">TẬP 05</span>
+    <h3><a href="05-lo-trinh-hoc-va-bat-chuoc.html">Lộ trình học &amp; bắt chước</a></h3>
+    <p><span class="tag no">Chưa tạo — sẽ bổ sung</span></p>
+    <ul>
+      <li>Tuần 1 làm gì, tháng đầu làm gì</li>
+      <li>Bài tập bắt chước từ code có sẵn trong dự án</li>
+      <li>Từ sửa lỗi nhỏ đến làm trọn một tính năng</li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="box warn">
+  <b class="lbl">Về bốn tài liệu chưa tạo</b>
+  Hiện <b>chỉ có Trang chủ và Tập 01</b> tồn tại. Các liên kết tới tập 02–05 vẫn nằm trên thanh điều hướng để giữ cấu trúc thống nhất,
+  nhưng <b>bấm vào sẽ báo không tìm thấy trang</b> cho tới khi chúng được viết. Đây là ghi chú trung thực, không phải lỗi.
+</div>
+
+<h2>Bắt đầu từ đâu — ba ngày đầu</h2>
+
+<table>
+  <thead><tr><th>Khi nào</th><th>Làm gì</th><th>Ở đâu</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Ngày 1<br>buổi sáng</b></td>
+      <td>Đọc trang này, rồi đọc hết Tập 01 một lượt <b>không cần hiểu hết</b> — chỉ để biết có những gì.</td>
+      <td>Trang chủ + Tập 01</td>
+    </tr>
+    <tr>
+      <td><b>Ngày 1<br>buổi chiều</b></td>
+      <td>Làm theo mục 3 của Tập 01: cài môi trường cho đến khi mở được trang đăng nhập.</td>
+      <td>Tập 01 · mục 3</td>
+    </tr>
+    <tr>
+      <td><b>Ngày 2</b></td>
+      <td>Nạp dữ liệu mẫu, đăng nhập, bấm thử khắp giao diện. Chưa sửa gì cả — chỉ xem hệ thống làm được gì.</td>
+      <td><code>bash scripts/setup_test_env.sh</code></td>
+    </tr>
+    <tr>
+      <td><b>Ngày 3</b></td>
+      <td>Đọc tài liệu nghiệp vụ để hiểu <i>vì sao</i> hệ thống làm như vậy. Đặc biệt chương M7 (Bán hàng) và M12 (Cổng khách hàng).</td>
+      <td><code>docs/ba-miyano/SupplyCore_MVL_BA.html</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box ok">
+  <b class="lbl">Lời khuyên quan trọng nhất</b>
+  Đừng cố hiểu hết trong tuần đầu. Hệ thống này có 12 phân hệ và hơn 70 quy tắc nghiệp vụ — người viết ra nó cũng mất nhiều tháng.
+  <b>Hãy chọn một phân hệ</b> (gợi ý: M7 Bán hàng, vì nó chạm tới hầu hết phần còn lại) và hiểu thật kỹ phân hệ đó trước.
+</div>
+
+<h2>Bản đồ nhanh: tìm tài liệu ở đâu trong repo</h2>
+
+<table>
+  <thead><tr><th>Bạn muốn biết</th><th>Mở file nào</th></tr></thead>
+  <tbody>
+    <tr><td>Hệ thống làm những nghiệp vụ gì</td><td><code>docs/ba-miyano/SupplyCore_MVL_BA.html</code> — tài liệu BA đầy đủ (v1.1)</td></tr>
+    <tr><td>Vì sao chuyển từ bản bệnh viện sang bản phân phối</td><td><code>docs/ba-miyano/PHAN_TICH_HUONG_THIET_KE_MVL.md</code></td></tr>
+    <tr><td>Hướng dẫn dành cho người dùng cuối</td><td><code>docs/SupplyCore_HuongDanSuDung_v1.0.docx</code> (nguồn ở <code>docs/_manual_build/</code>)</td></tr>
+    <tr><td>Tổng quan app + cấu trúc thư mục</td><td><code>README.md</code> ở thư mục gốc</td></tr>
+    <tr><td>Ghi chú kỹ thuật từng phân hệ</td><td><code>supplycore/m1_contract/README.md</code> … <code>m11_dashboard/README.md</code></td></tr>
+    <tr><td>Cách triển khai bằng Docker</td><td><code>deploy/README.md</code></td></tr>
+    <tr><td>Cách đóng gói bản cài Windows</td><td><code>installer/README.md</code></td></tr>
+    <tr><td>Cách nhập/xuất phiếu bằng Excel</td><td><code>supplycore/api/VOUCHER_IO_FLOW.md</code></td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <b class="lbl">Cảnh báo về README.md ở thư mục gốc</b>
+  File <code>README.md</code> có vài chỗ <b>đã lỗi thời</b>: nó ghi "M6–M11 chưa build (planned)" trong khi bảng ngay bên dưới lại đánh dấu M6–M12 đều ✅,
+  và phần liệt kê DocType vẫn theo bản v0.2 cũ. Khi hai nguồn mâu thuẫn, <b>hãy tin tài liệu BA và tin mã nguồn</b>.
+</div>
+
+<h2>Ba quy tắc bắt buộc trước khi bạn gõ dòng code đầu tiên</h2>
+<ol>
+  <li><b>Không commit bí mật.</b> Mật khẩu, khóa mã hóa, token — không bao giờ vào git, không vào chat, không vào tài liệu. Chi tiết ở Tập 01 mục 4k.</li>
+  <li><b>Không chạy lệnh xóa trên dữ liệu thật.</b> Mọi thử nghiệm làm trên site test <code>supplycore-miyano.local</code>. Lệnh <code>docker compose down -v</code> và <code>bench drop-site</code> xóa sạch không hoàn tác được.</li>
+  <li><b>Chạy test trước khi mở Pull Request.</b> Dự án <b>không có kiểm thử tự động khi mở PR</b> — nếu bạn không chạy, sẽ không ai chạy hộ.</li>
+</ol>
+
+</main>
+
+<footer class="pagefoot">
+  <b>SupplyCore MVL — Bộ tài liệu nhập môn</b><br>
+  Ngày tạo: <b>03/08/2026</b> · Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.<br>
+  Mọi mật khẩu, khóa mã hóa, token và IP nội bộ đã được thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
+  Hiện có: Trang chủ + Tập 01. Tập 02–05 sẽ được bổ sung.
+</footer>
+
+</body>
+</html>

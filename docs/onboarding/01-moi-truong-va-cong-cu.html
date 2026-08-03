@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Môi trường &amp; Bộ công cụ — SupplyCore MVL</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px;
+    line-height: 1.65; color: #222; background: #fff;
+  }
+
+  /* ===== Thanh điều hướng dính (sticky) — DÙNG CHUNG mọi trang ===== */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: #14243A; border-bottom: 3px solid #1F4E79;
+    padding: 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  }
+  nav.topnav a {
+    color: #E8EEF6; text-decoration: none; font-size: 13px; font-weight: bold;
+    padding: 11px 13px; display: block; border-bottom: 3px solid transparent;
+  }
+  nav.topnav a:hover { background: #1F4E79; color: #fff; }
+  nav.topnav a.active { background: #2E75B6; color: #fff; border-bottom-color: #9CC3E8; }
+
+  header.pagehead {
+    background: #1F4E79; color: #fff; padding: 34px 28px 26px;
+  }
+  header.pagehead h1 { margin: 0 0 8px; font-size: 27px; }
+  header.pagehead p { margin: 0; font-size: 15px; color: #D6E4F2; max-width: 90ch; }
+  header.pagehead .kicker {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: #9CC3E8; margin-bottom: 10px; font-weight: bold;
+  }
+
+  main { padding: 0 28px 60px; max-width: 1180px; }
+
+  h2 {
+    font-size: 21px; color: #1F4E79; margin: 38px 0 12px; padding-bottom: 7px;
+    border-bottom: 2px solid #1F4E79;
+  }
+  h3 { font-size: 17px; color: #173A5C; margin: 26px 0 8px; }
+  h4 { font-size: 15px; color: #2E75B6; margin: 20px 0 6px; }
+  p  { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  table {
+    border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14px;
+  }
+  th, td { border: 1px solid #C8D2DE; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #1F4E79; color: #fff; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #F2F5F9; }
+  td code, th code { background: transparent; }
+
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: 13px;
+    background: #EEF2F7; padding: 1px 5px; border-radius: 3px; color: #123A6B;
+  }
+  pre {
+    background: #14243A; color: #E8EEF6; padding: 13px 15px; border-radius: 5px;
+    overflow-x: auto; font-family: Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 1.55; margin: 12px 0;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+
+  .box { border-left: 5px solid #2E75B6; background: #EAF2FB; padding: 11px 16px; margin: 15px 0; }
+  .box.warn { border-left-color: #B8860B; background: #FBF3E0; }
+  .box.crit { border-left-color: #B03030; background: #FBEAEA; }
+  .box.ok   { border-left-color: #1B7A4E; background: #E6F3EC; }
+  .box b.lbl { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+
+  .ascii {
+    background: #14243A; color: #C6E0FF; padding: 16px; border-radius: 5px;
+    font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+    line-height: 1.45; overflow-x: auto; white-space: pre; margin: 14px 0;
+  }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px;
+    border-radius: 3px; background: #E3E9F0; color: #123A6B; border: 1px solid #C8D2DE;
+  }
+  .tag.no  { background: #FBEAEA; color: #8B2020; border-color: #E0BABA; }
+  .tag.yes { background: #E6F3EC; color: #15603E; border-color: #B3D9C4; }
+
+  footer.pagefoot {
+    background: #14243A; color: #A9BBD0; padding: 20px 28px; font-size: 13px;
+    border-top: 3px solid #1F4E79;
+  }
+  footer.pagefoot b { color: #E8EEF6; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html">Trang chủ</a>
+  <a href="01-moi-truong-va-cong-cu.html" class="active">01 · Môi trường &amp; Công cụ</a>
+  <a href="02-kien-truc-va-cau-truc-code.html">02 · Kiến trúc &amp; Cấu trúc code</a>
+  <a href="03-tai-lieu-nghiep-vu-BA.html">03 · Nghiệp vụ (BA)</a>
+  <a href="04-quy-trinh-lap-trinh-voi-claude-code.html">04 · Lập trình với Claude Code</a>
+  <a href="05-lo-trinh-hoc-va-bat-chuoc.html">05 · Lộ trình học</a>
+</nav>
+
+<header class="pagehead">
+  <div class="kicker">Tài liệu nhập môn · Tập 01</div>
+  <h1>Môi trường &amp; Bộ công cụ</h1>
+  <p>Mọi thứ bạn cần để dựng lại môi trường làm việc của nhóm từ một máy trắng, và danh mục đầy đủ công cụ nhóm đang dùng — quét trực tiếp từ mã nguồn thật của dự án SupplyCore MVL.</p>
+</header>
+
+<main>
+
+<div class="box">
+  <b class="lbl">Đọc trang này thế nào</b>
+  Bạn <b>không cần biết lập trình</b> để đọc. Mỗi công cụ đều có 3 dòng: <i>là gì</i> — <i>dùng làm gì ở dự án này</i> — <i>lệnh/thao tác thật</i>.
+  Mọi tên file, số phiên bản, đoạn lệnh trong tài liệu đều lấy từ repo thật. Chỗ nào dự án <b>không có</b>, tài liệu ghi thẳng
+  <span class="tag no">Không có trong repo</span> thay vì đoán.
+</div>
+
+<div class="box crit">
+  <b class="lbl">Quy tắc bảo mật khi đọc &amp; khi viết tài liệu</b>
+  Mật khẩu, khóa mã hóa, token và địa chỉ IP nội bộ trong tài liệu này đều bị thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.
+  <b>Tuyệt đối không</b> chép giá trị thật từ <code>site_config.json</code> hay <code>.env</code> vào tài liệu, chat, hay commit.
+  Xem mục 4k để hiểu vì sao.
+</div>
+
+<!-- ══════════════════════════════ 1 ══════════════════════════════ -->
+<h2>1. Tổng quan: nhóm chạy Frappe/ERPNext như thế nào?</h2>
+
+<h3>1.1 Ba cách chạy — nhóm dùng cả ba, cho ba mục đích khác nhau</h3>
+
+<p><b>Frappe</b> là bộ khung (framework) để làm phần mềm quản trị, viết bằng Python. <b>ERPNext</b> là bộ ứng dụng ERP dựng sẵn trên Frappe. <b>bench</b> là công cụ dòng lệnh để quản lý tất cả: tạo site, cài app, chạy máy chủ, chạy tác vụ nền.</p>
+
+<table>
+  <thead><tr><th>Cách chạy</th><th>Dùng khi nào</th><th>Bằng chứng trong repo</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>A. bench trực tiếp trên máy Linux</b> — đây là môi trường <b>phát triển hằng ngày</b></td>
+      <td>Lập trình viên viết code, chạy thử, chạy test</td>
+      <td>Thư mục bench thật: <code>/home/hoangvietyeuem/frappe-bench-yhct/</code> với <code>apps/</code>, <code>sites/</code>, <code>env/</code>, <code>config/</code>, <code>Procfile</code></td>
+    </tr>
+    <tr>
+      <td><b>B. Docker Compose</b> — dùng để <b>triển khai cho khách</b></td>
+      <td>Cài lên máy chủ của khách bằng 1 lệnh</td>
+      <td><code>deploy/compose.yml</code>, <code>deploy/.env.example</code>, <code>docker/Containerfile</code></td>
+    </tr>
+    <tr>
+      <td><b>C. Máy ảo đóng gói thành file .exe cho Windows</b></td>
+      <td>Khách không có Linux, không biết Docker — chỉ bấm đúp một file cài đặt</td>
+      <td><code>guest/packer/supplycore.pkr.hcl</code>, <code>installer/supplycore.iss</code>, workflow <code>build-installer.yml</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Không có cloud</b>
+  Repo <b>không</b> chứa cấu hình Frappe Cloud, AWS, Azure hay Kubernetes.
+  Cũng <b>không có thư mục <code>frappe_docker/</code></b> trong repo — file CI tải nó về lúc build và ghim đúng một phiên bản:
+  <code>FRAPPE_DOCKER_REF: 1e3d40fa65347209418e70a451d5b266e1a75b92</code>.
+</div>
+
+<h3>1.2 Các tiến trình đang chạy trên máy dev — và cách chúng nối với nhau</h3>
+
+<p>Máy dev này <b>không</b> chạy bằng lệnh <code>bench start</code> đơn giản, mà chạy kiểu máy chủ thật: có <b>supervisor</b> trông coi 7 tiến trình, và <b>nginx</b> đứng trước làm cổng vào. Đọc được điều này ở <code>config/supervisor.conf</code>.</p>
+
+<div class="ascii">
+   Trình duyệt của bạn
+        │  https://supplycore-miyano.local
+        ▼
+   ┌──────────────────────────────────────────────────────────┐
+   │  nginx  (đang chạy)                                       │
+   │  · phục vụ file tĩnh (ảnh, JS, CSS đã build)              │
+   │  · chuyển yêu cầu động về gunicorn                        │
+   │  · chứng chỉ HTTPS ở  certs/supplycore-miyano.local.crt    │
+   └───────────────┬───────────────────────┬──────────────────┘
+                   │ /api, /app, /supplycore│ /socket.io
+                   ▼                        ▼
+   ┌───────────────────────────┐   ┌────────────────────────────┐
+   │ gunicorn (WEB)            │   │ node socketio.js           │
+   │ 127.0.0.1:8002, 33 worker │   │ cổng 9002                  │
+   │ chạy frappe.app           │   │ đẩy thông báo thời gian thực│
+   └───────┬───────────────────┘   └──────────┬─────────────────┘
+           │                                   │
+           │                 ┌─────────────────┘
+           ▼                 ▼
+   ┌──────────────┐   ┌──────────────────────────────────────────┐
+   │ MariaDB      │   │ Redis  (2 tiến trình, KHÔNG phải 3)      │
+   │ cổng 3306    │   │  · redis_cache  127.0.0.1:13002          │
+   │ ★ ĐANG FAILED│   │      (bộ nhớ đệm + socketio dùng chung)  │
+   └──────────────┘   │  · redis_queue  127.0.0.1:11002          │
+           ▲          │      (hàng đợi việc nền)                 │
+           │          └──────────────────┬───────────────────────┘
+           │                             │
+   ┌───────┴─────────────────────────────┴───────────────────────┐
+   │ Tiến trình nền (supervisor trông coi)                        │
+   │  · bench worker --queue short,default   ← việc ngắn          │
+   │  · bench worker --queue long,default,short ← việc dài        │
+   │  · bench schedule  ← chạy tác vụ theo lịch (11 tác vụ)       │
+   └──────────────────────────────────────────────────────────────┘
+</div>
+
+<p><b>Giải thích cho người mới từng thành phần:</b></p>
+<table>
+  <thead><tr><th>Tiến trình</th><th>Làm gì (giải thích đời thường)</th><th>Lệnh thật</th></tr></thead>
+  <tbody>
+    <tr><td><b>nginx</b></td><td>Người gác cổng. Ai gõ địa chỉ web đều vào đây trước; nginx quyết định chuyển tiếp đi đâu.</td><td><code>sudo systemctl status nginx</code></td></tr>
+    <tr><td><b>gunicorn (web)</b></td><td>Bộ não xử lý mỗi lần bạn bấm nút trên màn hình. 33 "công nhân" chạy song song.</td><td><code>gunicorn -b 127.0.0.1:8002 -w 33 … frappe.app:application</code></td></tr>
+    <tr><td><b>socketio</b></td><td>Đường ống thời gian thực: thông báo hiện lên ngay mà không cần tải lại trang.</td><td><code>node apps/frappe/socketio.js</code> (cổng 9002)</td></tr>
+    <tr><td><b>worker</b> (2 cái)</td><td>Người làm việc nặng ở hậu trường: gửi email, dựng báo cáo — để bạn không phải chờ.</td><td><code>bench worker --queue short,default</code></td></tr>
+    <tr><td><b>schedule</b></td><td>Đồng hồ hẹn giờ: 8h sáng quét tồn kho tối thiểu, hằng ngày quét lô sắp hết hạn…</td><td><code>bench schedule</code></td></tr>
+    <tr><td><b>MariaDB</b></td><td>Kho chứa toàn bộ dữ liệu (đơn hàng, tồn kho, khách hàng).</td><td><code>sudo systemctl status mariadb</code></td></tr>
+    <tr><td><b>Redis</b> (2 cái)</td><td>Bộ nhớ tạm siêu nhanh: ghi nhớ tạm + xếp hàng công việc chờ worker làm.</td><td><code>redis-server config/redis_cache.conf</code></td></tr>
+    <tr><td><b>bench watch</b></td><td>Chỉ khi lập trình: theo dõi file, tự build lại giao diện khi bạn sửa code.</td><td><code>bench watch</code></td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <b class="lbl">Trạng thái thật tại thời điểm viết tài liệu (2026-08-03)</b>
+  <code>systemctl is-active</code> cho kết quả: <b>mariadb = failed</b>, redis-server = active, nginx = active, supervisor = active.<br>
+  Hệ quả: lệnh <code>bench --site supplycore-miyano.local list-apps</code> <b>báo lỗi</b> <code>ConnectionRefusedError: [Errno 111]</code>.
+  Vì vậy tài liệu này <b>không thể xác minh</b> danh sách app thực sự cài trên site (xem mục 2.3). Khởi động lại bằng:
+  <pre><code>sudo systemctl start mariadb
+sudo systemctl status mariadb --no-pager   # xem lỗi nếu vẫn không lên
+sudo journalctl -u mariadb -n 50 --no-pager</code></pre>
+</div>
+
+<h3>1.3 Hai chế độ chạy: supervisor (đang dùng) và <code>bench start</code> (dự phòng)</h3>
+
+<p>Repo có <b>cả hai</b>. Bạn cần biết mình đang ở chế độ nào để không "đá nhau".</p>
+
+<table>
+  <thead><tr><th>Chế độ</th><th>File cấu hình</th><th>Cách khởi động</th><th>Đặc điểm</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Supervisor</b> (máy này đang dùng)</td>
+      <td><code>config/supervisor.conf</code></td>
+      <td><code>sudo supervisorctl restart all</code></td>
+      <td>Chạy nền, tự bật lại khi lỗi, dùng gunicorn 33 worker. Giống máy chủ thật.</td>
+    </tr>
+    <tr>
+      <td><b><code>bench start</code></b> (chế độ dev)</td>
+      <td><code>Procfile</code> ở thư mục bench</td>
+      <td><code>cd ~/frappe-bench-yhct &amp;&amp; bench start</code></td>
+      <td>Chạy trước mắt, log đổ thẳng ra màn hình, có <code>bench watch</code>. Tắt cửa sổ là tắt hết.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Nội dung <code>Procfile</code> thật (dùng cho chế độ dev):</p>
+<pre><code>redis_cache: redis-server config/redis_cache.conf
+redis_queue: redis-server config/redis_queue.conf
+web: bench serve  --port 8002
+socketio: /home/hoangvietyeuem/.nvm/versions/node/v18.20.8/bin/node apps/frappe/socketio.js
+watch: bench watch
+schedule: bench schedule
+worker:  bench worker 1&gt;&gt; logs/worker.log 2&gt;&gt; logs/worker.error.log</code></pre>
+
+<div class="box warn">
+  <b class="lbl">Đừng chạy cả hai cùng lúc</b>
+  Cả supervisor lẫn <code>bench start</code> đều muốn giữ cổng 8002 và các cổng Redis. Chạy song song sẽ báo lỗi "Address already in use".
+  Trước khi <code>bench start</code>, hãy tắt supervisor: <code>sudo supervisorctl stop all</code>.
+</div>
+
+<h3>1.4 Có nhiều hơn một bench và nhiều hơn một site</h3>
+
+<p>Trên máy này tồn tại <b>hai thư mục bench</b> (thấy qua remote git <code>upstream</code> trỏ về <code>/home/hoangvietyeuem/frappe-bench/apps/supplycore</code>) và bench đang dùng là <code>frappe-bench-yhct</code>. Trong đó có <b>ba site</b>:</p>
+
+<table>
+  <thead><tr><th>Site</th><th>Vai trò</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td><code>supplycore-miyano.local</code></td><td><b>Site chính</b> — nơi phát triển &amp; test SupplyCore</td><td>Mặc định trong <code>scripts/setup_test_env.sh</code>. Có chứng chỉ HTTPS riêng ở <code>certs/</code>.</td></tr>
+    <tr><td><code>erptest.local</code></td><td>Site thử ERPNext, tách biệt</td><td>Có script khởi động riêng ở cổng 8003 — xem <code>start-erptest-dev.sh</code></td></tr>
+    <tr><td><code>&lt;ĐÃ_ẨN&gt;</code> (site đặt tên theo IP nội bộ)</td><td>Site truy cập qua mạng LAN</td><td>Tên thư mục là địa chỉ IP nội bộ nên được che theo quy tắc bảo mật</td></tr>
+  </tbody>
+</table>
+
+<p>Script chạy site ERPNext thử nghiệm — <b>cố ý tách biệt</b> để không đụng vào site chính (trích <code>start-erptest-dev.sh</code>):</p>
+<pre><code># Dev environment for erptest.local (ERPNext) — bench serve + bench watch.
+# ISOLATED from the supplycore production stack (supervisor gunicorn :8002).
+# Only touches port 8003 (dev web) + esbuild watch. Never restarts :8002.
+bench watch &amp;
+bench serve --port 8003</code></pre>
+
+<!-- ══════════════════════════════ 2 ══════════════════════════════ -->
+<h2>2. Bảng phiên bản chính xác</h2>
+
+<div class="box warn">
+  <b class="lbl">Vì sao bảng này chia cột, không phải một danh sách phẳng</b>
+  Dự án có <b>bốn bộ phiên bản khác nhau</b>: máy dev, ảnh Docker do CI dựng, stack triển khai, và mức tối thiểu ghi trong README/pyproject.
+  Chúng <b>không giống nhau</b>. Gộp làm một sẽ khiến bạn cài sai. Hãy nhìn đúng cột ứng với việc bạn đang làm.
+</div>
+
+<h3>2.1 Nền tảng &amp; công cụ hệ thống</h3>
+
+<table>
+  <thead>
+    <tr><th>Thành phần</th><th>Máy dev hiện tại<br><small>(đo bằng lệnh)</small></th><th>Ảnh Docker CI<br><small>build-image.yml</small></th><th>Stack triển khai<br><small>deploy/compose.yml</small></th><th>Mức tối thiểu<br><small>README / pyproject</small></th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>Hệ điều hành</b></td><td>Ubuntu 24.04.4 LTS<br>(kernel 7.0.0-28-generic)</td><td>Debian bookworm<br><code>DEBIAN_BASE=bookworm</code></td><td>Ubuntu 22.04 trong máy ảo appliance</td><td><span class="tag no">Không ghi</span></td></tr>
+    <tr><td><b>Python</b></td><td>3.12.3</td><td><code>PYTHON_VERSION: 3.11.9</code></td><td>(nằm trong ảnh)</td><td><code>requires-python = "&gt;=3.10"</code><br>README ghi "3.11+"</td></tr>
+    <tr><td><b>Node.js</b></td><td>v18.20.8 (qua nvm)</td><td><code>NODE_VERSION: 18.20.4</code></td><td>(nằm trong ảnh)</td><td><span class="tag no">Không ghi</span></td></tr>
+    <tr><td><b>npm</b></td><td>10.8.2</td><td>(theo Node)</td><td>—</td><td>—</td></tr>
+    <tr><td><b>yarn</b></td><td>1.22.22</td><td>(cài trong ảnh)</td><td>—</td><td>—</td></tr>
+    <tr><td><b>MariaDB</b></td><td>10.11.14</td><td>—</td><td><code>mariadb:10.6</code></td><td>README: "10.6+"</td></tr>
+    <tr><td><b>Redis</b></td><td>7.0.15</td><td>—</td><td><code>redis:6.2-alpine</code></td><td>README: "7+"</td></tr>
+    <tr><td><b>wkhtmltopdf</b><br><small>công cụ xuất PDF (in phiếu, hóa đơn)</small></td><td>0.12.6</td><td><code>WKHTMLTOPDF_VERSION=0.12.6.1-3</code></td><td>(nằm trong ảnh)</td><td><span class="tag no">Không ghi</span></td></tr>
+    <tr><td><b>bench (CLI)</b></td><td>5.29.1</td><td>(cài trong ảnh)</td><td>—</td><td>—</td></tr>
+    <tr><td><b>git</b></td><td>2.43.0</td><td>—</td><td>—</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <b class="lbl">Ba điểm lệch quan trọng — nhớ kỹ</b>
+  <ul style="margin:6px 0">
+    <li><b>Python:</b> máy dev 3.12.3 nhưng ảnh Docker ghim 3.11.9. Code chạy được trên máy bạn <b>chưa chắc</b> chạy trên ảnh, và ngược lại.</li>
+    <li><b>Redis:</b> máy dev 7.0.15 nhưng compose dùng 6.2. README yêu cầu "7+".</li>
+    <li><b>MariaDB:</b> máy dev 10.11 nhưng compose dùng 10.6.</li>
+  </ul>
+  Khi nghi ngờ lỗi "chạy được trên máy tôi", hãy so lại bảng này trước tiên.
+</div>
+
+<h3>2.2 Các app Frappe đang có trong bench</h3>
+
+<p>Đọc từ <code>sites/apps.txt</code> (danh sách app có mặt trong bench) và <code>__init__.py</code> của từng app:</p>
+
+<table>
+  <thead><tr><th>App</th><th>Phiên bản</th><th>Nhánh git đang mở</th><th>Là gì / vai trò</th></tr></thead>
+  <tbody>
+    <tr><td><code>frappe</code></td><td>15.113.4</td><td><code>version-15</code></td><td>Bộ khung nền tảng. Bắt buộc.</td></tr>
+    <tr><td><code>erpnext</code></td><td>15.83.0</td><td><b><code>develop</code></b> <span class="tag no">bất thường</span></td><td>Bộ ERP dựng sẵn. Xem cảnh báo bên dưới.</td></tr>
+    <tr><td><code>supplycore</code></td><td>0.1.0</td><td><code>feat/mvl-distributor</code></td><td><b>App chính của nhóm</b> — toàn bộ nghiệp vụ SupplyCore MVL.</td></tr>
+    <tr><td><code>miyano_portal</code></td><td>0.0.1</td><td><code>develop</code></td><td>App <b>riêng biệt</b> — "Miyano customer portal for ERPNext". Không phải cổng khách của SupplyCore.</td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">erpnext đang ở nhánh <code>develop</code>, không phải <code>version-15</code></b>
+  Nhánh <code>develop</code> là nhánh đang phát triển, có thể vỡ bất cứ lúc nào và <b>không tương thích chắc chắn</b> với frappe <code>version-15</code>.
+  Đây rất có thể là <b>cấu hình nhầm</b>. Hãy hỏi nhóm trước khi làm gì đụng tới ERPNext.
+  Kiểm tra lại bằng: <code>git -C ~/frappe-bench-yhct/apps/erpnext rev-parse --abbrev-ref HEAD</code>
+</div>
+
+<div class="box warn">
+  <b class="lbl">Đừng nhầm <code>miyano_portal</code> với "Cổng khách hàng" của SupplyCore</b>
+  Cổng khách hàng của SupplyCore <b>nằm bên trong chính app supplycore</b>: giao diện ở <code>supplycore/www/portal/</code>,
+  API ở <code>supplycore/api/portal.py</code>, vai trò <code>SC Customer Portal</code>.
+  Còn <code>miyano_portal</code> là một app <b>khác</b>, README của nó ghi "Miyano customer portal for <b>ERPNext</b>".
+  Không có tài liệu nào trong repo supplycore giải thích quan hệ giữa hai cái. <b>Hãy hỏi nhóm.</b>
+</div>
+
+<h3>2.3 Điều tài liệu này KHÔNG xác minh được</h3>
+
+<div class="box crit">
+  <b class="lbl">Chưa xác minh: erpnext có thực sự cài trên site không?</b>
+  <p style="margin:6px 0"><code>sites/apps.txt</code> liệt kê 4 app — nhưng đó là <b>app có mặt trong bench</b>, không phải <b>app đã cài lên site</b>. Hai chuyện khác nhau.</p>
+  <p style="margin:6px 0">Lệnh xác minh <code>bench --site supplycore-miyano.local list-apps</code> <b>chạy thất bại</b> vì MariaDB đang failed (mục 1.2).</p>
+  <p style="margin:6px 0"><b>Và có mâu thuẫn trong chính repo:</b></p>
+  <ul style="margin:6px 0">
+    <li><code>README.md</code> viết: "Custom Frappe app <b>(no ERPNext dependency)</b>" và "<b>KHÔNG cần ERPNext</b>"</li>
+    <li>nhưng <code>pyproject.toml</code> lại khai:
+      <pre style="margin:6px 0"><code>[tool.bench.frappe-dependencies]
+frappe = "&gt;=15.0.0"
+erpnext = "&gt;=15.0.0"</code></pre>
+    </li>
+  </ul>
+  <p style="margin:6px 0">Tài liệu <b>không chọn phe</b>. Sau khi khởi động lại MariaDB, hãy tự chạy và ghi kết quả vào đây:</p>
+  <pre><code>sudo systemctl start mariadb
+cd ~/frappe-bench-yhct
+bench --site supplycore-miyano.local list-apps</code></pre>
+</div>
+
+<h3>2.4 Một cạm bẫy: <code>sites/apps.json</code> là ảnh chụp cũ</h3>
+
+<p>File <code>sites/apps.json</code> ghi supplycore ở nhánh <code>vienyhctbca</code>, commit <code>442362c…</code>. Nhưng nhánh đang mở thật là <code>feat/mvl-distributor</code>.</p>
+<p><b>Đây không phải lỗi</b> — <code>apps.json</code> chỉ là bản ghi lại trạng thái tại một thời điểm trong quá khứ, bench không tự cập nhật. <b>Đừng tin nó</b> khi muốn biết đang ở nhánh nào; dùng <code>git branch</code> thay thế.</p>
+
+<!-- ══════════════════════════════ 3 ══════════════════════════════ -->
+<h2>3. Cài từ máy trắng đến chạy được site đầu tiên</h2>
+
+<p>Phần này giả định bạn có một máy <b>Ubuntu 22.04 hoặc 24.04 sạch</b>. Làm tuần tự từ trên xuống, đừng nhảy cóc.</p>
+
+<h3>Bước 0 — Chuẩn bị tài khoản</h3>
+<p><b>Làm gì:</b> Đừng cài Frappe bằng tài khoản <code>root</code>. Frappe cần một tài khoản người dùng thường có quyền <code>sudo</code>.</p>
+<pre><code>whoami                    # xem mình đang là ai
+sudo -v                   # thử quyền sudo — nếu hỏi mật khẩu là có quyền</code></pre>
+
+<h3>Bước 1 — Cài các gói hệ thống</h3>
+<p><b>Làm gì:</b> Cài sẵn những phần mềm nền mà Frappe cần trước khi bản thân Frappe cài được.</p>
+<pre><code>sudo apt update
+sudo apt install -y git python3-dev python3-pip python3-venv \
+    software-properties-common mariadb-server mariadb-client \
+    redis-server curl xvfb libfontconfig wkhtmltopdf \
+    libmysqlclient-dev build-essential</code></pre>
+<p><b>Giải thích từng nhóm:</b></p>
+<ul>
+  <li><code>python3-dev</code>, <code>build-essential</code> — để biên dịch vài thư viện Python cần mã máy.</li>
+  <li><code>mariadb-server</code> — cơ sở dữ liệu (kho chứa dữ liệu).</li>
+  <li><code>redis-server</code> — bộ nhớ tạm &amp; hàng đợi.</li>
+  <li><code>wkhtmltopdf</code>, <code>xvfb</code>, <code>libfontconfig</code> — bộ ba để in phiếu/hóa đơn ra PDF. Thiếu là in hỏng.</li>
+</ul>
+
+<div class="box warn">
+  <b class="lbl">Lỗi hay gặp</b>
+  <code>E: Unable to locate package</code> → bạn quên chạy <code>sudo apt update</code> trước.<br>
+  PDF in ra <b>trắng trơn hoặc mất chữ tiếng Việt</b> → thiếu <code>libfontconfig</code>/<code>xvfb</code>, hoặc bản wkhtmltopdf không có patch Qt. Bản đúng là <b>0.12.6</b>.
+</div>
+
+<h3>Bước 2 — Cấu hình MariaDB</h3>
+<p><b>Làm gì:</b> Frappe bắt buộc bảng mã <code>utf8mb4</code> để lưu được tiếng Việt có dấu và emoji.</p>
+<pre><code>sudo mysql_secure_installation      # đặt mật khẩu root, trả lời Y cho các câu hỏi bảo mật
+sudo nano /etc/mysql/my.cnf</code></pre>
+<p>Thêm vào file <code>my.cnf</code>:</p>
+<pre><code>[mysqld]
+character-set-client-handshake = FALSE
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+[mysql]
+default-character-set = utf8mb4</code></pre>
+<pre><code>sudo systemctl restart mariadb
+sudo systemctl enable mariadb      # tự bật khi khởi động máy</code></pre>
+
+<div class="box warn">
+  <b class="lbl">Lỗi hay gặp</b>
+  <code>Incorrect string value: '\xC3\xA0...'</code> khi lưu tiếng Việt → chưa đặt <code>utf8mb4</code>, hoặc đặt rồi mà quên restart MariaDB.
+</div>
+
+<h3>Bước 3 — Cài Node.js 18 qua nvm</h3>
+<p><b>Làm gì:</b> Frappe v15 cần Node 18. <b>nvm</b> cho phép cài nhiều bản Node và chuyển qua lại — an toàn hơn cài thẳng vào hệ thống.</p>
+<pre><code>curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 18
+nvm use 18
+node --version            # phải ra v18.x
+npm install -g yarn
+yarn --version            # dự án dùng yarn 1.22.x</code></pre>
+
+<div class="box warn">
+  <b class="lbl">Lỗi hay gặp</b>
+  <code>nvm: command not found</code> sau khi cài → mở terminal mới, hoặc chạy <code>source ~/.bashrc</code>.<br>
+  <b>Rất hay gặp với supervisor/systemd:</b> tiến trình nền không đọc <code>~/.bashrc</code> nên không thấy <code>node</code>.
+  Đó chính là lý do <code>Procfile</code> của dự án ghi <b>đường dẫn tuyệt đối</b>:
+  <code>/home/hoangvietyeuem/.nvm/versions/node/v18.20.8/bin/node</code>.
+</div>
+
+<h3>Bước 4 — Cài bench</h3>
+<pre><code>sudo pip3 install frappe-bench --break-system-packages
+bench --version           # kỳ vọng 5.29.x</code></pre>
+<p><b>Giải thích:</b> <code>--break-system-packages</code> cần trên Ubuntu 24.04 vì hệ điều hành mới chặn cài gói Python toàn cục. Nếu không muốn dùng cờ này, cài bench trong một venv riêng.</p>
+
+<h3>Bước 5 — Tạo thư mục bench</h3>
+<pre><code>cd ~
+bench init frappe-bench-yhct --frappe-branch version-15
+cd frappe-bench-yhct</code></pre>
+<p><b>Lệnh này làm gì:</b> tạo thư mục chứa mọi thứ — <code>apps/</code> (mã nguồn app), <code>sites/</code> (dữ liệu từng site), <code>env/</code> (môi trường Python riêng), <code>config/</code> (cấu hình nginx/redis/supervisor), <code>logs/</code>.</p>
+
+<div class="box warn">
+  <b class="lbl">Lỗi hay gặp</b>
+  Treo rất lâu ở bước <code>yarn install</code> → mạng chậm; kiên nhẫn hoặc đổi registry.<br>
+  <code>SystemExit: 1</code> ngay đầu → thường do sai bản Python. Kiểm tra <code>python3 --version</code>.
+</div>
+
+<h3>Bước 6 — Tạo site</h3>
+<pre><code>bench new-site supplycore-miyano.local \
+    --db-root-username root \
+    --db-root-password '&lt;ĐÃ_ẨN&gt;' \
+    --admin-password '&lt;ĐÃ_ẨN&gt;'</code></pre>
+<p><b>Lệnh này làm gì:</b> tạo một cơ sở dữ liệu mới, sinh khóa mã hóa, và ghi file <code>sites/supplycore-miyano.local/site_config.json</code>. File đó có <b>cấu trúc</b> như sau (giá trị thật đã bị che):</p>
+<pre><code>{
+ "allow_tests": true,
+ "db_name": "&lt;ĐÃ_ẨN&gt;",
+ "db_password": "&lt;ĐÃ_ẨN&gt;",
+ "db_type": "mariadb",
+ "encryption_key": "&lt;ĐÃ_ẨN&gt;"
+}</code></pre>
+
+<div class="box crit">
+  <b class="lbl">Cực kỳ quan trọng</b>
+  <code>encryption_key</code> dùng để giải mã mọi mật khẩu lưu trong hệ thống. <b>Mất khóa này = mất dữ liệu mã hóa vĩnh viễn.</b>
+  Sao lưu file <code>site_config.json</code> ở nơi an toàn, và <b>không bao giờ</b> commit lên git.
+</div>
+
+<h3>Bước 7 — Lấy mã nguồn app và cài lên site</h3>
+<pre><code># Lấy app từ GitHub (hoặc từ thư mục sẵn có trên máy)
+bench get-app supplycore https://github.com/mvl26/supplycore.git
+
+# Cài app lên site
+bench --site supplycore-miyano.local install-app supplycore
+
+# Đồng bộ cấu trúc dữ liệu + chạy các bản vá (patch)
+bench --site supplycore-miyano.local migrate</code></pre>
+
+<p><b><code>migrate</code> làm gì:</b> đồng bộ định nghĩa bảng dữ liệu (DocType) vào MariaDB, tạo vai trò &amp; quyền, và chạy tuần tự các bản vá liệt kê trong <code>supplycore/patches.txt</code> (hiện có <b>35</b> bản vá, từ <code>v0_1</code> đến <code>v0_12</code>).</p>
+
+<h3>Bước 8 — Build giao diện Vue (bước riêng, RẤT hay bị quên)</h3>
+
+<div class="box crit">
+  <b class="lbl">Điểm khác biệt lớn nhất so với app Frappe thông thường</b>
+  SupplyCore có một giao diện Vue riêng ở thư mục <code>frontend/</code>. Giao diện này <b>KHÔNG</b> được build bởi <code>bench build</code>.
+  Lý do được ghi thẳng trong <code>docker/Containerfile</code>:
+  <pre style="margin:6px 0"><code># no root package.json means `bench build` alone will NOT build it;
+# we must run `yarn build`.</code></pre>
+  <b>Phải chạy <code>yarn build</code> riêng, nếu không giao diện sẽ là bản cũ.</b>
+</div>
+
+<pre><code>cd ~/frappe-bench-yhct/apps/supplycore/frontend
+yarn install
+yarn build          # kết quả đổ vào supplycore/public/frontend/
+
+cd ~/frappe-bench-yhct
+bench build --app supplycore    # build phần asset Frappe thường</code></pre>
+
+<div class="box warn">
+  <b class="lbl">Sau khi build phải bấm Ctrl+Shift+R</b>
+  Giao diện là PWA có service worker lưu bản cũ trong trình duyệt. Build xong mà không <b>hard refresh</b> thì bạn vẫn thấy bản cũ và tưởng build hỏng.
+</div>
+
+<h3>Bước 9 — Khởi động</h3>
+<pre><code># Chế độ dev (đơn giản, log ra màn hình)
+cd ~/frappe-bench-yhct
+bench start
+
+# HOẶC chế độ giống máy chủ thật
+sudo bench setup supervisor
+sudo bench setup nginx
+sudo supervisorctl reload</code></pre>
+
+<p>Mở trình duyệt: <code>http://supplycore-miyano.local:8002</code> (nhớ thêm dòng vào <code>/etc/hosts</code> nếu tên miền chưa phân giải được):</p>
+<pre><code>echo "127.0.0.1  supplycore-miyano.local" | sudo tee -a /etc/hosts</code></pre>
+
+<h3>Bước 10 — Nạp dữ liệu mẫu để có cái mà thử</h3>
+<pre><code>cd ~/frappe-bench-yhct/apps/supplycore
+bash scripts/setup_test_env.sh</code></pre>
+<p><b>Script này làm gì</b> (đọc từ chính file, phần chú thích):</p>
+<pre><code># - Seed user nội bộ (Manager/Storekeeper... pass TestPass123!) qua seed_test_users.
+# - Seed dataset UI test (KH A/B + KH nợ + item tồn/hết tồn + HĐ khung) qua
+#   seed_ui_test.write_state → ghi ui_tests/seed-state.json cho test đọc.
+# An toàn: CHỈ trỏ vào SITE test cấu hình dưới đây.</code></pre>
+<p>Script <b>idempotent</b> — chạy lại nhiều lần không sao. Đổi site bằng biến môi trường: <code>SC_TEST_SITE=ten-site bash scripts/setup_test_env.sh</code></p>
+
+<h3>3.11 Bảng tra lỗi nhanh</h3>
+<table>
+  <thead><tr><th>Triệu chứng</th><th>Nguyên nhân thường gặp</th><th>Cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td><code>ConnectionRefusedError: [Errno 111]</code></td><td>MariaDB chưa chạy</td><td><code>sudo systemctl start mariadb</code></td></tr>
+    <tr><td><code>Address already in use</code> cổng 8002</td><td>Chạy đồng thời supervisor và <code>bench start</code></td><td><code>sudo supervisorctl stop all</code> rồi thử lại</td></tr>
+    <tr><td>Sửa code Vue mà giao diện không đổi</td><td>Quên <code>yarn build</code>, hoặc service worker giữ bản cũ</td><td><code>yarn build</code> + Ctrl+Shift+R</td></tr>
+    <tr><td>Sửa code Python mà không có tác dụng</td><td>Tiến trình cũ vẫn đang chạy</td><td><code>sudo supervisorctl restart all</code></td></tr>
+    <tr><td><code>Site does not exist</code></td><td>Gõ sai tên site, hoặc quên tham số <code>--site</code></td><td><code>ls ~/frappe-bench-yhct/sites/</code> để xem tên đúng</td></tr>
+    <tr><td>In PDF trắng / mất dấu tiếng Việt</td><td>Sai bản wkhtmltopdf hoặc thiếu font</td><td>Cài đúng 0.12.6 + <code>libfontconfig</code></td></tr>
+    <tr><td>Việc nền không chạy (email, cảnh báo)</td><td>worker/schedule chết</td><td><code>sudo supervisorctl status</code> xem cái nào không RUNNING</td></tr>
+    <tr><td>Không đăng nhập được sau khi khôi phục backup</td><td><code>encryption_key</code> không khớp</td><td>Khôi phục kèm đúng <code>site_config.json</code> gốc</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 4 ══════════════════════════════ -->
+<h2>4. Danh mục đầy đủ công cụ nhóm dùng</h2>
+
+<!-- ---------- 4a ---------- -->
+<h3>4a. Trình soạn code &amp; extension</h3>
+
+<div class="box crit">
+  <b class="lbl">Không có trong repo</b>
+  <b>Không có thư mục <code>.vscode/</code></b> — không có cấu hình editor dùng chung, không có danh sách extension đề xuất.
+  Hơn nữa <code>.gitignore</code> <b>cố ý loại trừ</b> cả hai trình soạn thảo phổ biến:
+  <pre style="margin:6px 0"><code>.idea/
+.vscode/</code></pre>
+  Nghĩa là <b>mỗi người tự chọn trình soạn thảo và tự cấu hình</b>. Không có chuẩn chung để bạn sao chép.
+</div>
+
+<p><b>Gợi ý (không phải quy định của nhóm — hãy hỏi lại):</b> với dự án Frappe + Vue, bộ tối thiểu thường là Python, Vue - Official (Volar), Tailwind CSS IntelliSense, và một extension Jinja cho file print format.</p>
+
+<!-- ---------- 4b ---------- -->
+<h3>4b. Claude Code</h3>
+
+<p><b>Là gì:</b> Trợ lý AI chạy ngay trong cửa sổ dòng lệnh, đọc được toàn bộ mã nguồn dự án, tự sửa file, tự chạy lệnh. Nhóm này dùng Claude Code làm công cụ chính để viết code — thấy rõ qua lịch sử commit.</p>
+
+<h4>Cài &amp; đăng nhập</h4>
+<pre><code>npm install -g @anthropic-ai/claude-code
+cd ~/frappe-bench-yhct/apps/supplycore
+claude                    # lần đầu sẽ mở trình duyệt để đăng nhập</code></pre>
+<p><b>Bằng chứng nhóm dùng Claude Code:</b> mọi commit gần đây đều có dòng ký tên đồng tác giả:</p>
+<pre><code>Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;</code></pre>
+
+<h4>CLAUDE.md — hướng dẫn riêng cho AI về dự án</h4>
+<div class="box crit">
+  <b class="lbl">Không có trong repo</b>
+  <b>Không tồn tại file <code>CLAUDE.md</code></b> ở bất kỳ đâu trong repo (đã kiểm tra cả thư mục gốc và <code>.claude/</code>).
+  CLAUDE.md là file dặn dò AI về quy ước dự án (cách đặt tên, lệnh build, điều cấm).
+  Đây là <b>một khoảng trống thật</b> — mỗi phiên làm việc, AI phải tự dò lại quy ước từ đầu.
+  <b>Đề xuất:</b> đây là việc đáng làm sớm, và tập 04 của bộ tài liệu này sẽ bàn kỹ.
+</div>
+
+<h4>Thư mục <code>.claude/</code> — và cái bẫy lớn nhất khi bạn clone repo</h4>
+
+<div class="box crit">
+  <b class="lbl">Clone repo về, bạn sẽ KHÔNG có gì trong .claude/</b>
+  <code>.gitignore</code> có dòng:
+  <pre style="margin:6px 0"><code># Claude Code local state (worktrees, session)
+.claude/
+
+.superpowers/
+design-system/
+frontend/UI_AUDIT/</code></pre>
+  Nghĩa là <b>toàn bộ 7 skill dưới đây chỉ tồn tại trên máy của người đã cài chúng</b>. Người mới clone repo sẽ không có skill nào.
+  Muốn có, bạn phải xin người trong nhóm chép thư mục <code>.claude/skills/</code> sang, hoặc tự cài lại từ nguồn gốc (chúng đến từ bộ <i>claudekit</i>).
+</div>
+
+<p><b>7 skill hiện có trên máy này</b> (mô tả lấy nguyên văn từ dòng <code>description:</code> trong từng <code>SKILL.md</code>):</p>
+
+<table>
+  <thead><tr><th>Skill</th><th>Mô tả (rút gọn từ SKILL.md)</th><th>Khi nào dùng</th></tr></thead>
+  <tbody>
+    <tr><td><code>ui-ux-pro-max</code></td><td>Kho dữ liệu thiết kế tra cứu được: 67 phong cách, 161 bảng màu, 57 cặp font, 25 loại biểu đồ, 21 nền tảng công nghệ (có Vue, Tailwind).</td><td>Khi thiết kế hoặc rà soát giao diện: trang, thành phần, màu, chữ, bố cục, khả năng tiếp cận.</td></tr>
+    <tr><td><code>ui-styling</code></td><td>Dựng giao diện đẹp &amp; tiếp cận được với shadcn/ui (Radix + Tailwind), Tailwind CSS.</td><td>Khi làm hộp thoại, menu, biểu mẫu, bảng; khi chỉnh theme và chế độ tối.</td></tr>
+    <tr><td><code>design-system</code></td><td>Kiến trúc design token 3 lớp (primitive → semantic → component), biến CSS, thang giãn cách/chữ.</td><td>Khi cần hệ thống thiết kế nhất quán thay vì sửa màu lẻ tẻ.</td></tr>
+    <tr><td><code>design</code></td><td>Skill thiết kế tổng hợp: nhận diện thương hiệu, logo, bộ nhận diện, slide HTML, banner, icon, ảnh mạng xã hội.</td><td>Khi cần tài sản thương hiệu hoặc thiết kế đa dạng.</td></tr>
+    <tr><td><code>brand</code></td><td>Giọng thương hiệu, nhận diện thị giác, khung thông điệp, tính nhất quán thương hiệu.</td><td>Khi viết nội dung có thương hiệu, tài liệu marketing.</td></tr>
+    <tr><td><code>slides</code></td><td>Tạo bài trình bày HTML có Chart.js, design token, bố cục co giãn.</td><td>Khi cần dựng slide báo cáo/demo.</td></tr>
+    <tr><td><code>banner-design</code></td><td>Thiết kế banner cho mạng xã hội, quảng cáo, hero website, in ấn.</td><td>Khi cần ảnh bìa/banner.</td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Nhận xét trung thực về bộ skill này</b>
+  Cả 7 skill đều thuộc nhóm <b>thiết kế/giao diện</b>. <b>Không có skill nào</b> chuyên về Frappe, về nghiệp vụ kho vận, hay về quy trình của nhóm.
+  Chúng là bộ skill dùng chung tải từ ngoài về, không phải do nhóm tự viết cho dự án này.
+</div>
+
+<h4>Agent, slash command, hook</h4>
+<table>
+  <thead><tr><th>Hạng mục</th><th>Trạng thái trong repo</th></tr></thead>
+  <tbody>
+    <tr><td><b>Agent tùy chỉnh</b> (<code>.claude/agents/</code>)</td><td><span class="tag no">Không có trong repo</span></td></tr>
+    <tr><td><b>Slash command tùy chỉnh</b> (<code>.claude/commands/</code>)</td><td><span class="tag no">Không có trong repo</span></td></tr>
+    <tr><td><b>Hook</b> (<code>.claude/settings.json</code>)</td><td><span class="tag no">Không có trong repo</span> — không có file settings nào, nên <b>không có hook cấp dự án</b></td></tr>
+    <tr><td><b><code>.claude/worktrees/</code></b></td><td><span class="tag yes">Có</span> — chứa <code>m7-bugfix</code>, là bản sao repo tách riêng để sửa lỗi song song mà không đụng nhánh chính (xem 4c)</td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Cảnh báo an toàn về hook</b>
+  Hook là lệnh do máy tự chạy mỗi khi AI thao tác — <b>bạn không được hỏi trước</b>. Nếu sau này nhóm thêm hook, hãy đọc kỹ từng dòng lệnh trước khi tin,
+  vì một hook độc có thể xóa file hoặc gửi mã nguồn ra ngoài. Hiện tại dự án <b>không có hook nào</b>, nên chưa có rủi ro này.
+</div>
+
+<h4>MCP server (kết nối AI với dịch vụ ngoài)</h4>
+<div class="box">
+  <b class="lbl">Repo không cấu hình MCP server nào</b>
+  Không có file <code>.mcp.json</code>. Kiểm tra cấu hình người dùng <code>~/.claude.json</code> cho kết quả
+  <code>mcpServers: []</code> — rỗng cả ở mức toàn cục lẫn mức dự án này.
+  <p style="margin:6px 0">Nếu trong phiên làm việc bạn thấy AI dùng được Chrome, Gmail, Google Drive… thì đó là <b>tính năng của ứng dụng Claude Code</b> mà bạn bật ở tài khoản cá nhân, <b>không phải cấu hình của dự án</b>. Người khác clone repo về sẽ không tự có.</p>
+</div>
+
+<h4>Bộ nhớ của Claude Code</h4>
+<p>Claude Code lưu ghi chú lâu dài ở ngoài repo, tại <code>~/.claude/projects/&lt;đường-dẫn-dự-án&gt;/memory/MEMORY.md</code>. Vì nằm ngoài git nên <b>không chia sẻ được</b> giữa các thành viên. Nội dung không trích ở đây (là ghi chú cá nhân).</p>
+
+<!-- ---------- 4c ---------- -->
+<h3>4c. Git &amp; GitHub</h3>
+
+<h4>Ba remote — biết mình đang đẩy code đi đâu</h4>
+<pre><code>$ git remote -v
+miyano    https://github.com/mvl26/supplycore-miyano.git (fetch/push)
+origin    https://github.com/mvl26/supplycore.git         (fetch/push)
+upstream  /home/hoangvietyeuem/frappe-bench/apps/supplycore (fetch/push)</code></pre>
+<table>
+  <thead><tr><th>Remote</th><th>Là gì</th></tr></thead>
+  <tbody>
+    <tr><td><code>origin</code></td><td>Kho chính trên GitHub: <code>mvl26/supplycore</code></td></tr>
+    <tr><td><code>miyano</code></td><td>Kho thứ hai: <code>mvl26/supplycore-miyano</code> — <b>repo không giải thích khác nhau thế nào</b>. Hãy hỏi nhóm trước khi push vào đây.</td></tr>
+    <tr><td><code>upstream</code></td><td><b>Không phải GitHub</b> — trỏ vào một thư mục khác <i>trên cùng máy này</i> (bench <code>frappe-bench</code> kia). Dùng để đồng bộ giữa hai bench nội bộ.</td></tr>
+  </tbody>
+</table>
+
+<h4>Nhánh</h4>
+<pre><code>$ git branch -a
+* feat/mvl-distributor            ← đang làm việc ở đây
++ fix/m7-bugs                     ← đang mở trong worktree .claude/worktrees/m7-bugfix
+  vienyhctbca
+  remotes/miyano/main
+  remotes/origin/fix/m7-bugs
+  remotes/upstream/vienyhctbca</code></pre>
+<p><b>Quy ước đặt tên nhánh quan sát được:</b> <code>&lt;loại&gt;/&lt;mô-tả-gạch-ngang&gt;</code> — ví dụ <code>feat/mvl-distributor</code> (tính năng), <code>fix/m7-bugs</code> (sửa lỗi). Nhánh <code>vienyhctbca</code> là nhánh cũ thời bản bệnh viện.</p>
+<p>Dấu <code>+</code> trước <code>fix/m7-bugs</code> nghĩa là nhánh đó đang được mở ở một <b>git worktree</b> — kỹ thuật cho phép mở hai nhánh ở hai thư mục cùng lúc, khỏi phải <code>git stash</code> qua lại.</p>
+
+<h4>Quy ước commit — quan sát được rõ ràng</h4>
+<p>Định dạng: <code>loại(phạm-vi): mô tả bằng tiếng Việt</code></p>
+<pre><code>feat(mvl-sales): SC Sales Invoice — GL phải thu + COGS (BRU-DEL/INVC/PAY)
+fix(mvl-portal): chặn portal tự-duyệt đơn hàng qua approve()/reject()
+docs(manual): viết lại Hướng dẫn sử dụng cho MVL + dọn tài sản bệnh viện cuối
+chore(mvl): rebrand Miyano + reseed kho/phòng phân phối
+test(mvl-portal): 4 cột mốc + E2E portal + regression GĐ3
+refactor(mvl): gỡ nghiệp vụ bệnh viện khỏi frontend Vue SPA (Task 9 GĐ1)</code></pre>
+<ul>
+  <li><b>Loại:</b> <code>feat</code> (tính năng mới) · <code>fix</code> (sửa lỗi) · <code>docs</code> (tài liệu) · <code>test</code> · <code>refactor</code> (dọn code) · <code>chore</code> (việc vặt)</li>
+  <li><b>Phạm vi:</b> hay dùng <code>mvl-&lt;module&gt;</code>, ví dụ <code>mvl-sales</code>, <code>mvl-portal</code>, <code>mvl-accounting</code></li>
+  <li><b>Mô tả:</b> viết tiếng Việt, thường kèm mã quy tắc nghiệp vụ (<code>BRU-…</code>) hoặc mã lỗi (<code>SC-E…</code>)</li>
+  <li><b>Phần thân:</b> commit lớn có phần thân dài giải thích lý do — hãy học theo, đây là điểm mạnh của nhóm</li>
+</ul>
+
+<h4>Pull Request, review, bảo vệ nhánh, issue/label</h4>
+<div class="box crit">
+  <b class="lbl">Không xác định được từ repo — phải hỏi nhóm</b>
+  <code>.github/</code> chỉ chứa đúng một thư mục <code>workflows/</code> với 2 file. <b>Không có</b>:
+  <ul style="margin:6px 0">
+    <li><code>PULL_REQUEST_TEMPLATE.md</code> — mẫu mô tả PR</li>
+    <li><code>ISSUE_TEMPLATE/</code> — mẫu báo lỗi</li>
+    <li><code>CODEOWNERS</code> — ai bắt buộc phải review file nào</li>
+    <li><code>dependabot.yml</code> — tự cập nhật thư viện</li>
+    <li><code>CONTRIBUTING.md</code> — hướng dẫn đóng góp</li>
+  </ul>
+  Quy tắc bảo vệ nhánh (branch protection) và nhãn issue nằm trong <b>cài đặt trên GitHub</b>, không đọc được từ mã nguồn.
+  <b>Đừng tự suy diễn</b> — hãy hỏi người phụ trách.
+</div>
+
+<h4>Git worktree — kỹ thuật nhóm đang dùng thật</h4>
+<pre><code># Tạo một thư mục làm việc riêng cho nhánh khác, không đụng nhánh hiện tại
+git worktree add .claude/worktrees/m7-bugfix fix/m7-bugs
+git worktree list
+git worktree remove .claude/worktrees/m7-bugfix   # dọn khi xong</code></pre>
+
+<!-- ---------- 4d ---------- -->
+<h3>4d. CI/CD — GitHub Actions</h3>
+
+<p>Có đúng <b>2 workflow</b>, cả hai đều nằm ở <code>.github/workflows/</code> và <b>cùng kích hoạt khi đẩy tag phiên bản</b>.</p>
+
+<h4>Workflow 1 — <code>build-image.yml</code>: "Build &amp; push SupplyCore image"</h4>
+<table>
+  <thead><tr><th>Mục</th><th>Chi tiết thật</th></tr></thead>
+  <tbody>
+    <tr><td><b>Kích hoạt khi</b></td><td><code>push</code> tag khớp <code>v*</code> (ví dụ <code>v1.2.0</code>), hoặc bấm tay (<code>workflow_dispatch</code>)</td></tr>
+    <tr><td><b>Chạy trên</b></td><td><code>ubuntu-latest</code></td></tr>
+    <tr><td><b>Làm gì</b></td><td>1. Tải mã supplycore + <code>frappe_docker</code> (ghim commit <code>1e3d40f…</code>) → 2. Chép <code>docker/Containerfile</code> đè lên → 3. Dựng ảnh Docker → 4. <b>Chạy thử toàn bộ stack</b> → 5. Đẩy lên GHCR</td></tr>
+    <tr><td><b>Kiểm thử khói (smoke test)</b></td><td>Rất kỹ: chờ tạo site xong (tối đa 60 lần × 10 giây), xác nhận supplycore đã cài, gọi thử trang chủ và route <code>/supplycore</code>, và kiểm tra file Vue đã build tồn tại</td></tr>
+    <tr><td><b>Bí mật cần có</b></td><td><code>APP_GH_TOKEN</code> — token GitHub chỉ có quyền đọc, dùng để tải mã app riêng tư lúc build. Truyền qua <b>secret mount</b> nên không dính vào ảnh.</td></tr>
+    <tr><td><b>Kết quả</b></td><td><code>ghcr.io/&lt;chủ-repo&gt;/supplycore:&lt;tag&gt;</code> và <code>:latest</code></td></tr>
+  </tbody>
+</table>
+
+<p>Đoạn kiểm tra thật trong workflow — đáng học vì nó kiểm tra <i>hệ quả</i>, không chỉ kiểm tra lệnh chạy xong:</p>
+<pre><code>echo "Asserting supplycore is installed…"
+docker compose exec -T backend bash -c "grep -qx supplycore sites/apps.txt"
+docker compose exec -T backend bash -c "bench --site smoke.localhost list-apps | grep -q supplycore"
+
+echo "Asserting the built Vue assets exist…"
+curl -fsS -H 'Host: smoke.localhost' \
+     http://localhost:8080/assets/supplycore/frontend/index.js -o /dev/null</code></pre>
+
+<h4>Workflow 2 — <code>build-installer.yml</code>: "Build SupplyCore Windows installer"</h4>
+<p><b>Đây là workflow phức tạp nhất trong dự án.</b> Mục tiêu: đóng gói toàn bộ hệ thống thành <b>một file <code>.exe</code></b> để khách hàng Windows chỉ cần bấm đúp — bên trong là một máy ảo Linux chạy Docker chạy SupplyCore.</p>
+
+<table>
+  <thead><tr><th>Việc (job)</th><th>Chạy trên</th><th>Làm gì</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b><code>guest</code></b></td>
+      <td>Linux <b>có KVM</b></td>
+      <td>Dựng ảnh Docker → <code>docker save</code> ra file tar → dùng <b>Packer</b> tạo đĩa máy ảo <code>disk0.qcow2</code> → nén lại → chạy <code>smoke.sh</code> kiểm tra khả năng lưu dữ liệu qua 2 lần khởi động</td>
+    </tr>
+    <tr>
+      <td><b><code>installer</code></b></td>
+      <td><code>windows-latest</code></td>
+      <td>Tải <code>disk0</code> → tải QEMU + WinSW (đã ghim URL &amp; SHA256) → chạy test <b>Pester</b> → biên dịch bằng <b>Inno Setup</b> → tính SHA256 → phát hành GitHub Release</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Hai giới hạn hạ tầng được ghi thẳng trong file (bằng tiếng Việt)</b>
+  <ul style="margin:6px 0">
+    <li>Job <code>guest</code> <b>bắt buộc có KVM</b>. File cấu hình Packer ghi cứng <code>accelerator="kvm"</code>, <b>không có phương án dự phòng</b> — runner thường của GitHub thiếu ảo hóa lồng nhau sẽ <b>fail thẳng</b>, không tự chậm lại.</li>
+    <li>Bước <code>test-install</code> để <code>continue-on-error: true</code> vì <code>windows-latest</code> không có WHPX nên QEMU chạy chậm. Kết quả bước này <b>không chặn phát hành</b>, và được in ra rõ ràng ở bước sau.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <b class="lbl">Một chi tiết đáng học về chất lượng</b>
+  Khi file <code>.exe</code> vượt 2 GiB (giới hạn GitHub Release), workflow <b>không im lặng bỏ qua</b> mà đổi chiến lược và <b>nói rõ với người dùng</b>:
+  <pre style="margin:6px 0"><code>⚠️ .exe = ... MB &gt; 2 GiB (vượt giới hạn GitHub Release).
+Tải .exe từ **Actions → run này → Artifacts → installer**.</code></pre>
+</div>
+
+<div class="box crit">
+  <b class="lbl">Thứ CI KHÔNG làm — khoảng trống thật</b>
+  Cả hai workflow chỉ chạy <b>khi đẩy tag phát hành</b>. <b>Không có workflow nào chạy khi mở Pull Request hoặc push nhánh thường.</b>
+  Nghĩa là <b>không có kiểm thử tự động, không có lint tự động</b> trước khi code vào nhánh chính. Mọi kiểm tra hiện <b>phải làm thủ công</b> (xem 4g).
+</div>
+
+<!-- ---------- 4e ---------- -->
+<h3>4e. Container &amp; hạ tầng</h3>
+
+<h4>Docker Compose — <code>deploy/compose.yml</code></h4>
+<p>Một lệnh dựng đủ 10 dịch vụ. Trích chú thích đầu file:</p>
+<pre><code># One command brings up DB + Redis + backend + workers + scheduler
+# + websocket + nginx frontend, creates the site and installs SupplyCore
+# on first run.</code></pre>
+
+<pre><code>cd apps/supplycore/deploy
+cp .env.example .env
+nano .env                  # SỬA mật khẩu trước khi chạy!
+docker compose up -d
+docker compose ps          # xem trạng thái
+docker compose logs -f backend
+docker compose down        # dừng (giữ dữ liệu)
+docker compose down -v     # dừng và XÓA SẠCH dữ liệu — cẩn thận!</code></pre>
+
+<table>
+  <thead><tr><th>Dịch vụ</th><th>Ảnh / lệnh</th><th>Vai trò</th></tr></thead>
+  <tbody>
+    <tr><td><code>db</code></td><td><code>mariadb:10.6</code></td><td>Cơ sở dữ liệu, có healthcheck bằng <code>mysqladmin ping</code></td></tr>
+    <tr><td><code>redis-cache</code>, <code>redis-queue</code></td><td><code>redis:6.2-alpine</code></td><td>Bộ nhớ đệm và hàng đợi (2 container riêng)</td></tr>
+    <tr><td><code>configurator</code></td><td>chạy 1 lần rồi thoát</td><td>Ghi <code>sites/apps.txt</code> và cấu hình địa chỉ DB/Redis</td></tr>
+    <tr><td><code>create-site</code></td><td>chạy 1 lần rồi thoát</td><td>Tạo site + cài supplycore. <b>Bỏ qua nếu site đã có</b> → chạy lại an toàn</td></tr>
+    <tr><td><code>backend</code></td><td>ảnh supplycore</td><td>Máy chủ ứng dụng chính</td></tr>
+    <tr><td><code>websocket</code></td><td><code>node … socketio.js</code></td><td>Thông báo thời gian thực</td></tr>
+    <tr><td><code>queue-short</code></td><td><code>bench worker --queue short,default</code></td><td>Việc nền ngắn</td></tr>
+    <tr><td><code>queue-long</code></td><td><code>bench worker --queue long,default,short</code></td><td>Việc nền dài</td></tr>
+    <tr><td><code>scheduler</code></td><td><code>bench schedule</code></td><td>Tác vụ theo lịch</td></tr>
+    <tr><td><code>frontend</code></td><td><code>nginx-entrypoint.sh</code></td><td>nginx, mở cổng <code>${HTTP_PORT:-8080}</code></td></tr>
+  </tbody>
+</table>
+
+<h4>Biến môi trường — <code>deploy/.env.example</code></h4>
+<pre><code>IMAGE=ghcr.io/mvl26/supplycore
+IMAGE_TAG=latest
+PULL_POLICY=missing          # always | missing | never
+SITE_NAME=supplycore.localhost
+ADMIN_PASSWORD=changeme-admin      # ← PHẢI ĐỔI
+DB_PASSWORD=changeme-db            # ← PHẢI ĐỔI
+HTTP_PORT=8080</code></pre>
+<div class="box crit">
+  <b class="lbl">Bắt buộc</b>
+  <code>changeme-admin</code>/<code>changeme-db</code> là giá trị <b>ví dụ</b>. Deploy thật mà giữ nguyên = mở cửa cho người ngoài.
+  File <code>.env</code> đã bị <code>.gitignore</code> chặn — <b>đừng bao giờ ép commit nó</b>.
+</div>
+
+<h4>Volume &amp; mạng</h4>
+<p><b>5 volume</b> (nơi dữ liệu sống sót khi container bị xóa): <code>sites</code> (dữ liệu site), <code>logs</code>, <code>db-data</code> (dữ liệu MariaDB), <code>redis-cache-data</code>, <code>redis-queue-data</code>.</p>
+<p><b>Mạng:</b> compose không khai mạng riêng → dùng mạng mặc định, các container gọi nhau bằng <b>tên dịch vụ</b> (<code>db</code>, <code>redis-cache</code>, <code>backend:8000</code>, <code>websocket:9000</code>). Chỉ <code>frontend</code> mở cổng ra ngoài.</p>
+
+<h4>Bộ công cụ đóng gói máy ảo Windows</h4>
+<table>
+  <thead><tr><th>Công cụ</th><th>Là gì</th><th>File trong repo</th></tr></thead>
+  <tbody>
+    <tr><td><b>Packer</b></td><td>Công cụ HashiCorp dựng ảnh đĩa máy ảo tự động</td><td><code>guest/packer/supplycore.pkr.hcl</code></td></tr>
+    <tr><td><b>QEMU/KVM</b></td><td>Phần mềm chạy máy ảo</td><td>ghim URL + SHA256 trong <code>installer/ci/fetch-deps.ps1</code></td></tr>
+    <tr><td><b>cloud-init</b></td><td>Cấu hình máy ảo tự động lúc khởi động lần đầu</td><td><code>guest/cloud-init/user-data</code></td></tr>
+    <tr><td><b>Inno Setup</b></td><td>Tạo file cài đặt <code>.exe</code> cho Windows</td><td><code>installer/supplycore.iss</code></td></tr>
+    <tr><td><b>WinSW</b></td><td>Biến chương trình thành dịch vụ Windows (tự chạy khi bật máy)</td><td><code>installer/winsw/supplycore-service.xml</code></td></tr>
+    <tr><td><b>systemd</b> (trong máy ảo)</td><td>Quản lý dịch vụ Linux + hẹn giờ sao lưu</td><td><code>guest/first-boot.service</code>, <code>guest/backup.timer</code>, <code>guest/ensure-data.service</code></td></tr>
+    <tr><td><b>PowerShell</b></td><td>Kịch bản điều khiển phía Windows</td><td><code>installer/launcher/run-vm.ps1</code>, <code>wait-healthy.ps1</code>, <code>backup-export.ps1</code>, <code>restore.ps1</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ---------- 4f ---------- -->
+<h3>4f. Quản lý gói</h3>
+
+<h4>Phía Python — câu trả lời có thể gây bất ngờ</h4>
+<div class="box">
+  <b class="lbl">Dự án gần như không quản lý gói Python</b>
+  Toàn bộ nội dung <code>requirements.txt</code> chỉ có <b>một dòng chú thích</b>:
+  <pre style="margin:6px 0"><code># Frappe &amp; ERPNext are managed by `bench`, not pip — do not pin them here.</code></pre>
+  Và <code>pyproject.toml</code> khai <code>dependencies = []</code> (rỗng).
+  <p style="margin:6px 0"><b>Nghĩa là:</b> SupplyCore <b>không thêm thư viện Python nào ngoài những gì Frappe đã có sẵn</b>. Đây là lựa chọn có chủ đích, giúp cài đặt đơn giản và ít xung đột.</p>
+  <p style="margin:6px 0"><b>Không có</b> <code>poetry.lock</code>, <b>không có</b> <code>uv.lock</code>, <b>không có</b> Pipfile.</p>
+</div>
+
+<p>Nếu sau này thật sự cần thêm thư viện Python:</p>
+<pre><code>cd ~/frappe-bench-yhct
+./env/bin/pip install &lt;tên-gói&gt;                     # cài vào môi trường của bench
+# rồi ghi tên gói + phiên bản vào apps/supplycore/requirements.txt</code></pre>
+
+<div class="box warn">
+  <b class="lbl">Hai file build song song, mô tả mâu thuẫn nhau</b>
+  Dự án có <b>cả</b> <code>setup.py</code> (setuptools) <b>lẫn</b> <code>pyproject.toml</code> (flit) — điều không cần thiết. Tệ hơn, mô tả của chúng đối nghịch:
+  <ul style="margin:6px 0">
+    <li><code>setup.py</code>: <i>"<b>Hospital</b> medical supply chain management"</i> ← còn sót thời bản bệnh viện</li>
+    <li><code>pyproject.toml</code>: <i>"Medical supply <b>distribution</b> management"</i> ← bản MVL hiện tại</li>
+  </ul>
+  <code>setup.py</code> cũng ghi cứng <code>version="0.1.0"</code> trong khi <code>pyproject.toml</code> khai <code>dynamic = ["version"]</code>.
+  Đây là <b>nợ kỹ thuật cần dọn</b>, không phải thiết kế có ý đồ.
+</div>
+
+<h4>Phía JavaScript — dùng yarn</h4>
+<p>Có <b>hai</b> thư mục Node độc lập:</p>
+<table>
+  <thead><tr><th>Thư mục</th><th>Dùng để</th><th>Lockfile</th></tr></thead>
+  <tbody>
+    <tr><td><code>frontend/</code></td><td>Giao diện Vue chính (SPA)</td><td>Có <b>cả</b> <code>yarn.lock</code> <b>và</b> <code>package-lock.json</code></td></tr>
+    <tr><td><code>ui_tests/</code></td><td>Kiểm thử giao diện bằng Playwright</td><td><code>package-lock.json</code></td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Cảnh báo: hai lockfile cùng tồn tại trong <code>frontend/</code></b>
+  Có cả <code>yarn.lock</code> và <code>package-lock.json</code> nghĩa là <b>đã có người dùng npm, người dùng yarn</b>.
+  Điều này gây "trên máy tôi chạy được" vì hai công cụ có thể chốt phiên bản khác nhau.
+  <p style="margin:6px 0"><b>Bằng chứng yarn mới là chuẩn:</b> <code>docker/Containerfile</code> chạy <code>yarn build</code>, và tài liệu dự án luôn nhắc <code>yarn build</code> (không phải <code>npm run build</code>).</p>
+  <p style="margin:6px 0"><b>Vậy hãy dùng yarn</b>, và đề xuất nhóm xóa <code>frontend/package-lock.json</code>.</p>
+</div>
+
+<pre><code>cd apps/supplycore/frontend
+yarn install                      # cài đúng theo yarn.lock
+yarn add chart.js                 # thêm thư viện (tự cập nhật yarn.lock)
+yarn add -D playwright            # thêm thư viện chỉ dùng lúc phát triển
+yarn build                        # build ra supplycore/public/frontend/</code></pre>
+
+<p><b>Thư viện chính đang dùng</b> (từ <code>frontend/package.json</code>):</p>
+<table>
+  <thead><tr><th>Gói</th><th>Phiên bản</th><th>Dùng làm gì</th></tr></thead>
+  <tbody>
+    <tr><td><code>vue</code></td><td>^3.4.21</td><td>Khung giao diện chính</td></tr>
+    <tr><td><code>vue-router</code></td><td>^4.3.0</td><td>Điều hướng giữa các trang trong SPA</td></tr>
+    <tr><td><code>pinia</code></td><td>^2.1.7</td><td>Lưu trạng thái dùng chung (người đăng nhập, quyền…)</td></tr>
+    <tr><td><code>frappe-ui</code></td><td>^0.1.84</td><td>Bộ thành phần giao diện của Frappe</td></tr>
+    <tr><td><code>chart.js</code> + <code>vue-chartjs</code></td><td>^4.4.2 / ^5.3.0</td><td>Vẽ biểu đồ trên Dashboard</td></tr>
+    <tr><td><code>jsbarcode</code></td><td>^3.12.3</td><td>Sinh mã vạch cho lô hàng &amp; vị trí kệ</td></tr>
+    <tr><td><code>vite</code></td><td>^6.4.2</td><td>Công cụ build (rất nhanh)</td></tr>
+    <tr><td><code>vite-plugin-pwa</code></td><td>^1.3.0</td><td>Biến web thành ứng dụng cài được (PWA)</td></tr>
+    <tr><td><code>tailwindcss</code></td><td>^3.4.1</td><td>Bộ class CSS dựng giao diện nhanh</td></tr>
+    <tr><td><code>playwright</code></td><td>^1.59.1</td><td>Điều khiển trình duyệt để kiểm thử</td></tr>
+    <tr><td><code>sharp</code></td><td>^0.34.5</td><td>Xử lý ảnh — dùng ở <code>yarn icons</code> sinh icon PWA</td></tr>
+  </tbody>
+</table>
+
+<!-- ---------- 4g ---------- -->
+<h3>4g. Kiểm thử — có tới NĂM hệ thống khác nhau</h3>
+
+<div class="box warn">
+  <b class="lbl">Đừng gộp chúng làm một</b>
+  Dự án dùng 5 bộ kiểm thử riêng biệt, chạy bằng 5 lệnh khác nhau. Biết cái nào dùng khi nào sẽ tiết kiệm rất nhiều thời gian.
+</div>
+
+<h4>(1) Test nghiệp vụ Python — chạy qua bench</h4>
+<p>Quy ước của nhóm: mỗi file test có hàm <code>run()</code>, và <b>docstring đầu file ghi luôn lệnh chạy</b>. Ví dụ thật từ <code>supplycore/tests/mvl_rule_test.py</code>:</p>
+<pre><code>"""Test GĐ MVL — Workstream D: rule công nợ + chặn tồn lúc gọi hàng.
+...
+Run: bench --site supplycore-miyano.local execute supplycore.tests.mvl_rule_test.run
+"""</code></pre>
+<pre><code>cd ~/frappe-bench-yhct
+bench --site supplycore-miyano.local execute supplycore.tests.mvl_rule_test.run
+bench --site supplycore-miyano.local execute supplycore.tests.qi_permission_test.run</code></pre>
+<p><b>Có 68 file test</b> trong <code>supplycore/tests/</code> — 56 file <code>*_test.py</code> và 12 file <code>smoke_*.py</code>. Vài cái tiêu biểu:</p>
+<table>
+  <thead><tr><th>File</th><th>Kiểm cái gì</th></tr></thead>
+  <tbody>
+    <tr><td><code>mvl_e2e_test.py</code></td><td>Chạy trọn luồng bán hàng đầu-cuối</td></tr>
+    <tr><td><code>portal_isolation_test.py</code></td><td><b>Rủi ro số 1 (RSK-01)</b> — khách A không được thấy dữ liệu khách B</td></tr>
+    <tr><td><code>portal_internal_api_denied_test.py</code></td><td>Tài khoản khách không gọi được API nội bộ</td></tr>
+    <tr><td><code>fiscal_lock_test.py</code></td><td>Không ghi/hủy chứng từ vào kỳ đã khóa sổ</td></tr>
+    <tr><td><code>qi_permission_test.py</code></td><td>Chỉ QC Officer được kết luận kiểm định</td></tr>
+    <tr><td><code>sle_cancel_reversal_test.py</code></td><td>Hủy phiếu không làm âm tồn kho</td></tr>
+    <tr><td><code>recall_by_customer_test.py</code></td><td>Truy được lô đã bán tới từng khách</td></tr>
+  </tbody>
+</table>
+
+<h4>(2) Test giao diện — bộ chạy tự viết ở <code>frontend/tests/sandbox/</code></h4>
+<p>Nhóm tự viết một bộ chạy Playwright bằng Node (<code>runner.mjs</code>), gọi qua khoảng 20 script trong <code>package.json</code>:</p>
+<pre><code>cd apps/supplycore/frontend
+yarn test                 # chạy tất cả
+yarn test:login           # chỉ màn đăng nhập
+yarn test:crud            # thêm/sửa/xóa
+yarn test:uc:m7 &amp;&amp; …      # theo từng module (m1…m11)
+yarn test:headed          # HIỆN trình duyệt để xem tận mắt — rất hữu ích khi học
+yarn e2e                  # kịch bản đầu-cuối
+yarn e2e:headed</code></pre>
+
+<h4>(3) Test giao diện — Playwright chuẩn ở <code>ui_tests/</code></h4>
+<p>Dùng <code>@playwright/test</code> chính thống. Cấu hình ở <code>ui_tests/playwright.config.js</code>:</p>
+<pre><code>fullyParallel: false,     // các spec chia sẻ site → chạy tuần tự cho ổn định
+workers: 1,
+retries: process.env.CI ? 1 : 0,
+screenshot: 'only-on-failure',
+trace: 'retain-on-failure',
+video: 'retain-on-failure',</code></pre>
+<pre><code>cd apps/supplycore/ui_tests
+npm install
+npx playwright install chromium     # tải trình duyệt lần đầu
+bash run.sh                          # hoặc: npx playwright test
+npx playwright show-report report    # xem báo cáo có ảnh + video lỗi</code></pre>
+
+<h4>(4) Test kịch bản PowerShell — Pester</h4>
+<pre><code>Invoke-Pester -Path tests/installer/ -CI       # lệnh CI thật đang dùng</code></pre>
+<p>File: <code>tests/installer/test_run_vm.Tests.ps1</code> — kiểm kịch bản khởi động máy ảo phía Windows.</p>
+
+<h4>(5) Test shell — bats</h4>
+<p>File: <code>tests/installer/test_backup.bats</code>, <code>test_first_boot.bats</code>.</p>
+<div class="box warn">
+  <b class="lbl">Lưu ý: CI KHÔNG chạy các file bats</b>
+  Chú thích trong <code>build-installer.yml</code> ghi rõ: <i>"Discovers *.Tests.ps1 recursively (<b>the .bats files are ignored</b>)."</i> — muốn chạy phải chạy tay bằng <code>bats</code>.
+</div>
+
+<h4>Dữ liệu mẫu (fixture &amp; seed)</h4>
+<table>
+  <thead><tr><th>Nguồn</th><th>Nội dung</th></tr></thead>
+  <tbody>
+    <tr><td><code>scripts/setup_test_env.sh</code></td><td>Điểm vào chính — tạo user test + dữ liệu mẫu, ghi <code>ui_tests/seed-state.json</code></td></tr>
+    <tr><td><code>supplycore/setup/seed_*.py</code></td><td>9 kịch bản nạp dữ liệu: <code>seed_master_data</code>, <code>seed_test_users</code>, <code>seed_sales_demo</code>, <code>seed_ui_test</code>, <code>seed_uc_scenario</code>, <code>seed_10_full_flow</code>…</td></tr>
+    <tr><td><code>supplycore/tests/fixtures/</code></td><td>Dữ liệu cố định dùng trong test</td></tr>
+    <tr><td><code>supplycore/fixtures/</code></td><td>Vai trò &amp; quyền — được xuất/nhập tự động khi <code>migrate</code></td></tr>
+    <tr><td><code>ui_tests/seed-state.json</code></td><td>File cầu nối: script seed ghi ra, test đọc vào</td></tr>
+  </tbody>
+</table>
+<p>Tài khoản test có mật khẩu <b>ghi thẳng trong script</b>: <code>TestPass123!</code> — chấp nhận được vì <b>chỉ dùng cho site test cục bộ</b>. Tuyệt đối không dùng mẫu này cho site thật.</p>
+
+<!-- ---------- 4h ---------- -->
+<h3>4h. Chất lượng code — linter &amp; formatter</h3>
+
+<div class="box crit">
+  <b class="lbl">Đây là khoảng trống lớn nhất của dự án</b>
+  <table style="margin:8px 0">
+    <thead><tr><th>Công cụ</th><th>Trong repo supplycore?</th></tr></thead>
+    <tbody>
+      <tr><td><code>.pre-commit-config.yaml</code></td><td><span class="tag no">Không có</span></td></tr>
+      <tr><td>ruff / flake8 / pylint</td><td><span class="tag no">Không có cấu hình</span></td></tr>
+      <tr><td>black / isort</td><td><span class="tag no">Không có cấu hình</span></td></tr>
+      <tr><td>eslint / prettier</td><td><span class="tag no">Không có cấu hình</span></td></tr>
+      <tr><td>mypy / kiểm kiểu</td><td><span class="tag no">Không có cấu hình</span></td></tr>
+      <tr><td>Lint trong CI</td><td><span class="tag no">Không có</span> — cả 2 workflow đều không lint</td></tr>
+    </tbody>
+  </table>
+  <b>Kết luận:</b> chất lượng code hiện dựa hoàn toàn vào <b>kỷ luật cá nhân và review thủ công</b>.
+</div>
+
+<div class="box warn">
+  <b class="lbl">Đừng nhầm: pre-commit thuộc app KHÁC</b>
+  README của <code>apps/miyano_portal</code> có ghi <i>"This app uses <code>pre-commit</code> for code formatting and linting"</i>.
+  Đó là <b>app miyano_portal</b>, <b>không phải supplycore</b>. Nếu bạn làm việc trên supplycore mà đi tìm pre-commit thì sẽ không thấy gì.
+</div>
+
+<p><b>Nếu nhóm muốn bổ sung</b> (gợi ý, chưa phải quyết định của nhóm) — tạo <code>.pre-commit-config.yaml</code>:</p>
+<pre><code>repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.0
+    hooks: [{ id: ruff, args: [--fix] }, { id: ruff-format }]</code></pre>
+<pre><code>pip install pre-commit
+pre-commit install          # từ giờ mỗi lần commit sẽ tự kiểm</code></pre>
+
+<p><b>Điểm sáng cần ghi nhận:</b> tuy thiếu công cụ tự động, code trong dự án có <b>chú thích tiếng Việt rất dày và giải thích lý do</b> — mức chất lượng này cao hơn nhiều dự án có đủ linter. Ví dụ thật:</p>
+<pre><code># "Đang xử lý" = đã có phiếu giao nháp đang soạn hàng cho SO này (đặt ở
+# delivery_create khi submit=0). Vẫn cho lưu/soạn phiếu nháp đó tiếp.
+if so_status not in ("Đã duyệt", "Đang xử lý"):</code></pre>
+
+<!-- ---------- 4i ---------- -->
+<h3>4i. Công cụ thử API</h3>
+
+<div class="box crit">
+  <b class="lbl">Không có trong repo</b>
+  Đã tìm khắp repo: <b>không có</b> bộ sưu tập Postman (<code>*postman*</code>), Bruno (<code>*.bru</code>), Insomnia, hay file <code>.http</code>/<code>.rest</code>.
+</div>
+
+<p>Nhóm thử API bằng cách khác — quan sát được từ chính code CI và test:</p>
+<pre><code># 1. curl — dùng thật trong build-image.yml
+curl -fsS -H 'Host: smoke.localhost' \
+     http://localhost:8080/assets/supplycore/frontend/index.js -o /dev/null
+
+# 2. bench console — chạy Python trực tiếp trong ngữ cảnh site (mạnh nhất)
+bench --site supplycore-miyano.local console
+&gt;&gt;&gt; frappe.get_doc("SC Sales Order", "SC-SO-2026-00001").status
+
+# 3. bench execute — gọi thẳng một hàm
+bench --site supplycore-miyano.local execute \
+      supplycore.api.kpi.get_executive_dashboard</code></pre>
+
+<p><b>API của dự án ở đâu:</b> <b>103 hàm</b> có <code>@frappe.whitelist()</code> nằm trong <code>supplycore/api/</code> (17 file) — ví dụ <code>frontend.py</code> (25 hàm), <code>portal.py</code> (16 hàm, dành riêng cho khách), <code>sales.py</code> (9 hàm), <code>data_io.py</code>, <code>users.py</code>, <code>warehouse_map.py</code>, <code>voucher_io.py</code>, <code>wms.py</code>, <code>kpi.py</code>, <code>fefo.py</code>. Tính cả các hàm nằm trong controller của từng DocType thì toàn app có <b>217</b> hàm whitelisted.</p>
+
+<!-- ---------- 4j ---------- -->
+<h3>4j. Cơ sở dữ liệu — xem, truy vấn, sao lưu</h3>
+
+<h4>Mở cửa sổ SQL</h4>
+<pre><code>cd ~/frappe-bench-yhct
+bench --site supplycore-miyano.local mariadb</code></pre>
+<p>Lệnh này tự lấy tên DB và mật khẩu từ <code>site_config.json</code> — bạn không cần biết mật khẩu.</p>
+<pre><code>-- Tên bảng = "tab" + tên DocType
+SELECT name, customer, status, total_amount
+FROM `tabSC Sales Order`
+ORDER BY creation DESC LIMIT 10;
+
+-- Tính tồn kho (hệ thống KHÔNG lưu số tồn cố định)
+SELECT item, warehouse, SUM(qty_change) AS ton
+FROM `tabSC Stock Ledger Entry`
+GROUP BY item, warehouse HAVING ton &lt;&gt; 0;</code></pre>
+
+<h4>Truy vấn từ Python (an toàn hơn, khuyến nghị)</h4>
+<pre><code>bench --site supplycore-miyano.local console
+&gt;&gt;&gt; frappe.db.get_all("SC Sales Order",
+...     filters={"status": "Đã duyệt"},
+...     fields=["name", "customer", "total_amount"], limit=10)</code></pre>
+
+<h4>Công cụ đồ họa</h4>
+<p><span class="tag no">Không có trong repo</span> — không có cấu hình DBeaver/TablePlus. Muốn dùng, kết nối thủ công: host <code>127.0.0.1</code>, cổng <code>3306</code>, tên DB và mật khẩu lấy từ <code>site_config.json</code> (<b>đừng chép giá trị đó đi đâu</b>).</p>
+
+<h4>Sao lưu &amp; khôi phục</h4>
+<pre><code># Sao lưu (kèm file đính kèm)
+bench --site supplycore-miyano.local backup --with-files
+# Kết quả ở: sites/supplycore-miyano.local/private/backups/
+
+# Khôi phục
+bench --site supplycore-miyano.local restore &lt;đường-dẫn-file.sql.gz&gt;</code></pre>
+
+<p><b>Cơ chế sao lưu tự động cho bản appliance</b> (khách hàng dùng file .exe):</p>
+<table>
+  <thead><tr><th>File</th><th>Vai trò</th></tr></thead>
+  <tbody>
+    <tr><td><code>guest/backup.sh</code></td><td>Kịch bản sao lưu chạy trong máy ảo</td></tr>
+    <tr><td><code>guest/backup.timer</code> + <code>backup.service</code></td><td>Hẹn giờ systemd — tự chạy backup định kỳ</td></tr>
+    <tr><td><code>installer/launcher/backup-export.ps1</code></td><td>Xuất bản sao ra máy Windows của khách</td></tr>
+    <tr><td><code>installer/launcher/restore.ps1</code></td><td>Khôi phục từ bản sao</td></tr>
+    <tr><td><code>restic</code></td><td>Công cụ backup có mã hóa &amp; khử trùng lặp — cài sẵn trong <code>docker/Containerfile</code></td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <b class="lbl">Nhắc lại: sao lưu DB không đủ</b>
+  Phải giữ <b>cùng lúc</b> file <code>.sql.gz</code> <b>và</b> <code>site_config.json</code> (chứa <code>encryption_key</code>).
+  Có DB mà mất khóa thì mọi mật khẩu/dữ liệu mã hóa trong đó không đọc được nữa.
+</div>
+
+<!-- ---------- 4k ---------- -->
+<h3>4k. Quản lý bí mật &amp; cấu hình</h3>
+
+<table>
+  <thead><tr><th>Nơi chứa bí mật</th><th>Chứa gì</th><th>Có trong git?</th></tr></thead>
+  <tbody>
+    <tr><td><code>sites/&lt;site&gt;/site_config.json</code></td><td>Mật khẩu DB, khóa mã hóa</td><td><span class="tag no">Không</span> — nằm ngoài repo app</td></tr>
+    <tr><td><code>sites/common_site_config.json</code></td><td>Cổng Redis, số worker, cổng socketio</td><td><span class="tag no">Không</span></td></tr>
+    <tr><td><code>deploy/.env</code></td><td>Mật khẩu admin &amp; DB khi deploy</td><td><span class="tag no">Không</span> — <code>.gitignore</code> chặn <code>.env</code></td></tr>
+    <tr><td><code>deploy/.env.example</code></td><td><b>Mẫu</b> với giá trị giả (<code>changeme-…</code>)</td><td><span class="tag yes">Có</span> — đúng cách làm</td></tr>
+    <tr><td>GitHub Secrets</td><td><code>APP_GH_TOKEN</code> (token đọc repo riêng tư)</td><td><span class="tag no">Không</span> — lưu ở GitHub</td></tr>
+    <tr><td><code>certs/</code> (bench root)</td><td>Chứng chỉ &amp; khóa riêng HTTPS</td><td><span class="tag no">Không</span></td></tr>
+  </tbody>
+</table>
+
+<h4>Cách nhóm xử lý token trong CI — đáng học</h4>
+<p>File <code>docker/apps.json.template</code> dùng một chỗ trống, không phải token thật:</p>
+<pre><code>[
+  {
+    "url": "https://__TOKEN__@github.com/mvl26/supplycore",
+    "branch": "main"
+  }
+]</code></pre>
+<p>CI thay chỗ trống rồi truyền vào Docker qua <b>secret mount</b> (không nằm lại trong ảnh):</p>
+<pre><code>sed "s|__TOKEN__|${{ secrets.APP_GH_TOKEN }}|" \
+  supplycore/docker/apps.json.template &gt; "${RUNNER_TEMP}/apps.json"
+# rồi:  secret-files: apps_json=${{ runner.temp }}/apps.json</code></pre>
+<p>Chú thích trong workflow nói rõ ý đồ: <i>"passed via a buildx secret mount, <b>never baked into a layer</b>"</i>.</p>
+
+<h4>Bốn quy tắc bắt buộc</h4>
+<ol>
+  <li><b>Không bao giờ</b> commit <code>.env</code>, <code>site_config.json</code>, file <code>.key</code>/<code>.crt</code>.</li>
+  <li><b>Không dán</b> mật khẩu/token vào commit message, issue, chat, hay tài liệu.</li>
+  <li>Chỉ commit file <b>mẫu</b> có giá trị giả (<code>.env.example</code>).</li>
+  <li>Lỡ commit bí mật → <b>coi như đã lộ</b>. Phải <b>đổi ngay</b> mật khẩu/token đó, chứ xóa commit là chưa đủ.</li>
+</ol>
+
+<!-- ---------- 4l ---------- -->
+<h3>4l. Giám sát &amp; log</h3>
+
+<h4>Log file trên máy dev</h4>
+<pre><code>cd ~/frappe-bench-yhct/logs
+ls
+# bench.log  database.log  frappe.log  ipython.log  node-socketio.error.log
+# worker.log  worker.error.log  (+ các bản xoay vòng .1 .2 .3 …)
+
+tail -f logs/frappe.log            # theo dõi lỗi ứng dụng theo thời gian thực
+tail -f logs/worker.error.log      # lỗi việc nền
+grep -i "traceback" logs/frappe.log | tail -20</code></pre>
+
+<h4>Log qua supervisor</h4>
+<pre><code>sudo supervisorctl status                                   # cái nào đang chạy
+sudo supervisorctl tail -f frappe-bench-yhct-frappe-web      # log web
+sudo supervisorctl restart frappe-bench-yhct-frappe-schedule # khởi động lại 1 tiến trình</code></pre>
+
+<h4>Log trong Docker</h4>
+<pre><code>docker compose logs -f backend
+docker compose logs --tail=100 scheduler
+docker compose logs create-site      # xem vì sao tạo site thất bại</code></pre>
+
+<h4>Nhật ký lỗi ngay trong ứng dụng</h4>
+<p>Frappe tự ghi lỗi vào DocType <b>Error Log</b>, xem tại <code>/app/error-log</code>. Code SupplyCore chủ động ghi vào đây khi gửi email hỏng, ví dụ:</p>
+<pre><code>except Exception as e:
+    frappe.log_error(str(e)[:1000], "FC notify email")</code></pre>
+<p>Nguyên tắc thiết kế đáng học: <b>lỗi gửi email không được làm hỏng giao dịch nghiệp vụ</b> — nên chỗ nào gửi mail cũng bọc <code>try/except</code>.</p>
+
+<h4>Giám sát ngoài</h4>
+<div class="box crit">
+  <b class="lbl">Không có trong repo</b>
+  <b>Không có Sentry</b>, không có Prometheus/Grafana, không có APM. Đã tìm chuỗi "sentry" trên toàn repo: không kết quả.
+  Việc theo dõi lỗi hiện hoàn toàn thủ công qua log file và Error Log.
+</div>
+
+<!-- ---------- 4m ---------- -->
+<h3>4m. Quản lý công việc &amp; tài liệu</h3>
+
+<div class="box crit">
+  <b class="lbl">Không có trong repo</b>
+  Đã tìm "jira", "notion", "trello", "confluence", "slack" trên toàn bộ file <code>.md</code>/<code>.py</code>/<code>.yml</code>: <b>không có dấu vết nào</b>.
+  Cũng không có GitHub Projects hay issue template.
+</div>
+
+<p><b>Vậy nhóm quản lý công việc bằng gì?</b> Bằng <b>chính tài liệu trong repo</b> — cách làm khá đặc biệt và hiệu quả:</p>
+<table>
+  <thead><tr><th>Nơi lưu</th><th>Vai trò</th></tr></thead>
+  <tbody>
+    <tr><td><b>Commit message có phần thân dài</b></td><td>Ghi lại <i>lý do</i> thay đổi, không chỉ <i>cái gì</i> — đóng vai trò như nhật ký dự án</td></tr>
+    <tr><td><code>docs/ba-miyano/SupplyCore_MVL_BA.html</code></td><td>Tài liệu phân tích nghiệp vụ đầy đủ (bản v1.1) — xem tập 03</td></tr>
+    <tr><td><code>docs/ba-miyano/PHAN_TICH_HUONG_THIET_KE_MVL.md</code></td><td>Biên bản quyết định kiến trúc (chuyển từ bản bệnh viện sang bản phân phối)</td></tr>
+    <tr><td><code>docs/_manual_build/</code></td><td>Nguồn tài liệu Hướng dẫn sử dụng cho người dùng cuối (dạng DSL, build ra .docx)</td></tr>
+    <tr><td><code>supplycore/m*/README.md</code></td><td>Ghi chú kỹ thuật theo từng module</td></tr>
+    <tr><td><code>docs/onboarding/</code></td><td><b>Chính là bộ tài liệu bạn đang đọc</b></td></tr>
+  </tbody>
+</table>
+
+<!-- ---------- 4n ---------- -->
+<h3>4n. Công cụ khác phát hiện trong repo</h3>
+
+<table>
+  <thead><tr><th>Công cụ</th><th>Là gì / dùng làm gì</th><th>File liên quan</th></tr></thead>
+  <tbody>
+    <tr><td><b>Vite</b></td><td>Công cụ build giao diện Vue, rất nhanh. Cấu hình PWA phức tạp nằm ở đây.</td><td><code>frontend/vite.config.js</code></td></tr>
+    <tr><td><b>Tailwind CSS</b></td><td>Bộ class CSS. Nhóm định nghĩa bảng màu thương hiệu riêng: <code>sc-navy #1F4E79</code>, <code>sc-royal #2E75B6</code>…</td><td><code>frontend/tailwind.config.js</code></td></tr>
+    <tr><td><b>Workbox / vite-plugin-pwa</b></td><td>Biến SPA thành ứng dụng cài được, chạy được khi mất mạng. Cấu hình có nhiều xử lý đặc biệt vì service worker phục vụ ở gốc <code>/sw.js</code> nhưng asset ở <code>/assets/supplycore/frontend/</code>.</td><td><code>frontend/vite.config.js</code>, <code>supplycore/pwa.py</code></td></tr>
+    <tr><td><b>python-docx</b></td><td>Thư viện Python sinh file Word — dùng để xuất tài liệu BA và Hướng dẫn sử dụng ra <code>.docx</code></td><td><code>docs/ba-miyano/build_ba_docx.py</code>, <code>docs/_manual_build/build_docx.py</code></td></tr>
+    <tr><td><b>openpyxl / Excel</b></td><td>Nhập–xuất phiếu cha-con bằng Excel 2 sheet</td><td><code>supplycore/api/voucher_io.py</code>, <code>data_io.py</code></td></tr>
+    <tr><td><b>Jinja2</b></td><td>Ngôn ngữ mẫu để làm Print Format (hóa đơn mẫu TT99, phiếu nhập kho)</td><td><code>supplycore/patches/v0_11/create_tt99_print_formats.py</code></td></tr>
+    <tr><td><b>ngrok</b></td><td>Mở đường hầm để người ngoài truy cập máy dev qua Internet (dùng khi demo)</td><td><span class="tag no">Không trong repo</span> — cấu hình ở systemd trên máy, không commit</td></tr>
+    <tr><td><b>sharp</b></td><td>Xử lý ảnh — sinh bộ icon PWA nhiều kích cỡ</td><td><code>frontend/scripts/gen-icons.mjs</code>, chạy bằng <code>yarn icons</code></td></tr>
+    <tr><td><b>git worktree</b></td><td>Mở nhiều nhánh cùng lúc ở nhiều thư mục</td><td><code>.claude/worktrees/m7-bugfix/</code></td></tr>
+    <tr><td><b>self-signed HTTPS</b></td><td>Chứng chỉ tự ký cho site dev</td><td><code>certs/supplycore-miyano.local.crt</code> / <code>.key</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 5 ══════════════════════════════ -->
+<h2>5. Công cụ nào dùng ở giai đoạn nào</h2>
+
+<table>
+  <thead>
+    <tr><th>Giai đoạn</th><th>Công cụ chính</th><th>Lệnh / thao tác tiêu biểu</th><th>Kết quả cần đạt</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>1. Thiết kế<br>nghiệp vụ</b></td>
+      <td>Tài liệu BA HTML · Claude Code · skill <code>ui-ux-pro-max</code></td>
+      <td>Đọc <code>docs/ba-miyano/SupplyCore_MVL_BA.html</code>; hỏi Claude "quy tắc BRU-SO-001 làm gì?"</td>
+      <td>Hiểu rõ quy tắc nghiệp vụ trước khi động vào code</td>
+    </tr>
+    <tr>
+      <td><b>2. Viết code</b></td>
+      <td>Claude Code · trình soạn thảo tự chọn · git worktree</td>
+      <td><code>claude</code> · <code>git checkout -b feat/&lt;việc&gt;</code></td>
+      <td>Code chạy được trên máy mình</td>
+    </tr>
+    <tr>
+      <td><b>3. Chạy thử</b></td>
+      <td>bench · yarn build · <code>scripts/setup_test_env.sh</code></td>
+      <td><code>bench start</code> · <code>yarn build</code> · Ctrl+Shift+R</td>
+      <td>Thấy thay đổi hiện lên đúng trên màn hình</td>
+    </tr>
+    <tr>
+      <td><b>4. Kiểm thử</b></td>
+      <td>bench execute · Playwright (2 bộ) · Pester · bats</td>
+      <td><code>bench --site … execute supplycore.tests.&lt;mod&gt;.run</code><br><code>yarn test</code> · <code>npx playwright test</code></td>
+      <td>Test xanh, không làm hỏng chức năng cũ</td>
+    </tr>
+    <tr>
+      <td><b>5. Review</b></td>
+      <td>git · GitHub PR · <b>đọc thủ công</b></td>
+      <td><code>git diff</code> · mở PR trên GitHub</td>
+      <td><span class="tag no">Không có lint/CI tự động ở bước này</span> — người review phải đọc kỹ</td>
+    </tr>
+    <tr>
+      <td><b>6. Đóng gói</b></td>
+      <td>GitHub Actions · Docker Buildx · Packer · Inno Setup</td>
+      <td><code>git tag v1.2.0 &amp;&amp; git push --tags</code></td>
+      <td>Ảnh Docker trên GHCR + file <code>.exe</code> ở GitHub Release</td>
+    </tr>
+    <tr>
+      <td><b>7. Triển khai</b></td>
+      <td>Docker Compose <b>hoặc</b> file <code>.exe</code></td>
+      <td><code>docker compose up -d</code> · hoặc khách bấm đúp <code>SupplyCore-Setup-*.exe</code></td>
+      <td>Hệ thống chạy trên máy khách</td>
+    </tr>
+    <tr>
+      <td><b>8. Vận hành</b></td>
+      <td>supervisor · log file · Error Log · <code>bench backup</code> · restic</td>
+      <td><code>sudo supervisorctl status</code> · <code>tail -f logs/frappe.log</code> · <code>bench --site … backup --with-files</code></td>
+      <td>Hệ thống chạy ổn, có bản sao lưu</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Chỗ yếu nhất của quy trình: bước 5</b>
+  Không có CI chạy khi mở PR ⇒ không có lưới an toàn tự động. Vì thế <b>bước 4 (kiểm thử thủ công) trở nên cực kỳ quan trọng</b>.
+  Hãy tự chạy test trước khi mở PR, đừng trông chờ máy làm hộ.
+</div>
+
+<!-- ══════════════════════════════ 6 ══════════════════════════════ -->
+<h2>6. Từ điển thuật ngữ</h2>
+
+<table>
+  <thead><tr><th>Thuật ngữ</th><th>Nghĩa một câu</th></tr></thead>
+  <tbody>
+    <tr><td><b>Frappe</b></td><td>Bộ khung phần mềm bằng Python để dựng ứng dụng quản trị — nền tảng của toàn bộ dự án.</td></tr>
+    <tr><td><b>ERPNext</b></td><td>Bộ ứng dụng ERP dựng sẵn trên Frappe; SupplyCore tuyên bố không phụ thuộc nó (nhưng xem mâu thuẫn ở mục 2.3).</td></tr>
+    <tr><td><b>bench</b></td><td>Công cụ dòng lệnh quản lý mọi thứ của Frappe: tạo site, cài app, chạy máy chủ, chạy test.</td></tr>
+    <tr><td><b>site</b></td><td>Một "bản chạy" độc lập có cơ sở dữ liệu riêng; một bench có thể chứa nhiều site.</td></tr>
+    <tr><td><b>app</b></td><td>Một gói tính năng cài vào site; <code>supplycore</code> chính là app của nhóm.</td></tr>
+    <tr><td><b>DocType</b></td><td>Định nghĩa một loại dữ liệu — vừa là bảng trong DB, vừa là màn hình nhập liệu. Ví dụ <code>SC Sales Order</code>.</td></tr>
+    <tr><td><b>docstatus</b></td><td>Trạng thái chứng từ: 0 = Nháp, 1 = Đã nộp, 2 = Đã hủy.</td></tr>
+    <tr><td><b>child table</b></td><td>Bảng con nằm trong một chứng từ, ví dụ danh sách dòng hàng của một đơn.</td></tr>
+    <tr><td><b>migrate</b></td><td>Lệnh đồng bộ cấu trúc dữ liệu vào DB và chạy các bản vá — <b>phải chạy sau mỗi lần đổi DocType</b>.</td></tr>
+    <tr><td><b>patch</b></td><td>Đoạn mã chạy đúng một lần khi migrate, để sửa/chuyển đổi dữ liệu cũ. Danh sách ở <code>patches.txt</code>.</td></tr>
+    <tr><td><b>fixture</b></td><td>Dữ liệu cấu hình (vai trò, quyền) được xuất/nhập tự động khi migrate.</td></tr>
+    <tr><td><b>whitelist</b></td><td>Đánh dấu <code>@frappe.whitelist()</code> cho phép gọi một hàm Python từ trình duyệt qua API.</td></tr>
+    <tr><td><b>hook</b></td><td>Điểm móc trong <code>hooks.py</code> để chen logic của mình vào vòng đời Frappe (khi lưu, khi nộp, theo lịch…).</td></tr>
+    <tr><td><b>scheduler</b></td><td>Bộ hẹn giờ chạy tác vụ định kỳ — dự án có 11 tác vụ (quét tồn tối thiểu, quét lô sắp hết hạn…).</td></tr>
+    <tr><td><b>worker</b></td><td>Tiến trình nền xử lý việc nặng để người dùng không phải chờ.</td></tr>
+    <tr><td><b>SPA</b></td><td>Single Page Application — ứng dụng web một trang; giao diện Vue ở <code>/supplycore</code> là SPA.</td></tr>
+    <tr><td><b>PWA</b></td><td>Progressive Web App — web cài được như ứng dụng, chạy được khi mất mạng.</td></tr>
+    <tr><td><b>service worker</b></td><td>Đoạn mã chạy nền trong trình duyệt, lưu bản sao trang — <b>chính là thủ phạm khiến bạn thấy giao diện cũ sau khi build</b>.</td></tr>
+    <tr><td><b>Vite</b></td><td>Công cụ đóng gói mã JavaScript/Vue thành file trình duyệt hiểu được.</td></tr>
+    <tr><td><b>supervisor</b></td><td>Chương trình trông coi các tiến trình nền, tự bật lại khi chúng chết.</td></tr>
+    <tr><td><b>gunicorn</b></td><td>Máy chủ chạy ứng dụng Python; ở đây chạy 33 tiến trình song song trên cổng 8002.</td></tr>
+    <tr><td><b>GHCR</b></td><td>GitHub Container Registry — kho lưu ảnh Docker của GitHub.</td></tr>
+    <tr><td><b>Packer</b></td><td>Công cụ dựng ảnh đĩa máy ảo tự động, dùng cho bản cài Windows.</td></tr>
+    <tr><td><b>KVM</b></td><td>Công nghệ ảo hóa của Linux; job <code>guest</code> trong CI bắt buộc phải có.</td></tr>
+    <tr><td><b>smoke test</b></td><td>Bài kiểm nhanh xem hệ thống có "lên" được không, trước khi kiểm sâu.</td></tr>
+    <tr><td><b>FEFO</b></td><td>First-Expiry-First-Out — quy tắc ưu tiên xuất lô gần hết hạn nhất.</td></tr>
+    <tr><td><b>SLE</b></td><td>Stock Ledger Entry — sổ kho chỉ ghi thêm, không sửa; tồn kho luôn tính bằng tổng các dòng.</td></tr>
+    <tr><td><b>BRU-xxx</b></td><td>Mã quy tắc nghiệp vụ (Business RUle) trong dự án, ví dụ <code>BRU-SO-001</code>.</td></tr>
+    <tr><td><b>SC-Exxx</b></td><td>Mã lỗi nghiệp vụ do hệ thống ném ra, ví dụ <code>SC-E-DN-NOT-SCANNED</code>.</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 7 ══════════════════════════════ -->
+<h2>7. Tóm tắt: điều nên nhớ và điều cần hỏi</h2>
+
+<h3>7.1 Bảy điều dễ vấp nhất</h3>
+<ol>
+  <li><b>MariaDB đang failed</b> trên máy này → khởi động trước khi làm bất cứ gì (mục 1.2).</li>
+  <li><b><code>yarn build</code> là bước riêng</b>, <code>bench build</code> không build giao diện Vue (mục 3, Bước 8).</li>
+  <li><b>Hard refresh (Ctrl+Shift+R)</b> sau mỗi lần build, vì service worker giữ bản cũ.</li>
+  <li><b>Clone repo về sẽ không có <code>.claude/</code></b> — mất hết skill, phải xin chép tay (mục 4b).</li>
+  <li><b>Không có CI khi mở PR</b> — phải tự chạy test (mục 4d, 4g).</li>
+  <li><b>Không có linter/pre-commit</b> — chất lượng dựa vào kỷ luật cá nhân (mục 4h).</li>
+  <li><b>Dùng yarn, không dùng npm</b> ở <code>frontend/</code> dù có cả hai lockfile (mục 4f).</li>
+</ol>
+
+<h3>7.2 Sáu câu nên hỏi người trong nhóm ngay ngày đầu</h3>
+<ol>
+  <li><b>erpnext</b> đang ở nhánh <code>develop</code> — cố ý hay nhầm? Site có thực sự cài erpnext không?</li>
+  <li>App <b><code>miyano_portal</code></b> quan hệ thế nào với SupplyCore? Có đang dùng không?</li>
+  <li>Remote <b><code>miyano</code></b> khác <b><code>origin</code></b> ở điểm nào? Push vào đâu?</li>
+  <li>Quy trình <b>Pull Request &amp; review</b> cụ thể ra sao? Ai duyệt? Nhánh nào được bảo vệ?</li>
+  <li>Tôi lấy <b>thư mục <code>.claude/skills/</code></b> ở đâu để có bộ skill giống mọi người?</li>
+  <li>Có nên bổ sung <b>CLAUDE.md</b> và <b>pre-commit</b> không? Ai quyết?</li>
+</ol>
+
+<div class="box ok">
+  <b class="lbl">Điểm mạnh của dự án — đáng học theo</b>
+  Dù thiếu vài công cụ tự động, dự án này có những thói quen rất tốt:
+  <b>chú thích code bằng tiếng Việt giải thích LÝ DO</b> (không chỉ mô tả code làm gì),
+  <b>commit message có phần thân dài</b> ghi lại bối cảnh quyết định,
+  <b>CI kiểm tra hệ quả thật</b> (curl vào asset đã build, không chỉ xem lệnh có chạy xong),
+  và <b>tài liệu thừa nhận giới hạn</b> thay vì tô hồng (workflow ghi rõ runner nào sẽ fail và vì sao).
+  Hãy giữ những thói quen này.
+</div>
+
+</main>
+
+<footer class="pagefoot">
+  <b>SupplyCore MVL — Tài liệu nhập môn · Tập 01: Môi trường &amp; Bộ công cụ</b><br>
+  Ngày tạo: <b>03/08/2026</b> · Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.<br>
+  Mọi mật khẩu, khóa mã hóa, token và IP nội bộ đã được thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
+  Khi môi trường thay đổi, mã nguồn là chuẩn — hãy cập nhật tài liệu này theo.
+</footer>
+
+</body>
+</html>
