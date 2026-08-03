@@ -1,4 +1,4 @@
-"""UAT E2E — execute từng section trong UAT_PROCEDURE.md, ghi issues."""
+"""UAT E2E — chạy từng section kịch bản UAT trong file này, ghi issues."""
 
 import frappe
 from frappe.utils import today, add_days, flt, random_string

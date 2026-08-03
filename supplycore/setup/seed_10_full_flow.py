@@ -1,4 +1,4 @@
-"""Seed E2E full-flow cho 10 HĐ khung — theo docs/E2E_MAIN_FLOW_SCENARIO.md.
+"""Seed E2E full-flow cho 10 HĐ khung (xem docs/ba-miyano/SupplyCore_MVL_BA.html).
 
 Phải chạy `supplycore.setup.seed_10_framework_contracts.run` trước.
 

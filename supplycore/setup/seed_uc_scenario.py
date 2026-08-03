@@ -8,7 +8,7 @@ Three phases:
     2. seed_master()    — UOM, Warehouses, Suppliers, Items, FC, GL, Alert Rules
     3. seed_scenario()  — 10 phase transactional UC-05..34
 
-See MAIN_FLOW.md cùng folder cho mô tả flow đầy đủ.
+Mô tả nghiệp vụ tổng thể: docs/ba-miyano/SupplyCore_MVL_BA.html.
 """
 
 import frappe

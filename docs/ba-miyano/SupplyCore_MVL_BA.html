@@ -455,7 +455,6 @@ flowchart LR
         <tr><td><strong>SC Department</strong></td><td>Phòng ban</td><td>Đơn vị nội bộ dùng cho phân bổ chi phí &amp; lọc dashboard.</td></tr>
         <tr><td><strong>Bin Location</strong></td><td>Vị trí lưu trong kho</td><td><code>bin_code</code>, sức chứa, cách ly, barcode (chi tiết ở M4).</td></tr>
         <tr><td><strong>SC GL Account</strong></td><td>Tài khoản kế toán</td><td>Danh mục TK cho sổ cái tự quản (131, 331, 511, 632, 156/152, 3331…).</td></tr>
-        <tr><td><strong>SC Audit Log</strong></td><td>Nhật ký thao tác</td><td>Ghi hành vi nhạy cảm; nguồn cho điều tra (M10) &amp; kiểm toán.</td></tr>
         <tr><td><strong>SupplyCore Settings</strong> (Single)</td><td>Tham số hệ thống</td><td>36 tham số vận hành: ngưỡng duyệt (<code>po_approval_threshold</code>, <code>fc_executive_threshold</code>), FEFO (<code>fefo_strict_mode</code>, <code>fefo_min_shelf_life_days</code>, <code>enforce_fefo</code>), cảnh báo hạn dùng/HĐ, kho mặc định, <code>fiscal_lock_date</code>, tài khoản GL mặc định, kiểm soát tín dụng (<code>credit_check_enabled</code>, <code>default_credit_limit</code>), <code>block_order_on_insufficient_stock</code>, thông tin bên bán cho hóa đơn (<code>site_name</code>, <code>site_address</code>, <code>seller_tax_code</code>), sơ đồ mặt bằng kho, gateway SMS.</td></tr>
       </tbody>
     </table></div>
@@ -1210,6 +1209,7 @@ flowchart TB
         <tr><td>PDA Session, Pick List (M4)</td><td><span class="sev block">Chưa có</span></td><td>Thư mục stub, chưa có schema/controller. Nghiệp vụ soạn hàng hiện thực hiện <strong>trực tiếp trên Phiếu giao hàng</strong> (§12), không qua Pick List.</td></tr>
         <tr><td>Goods Receipt Discrepancy (M3)</td><td><span class="sev block">Chưa có</span></td><td>Thư mục stub. Lệch nhận hàng hiện xử lý bằng <code>over_received_qty</code> trên dòng Phiếu nhập + 3-way match ở M8.</td></tr>
         <tr><td>QC Checklist Template (M3)</td><td><span class="sev info">Di sản</span></td><td>DocType còn tồn tại nhưng đã <strong>ra khỏi luồng chính</strong> — thay bằng 5 tiêu chí mẫu điền sẵn trên Kiểm định.</td></tr>
+        <tr><td>SC Audit Log, Alert Rule (M0)</td><td><span class="sev block">Chưa có</span></td><td>Thư mục DocType rỗng (chỉ có <code>__init__.py</code>, không có schema/controller) và không hàm nào tham chiếu. Nhật ký kiểm toán hiện dựa trên <strong>bản ghi phiên bản (Version) sẵn có của Frappe</strong> — xem §21; cấu hình cảnh báo dùng <code>SC Alert Rule</code> ở M11. Tham số <code>audit_log_retention_days</code> trong Settings hiện chưa có DocType tương ứng.</td></tr>
         <tr><td>Báo cáo tài chính chi tiết (M8)</td><td><span class="sev warn">Một phần</span></td><td>KPI realtime + màn Báo cáo tài chính có; Trial Balance / AP Aging đầy đủ cấu hình qua Report Builder.</td></tr>
         <tr><td>SMS gateway (M11)</td><td><span class="sev info">Cấu hình</span></td><td>Kênh SMS cần khai báo <code>sms_gateway_endpoint</code>.</td></tr>
       </tbody>
@@ -1259,14 +1259,15 @@ cd frontend &amp;&amp; yarn build                     # build SPA → public/fro
         <tr><td><strong>1.1</strong></td><td>2026-08-03</td><td>
           <strong>Sửa sai so với code:</strong> gỡ quy tắc SC-E026 (ý kiến duyệt ≥10 ký tự) đã bị bỏ khỏi hệ thống; QC Checklist Template chuyển sang di sản (thay bằng 5 tiêu chí mẫu); <code>check_reorder_levels</code> chuyển sang cron 08:00; BRU-QC-002 nêu đúng role (QC Officer / SupplyCore Manager).<br>
           <strong>Bổ sung nghiệp vụ mới:</strong> §18 Đơn vị kép &amp; quy đổi; soạn hàng &amp; quét xác nhận phiếu giao (M7) với 10 mã lỗi mới; hủy phiếu giao bắt buộc lý do; duyệt &amp; kích hoạt HĐ khung hàng loạt (M1); thanh toán NCC 1 chạm (M8); §23.2 Hệ thống email thông báo; tự gắn HĐ khung NCC khi quét tồn tối thiểu (M2); số lô NCC &amp; xuất xứ/model trên lô và phiếu nhập; in nhãn lô hàng loạt; panel vị trí trên màn kho; chuỗi chứng từ O2C; lọc &amp; tự nạp danh mục HĐ khung bán.<br>
-          <strong>Bổ sung minh bạch:</strong> BRU-CUS-001, BRU-INV-002, BRU-SEC-001, SC-E-FC-STAGE, SC-E-PE-PAYMENT-HOLD, SC-E-FC-BULK-ROLE vào danh mục quy tắc; Demand Forecast &amp; Goods Receipt Discrepancy vào danh sách stub; bổ sung DocType nền còn thiếu (SC Department, SC Item Barcode, SC UOM, SC Supplier Item Group, SC Audit Log, SC QI Reading, SC Payment Reference, Putaway Rule).
+          <strong>Bổ sung minh bạch:</strong> BRU-CUS-001, BRU-INV-002, BRU-SEC-001, SC-E-FC-STAGE, SC-E-PE-PAYMENT-HOLD, SC-E-FC-BULK-ROLE vào danh mục quy tắc; Demand Forecast &amp; Goods Receipt Discrepancy vào danh sách stub; bổ sung DocType nền còn thiếu (SC Department, SC Item Barcode, SC UOM, SC Supplier Item Group, SC QI Reading, SC Payment Reference, Putaway Rule).
         </td></tr>
       </tbody>
     </table></div>
 
     <div class="foot">
       <p><strong>SupplyCore MVL</strong> — Tài liệu Phân tích Nghiệp vụ v1.1 · Công ty Miyano Việt Nam.<br>
-      Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code> (2026-08-03). Khi hệ thống thay đổi, code sống là chuẩn — tài liệu cần cập nhật theo.</p>
+      Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code> tại thời điểm 2026-08-03, <strong>bao gồm cả phần đang trong thư mục làm việc chưa commit</strong> (soạn hàng &amp; quét xác nhận, đơn vị kép, hệ thống email, duyệt hàng loạt, thanh toán 1 chạm). Tài liệu mô tả hệ thống <em>đang chạy</em>, nên đi trước nhánh cho tới khi các thay đổi đó được commit.<br>
+      Khi hệ thống thay đổi, code sống là chuẩn — tài liệu cần cập nhật theo.</p>
     </div>
   </section>
 </main>

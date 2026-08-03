@@ -6,7 +6,7 @@ Bypass workflow 3-tier (giống pattern seed_uc_scenario._seed_framework_contrac
 Usage:
     bench --site supplycore execute supplycore.setup.seed_10_framework_contracts.run
 
-Tham chiếu: docs/E2E_MAIN_FLOW_SCENARIO.md Bước 1.
+Tham chiếu nghiệp vụ: docs/ba-miyano/SupplyCore_MVL_BA.html (§M1).
 """
 
 import frappe
