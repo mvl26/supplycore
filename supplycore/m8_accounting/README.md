@@ -178,7 +178,6 @@ GET /api/method/supplycore.api.accounting.supplier_balance?supplier=X
 
 1. Script Report: Trial Balance + AP Aging (UC-26 chi tiết)
 2. Workflow phê duyệt PE Manager → Executive với multi-stage approval
-3. BHYT reconciliation report (đã có khái niệm trong M7, cần tổng hợp ở M8)
 4. Foreign currency support
 5. Bank reconciliation
 

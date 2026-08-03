@@ -43,7 +43,7 @@ GET /api/method/supplycore.api.kpi.get_warehouse_dashboard?warehouse=X
 
 Returns {
   warehouse, stock_qty_total, expiring_batches,
-  pending_dispensing_requests, pending_transfer_requests
+  pending_transfer_requests
 }
 ```
 

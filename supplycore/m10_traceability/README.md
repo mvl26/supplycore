@@ -24,8 +24,8 @@ Module quản lý **SC Recall Notice** (thu hồi lô) + **API trace** (batch li
 [2] Click "Populate Affected Items"
         │ Auto-load từ batch trace:
         │   - Tồn kho hiện tại theo warehouse → location_type=Warehouse
-        │   - SC Patient Dispensing đã dùng cho BN → location_type=Patient
-        │   - SC Stock Entry Material Transfer đã chuyển khoa → location_type=Department
+        │   - SC Delivery Note đã giao cho khách → location_type=Customer
+        │   - SC Stock Entry Material Transfer đã chuyển kho → location_type=Department
         │
 [3] Submit Recall Notice
         │ on_submit:
@@ -53,7 +53,7 @@ GET /api/method/supplycore.api.trace.get_batch_trace?batch_no=X
   Returns full lifecycle:
     - source: PR đã tạo batch (supplier, qc_status)
     - movements: chronological SC SLE (SE/PR/SR/Issue movements)
-    - patient_dispensings: BN đã dùng + bhyt_amount
+    - sold_to: khách hàng đã mua lô (qua SC Delivery Note)
     - current_qty_per_warehouse: tồn còn ở từng kho
     - remaining_qty: tổng còn lại
 

@@ -6,7 +6,7 @@ child table chính.
 
 Module: `supplycore/api/voucher_io.py` — API `supplycore.api.voucher_io.*`.
 
-## Doctype được hỗ trợ (CONFIGS) — phủ 7 chứng từ CR-01 + Yêu cầu cấp phát
+## Doctype được hỗ trợ (CONFIGS)
 | Doctype | Nhãn | Mã | item child | Ghi chú |
 |---|---|---|---|---|
 | Framework Contract | Hợp đồng khung | SC-FC | FC Item (`item_code`) | guard theo `approval_stage` |
@@ -14,12 +14,10 @@ Module: `supplycore/api/voucher_io.py` — API `supplycore.api.voucher_io.*`.
 | SC Purchase Order | Đơn mua | SC-PO | SC Purchase Order Item (`item`) | guard theo `approval_stage` |
 | SC Purchase Receipt | Phiếu nhập (tiếp nhận) | SC-PR | SC Purchase Receipt Item (`item`) | |
 | SC Transfer Request | Yêu cầu chuyển kho | SC-TR | SC Transfer Request Item (`item`) | |
-| SC Dispensing Request | Yêu cầu cấp phát | SC-DR | SC DR Item (`item`) | thêm ngoài CR (theo y/c) |
-| SC Patient Dispensing | Cấp phát bệnh nhân | SC-PD | SC PD Item (`item`) | |
 | SC Inventory Count Sheet | Phiếu kiểm kê | SC-ICS | SC ICS Item (`item`) | `require_items=False` |
 
 Chưa làm: SC Quality Inspection (CR ghi "ít liên quan", 1 dòng/phiếu) — bỏ qua.
-Đối chiếu tài liệu: `docs/PHAN_TICH_YEUCAU_CAITIEN_CR_20260624.md` (CR-01 + CR-02 — đã làm cả hai).
+Đối chiếu nghiệp vụ tổng thể: `docs/ba-miyano/SupplyCore_MVL_BA.html`.
 
 ## CR-02 — Import/Export/Tải mẫu ngay tại lưới trong form (ChildTable)
 - Backend: `parse_child_rows(doctype, content_b64, file_type)` → parse 1 sheet vật tư,
@@ -78,4 +76,4 @@ Người dùng tự gõ file **1 dòng header** (chỉ nhãn) cũng được —
 
 ## Lưu ý
 - Chỉ Excel `.xlsx` (CSV không chứa 2 sheet).
-- Cột read-only/auto (Tên VT, Thành tiền, Tổng…, Trạng thái, Người tạo, BHYT) chỉ để xem.
+- Cột read-only/auto (Tên VT, Thành tiền, Tổng…, Trạng thái, Người tạo) chỉ để xem.

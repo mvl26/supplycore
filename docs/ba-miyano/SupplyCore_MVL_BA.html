@@ -113,6 +113,7 @@
     padding:13px 18px;margin:18px 0;font-size:.92rem;color:var(--ink)}
   .note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
   .note.crit{border-left-color:var(--crit);background:var(--crit-soft)}
+  .note.ok{border-left-color:var(--ok);background:var(--ok-soft)}
   .note b{display:block;margin-bottom:3px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
 
   /* tables */
@@ -140,6 +141,9 @@
   .sev.warn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
   .sev.ok{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
   .sev.info{background:var(--info-soft);color:var(--info);border:1px solid var(--info)}
+  .nw{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    padding:1px 6px;border-radius:5px;background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok);
+    vertical-align:middle;margin-left:6px}
 
   /* pipeline / status flow */
   .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0;font-size:.83rem}
@@ -205,13 +209,15 @@
     <a href="#m11"><span class="n">16</span>M11 · Dashboard &amp; Cảnh báo</a>
     <a href="#m12"><span class="n">17</span>M12 · Cổng khách hàng</a>
     <div class="grp">Chuyên đề</div>
-    <a href="#business-rules"><span class="n">18</span>Danh mục Business Rules</a>
-    <a href="#du-lieu"><span class="n">19</span>Sổ kho &amp; sổ cái tự quản</a>
-    <a href="#bao-mat"><span class="n">20</span>Bảo mật &amp; cô lập Portal</a>
-    <a href="#phi-chuc-nang"><span class="n">21</span>Yêu cầu phi chức năng</a>
-    <a href="#tu-dong-hoa"><span class="n">22</span>Tự động hóa &amp; lịch chạy</a>
-    <a href="#trang-thai"><span class="n">23</span>Trạng thái hoàn thiện</a>
-    <a href="#thuat-ngu"><span class="n">24</span>Thuật ngữ &amp; Phụ lục</a>
+    <a href="#don-vi-kep"><span class="n">18</span>Đơn vị kép &amp; quy đổi</a>
+    <a href="#business-rules"><span class="n">19</span>Danh mục Business Rules</a>
+    <a href="#du-lieu"><span class="n">20</span>Sổ kho &amp; sổ cái tự quản</a>
+    <a href="#bao-mat"><span class="n">21</span>Bảo mật &amp; cô lập Portal</a>
+    <a href="#phi-chuc-nang"><span class="n">22</span>Yêu cầu phi chức năng</a>
+    <a href="#tu-dong-hoa"><span class="n">23</span>Tự động hóa, lịch chạy &amp; email</a>
+    <a href="#trang-thai"><span class="n">24</span>Trạng thái hoàn thiện</a>
+    <a href="#thuat-ngu"><span class="n">25</span>Thuật ngữ &amp; Phụ lục</a>
+    <a href="#lich-su"><span class="n">26</span>Lịch sử phiên bản tài liệu</a>
   </nav>
 </details>
 
@@ -219,38 +225,40 @@
   <header class="hero">
     <div class="eyebrow">Tài liệu Phân tích Nghiệp vụ (Business Analysis)</div>
     <h1>SupplyCore MVL</h1>
-    <p class="lede">Hệ thống quản trị chuỗi cung ứng &amp; phân phối vật tư — từ hợp đồng khung, mua hàng, nhập kho &amp; kiểm định, quản lý lô theo hạn dùng (FEFO), đến bán hàng, giao nhận, xuất hóa đơn, thu tiền và cổng tự phục vụ cho khách hàng.</p>
+    <p class="lede">Hệ thống quản trị chuỗi cung ứng &amp; phân phối vật tư — từ hợp đồng khung, mua hàng, nhập kho &amp; kiểm định, quản lý lô theo hạn dùng (FEFO), đến bán hàng, soạn hàng &amp; giao nhận, xuất hóa đơn, thu tiền và cổng tự phục vụ cho khách hàng.</p>
     <div class="meta-row">
       <span><b>Chủ đầu tư:</b> Công ty Miyano Việt Nam (MVL)</span>
       <span><b>Nền tảng:</b> Frappe v15 (thuần, không ERPNext)</span>
       <span><b>Nhánh:</b> feat/mvl-distributor</span>
-      <span><b>Phiên bản tài liệu:</b> 1.0 · 2026-07-21</span>
+      <span><b>Phiên bản tài liệu:</b> 1.1 · 2026-08-03</span>
     </div>
     <div class="stats">
       <div class="stat"><div class="v">12</div><div class="l">phân hệ nghiệp vụ (M0–M12)</div></div>
-      <div class="stat"><div class="v">~40</div><div class="l">DocType nghiệp vụ</div></div>
+      <div class="stat"><div class="v">40</div><div class="l">DocType chính (+25 bảng con)</div></div>
       <div class="stat"><div class="v">21</div><div class="l">chứng từ có luồng duyệt</div></div>
       <div class="stat"><div class="v">12</div><div class="l">vai trò hệ thống</div></div>
-      <div class="stat"><div class="v">60+</div><div class="l">quy tắc nghiệp vụ mã hóa</div></div>
-      <div class="stat"><div class="v">9</div><div class="l">tác vụ tự động (scheduler)</div></div>
+      <div class="stat"><div class="v">70+</div><div class="l">quy tắc nghiệp vụ mã hóa</div></div>
+      <div class="stat"><div class="v">11</div><div class="l">tác vụ tự động (scheduler)</div></div>
+      <div class="stat"><div class="v">~100</div><div class="l">API whitelisted</div></div>
     </div>
   </header>
 
   <!-- ============ 01 ============ -->
   <section id="gioi-thieu">
     <h2><span class="h2n">01</span>Giới thiệu &amp; Bối cảnh</h2>
-    <p><strong>SupplyCore MVL</strong> là phần mềm quản trị chuỗi cung ứng cho doanh nghiệp phân phối vật tư/hóa chất y tế của <strong>Công ty Miyano Việt Nam</strong>. Phần mềm bao trùm toàn bộ dòng chảy vật tư và dòng tiền: <em>mua vào → nhận &amp; kiểm định chất lượng → nhập kho theo lô/hạn dùng → bán ra → giao nhận &amp; nghiệm thu → xuất hóa đơn → thu tiền</em>, kèm truy xuất nguồn gốc lô, thu hồi sản phẩm và cổng đặt hàng cho khách.</p>
+    <p><strong>SupplyCore MVL</strong> là phần mềm quản trị chuỗi cung ứng cho doanh nghiệp phân phối vật tư/hóa chất y tế của <strong>Công ty Miyano Việt Nam</strong>. Phần mềm bao trùm toàn bộ dòng chảy vật tư và dòng tiền: <em>mua vào → nhận &amp; kiểm định chất lượng → nhập kho theo lô/hạn dùng → bán ra → soạn hàng &amp; giao nhận &amp; nghiệm thu → xuất hóa đơn → thu tiền</em>, kèm truy xuất nguồn gốc lô, thu hồi sản phẩm và cổng đặt hàng cho khách.</p>
 
     <h3>1.1 Nguồn gốc &amp; định vị sản phẩm</h3>
     <p>SupplyCore MVL được <strong>dẫn xuất từ một bản "bệnh viện"</strong> (quản lý vật tư nội bộ + cấp phát bệnh nhân + BHYT). Theo quyết định kiến trúc đã chốt (03/07/2026), bản MVL <strong>thay thế in-place</strong> bản bệnh viện: gỡ hẳn phân hệ Cấp phát/BHYT/Bệnh nhân/tích hợp HIS, thay bằng <strong>phân hệ Bán hàng (M7)</strong> và bổ sung <strong>Cổng khách hàng (M12)</strong>. Khoảng 80% lõi (M1–M6, M8–M11) được tái sử dụng.</p>
+    <p><small>Việc gỡ được thực hiện triệt để ở cả 3 lớp: xóa DocType (<code>patches/v0_6/remove_hospital_domain</code>), xóa role mồ côi (<code>patches/v0_7/remove_hospital_roles</code>), và cắt nhánh trong file dùng chung + Vue SPA. Hệ thống hiện <strong>không còn</strong> bất kỳ khái niệm bệnh nhân / BHYT / cấp phát / HIS nào.</small></p>
 
     <div class="tw"><table>
       <thead><tr><th>Tiêu chí</th><th>Bản bệnh viện (nguồn gốc)</th><th>Bản MVL (hiện tại)</th></tr></thead>
       <tbody>
         <tr><td><strong>Chủ thể</strong></td><td>Bệnh viện dùng nội bộ</td><td>Công ty phân phối, bán ra ngoài</td></tr>
-        <tr><td><strong>Đầu ra M7</strong></td><td>Cấp phát khoa/bệnh nhân + BHYT</td><td>Bán hàng, bàn giao, nghiệm thu</td></tr>
+        <tr><td><strong>Đầu ra M7</strong></td><td>Cấp phát khoa/bệnh nhân + BHYT</td><td>Bán hàng, soạn hàng, bàn giao, nghiệm thu</td></tr>
         <tr><td><strong>Khách hàng</strong></td><td>Bệnh nhân (SC Patient)</td><td>Doanh nghiệp (SC Customer) + Portal</td></tr>
-        <tr><td><strong>Tích hợp ngoài</strong></td><td>HIS/EMR, Cổng BHYT</td><td>Bỏ hết; thêm Portal + máy in nhãn</td></tr>
+        <tr><td><strong>Tích hợp ngoài</strong></td><td>HIS/EMR, Cổng BHYT</td><td>Bỏ hết; thêm Portal + in nhãn barcode</td></tr>
         <tr><td><strong>Kế toán</strong></td><td>Phải trả (mua)</td><td>Phải trả <strong>+ phải thu</strong> (công nợ khách)</td></tr>
         <tr><td><strong>Số phân hệ</strong></td><td>11 (M1–M11)</td><td><strong>12</strong> (thêm M12 Portal)</td></tr>
       </tbody>
@@ -258,12 +266,12 @@
 
     <h3>1.2 Mục tiêu hệ thống</h3>
     <ul>
-      <li><strong>Kiểm soát mua hàng theo hợp đồng khung</strong>: khóa giá &amp; hạn mức số lượng/giá trị, phê duyệt nhiều cấp theo ngưỡng.</li>
-      <li><strong>Chất lượng &amp; an toàn lô</strong>: kiểm định QC bắt buộc, quản lý hạn dùng, ép xuất theo FEFO, chặn lô hết hạn/bị khóa.</li>
+      <li><strong>Kiểm soát mua hàng theo hợp đồng khung</strong>: khóa giá &amp; hạn mức số lượng/giá trị, phê duyệt nhiều cấp theo ngưỡng, thông báo email từng bước duyệt.</li>
+      <li><strong>Chất lượng &amp; an toàn lô</strong>: kiểm định QC bắt buộc, quản lý hạn dùng &amp; số lô nhà cung cấp, ép xuất theo FEFO, chặn lô hết hạn/bị khóa.</li>
       <li><strong>Tồn kho chính xác thời gian thực</strong>: sổ kho tự quản (Stock Ledger) append-only, quản lý vị trí (bin), kiểm kê &amp; đối soát.</li>
-      <li><strong>Bán hàng khép kín (Order-to-Cash)</strong>: từ đơn khách đến thu tiền, hạch toán công nợ phải thu tự động.</li>
+      <li><strong>Bán hàng khép kín (Order-to-Cash)</strong>: từ đơn khách đến thu tiền, có bước <strong>soạn hàng quét xác nhận</strong>, hạch toán công nợ phải thu tự động.</li>
       <li><strong>Truy xuất &amp; thu hồi</strong>: truy vết một lô đến tận khách hàng đã mua; phát lệnh thu hồi có kiểm soát.</li>
-      <li><strong>Tự phục vụ cho khách</strong>: cổng đặt hàng, theo dõi đơn, tải chứng từ — với cô lập dữ liệu tuyệt đối giữa các khách.</li>
+      <li><strong>Tự phục vụ cho khách</strong>: cổng đặt hàng, theo dõi đơn, tự nghiệm thu, tải chứng từ — với cô lập dữ liệu tuyệt đối giữa các khách.</li>
       <li><strong>Điều hành theo dữ liệu</strong>: KPI, cảnh báo chủ động đa kênh, dashboard theo vai trò.</li>
     </ul>
 
@@ -272,14 +280,15 @@
       <li><strong>Frappe thuần, không phụ thuộc ERPNext</strong> — mọi DocType nghiệp vụ tự xây với tiền tố <code>SC&nbsp;</code>.</li>
       <li><strong>Sổ kho &amp; sổ cái tự quản</strong> — <code>SC Stock Ledger Entry</code> và <code>SC GL Entry</code> là hai sổ append-only; tồn kho &amp; số dư luôn tính từ sổ, không lưu cache cứng.</li>
       <li><strong>Máy trạng thái bằng controller</strong> — luồng duyệt dùng trường <code>status</code>/<code>approval_stage</code> + logic Python, không dùng Frappe Workflow engine.</li>
-      <li><strong>"Code sống là chuẩn"</strong> — khi tài liệu BA gốc lệch với hệ thống, lấy hành vi code làm chuẩn. Tài liệu này được trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.</li>
+      <li><strong>Server là nguồn sự thật</strong> — mọi giá, mọi hạn mức, mọi kiểm tra tồn/hạn/QC đều tính lại phía server; tham số client gửi lên không bao giờ được tin.</li>
+      <li><strong>"Code sống là chuẩn"</strong> — khi tài liệu lệch với hệ thống, lấy hành vi code làm chuẩn. Tài liệu này được trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.</li>
     </ul>
   </section>
 
   <!-- ============ 02 ============ -->
   <section id="kien-truc">
     <h2><span class="h2n">02</span>Kiến trúc tổng thể</h2>
-    <p>Hệ thống gồm một backend Frappe và <strong>hai giao diện tách biệt</strong>: SPA nội bộ cho nhân viên và cổng web riêng cho khách hàng.</p>
+    <p>Hệ thống gồm một backend Frappe và <strong>ba giao diện tách biệt</strong>: SPA nội bộ cho nhân viên, cổng web riêng cho khách hàng, và trang PDA cho thiết bị cầm tay trong kho.</p>
 
     <div class="diagram">
 <pre class="mermaid">
@@ -292,6 +301,7 @@ flowchart TB
   subgraph BE["Backend Frappe v15"]
     API["API whitelisted<br/>supplycore/api/*"]
     CTRL["Controller nghiệp vụ<br/>m1..m11 + doctype"]
+    MAIL["Email thông báo<br/>utils/emailer"]
     SLE["Sổ kho SLE<br/>append-only"]
     GL["Sổ cái GL<br/>append-only"]
     DB[("MariaDB")]
@@ -302,20 +312,22 @@ flowchart TB
   API --> CTRL
   CTRL --> SLE
   CTRL --> GL
+  CTRL --> MAIL
   SLE --> DB
   GL --> DB
   CTRL --> DB
 </pre>
-      <div class="cap">Kiến trúc phân lớp — hai giao diện tiêu thụ chung một backend Frappe với sổ kho và sổ cái tự quản.</div>
+      <div class="cap">Kiến trúc phân lớp — ba giao diện tiêu thụ chung một backend Frappe với sổ kho và sổ cái tự quản.</div>
     </div>
 
     <h3>2.1 Thành phần chính</h3>
     <div class="tw"><table>
       <thead><tr><th>Lớp</th><th>Công nghệ</th><th>Vai trò</th></tr></thead>
       <tbody>
-        <tr><td><strong>Backend</strong></td><td>Frappe v15, Python 3.11, MariaDB 10.6, Redis 7</td><td>DocType nghiệp vụ, controller, API whitelisted, sổ kho/sổ cái, scheduler.</td></tr>
-        <tr><td><strong>SPA nội bộ</strong></td><td>Vue 3 + Vite, Pinia, Vue Router</td><td>UI cho toàn bộ nhân viên tại <code>/supplycore/*</code>; <strong>không dùng Frappe Desk</strong>. Build bằng <code>yarn build</code> ra <code>public/frontend/</code>.</td></tr>
+        <tr><td><strong>Backend</strong></td><td>Frappe v15, Python 3.11, MariaDB 10.6, Redis 7</td><td>DocType nghiệp vụ, controller, ~100 API whitelisted, sổ kho/sổ cái, scheduler, email.</td></tr>
+        <tr><td><strong>SPA nội bộ</strong></td><td>Vue 3 + Vite, Pinia, Vue Router, Tailwind</td><td>UI cho toàn bộ nhân viên tại <code>/supplycore/*</code>; <strong>không dùng Frappe Desk</strong>. Build bằng <code>yarn build</code> ra <code>public/frontend/</code>.</td></tr>
         <tr><td><strong>Cổng khách</strong></td><td>Frappe web page (<code>www/portal</code>)</td><td>Trang mobile-first riêng; khách tiêu thụ dữ liệu qua <code>api/portal.py</code> với cô lập theo từng khách.</td></tr>
+        <tr><td><strong>Trang PDA</strong></td><td>Frappe web page (<code>www/pda</code>)</td><td>Giao diện tối giản cho máy quét cầm tay (nhập kho, putaway, kiểm kê).</td></tr>
         <tr><td><strong>PWA</strong></td><td>vite-plugin-pwa (Workbox)</td><td>Cài như app (standalone), service worker phục vụ ở gốc <code>/sw.js</code> (scope <code>/supplycore</code>); shell NetworkFirst, API NetworkOnly.</td></tr>
       </tbody>
     </table></div>
@@ -335,7 +347,7 @@ flowchart LR
     direction LR
     FC["Hợp đồng khung<br/>NCC"] --> RO["Lệnh gọi hàng"]
     RO --> PO["Đơn mua PO"]
-    PP["Kế hoạch mua"] -.-> MR["Yêu cầu vật tư"] -.-> PO
+    PP["Kế hoạch mua"] -.-> MR["Yêu cầu mua"] -.-> PO
     PO --> PR["Phiếu nhập PR"]
     PR --> QC["Kiểm định QC"]
     PR --> PI["Hóa đơn NCC"]
@@ -346,7 +358,7 @@ flowchart LR
   subgraph O2C["Order-to-Cash · đầu ra"]
     direction LR
     SFC["HĐ khung bán"] --> SO["Đơn hàng<br/>khách"]
-    SO --> DN["Phiếu giao<br/>FEFO"]
+    SO --> DN["Phiếu giao<br/>soạn hàng + FEFO"]
     DN --> AR["Nghiệm thu"]
     AR --> SI["Hóa đơn bán"]
     SI --> SR["Thu tiền"]
@@ -361,9 +373,9 @@ flowchart LR
       <tbody>
         <tr><td><strong>1. Chiến lược nguồn hàng</strong></td><td>M1</td><td>Framework Contract → Release Order</td><td>Khóa giá &amp; hạn mức với NCC</td></tr>
         <tr><td><strong>2. Lập kế hoạch &amp; mua</strong></td><td>M2</td><td>Procurement Plan → Material Request → Purchase Order</td><td>Đơn mua đã duyệt</td></tr>
-        <tr><td><strong>3. Nhận &amp; kiểm định</strong></td><td>M3</td><td>Purchase Receipt → Quality Inspection</td><td>Hàng nhập kho, lô có kết quả QC</td></tr>
+        <tr><td><strong>3. Nhận &amp; kiểm định</strong></td><td>M3</td><td>Purchase Receipt → Quality Inspection</td><td>Hàng nhập kho, lô có kết quả QC + số lô NCC</td></tr>
         <tr><td><strong>4. Lưu kho &amp; quản lý lô</strong></td><td>M4·M5</td><td>Batch · Bin Location · Stock Ledger</td><td>Tồn kho thời gian thực theo lô/vị trí</td></tr>
-        <tr><td><strong>5. Bán &amp; giao</strong></td><td>M7</td><td>Sales Order → Delivery Note (FEFO) → Acceptance</td><td>Hàng đến khách, có biên bản nghiệm thu</td></tr>
+        <tr><td><strong>5. Bán, soạn hàng &amp; giao</strong></td><td>M7</td><td>Sales Order → Delivery Note (soạn hàng + FEFO) → Acceptance</td><td>Hàng đến khách, có biên bản nghiệm thu</td></tr>
         <tr><td><strong>6. Hóa đơn &amp; thu tiền</strong></td><td>M7·M8</td><td>Sales Invoice → Sales Receipt</td><td>Ghi nhận doanh thu, tất toán công nợ</td></tr>
         <tr><td><strong>7. Kiểm soát &amp; điều hành</strong></td><td>M9·M10·M11</td><td>Kiểm kê · Truy xuất · Thu hồi · KPI/Cảnh báo</td><td>Đảm bảo chính xác, an toàn, minh bạch</td></tr>
       </tbody>
@@ -375,26 +387,28 @@ flowchart LR
     <h2><span class="h2n">04</span>Vai trò &amp; Phân quyền</h2>
 
     <h3>4.1 Danh sách vai trò</h3>
+    <p>Cài app tạo <strong>10 role</strong> mặc định (<code>install.py::DEFAULT_ROLES</code>); cộng với <code>System Manager</code> của Frappe và nhãn <code>Khách hàng</code> là <strong>12 vai trò</strong> trong hệ thống.</p>
     <div class="tw"><table>
       <thead><tr><th>Vai trò</th><th>Tên tiếng Việt</th><th>Trách nhiệm chính</th><th>Desk</th></tr></thead>
       <tbody>
         <tr><td><span class="chip">System Manager</span></td><td>Quản trị Frappe</td><td>Siêu quyền: toàn bộ DocType/user/role, cấu hình hệ thống; không bị lọc dữ liệu.</td><td class="yes">✓</td></tr>
-        <tr><td><span class="chip">SupplyCore Manager</span></td><td>Quản lý SupplyCore</td><td>Duyệt HĐ khung/PO lớn, cấu hình alert/FEFO/putaway, xem mọi KPI &amp; module; là <code>is_admin</code> phía FE.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Manager</span></td><td>Quản lý SupplyCore</td><td>Duyệt HĐ khung/PO lớn, duyệt hàng loạt HĐ khung, kết luận QC, cấu hình alert/FEFO/putaway, xem mọi KPI &amp; module; là <code>is_admin</code> phía FE.</td><td class="yes">✓</td></tr>
         <tr><td><span class="chip">SupplyCore Executive</span></td><td>Lãnh đạo / phê duyệt cấp cao</td><td>Duyệt cấp 2 HĐ/PO/PE giá trị lớn; duyệt phát hành thu hồi; xem dashboard điều hành. Không tạo phiếu trực tiếp.</td><td class="yes">✓</td></tr>
         <tr><td><span class="chip">SupplyCore Purchaser</span></td><td>Cán bộ mua &amp; bán hàng</td><td>Tạo MR/PO, gửi PO cho NCC; tạo Khách hàng/HĐ khung bán/Đơn hàng + duyệt đơn.</td><td class="yes">✓</td></tr>
-        <tr><td><span class="chip">SupplyCore Storekeeper</span></td><td>Thủ kho</td><td>Nhập PR từ PO, putaway/phân bin, chuyển kho, giao hàng &amp; nghiệm thu; bị lọc theo kho được gán.</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">SupplyCore Storekeeper</span></td><td>Thủ kho</td><td>Nhập PR từ PO, putaway/phân bin, chuyển kho, <strong>soạn hàng &amp; quét xác nhận phiếu giao</strong>, nghiệm thu; bị lọc theo kho được gán.</td><td class="yes">✓</td></tr>
         <tr><td><span class="chip">Warehouse Officer</span></td><td>Phụ trách kho vận hành</td><td>Quản lý bin/putaway, hỗ trợ nhập/chuyển kho, đọc tồn thời gian thực.</td><td class="yes">✓</td></tr>
-        <tr><td><span class="chip">QC Officer</span></td><td>Cán bộ kiểm định</td><td>Lấy mẫu &amp; <strong>kết luận QC</strong> (Accept/Reject/Conditional), khóa lô hỏng. (BRU-QC-002)</td><td class="yes">✓</td></tr>
+        <tr><td><span class="chip">QC Officer</span></td><td>Cán bộ kiểm định</td><td>Lấy mẫu &amp; <strong>kết luận QC</strong> (Accepted/Rejected/Conditional), khóa lô hỏng. (BRU-QC-002)</td><td class="yes">✓</td></tr>
         <tr><td><span class="chip">SupplyCore Accountant</span></td><td>Kế toán</td><td>Hóa đơn mua (3-way match), thanh toán NCC, hóa đơn bán &amp; phiếu thu, sổ cái. Bị chặn sửa giá &amp; ghi vào kỳ khóa sổ.</td><td class="yes">✓</td></tr>
         <tr><td><span class="chip">SupplyCore Auditor</span></td><td>Kiểm toán</td><td><strong>Chỉ đọc</strong> toàn bộ dữ liệu lịch sử + audit log, xuất báo cáo.</td><td class="yes">✓</td></tr>
         <tr><td><span class="chip">SupplyCore User</span></td><td>Người dùng cơ bản</td><td>Đọc master, tạo/sửa phiếu ở mức Nháp; không duyệt/submit/cấu hình.</td><td class="yes">✓</td></tr>
-        <tr><td><span class="chip">SC Customer Portal</span></td><td>Khách hàng (chức năng)</td><td>Vai trò gating thật của khách: cô lập dữ liệu theo customer, cho thao tác cổng. <strong>Không vào Desk.</strong></td><td class="no">✗</td></tr>
+        <tr><td><span class="chip">SC Customer Portal</span></td><td>Khách hàng (chức năng)</td><td>Vai trò gating thật của khách: cô lập dữ liệu theo customer, cho thao tác cổng. <strong>Không vào Desk</strong> (<code>desk_access=0</code>).</td><td class="no">✗</td></tr>
         <tr><td><span class="chip">Khách hàng</span></td><td>Khách hàng (nhãn)</td><td>Thuần nhãn hiển thị, gán kèm role Portal; <strong>không cấp quyền DocType nào</strong> (tránh rò rỉ chéo).</td><td class="no">✗</td></tr>
       </tbody>
     </table></div>
 
     <h3>4.2 Persona — lăng kính UI</h3>
     <p>Phía SPA, <strong>Persona</strong> quyết định menu và widget dashboard nào hiển thị. Persona <strong>suy dẫn 100% từ role Frappe</strong> (không chọn thủ công); nav của persona vẫn bị lọc lần nữa qua quyền thực. Ánh xạ: System Manager/Executive → <em>admin</em>; Manager → <em>lan (Trưởng phòng)</em>; Accountant → <em>phong (Kế toán)</em>; Storekeeper/Warehouse Officer → <em>tam (Thủ kho)</em>.</p>
+    <p>Menu chính chia làm <strong>3 khối nghiệp vụ</strong> (<code>nav-blocks.js</code>), mỗi khối có màu nhấn riêng và tự ẩn theo vai trò: <strong>MUA HÀNG</strong> (Manager/Purchaser/Accountant/Storekeeper/QC/Warehouse), <strong>BÁN HÀNG</strong> (Manager/Executive/Accountant — Miyano không có role bán riêng, quản lý kiêm bán hàng), <strong>DÙNG CHUNG</strong> (mọi vai).</p>
 
     <h3>4.3 Mô hình phân quyền nhiều lớp</h3>
     <p>Hàm <code>access.menu()</code> gọi một lần lúc đăng nhập, trả về ba nhóm quyền cho FE: <strong>modules</strong> (m0–m11 hiện/ẩn), <strong>features</strong> (trang top-level như dashboard, batch_trace…), và <strong>doctypes</strong> (read/write/create/submit/cancel/delete + is_submittable cho ~35 doctype). FE dùng ba lớp gate theo phương châm <em>"không có phận sự thì không thấy"</em>:</p>
@@ -403,7 +417,7 @@ flowchart LR
       <li><strong>Route guard</strong> — chặn điều hướng, chuyển hướng trang 403 kèm lý do.</li>
       <li><strong>Nút hành động</strong> — ẩn nút Gửi duyệt/Submit/Cancel/Xóa theo quyền &amp; tính submittable.</li>
     </ol>
-    <div class="note"><b>Phòng thủ nhiều lớp (backend)</b>Quyền UI chỉ là lớp tiện dụng. Backend enforce thật bằng: DocPerm theo role; <code>permission_query_conditions</code> + <code>has_permission</code> (cô lập Portal); override <code>frappe.client.get</code>; chặn REST child-row ở <code>before_request</code>; và guard <code>before_delete</code> (chỉ cho xóa phiếu Nháp) trên toàn bộ 21 doctype có luồng duyệt.</div>
+    <div class="note"><b>Phòng thủ nhiều lớp (backend)</b>Quyền UI chỉ là lớp tiện dụng. Backend enforce thật bằng: DocPerm theo role; <code>permission_query_conditions</code> + <code>has_permission</code> (cô lập Portal, 6 doctype bán + 4 bảng con); override <code>frappe.client.get</code>; chặn REST child-row ở <code>before_request</code>; và guard <code>before_delete</code> (chỉ cho xóa phiếu Nháp) trên toàn bộ 21 doctype có luồng duyệt.</div>
 
     <h3>4.4 Ma trận vai trò × phân hệ (tóm tắt)</h3>
     <div class="tw"><table class="matrix">
@@ -430,14 +444,19 @@ flowchart LR
     <div class="tw"><table>
       <thead><tr><th>DocType</th><th>Mục đích</th><th>Trường/điểm chính</th></tr></thead>
       <tbody>
-        <tr><td><strong>SC Item</strong></td><td>Danh mục vật tư</td><td><code>item_group</code>, <code>uom</code>, <code>selling_price</code> (bán lẻ portal), <code>disabled</code>, mức reorder theo kho (child <code>SC Item Reorder</code>)</td></tr>
-        <tr><td><strong>SC Item Group</strong></td><td>Nhóm vật tư</td><td>Gắn template QC mặc định, phân nhóm reorder/putaway</td></tr>
-        <tr><td><strong>SC UOM</strong></td><td>Đơn vị tính</td><td>—</td></tr>
-        <tr><td><strong>SC Supplier</strong></td><td>Nhà cung cấp</td><td><code>tax_id</code>, điều khoản thanh toán 30/60/90, nhóm hàng cung cấp, blacklist, scorecard</td></tr>
-        <tr><td><strong>SC Warehouse</strong></td><td>Kho / khu</td><td>Phân cấp kho; kho cách ly QC; kho phòng ban phân phối</td></tr>
-        <tr><td><strong>Bin Location</strong></td><td>Vị trí lưu trong kho</td><td><code>bin_code</code>, sức chứa, cách ly, barcode (chi tiết ở M4)</td></tr>
-        <tr><td><strong>SC GL Account</strong></td><td>Tài khoản kế toán</td><td>Danh mục TK cho sổ cái tự quản (131, 331, 511, 632, 156/152…)</td></tr>
-        <tr><td><strong>SupplyCore Settings</strong> (Single)</td><td>Tham số hệ thống</td><td>Ngưỡng duyệt HĐ/PO, số ngày cảnh báo HSD/HĐ, kho mặc định, ngày khóa sổ, gateway SMS…</td></tr>
+        <tr><td><strong>SC Item</strong></td><td>Danh mục vật tư</td><td>Chia 5 nhóm trường: <em>Thông tin chính</em> (<code>item_code</code>, <code>item_name</code>, <code>item_group</code>, <code>uom</code> = đơn vị tồn kho) · <em>Phân loại</em> (<code>is_stock_item</code>, <code>is_purchase_item</code>, <code>has_batch_no</code>, <code>is_medical_supply</code>, <code>inspection_required_before_purchase</code>) · <em>Barcodes</em> (bảng con nhiều mã) · <em>Đơn vị kép</em> (<code>buy_uom</code>, <code>use_uom</code>, bảng <code>uom_conversions</code> — xem §18) · <em>Kế hoạch &amp; FEFO</em> (<code>safety_stock</code>, <code>reorder_level</code>, <code>max_stock</code>, <code>standard_order_qty</code>, <code>lead_time_days</code>, <code>min_shelf_life_days</code>) + <code>selling_price</code>, <code>valuation_method</code>, mức reorder theo kho (child <code>SC Item Reorder</code>)</td></tr>
+        <tr><td><strong>SC Item UOM Conversion</strong> <span class="chip">child</span><span class="nw">v1.1</span></td><td>Quy đổi đơn vị</td><td><code>uom</code> + <code>conversion_factor</code> — "1 đơn vị này = N đơn vị tồn kho". Khai bao nhiêu dòng cũng được.</td></tr>
+        <tr><td><strong>SC Item Barcode</strong> <span class="chip">child</span></td><td>Nhiều mã vạch/vật tư</td><td>Một vật tư có thể mang nhiều mã vạch (hộp, thùng, mã NCC).</td></tr>
+        <tr><td><strong>SC Item Group</strong></td><td>Nhóm vật tư</td><td>Phân nhóm reorder/putaway, cây phân cấp.</td></tr>
+        <tr><td><strong>SC UOM</strong></td><td>Đơn vị tính</td><td>Danh mục đơn vị dùng chung (cái, hộp, thùng, kg…).</td></tr>
+        <tr><td><strong>SC Supplier</strong></td><td>Nhà cung cấp</td><td><code>tax_id</code>, điều khoản thanh toán 30/60/90, blacklist, scorecard, email (dùng cho nhắc PO/trả hàng).</td></tr>
+        <tr><td><strong>SC Supplier Item Group</strong> <span class="chip">child</span></td><td>Nhóm hàng NCC cung cấp</td><td>Dùng để gợi ý NCC khi lập kế hoạch/MR.</td></tr>
+        <tr><td><strong>SC Warehouse</strong></td><td>Kho / khu</td><td>Phân cấp kho (tree); kho cách ly QC; kho phòng phân phối. Có panel quản lý vị trí (bin) ngay trên màn kho.</td></tr>
+        <tr><td><strong>SC Department</strong></td><td>Phòng ban</td><td>Đơn vị nội bộ dùng cho phân bổ chi phí &amp; lọc dashboard.</td></tr>
+        <tr><td><strong>Bin Location</strong></td><td>Vị trí lưu trong kho</td><td><code>bin_code</code>, sức chứa, cách ly, barcode (chi tiết ở M4).</td></tr>
+        <tr><td><strong>SC GL Account</strong></td><td>Tài khoản kế toán</td><td>Danh mục TK cho sổ cái tự quản (131, 331, 511, 632, 156/152, 3331…).</td></tr>
+        <tr><td><strong>SC Audit Log</strong></td><td>Nhật ký thao tác</td><td>Ghi hành vi nhạy cảm; nguồn cho điều tra (M10) &amp; kiểm toán.</td></tr>
+        <tr><td><strong>SupplyCore Settings</strong> (Single)</td><td>Tham số hệ thống</td><td>36 tham số vận hành: ngưỡng duyệt (<code>po_approval_threshold</code>, <code>fc_executive_threshold</code>), FEFO (<code>fefo_strict_mode</code>, <code>fefo_min_shelf_life_days</code>, <code>enforce_fefo</code>), cảnh báo hạn dùng/HĐ, kho mặc định, <code>fiscal_lock_date</code>, tài khoản GL mặc định, kiểm soát tín dụng (<code>credit_check_enabled</code>, <code>default_credit_limit</code>), <code>block_order_on_insufficient_stock</code>, thông tin bên bán cho hóa đơn (<code>site_name</code>, <code>site_address</code>, <code>seller_tax_code</code>), sơ đồ mặt bằng kho, gateway SMS.</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -469,18 +488,41 @@ flowchart LR
         <span class="st">Approved</span><span class="ar">→</span>
         <span class="st">Submit → Active</span>
       </div>
-      <p><small>* Chỉ khi <code>total_value ≥ ngưỡng</code> (mặc định 100 triệu, cấu hình <code>fc_executive_threshold</code>). Dưới ngưỡng: Manager duyệt thẳng sang Approved. Mọi cấp có thể Reject (bắt buộc lý do). Sau khi Approved (chưa submit) HĐ bị <strong>khóa sửa</strong>. Cancel → Terminated.</small></p>
+      <p><small>* Chỉ khi <code>total_value ≥ ngưỡng</code> (mặc định 100 triệu, cấu hình <code>fc_executive_threshold</code>). Dưới ngưỡng: Manager duyệt thẳng sang Approved. Mọi cấp có thể Reject (<strong>bắt buộc lý do</strong>). Sau khi Approved (chưa submit) HĐ bị <strong>khóa sửa</strong>. Cancel → Terminated.</small></p>
       <p><strong>Gia hạn &amp; thanh lý:</strong> yêu cầu gia hạn (bắt buộc lý do + ngày mới) → Manager/Executive duyệt → cập nhật <code>valid_to</code>; không cho gia hạn hồi tố quá 90 ngày. Thanh lý (bắt buộc lý do + biên bản) chặn mọi Lệnh gọi hàng nháp đang tham chiếu.</p>
+
+      <h3>Email thông báo theo luồng duyệt <span class="nw">v1.1</span></h3>
+      <p>Mỗi bước chuyển giai đoạn gửi email <strong>chi tiết, có thương hiệu</strong> tới đúng người cần biết (qua <code>utils/emailer</code>, xem §23.2):</p>
+      <div class="tw"><table>
+        <thead><tr><th>Sự kiện</th><th>Người nhận</th><th>Nội dung email</th></tr></thead>
+        <tbody>
+          <tr><td>Gửi duyệt</td><td>Mọi user role <code>SupplyCore Manager</code></td><td>HĐ chờ Quản lý duyệt + bảng thông tin HĐ + nút mở phiếu</td></tr>
+          <tr><td>Manager duyệt (≥ ngưỡng)</td><td>Mọi user role <code>SupplyCore Executive</code></td><td>HĐ giá trị lớn chờ Lãnh đạo duyệt</td></tr>
+          <tr><td>Manager duyệt (&lt; ngưỡng)</td><td>Người tạo HĐ</td><td>HĐ đã được duyệt, sẵn sàng kích hoạt</td></tr>
+          <tr><td>Executive duyệt</td><td>Người tạo HĐ</td><td>HĐ đã được Lãnh đạo phê duyệt</td></tr>
+          <tr><td>Từ chối</td><td>Người tạo HĐ</td><td>HĐ bị từ chối + <strong>lý do</strong> (khối cảnh báo đỏ)</td></tr>
+        </tbody>
+      </table></div>
+      <p>Bảng thông tin đính kèm mọi email: mã HĐ, nhà cung cấp, giá trị HĐ, hạn mức còn lại, kỳ hiệu lực, giai đoạn duyệt.</p>
+
+      <h3>Duyệt &amp; kích hoạt hàng loạt <span class="nw">v1.1</span></h3>
+      <p>Khi import loạt hợp đồng nháp, <code>bulk_approve_submit(names)</code> chạy trọn chuỗi <em>gửi duyệt → Manager duyệt → submit</em> cho từng HĐ:</p>
+      <ul>
+        <li><strong>Quyền:</strong> chỉ <code>SupplyCore Manager</code> / <code>System Manager</code> (<span class="chip">SC-E-FC-BULK-ROLE</span>).</li>
+        <li>HĐ dưới ngưỡng Executive → kích hoạt thẳng (Active). HĐ ≥ ngưỡng → dừng ở "Chờ Lãnh đạo duyệt".</li>
+        <li><strong>Cô lập lỗi:</strong> commit sau mỗi phiếu thành công, rollback riêng phiếu lỗi — một HĐ hỏng không kéo đổ cả lô.</li>
+        <li><strong>Email:</strong> chặn email từng phiếu, thay bằng <strong>1 email tổng kết</strong> gửi chính người thực hiện (đã kích hoạt / chờ Lãnh đạo / lỗi).</li>
+      </ul>
 
       <h3>Business rules tiêu biểu</h3>
       <ul>
         <li><span class="chip">SC-E-FC-LOCKED</span> HĐ đã Approved: chặn sửa, chỉ cho Submit/Reject.</li>
         <li><span class="chip">SC-E-FC-NOT-APPROVED</span> Chưa qua 3 cấp thì không được Submit.</li>
         <li><span class="chip">SC-E-FC-BLACKLIST</span> NCC trong blacklist phải có cờ <code>executive_override_blacklist</code>.</li>
-        <li><span class="chip">SC-E026</span> Ý kiến duyệt phải ≥ 10 ký tự.</li>
         <li><span class="chip">SC-E002 FC_EXCEEDED</span> Lệnh gọi hàng không vượt <code>remaining_qty</code>/<code>remaining_value</code> của HĐ.</li>
         <li><span class="chip">QA-BUG-M1-02</span> <code>remaining_value ≤ 0</code> → status Exhausted, không tạo PO mới.</li>
       </ul>
+      <div class="note"><b>Thay đổi so với v1.0</b>Quy tắc <span class="chip">SC-E026</span> (ý kiến duyệt tối thiểu 10 ký tự) <strong>đã được gỡ bỏ</strong> theo yêu cầu vận hành. Ý kiến duyệt nay là <strong>tùy chọn</strong> — vẫn được lưu vào <code>manager_comment</code>/<code>executive_comment</code> nếu người duyệt có nhập. Lý do <strong>từ chối</strong> thì vẫn bắt buộc.</div>
 
       <h3>Tự động hóa</h3>
       <p><code>check_contract_expiry</code> (hằng ngày): đánh dấu <code>expiring_soon</code> khi còn 30/15/7 ngày, tự chuyển HĐ quá hạn sang Expired, gửi email tổng hợp.</p>
@@ -492,7 +534,7 @@ flowchart LR
     <h2><span class="h2n">07</span>M2 · Kế hoạch &amp; Mua hàng (Planning)</h2>
     <div class="modcard">
       <h3>Mục đích</h3>
-      <p>Lập <strong>kế hoạch mua sắm định kỳ</strong>, tự gợi ý số lượng cần mua theo tiêu thụ lịch sử hoặc mức tái đặt hàng, sinh Yêu cầu vật tư (MR) và cầu nối MR → Đơn mua (PO).</p>
+      <p>Lập <strong>kế hoạch mua sắm định kỳ</strong>, tự gợi ý số lượng cần mua theo tiêu thụ lịch sử hoặc mức tồn tối thiểu, sinh Yêu cầu mua (MR) và cầu nối MR → Đơn mua (PO).</p>
 
       <h3>DocType</h3>
       <div class="tw"><table>
@@ -501,8 +543,8 @@ flowchart LR
           <tr><td><strong>Procurement Plan</strong> <span class="chip">SC-PP-…</span></td><td class="yes">✓</td><td>Kế hoạch mua định kỳ</td><td><code>period_type</code>, <code>consumption_lookback_months</code>, <code>safety_stock_factor</code>, <code>budget</code>, <code>auto_create_mr</code> · Draft→Approved→Generated</td></tr>
           <tr><td>Procurement Plan Item <span class="chip">child</span></td><td>—</td><td>Dòng đề xuất mua</td><td><code>current_stock</code>, <code>avg_monthly_consumption</code>, <code>lead_time_days</code>, <code>planned_qty</code>, <code>preferred_supplier</code></td></tr>
           <tr><td>SC Item Reorder <span class="chip">child của SC Item</span></td><td>—</td><td>Ngưỡng tái đặt theo kho</td><td><code>safety_stock</code>, <code>reorder_level</code>, <code>max_stock</code>, <code>standard_order_qty</code> (EOQ)</td></tr>
-          <tr><td><strong>SC Material Request</strong> <span class="chip">SC-MR-…</span></td><td class="yes">✓</td><td>Yêu cầu vật tư</td><td>Submit → Approved; nguồn cho gợi ý PO</td></tr>
-          <tr><td><strong>SC Purchase Order</strong> <span class="chip">SC-PO-…</span></td><td class="yes">✓</td><td>Đơn mua NCC</td><td>Duyệt theo ngưỡng; gửi NCC; nhận hàng qua PR</td></tr>
+          <tr><td><strong>SC Material Request</strong> <span class="chip">SC-MR-…</span></td><td class="yes">✓</td><td>Yêu cầu mua</td><td>Submit → Approved; mỗi dòng có thể gắn <code>framework_contract</code>; nguồn cho gợi ý PO</td></tr>
+          <tr><td><strong>SC Purchase Order</strong> <span class="chip">SC-PO-…</span></td><td class="yes">✓</td><td>Đơn mua NCC</td><td>Duyệt theo ngưỡng (<code>po_approval_threshold</code>, mặc định 50 triệu); gửi NCC; nhận hàng qua PR</td></tr>
         </tbody>
       </table></div>
 
@@ -510,13 +552,22 @@ flowchart LR
       <p>Công thức đề xuất: <code>SL = max(0, TB_tháng × (lead_time/30) × (1 + safety%) + safety_item − tồn_hiện − PO_đang_về)</code>. Ngưỡng tái đặt ưu tiên override theo kho (SC Item Reorder) trên mức item-level.</p>
       <p>Cầu nối <strong>MR → PO</strong>: gom dòng MR theo (NCC, HĐ khung); dòng chưa gán HĐ thì chọn HĐ Active có <strong>đơn giá rẻ nhất</strong> đủ hạn mức; dòng không khớp đưa vào <code>unmatched_items</code>. Kiểm toàn vẹn số dòng (<span class="chip">SC-E-MR-PO-ROW-LOSS</span>).</p>
 
+      <h3>Quét tồn tối thiểu → gọi hàng theo HĐ khung <span class="nw">v1.1</span></h3>
+      <p><code>check_reorder_levels</code> chuyển từ lịch "daily" mặc định sang <strong>cron 08:00 hằng ngày</strong> (giờ Asia/Ho_Chi_Minh) để email rơi đúng đầu giờ làm việc. Ba cải tiến:</p>
+      <ol>
+        <li><strong>Tự gắn HĐ khung NCC cho từng dòng</strong> (<code>_resolve_item_fc</code>): vật tư nằm trong đúng 1 HĐ khung Active → gán luôn; nằm trong nhiều HĐ → ưu tiên HĐ khớp NCC mặc định của vật tư; vẫn mơ hồ → <strong>để trống</strong> cho người mua tự chọn (không đoán bừa).</li>
+        <li><strong>Người nhận email mở rộng</strong>: ngoài danh sách <code>email_alert_recipients</code>, bổ sung mọi user có role <code>SupplyCore Manager</code>.</li>
+        <li><strong>Email theo mẫu thống nhất</strong>: bảng vật tư dưới ngưỡng (tồn hiện tại / mức tối thiểu / SL đề xuất), danh sách Yêu cầu mua nháp đã tạo, danh sách bỏ qua vì chưa có NCC, kèm nút "Mở danh sách Yêu cầu mua".</li>
+      </ol>
+
       <h3>Business rules &amp; tự động hóa</h3>
       <ul>
         <li><span class="chip">SC-E-BUDGET-EXCEEDED</span> Chi phí ước tính vượt ngân sách mà chưa tick xác nhận → chặn Submit.</li>
         <li><span class="chip">SC-E002 FC_BUDGET</span> Tổng PO đề xuất trên 1 HĐ khung vượt <code>remaining_value</code> → chặn.</li>
-        <li><code>check_reorder_levels</code> (hằng ngày): quét (item, kho) dưới ngưỡng → tự tạo MR nháp, email tổng hợp.</li>
-        <li><code>check_po_response</code> (hằng ngày): nhắc NCC khi PO đã gửi quá số ngày chưa phản hồi.</li>
+        <li><code>check_reorder_levels</code> (cron 08:00): quét (vật tư, kho) dưới ngưỡng → tự tạo Yêu cầu mua nháp + email.</li>
+        <li><code>check_po_response</code> (hằng ngày): nhắc NCC bằng email khi PO đã gửi quá <code>po_response_reminder_days</code> chưa phản hồi.</li>
       </ul>
+      <p><strong>Đơn mua cũng gửi email theo luồng duyệt</strong> giống HĐ khung: gửi duyệt → Manager; Manager duyệt (≥ ngưỡng) → Executive; duyệt xong / từ chối → người tạo.</p>
     </div>
   </section>
 
@@ -525,23 +576,26 @@ flowchart LR
     <h2><span class="h2n">08</span>M3 · Tiếp nhận &amp; Kiểm định (Receiving &amp; QC)</h2>
     <div class="modcard">
       <h3>Mục đích</h3>
-      <p>Nhận hàng theo đơn mua (<strong>Purchase Receipt</strong>), tự tạo lô &amp; <strong>Kiểm định chất lượng (Quality Inspection)</strong>, quản lý bộ tiêu chí QC theo nhóm vật tư, và xử lý trả hàng NCC.</p>
+      <p>Nhận hàng theo đơn mua (<strong>Purchase Receipt</strong>), tự tạo lô &amp; <strong>Kiểm định chất lượng (Quality Inspection)</strong>, và xử lý trả hàng NCC.</p>
 
       <h3>DocType</h3>
       <div class="tw"><table>
         <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
         <tbody>
-          <tr><td><strong>SC Purchase Receipt</strong> <span class="chip">SC-PR-…</span></td><td class="yes">✓</td><td>Phiếu nhập hàng</td><td>Submit → tự sinh SC Batch + Quality Inspection + ghi SLE; hỗ trợ trả hàng (<code>is_return=1</code>)</td></tr>
-          <tr><td><strong>SC Quality Inspection</strong> <span class="chip">SC-QI-…</span></td><td class="yes">✓</td><td>Kết luận kiểm định</td><td><code>overall_status</code>: Accepted/Rejected/Conditional · rollup vào <code>PR.qc_status</code> &amp; <code>Batch.qc_status</code></td></tr>
-          <tr><td>QC Checklist Template <span class="chip">SC-QCT-…</span></td><td>—</td><td>Bộ tiêu chí theo nhóm hàng</td><td><code>is_default_for_group</code> (chỉ 1 default/nhóm), <code>criteria</code></td></tr>
-          <tr><td>QC Checklist Item <span class="chip">child</span></td><td>—</td><td>1 tiêu chí</td><td><code>is_critical</code> (fail tiêu chí này → fail toàn bộ QC)</td></tr>
+          <tr><td><strong>SC Purchase Receipt</strong> <span class="chip">SC-PR-…</span></td><td class="yes">✓</td><td>Phiếu nhập hàng</td><td>Submit → tự sinh SC Batch + Quality Inspection + ghi SLE; hỗ trợ trả hàng (<code>is_return=1</code>); có Print Format riêng (patch v0_12)</td></tr>
+          <tr><td>SC Purchase Receipt Item <span class="chip">child</span></td><td>—</td><td>Dòng hàng nhận</td><td>Ngoài <code>qty</code>/<code>rate</code>: <code>po_qty</code> &amp; <code>over_received_qty</code> (kiểm nhận vượt PO) · nhóm <em>Lô</em>: <code>batch_no</code> (lô đã có) hoặc thông tin tạo lô mới — <code>manufacturing_date</code>, <code>expiry_date</code>, <strong><code>supplier_batch_no</code></strong>, <code>manufacturer</code>, <code>country_of_origin</code>, <code>model</code> · nhóm <em>WMS</em>: <code>warehouse</code>, <code>target_bin</code>, <code>po_item_ref</code></td></tr>
+          <tr><td><strong>SC Quality Inspection</strong> <span class="chip">SC-QI-…</span></td><td class="yes">✓</td><td>Kết luận kiểm định</td><td><code>overall_status</code>: Accepted/Rejected/Conditional · rollup vào <code>PR.qc_status</code> &amp; <code>Batch.qc_status</code> · danh sách Kiểm định hiển thị cả <strong>lô hệ thống</strong> và <strong>số lô NCC</strong></td></tr>
+          <tr><td>SC QI Reading <span class="chip">child</span></td><td>—</td><td>1 tiêu chí kiểm</td><td>Tiêu chí + giá trị đo + kết luận đạt/không đạt</td></tr>
         </tbody>
       </table></div>
 
-      <div class="note crit"><b>BRU-QC-002 — Chỉ QC kết luận QC</b>Chỉ <strong>QC Officer / QC Manager</strong> được submit Quality Inspection. Thủ kho &amp; Warehouse Officer được chuẩn bị/nhập liệu nhưng <strong>không được kết luận</strong>. Kết quả QC chảy vào truy xuất nguồn gốc và cờ <code>qc_status</code> của lô — lô Pending/Rejected bị loại khỏi tồn khả dụng.</div>
+      <div class="note"><b>Bộ tiêu chí QC — đã đơn giản hóa</b>Khái niệm <strong>QC Checklist Template đã bị bỏ</strong>. Khi Purchase Receipt submit, hệ thống tự tạo Quality Inspection với <strong>5 tiêu chí kiểm nhập mẫu</strong> điền sẵn để KCS tick (thêm/bớt được ngay trên phiếu). DocType <code>QC Checklist Template</code> còn tồn tại như di sản nhưng <strong>không nằm trong luồng chính</strong>; quy tắc <code>SC-E033</code> gắn với nó không còn áp dụng.</div>
+
+      <div class="note crit"><b>BRU-QC-002 — Chỉ QC kết luận QC</b>Chỉ <strong>QC Officer</strong> và <strong>SupplyCore Manager</strong> (cùng System Manager) có quyền <code>submit</code> Quality Inspection — enforce bằng DocPerm, không phải bằng cảnh báo mềm. Thủ kho &amp; Warehouse Officer được chuẩn bị/nhập liệu (read/write/create) nhưng <strong>không được kết luận</strong>. Kết quả QC chảy vào truy xuất nguồn gốc và cờ <code>qc_status</code> của lô — lô Pending/Rejected bị loại khỏi tồn khả dụng.</div>
 
       <h3>Xử lý trả hàng &amp; tự động hóa</h3>
       <p>Khi QI kết luận <em>Rejected</em>, hệ thống tự tạo phiếu trả NCC (PR <code>is_return</code>). <code>check_return_responses</code> (hằng ngày) escalate các phiếu trả quá 7 ngày chưa phản hồi lên Manager.</p>
+      <div class="note warn"><b>Chống trừ khống công nợ khi trả hàng</b>Phiếu trả sinh tự động từ QC <strong>không</strong> tự tạo Debit Note nếu hàng bị loại <em>trước khi</em> lên hóa đơn mua (chưa hề ghi công nợ) — tạo Debit Note khi đó sẽ trừ khống. Hệ thống chỉ auto-tạo khi hàng thực sự đã nằm trên một hóa đơn mua đã submit; ngược lại báo kế toán tạo tay.</div>
     </div>
   </section>
 
@@ -558,8 +612,8 @@ flowchart LR
         <tbody>
           <tr><td><strong>SC Stock Ledger Entry (SLE)</strong></td><td>Sổ kho append-only</td><td>Bất biến; mỗi phát sinh 1 dòng <code>qty_change</code> ± có <code>batch/warehouse/bin</code>; cancel = chèn dòng đối ứng (không sửa dòng gốc)</td></tr>
           <tr><td><strong>SC Stock Entry</strong></td><td>Chứng từ nhập/xuất/chuyển</td><td><code>entry_type</code>: Material Receipt/Issue/Transfer; Submit → ghi SLE</td></tr>
-          <tr><td><strong>SC Batch</strong></td><td>Lô hàng</td><td><code>expiry_date</code>, <code>qc_status</code>, <code>blocked</code>, NSX, xuất xứ, <code>barcode</code></td></tr>
-          <tr><td><strong>Bin Location</strong></td><td>Vị trí vật lý</td><td><code>bin_code</code> unique, sức chứa, <code>occupancy_pct</code>, cách ly, kiểm soát nhiệt độ</td></tr>
+          <tr><td><strong>SC Batch</strong></td><td>Lô hàng</td><td>Nhóm <em>Lô</em> (<code>batch_id</code>, <code>barcode</code>, <code>expiry_date</code>, <code>manufacturing_date</code>) · <em>Nguồn gốc</em> (<code>supplier</code>, <strong><code>supplier_batch_no</code></strong>, <code>manufacturer</code>, <code>country_of_origin</code>, <code>model</code>) · <em>QC</em> (<code>qc_status</code>, <code>coa_attachment</code>) · <em>Xác nhận hạn dùng</em> (<code>is_short_expiry</code>, <code>expiry_warning_ack</code> + người/thời điểm xác nhận) · <em>Block/Recall</em> (<code>blocked</code>, <code>block_reason</code>, người/thời điểm block)</td></tr>
+          <tr><td><strong>Bin Location</strong></td><td>Vị trí vật lý</td><td><code>bin_code</code> unique, sức chứa, <code>occupancy_pct</code>, cách ly, kiểm soát nhiệt độ, barcode</td></tr>
           <tr><td><strong>Putaway Rule</strong></td><td>Gợi ý bin đích</td><td>Theo item HOẶC item_group, <code>priority</code></td></tr>
         </tbody>
       </table></div>
@@ -571,6 +625,14 @@ flowchart LR
         <li><code>get_available_qty()</code> — tồn <strong>khả dụng</strong>: loại lô QC Pending/Rejected và lô blocked → dùng cho mọi nghiệp vụ xuất, chốt chặn tồn âm (<span class="chip">SC-E010</span>).</li>
       </ul>
       <div class="note warn"><b>Bất biến sổ kho</b>Hủy chứng từ <strong>chèn dòng đối ứng đảo dấu</strong>, cả hai dòng giữ <code>is_cancelled=0</code> để tự triệt tiêu — tránh lỗi "đảo kép". Mỗi SLE có bin sẽ tự cập nhật <code>current_qty</code>/<code>status</code> của bin.</div>
+
+      <h3>Công cụ vận hành kho trên SPA <span class="nw">v1.1</span></h3>
+      <ul>
+        <li><strong>Panel vị trí ngay trên màn Kho</strong> (<code>WarehouseBinsPanel</code>): xem danh sách bin của kho và tạo bin mới với kho điền sẵn — không phải rời màn hình.</li>
+        <li><strong>Màn soạn hàng</strong> (<code>PickingPanel</code>): quét lô + vị trí + số lượng cho từng dòng Phiếu giao — chi tiết ở M7.</li>
+        <li><strong>In nhãn lô hàng loạt</strong> (<code>batch_labels</code>): chọn nhiều lô trong danh sách → lấy dữ liệu nhãn (barcode, mã lô, vật tư, số lô NCC, ngày SX/HSD, model, xuất xứ) để in một lượt.</li>
+        <li><strong>Quét bằng máy PDA</strong>: máy quét gửi text + Enter vào ô đang focus, nên dùng được ngay trên trình duyệt của PDA mà không cần app riêng.</li>
+      </ul>
     </div>
   </section>
 
@@ -591,14 +653,15 @@ flowchart LR
 
       <h3>Thuật toán chọn lô FEFO</h3>
       <p>Sắp lô theo <code>expiry_date</code> tăng dần (lô không hạn xếp cuối), rồi <code>creation</code>. Chỉ chọn lô <strong>đủ điều kiện</strong>: không disabled/blocked, chưa hết hạn, <code>qc_status</code> ∈ {rỗng, Accepted, Conditional}, còn tồn khả dụng. Trả về danh sách kèm <code>suggested_qty</code> tích lũy (thêm tối đa 5 lô để xem thay thế), cờ <code>fully_satisfied</code>/<code>shortfall</code> và <code>severity</code>.</p>
+      <p>Kết quả FEFO hiển thị cho người dùng qua <strong>bảng hướng dẫn lấy hàng</strong> (<code>FefoPickGuide</code>) — nhân viên kho thấy nên lấy lô nào, ở đâu, bao nhiêu, và lô thay thế nếu thiếu.</p>
 
       <h3>Business rules &amp; tự động hóa</h3>
       <ul>
         <li><span class="chip">SC-E001 FEFO_OVERRIDE</span> Xuất lô khi còn lô gần hết hạn hơn: strict → chặn, phải tick Override + ghi lý do (yêu cầu role Manager — <span class="chip">SC-E-FEFO-MANAGER-REQUIRED</span>).</li>
         <li><span class="chip">SC-E003</span> Không xuất lô đã hết hạn · <span class="chip">SC-E008</span> Lô bị block không được xuất.</li>
-        <li><code>scan_expiring_batches</code> (hằng ngày): quét lô có hạn trong 180 ngày còn tồn, tạo Batch Expiry Alert (chống trùng 7 ngày), email Thủ kho/Manager.</li>
+        <li><code>scan_expiring_batches</code> (hằng ngày): quét lô có hạn trong 180 ngày còn tồn, tạo Batch Expiry Alert (chống trùng 7 ngày), email Thủ kho/Manager theo mẫu thống nhất — bảng lô + số ngày còn + nút "Xem danh sách cảnh báo", gợi ý xử lý (chuyển cách ly / ưu tiên xuất / trả NCC).</li>
       </ul>
-      <p><em>Lưu ý phạm vi:</em> FEFO ép khi <strong>xuất bán/cấp (Material Issue)</strong>, không ép khi chuyển kho nội bộ (Material Transfer).</p>
+      <p><em>Lưu ý phạm vi:</em> FEFO ép khi <strong>xuất bán (Material Issue)</strong>, không ép khi chuyển kho nội bộ (Material Transfer).</p>
     </div>
   </section>
 
@@ -638,7 +701,7 @@ flowchart LR
     <h2><span class="h2n">12</span>M7 · Bán hàng &amp; Bàn giao — Order-to-Cash</h2>
     <div class="modcard">
       <h3>Mục đích</h3>
-      <p>Quản lý toàn bộ vòng đời bán hàng: <strong>hợp đồng khung bán → đơn khách → giao hàng (xuất FEFO) → nghiệm thu → hóa đơn → thu tiền</strong>, cùng kiểm soát tín dụng công nợ và hạch toán phải thu.</p>
+      <p>Quản lý toàn bộ vòng đời bán hàng: <strong>hợp đồng khung bán → đơn khách → soạn hàng &amp; giao (xuất FEFO) → nghiệm thu → hóa đơn → thu tiền</strong>, cùng kiểm soát tín dụng công nợ và hạch toán phải thu.</p>
 
       <h3>DocType</h3>
       <div class="tw"><table>
@@ -646,10 +709,12 @@ flowchart LR
         <tbody>
           <tr><td><strong>SC Customer</strong></td><td>—</td><td>Hồ sơ khách + khóa Portal</td><td><code>tax_code</code>, <code>credit_limit</code>, <strong><code>portal_user</code></strong> (trục cô lập dữ liệu)</td></tr>
           <tr><td><strong>SC Sales Framework Contract</strong></td><td class="yes">✓</td><td>HĐ khung bán: khóa danh mục + giá + SL trần</td><td>Nháp→Chờ duyệt→Hiệu lực→Hết hạn/Thanh lý</td></tr>
-          <tr><td><strong>SC Sales Order</strong></td><td class="yes">✓</td><td>Đơn hàng khách</td><td>Chờ duyệt→Đã duyệt→Đang xử lý→Đã bàn giao→Hoàn tất/Từ chối · <code>credit_hold</code></td></tr>
-          <tr><td><strong>SC Delivery Note</strong></td><td class="yes">✓</td><td>Phiếu giao, xuất FEFO</td><td>Nháp→Đã giao→Đã nghiệm thu→Đã xuất HĐ</td></tr>
+          <tr><td>SFC Item <span class="chip">child</span></td><td>—</td><td>Dòng danh mục bán</td><td><code>unit_price</code>, <code>contract_qty</code>, <code>sold_qty</code>, <code>remaining_qty</code></td></tr>
+          <tr><td><strong>SC Sales Order</strong></td><td class="yes">✓</td><td>Đơn hàng khách</td><td>Chờ duyệt→Đã duyệt→<strong>Đang xử lý</strong>→Đã bàn giao→Hoàn tất/Từ chối · <code>credit_hold</code></td></tr>
+          <tr><td><strong>SC Delivery Note</strong></td><td class="yes">✓</td><td>Phiếu giao, soạn hàng + xuất FEFO</td><td>Nháp→Đã giao→Đã nghiệm thu→Đã xuất HĐ · <code>picking_required</code>, <code>cancellation_reason</code></td></tr>
+          <tr><td>DN Item <span class="chip">child</span></td><td>—</td><td>Dòng hàng giao</td><td><code>batch</code>, <code>warehouse</code>, <code>bin_location</code>, <strong><code>scan_confirmed</code></strong></td></tr>
           <tr><td><strong>SC Acceptance Record</strong></td><td class="yes">✓</td><td>Biên bản nghiệm thu</td><td>Nháp→Đã nghiệm thu (mở khóa lập hóa đơn)</td></tr>
-          <tr><td><strong>SC Sales Invoice</strong></td><td class="yes">✓</td><td>Hóa đơn bán</td><td>Nháp→Đã phát hành→Thu một phần→Thu đủ→Hủy · <code>outstanding_amount</code></td></tr>
+          <tr><td><strong>SC Sales Invoice</strong></td><td class="yes">✓</td><td>Hóa đơn bán</td><td>Nháp→Đã phát hành→Thu một phần→Thu đủ→Hủy · <code>outstanding_amount</code> · Print Format theo mẫu TT99</td></tr>
           <tr><td><strong>SC Sales Receipt</strong></td><td class="yes">✓</td><td>Phiếu thu công nợ</td><td><code>mode</code> Tiền mặt/Chuyển khoản; cập nhật trạng thái hóa đơn</td></tr>
         </tbody>
       </table></div>
@@ -658,27 +723,74 @@ flowchart LR
       <div class="diagram">
 <pre class="mermaid">
 flowchart TB
-  SFC["HĐ khung bán · Hiệu lực<br/>khóa giá + SL trần"] --> SO["Đơn hàng khách<br/>kiểm giá · hạn mức · tín dụng"]
+  SFC["HĐ khung bán · Hiệu lực<br/>khóa giá + SL trần"] --> SO["Đơn hàng khách<br/>kiểm giá · hạn mức · tín dụng · tồn"]
   SO -->|approve| SOA["Đơn Đã duyệt"]
-  SOA --> DN["Phiếu giao · FEFO<br/>ghi SLE trừ kho"]
+  SOA --> DNP["Phiếu giao NHÁP<br/>FEFO gợi ý lô<br/>SO → Đang xử lý"]
+  DNP --> PICK["Soạn hàng<br/>quét lô + vị trí + SL<br/>từng dòng"]
+  PICK --> DN["Submit phiếu giao<br/>ghi SLE trừ kho"]
   DN --> AR["Biên bản nghiệm thu"]
   AR --> SI["Hóa đơn bán<br/>Dr 131 / Cr 511 · Dr 632 / Cr 156"]
   SI --> SR["Phiếu thu<br/>Dr tiền / Cr 131"]
   SO -.->|reject| REJ["Từ chối<br/>chuỗi dừng"]
 </pre>
-        <div class="cap">Nghiệm thu là chốt bắt buộc trước khi lập hóa đơn (BRU-DEL-001). Giá luôn khóa theo HĐ khung.</div>
+        <div class="cap">Nghiệm thu là chốt bắt buộc trước khi lập hóa đơn (BRU-DEL-001). Giá luôn khóa theo HĐ khung. Tồn chỉ bị trừ khi phiếu giao được submit — sau khi soạn hàng đủ.</div>
       </div>
+
+      <h3>Soạn hàng &amp; quét xác nhận <span class="nw">v1.1</span></h3>
+      <p>Trước đây "Tạo phiếu giao" tạo <em>và submit ngay</em> (trừ tồn lập tức, lô do FEFO chọn cứng). Nay có <strong>hai chế độ</strong>, điều khiển bằng tham số <code>submit</code> của <code>make_delivery</code>:</p>
+      <div class="tw"><table>
+        <thead><tr><th>Chế độ</th><th>Khi nào dùng</th><th>Hành vi</th></tr></thead>
+        <tbody>
+          <tr><td><code>submit=1</code> (mặc định)</td><td>Luồng tự động, seed, test</td><td>Tạo + submit ngay; trừ tồn lập tức. <code>picking_required=0</code>.</td></tr>
+          <tr><td><code>submit=0</code></td><td>Vận hành thật ở kho</td><td>Tạo <strong>phiếu NHÁP</strong> với <code>picking_required=1</code>; FEFO chỉ <em>gợi ý</em> lô; đơn hàng chuyển sang <strong>"Đang xử lý"</strong>; tồn chưa bị động.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4>Quy trình quét từng dòng</h4>
+      <p>Nhân viên kho quét <strong>lô</strong> (mã lô hoặc barcode), tùy chọn <strong>vị trí (bin)</strong>, và nhập <strong>số lượng thực lấy</strong>. Server (<code>confirm_pick_line</code>) validate <strong>không tin client</strong>:</p>
+      <div class="tw"><table>
+        <thead><tr><th>Kiểm tra</th><th>Mã lỗi</th><th>Nội dung</th></tr></thead>
+        <tbody>
+          <tr><td>Nhận dạng lô</td><td><span class="chip">SC-E-PICK-BATCH</span></td><td>Không tra được lô từ barcode/mã đã quét.</td></tr>
+          <tr><td>Đúng vật tư</td><td><span class="chip">SC-E-PICK-ITEM</span></td><td>Lô quét thuộc vật tư khác với dòng trên phiếu.</td></tr>
+          <tr><td>Lô không bị khóa</td><td><span class="chip">SC-E-PICK-BLOCKED</span></td><td>Lô đang <code>blocked</code> (thu hồi/lý do khác).</td></tr>
+          <tr><td>Lô đạt QC</td><td><span class="chip">SC-E-PICK-QC</span></td><td>Lô còn Pending hoặc đã Rejected.</td></tr>
+          <tr><td>Lô còn hạn</td><td><span class="chip">SC-E-PICK-EXPIRED</span></td><td>Lô đã quá hạn dùng.</td></tr>
+          <tr><td>Số lượng hợp lệ</td><td><span class="chip">SC-E-PICK-QTY</span></td><td>SL phải &gt; 0.</td></tr>
+          <tr><td>Đủ tồn khả dụng</td><td><span class="chip">SC-E-PICK-STOCK</span></td><td>Tồn khả dụng của lô tại kho xuất không đủ.</td></tr>
+          <tr><td>Vị trí đúng kho</td><td><span class="chip">SC-E-PICK-BIN / -BIN-WH</span></td><td>Bin không tra được, hoặc thuộc kho khác kho xuất.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note ok"><b>Cho phép lấy lô khác lô gợi ý</b>Thực tế kho không phải lúc nào cũng khớp gợi ý FEFO (hàng nằm sâu, thùng vỡ…). Hệ thống <strong>cho phép quét lô khác</strong> — miễn qua đủ 8 lớp kiểm tra trên. Server ghi lại lô/vị trí/SL <em>thực tế lấy</em> vào dòng, không giữ lô gợi ý ban đầu. Nhờ vậy truy xuất nguồn gốc phản ánh đúng hàng đã giao.</div>
+      <p>Quét đạt → dòng được đánh <code>scan_confirmed=1</code>; API trả về số dòng còn lại để UI biết khi nào mở nút Submit.</p>
+
+      <h4>Chốt chặn khi submit &amp; khi hủy</h4>
+      <ul>
+        <li><span class="chip">SC-E-DN-NOT-SCANNED</span> Phiếu <code>picking_required</code> chỉ submit được khi <strong>mọi dòng</strong> đã quét xác nhận — nêu rõ còn bao nhiêu dòng, vật tư nào.</li>
+        <li><span class="chip">SC-E-DN-CANCEL-REASON</span> Hủy phiếu giao (đã submit hoặc đang soạn) <strong>bắt buộc nhập lý do</strong>; lý do ghi vào <code>cancellation_reason</code> trước khi cancel để không vướng <code>UpdateAfterSubmitError</code>. Hủy xong tồn kho được hoàn nguyên bằng dòng SLE đối ứng.</li>
+        <li><strong>Xóa phiếu giao nháp</strong> → đơn hàng tự trả về "Đã duyệt" để nút "Tạo phiếu giao" hiện lại (tránh đơn kẹt ở "Đang xử lý").</li>
+      </ul>
+      <div class="note warn"><b>Vì sao đơn chuyển sang "Đang xử lý"</b>Nút "Tạo phiếu giao" chỉ hiện khi đơn ở trạng thái "Đã duyệt". Khi đã có một phiếu giao nháp đang soạn, đơn chuyển "Đang xử lý" để <strong>ẩn nút đó đi</strong> — nếu không, người dùng có thể tạo phiếu giao trùng và trừ tồn hai lần. Trạng thái được khôi phục khi hủy hoặc xóa phiếu nháp.</div>
+
+      <h3>Hỗ trợ nhập liệu đơn bán <span class="nw">v1.1</span></h3>
+      <ul>
+        <li><strong>Lọc HĐ khung theo khách</strong>: khi đơn đã chọn khách, ô tìm HĐ khung bán chỉ trả HĐ của khách đó (<code>search_sales_framework_contract(customer=…)</code>).</li>
+        <li><strong>Tự nạp danh mục HĐ khung</strong> (<code>sales_framework_items</code>): chọn HĐ khung → nạp sẵn dòng hàng kèm đơn giá HĐ, SL hợp đồng và SL còn lại; đồng thời <strong>giới hạn ô chọn vật tư</strong> trong danh mục HĐ. Giá server vẫn ghi đè lại khi lưu (BRU-SFC-002) — nạp sẵn chỉ là tiện dụng, không phải nguồn sự thật.</li>
+        <li><strong>Chuỗi chứng từ liên quan</strong>: từ mỗi phiếu O2C xem được cả chuỗi hai chiều — Khách hàng → HĐ khung bán → Đơn hàng → Phiếu giao (kèm <strong>các lô đã giao</strong> + số lô NCC) → Nghiệm thu → Hóa đơn → Phiếu thu.</li>
+      </ul>
 
       <h3>Ràng buộc lõi (Business rules)</h3>
       <ul>
         <li><span class="chip">BRU-SFC-001</span> Chỉ đặt đơn trên HĐ khung còn hiệu lực theo <strong>ngày</strong> (không tin status có thể stale).</li>
-        <li><span class="chip">BRU-SFC-002</span> Đơn giá luôn lấy từ HĐ khung; người dùng/kế toán <strong>không được sửa</strong>.</li>
+        <li><span class="chip">BRU-SFC-002</span> Đơn giá luôn lấy từ HĐ khung; người dùng/kế toán <strong>không được sửa</strong> (chặn cả đường Desk).</li>
         <li><span class="chip">BRU-SO-001</span> Tổng SL đặt (gộp mọi đơn) không vượt SL trần HĐ khung — tính <em>live</em> chống tranh chấp đồng thời, kiểm lại khi duyệt.</li>
-        <li><span class="chip">BRU-SO-002</span> Chỉ lập Phiếu giao khi đơn ở <em>Đã duyệt</em>.</li>
+        <li><span class="chip">BRU-SO-002</span> Chỉ lập Phiếu giao khi đơn ở <em>Đã duyệt</em> (hoặc <em>Đang xử lý</em> — phiếu nháp đang soạn của chính đơn đó).</li>
+        <li><span class="chip">BRU-INV-002</span> Chặn <strong>sớm</strong> ngay lúc đặt hàng nếu tồn khả dụng không đủ (bật/tắt bằng <code>block_order_on_insufficient_stock</code>).</li>
         <li><span class="chip">BRU-AR-001</span> Nếu (dư nợ + tổng đơn) vượt hạn mức tín dụng → <code>credit_hold</code> + chặn.</li>
-        <li><span class="chip">BRU-EXP-001</span> Không xuất lô hết hạn · <span class="chip">BRU-INV-001</span> tồn khả dụng phải đủ.</li>
+        <li><span class="chip">BRU-EXP-001</span> Không xuất lô hết hạn · <span class="chip">BRU-INV-001</span> tồn khả dụng phải đủ khi xuất.</li>
         <li><span class="chip">BRU-DEL-001</span> Chỉ lập hóa đơn khi Phiếu giao <em>Đã nghiệm thu</em>.</li>
         <li><span class="chip">BRU-INVC-001</span> Item + số lượng trên hóa đơn phải khớp chính xác Phiếu giao; khách phải khớp.</li>
+        <li>Không thu tiền trên hóa đơn bán <strong>chưa submit</strong> (tránh công nợ phải thu âm).</li>
       </ul>
 
       <h3>Mốc hiển thị cho khách</h3>
@@ -702,21 +814,33 @@ flowchart TB
       <div class="tw"><table>
         <thead><tr><th>Tên</th><th>Duyệt?</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
         <tbody>
-          <tr><td><strong>SC Purchase Invoice</strong></td><td class="yes">✓</td><td>Hóa đơn NCC</td><td><code>three_way_match_status</code>, <code>payment_hold</code>, <code>outstanding_amount</code>; tolerance 1% / hard-cap PO +5%</td></tr>
-          <tr><td><strong>SC Payment Entry</strong></td><td class="yes">✓</td><td>Thanh toán NCC</td><td>Dr 331 / Cr tiền; duyệt theo ngưỡng (Executive ≥ 50 triệu)</td></tr>
+          <tr><td><strong>SC Purchase Invoice</strong></td><td class="yes">✓</td><td>Hóa đơn NCC</td><td><code>three_way_match_status</code>, <code>payment_hold</code>, <code>outstanding_amount</code>; tolerance 1% / hard-cap PO +5%; hỗ trợ Debit/Credit Note trả hàng</td></tr>
+          <tr><td><strong>SC Payment Entry</strong></td><td class="yes">✓</td><td>Thanh toán NCC</td><td>Dr 331 / Cr tiền; duyệt theo ngưỡng (Executive ≥ 50 triệu); bảng <code>references</code> phân bổ theo từng hóa đơn</td></tr>
+          <tr><td>SC Payment Reference <span class="chip">child</span></td><td>—</td><td>Dòng phân bổ</td><td><code>purchase_invoice</code>, <code>allocated_amount</code></td></tr>
           <tr><td><strong>SC GL Entry</strong></td><td>—</td><td>Sổ cái append-only</td><td>Hủy = đảo bút toán vào đúng <code>posting_date</code> gốc</td></tr>
         </tbody>
       </table></div>
 
       <div class="note crit"><b>BRU-PAY-001 — Khóa kỳ tài chính (fiscal lock)</b>Không được submit <em>hoặc</em> hủy chứng từ kế toán có ngày chứng từ <code>≤ fiscal_lock_date</code>. Áp trên <strong>4 doctype × 2 đường (submit + cancel)</strong>: SI, SR, PI, PE. Điểm mấu chốt: kiểm ở <code>before_cancel</code> — vì hủy chứng từ sẽ đảo bút toán vào lại đúng kỳ gốc; nếu kỳ đã khóa sau khi submit, việc hủy sẽ ghi vào kỳ khóa, phá bất biến "không ghi vào kỳ đã khóa". <span class="chip">SC-E-FISCAL-LOCK</span></div>
 
+      <h3>Thanh toán 1 chạm từ hóa đơn mua <span class="nw">v1.1</span></h3>
+      <p><code>create_payment_for_invoice</code> là điểm vào 1 chạm ngay trên màn Hóa đơn mua — đối xứng với nút "Thu tiền" bên bán hàng — thay cho việc dựng phiếu thanh toán thủ công (tự gõ NCC, số hóa đơn, dòng phân bổ):</p>
+      <ul>
+        <li>Chỉ nhận hóa đơn <strong>đã submit</strong>; chặn nếu <code>payment_hold</code> (<span class="chip">SC-E-PE-PAYMENT-HOLD</span> — lệch 3-way chưa xử lý) hoặc đã thanh toán đủ.</li>
+        <li>Số tiền mặc định = còn phải trả; không cho vượt số còn phải trả.</li>
+        <li><strong>Cố ý KHÔNG submit</strong> — phiếu để trạng thái Nháp để người đủ quyền theo ngưỡng rà soát số tiền + phương thức rồi bấm Duyệt. Submit chuẩn mới kiểm ngưỡng duyệt và ghi sổ cái.</li>
+        <li>Phiếu thanh toán nay tự lấy <code>amount</code> = tổng phân bổ nếu người dùng chưa nhập, tránh lỗi "Tổng phân bổ ≠ Số tiền" khi chỉ điền bảng phân bổ.</li>
+      </ul>
+
       <h4>Bút toán tiêu biểu</h4>
       <ul>
         <li><strong>Hóa đơn bán:</strong> Dr 131 (phải thu) / Cr 511 (doanh thu) + Cr 3331 (thuế); giá vốn Dr 632 / Cr 156.</li>
         <li><strong>Thu tiền khách:</strong> Dr 1111/1121 (tiền) / Cr 131.</li>
         <li><strong>Thanh toán NCC:</strong> Dr 331 (phải trả) / Cr tiền.</li>
+        <li><strong>Trả hàng NCC (Debit Note):</strong> ghi đảo chiều Dr 331 / Cr 152.</li>
       </ul>
-      <p><small>Số hiệu tài khoản theo cấu hình seed hiện tại; điều chỉnh qua danh mục SC GL Account.</small></p>
+      <div class="note"><b>Làm tròn VND</b>Tiền tệ hiển thị và hạch toán ở <strong>precision = 0</strong> (đồng). Cả hóa đơn bán và hóa đơn mua đều làm tròn nhất quán giữa dòng chi tiết và tổng header, để sổ cái luôn cân ngay cả khi số lượng lẻ.</div>
+      <p><small>Số hiệu tài khoản theo cấu hình seed hiện tại; điều chỉnh qua danh mục SC GL Account và các tham số <code>default_*_account</code> trong SupplyCore Settings.</small></p>
     </div>
   </section>
 
@@ -742,8 +866,9 @@ flowchart TB
       <ul>
         <li><span class="chip">SC-E025</span> Chống can thiệp field tổng hợp — hệ thống ghi đè lại + log audit.</li>
         <li><span class="chip">SC-E-ICS-WITNESS-REQUIRED</span> Đếm lần 3 phải có Manager chứng kiến.</li>
-        <li><span class="chip">SC-E-SR-INVESTIGATION-REQUIRED</span> Lệch giá trị &gt; ngưỡng lớn (mặc định 10 triệu) → phải điền ghi chú điều tra.</li>
+        <li><span class="chip">SC-E-SR-INVESTIGATION-REQUIRED</span> Lệch giá trị &gt; ngưỡng lớn (<code>large_variance_threshold</code>, mặc định 10 triệu) → phải điền ghi chú điều tra.</li>
       </ul>
+      <div class="note warn"><b>Chống đảo tồn hai lần khi hủy</b>Hủy Phiếu nhập / Chứng từ kho / Đối soát tồn chỉ ghi <strong>một</strong> lần dòng đối ứng. Lỗi double-reversal (làm âm tồn kho) đã được sửa và có test hồi quy che.</div>
     </div>
   </section>
 
@@ -765,7 +890,7 @@ flowchart TB
       </table></div>
 
       <h3>Truy xuất theo lô (Batch Trace)</h3>
-      <p>Từ một mã lô, hệ thống dựng lại toàn bộ vòng đời dựa trên sổ kho SLE:</p>
+      <p>Từ một mã lô (hoặc <strong>số lô của nhà cung cấp</strong>), hệ thống dựng lại toàn bộ vòng đời dựa trên sổ kho SLE:</p>
       <div class="diagram">
 <pre class="mermaid">
 flowchart LR
@@ -781,7 +906,7 @@ flowchart LR
       </div>
 
       <h3>Quy trình thu hồi (Recall)</h3>
-      <p><code>populate_affected_items()</code> tự nạp phạm vi ảnh hưởng từ SLE: tồn theo kho + <strong>khách đã mua</strong> (qua Phiếu giao). Submit → <strong>chặn lô</strong> (<code>Batch.blocked=1</code>). Thông báo theo khoa/khách (<span class="chip">BRU-REC-001</span> — mỗi khách 1 thư thu hồi). Khắc phục: cập nhật số thu hồi/hủy từng dòng; sinh phiếu trả NCC hoặc phiếu hủy (write-off); tự tính % giải quyết → Completed.</p>
+      <p><code>populate_affected_items()</code> tự nạp phạm vi ảnh hưởng từ SLE: tồn theo kho + <strong>khách đã mua</strong> (qua Phiếu giao). Submit → <strong>chặn lô</strong> (<code>Batch.blocked=1</code>). Thông báo tới từng khách (<span class="chip">BRU-REC-001</span> — mỗi khách 1 thư thu hồi). Khắc phục: cập nhật số thu hồi/hủy từng dòng; sinh phiếu trả NCC hoặc phiếu hủy (write-off); tự tính % giải quyết → Completed.</p>
       <div class="note warn"><b>BUG-007 / SC-E016 — Audit tiêu hủy</b>Dòng thu hồi có số lượng hủy &gt; 0 bắt buộc đủ <strong>Lý do hủy + Người chứng kiến + Ngày hủy</strong> — chống gian lận tiêu hủy.</div>
 
       <h3>Điều tra (Investigation)</h3>
@@ -799,28 +924,28 @@ flowchart LR
       <div class="tw"><table>
         <thead><tr><th>DocType</th><th>Mục đích</th><th>Điểm chính</th></tr></thead>
         <tbody>
-          <tr><td><strong>SC Alert Rule</strong></td><td>Cấu hình quy tắc quét</td><td>7 <code>alert_type</code>; đa kênh email/in-app/SMS; ngưỡng; tần suất; recipient roles</td></tr>
+          <tr><td><strong>SC Alert Rule</strong></td><td>Cấu hình quy tắc quét</td><td>7 <code>alert_type</code>; đa kênh email/in-app/SMS; ngưỡng; tần suất; recipient roles; nút gửi email test</td></tr>
           <tr><td><strong>SC Alert</strong></td><td>Bản ghi 1 cảnh báo + workflow xử lý</td><td><code>resolved</code>, <code>snooze_until</code>, <code>assigned_to</code>, nút hành động 1-click, escalation</td></tr>
         </tbody>
       </table></div>
 
       <h3>KPI điều hành</h3>
-      <p>8 chỉ số chính: giá trị tồn, chi phí tháng, công nợ NCC, PO đang chờ, lô sắp hết hạn, item dưới safety stock, HĐ khung sắp hết hạn, PO trễ hạn — mỗi KPI có drill-down; lọc theo kho/phòng ban; widget hiển thị theo vai trò.</p>
+      <p>8 chỉ số chính: giá trị tồn, chi phí tháng, công nợ NCC, PO đang chờ, lô sắp hết hạn, item dưới safety stock, HĐ khung sắp hết hạn, PO trễ hạn — mỗi KPI có drill-down; lọc theo kho/phòng ban; widget hiển thị theo vai trò. Dashboard bán hàng bổ sung nhóm <strong>công nợ phải thu</strong>.</p>
 
       <h3>7 loại cảnh báo &amp; hành động 1-click</h3>
       <div class="tw"><table>
         <thead><tr><th>Loại</th><th>Điều kiện</th><th>Hành động nhanh</th></tr></thead>
         <tbody>
           <tr><td><code>expiring_batch</code></td><td>Lô sắp hết hạn còn tồn</td><td>Chuyển lô vào kho cách ly QC</td></tr>
-          <tr><td><code>low_stock</code></td><td>Tồn dưới safety stock</td><td>Tạo Yêu cầu vật tư → Đơn mua</td></tr>
+          <tr><td><code>low_stock</code></td><td>Tồn dưới safety stock</td><td>Tạo Yêu cầu mua → Đơn mua</td></tr>
           <tr><td><code>contract_expiring</code></td><td>HĐ khung sắp hết hạn</td><td>—</td></tr>
           <tr><td><code>fc_remaining_low</code></td><td>HĐ khung còn ít hạn mức</td><td>—</td></tr>
           <tr><td><code>overdue_payment</code></td><td>Hóa đơn NCC quá hạn</td><td>Tạo phiếu thanh toán</td></tr>
-          <tr><td><code>qc_pending</code></td><td>QC treo quá lâu</td><td>Nhắc NCC</td></tr>
+          <tr><td><code>qc_pending</code></td><td>QC treo quá lâu</td><td>Nhắc NCC (email)</td></tr>
           <tr><td><code>recall_outstanding</code></td><td>Thu hồi còn dở dang</td><td>—</td></tr>
         </tbody>
       </table></div>
-      <p><strong>Cơ chế:</strong> dedup theo (loại, đối tượng tham chiếu, 7 ngày) chống nhân đôi; auto-resolve khi điều kiện hết; escalate cảnh báo Critical/Warning quá 48h (bump severity, email lên cấp trên); gửi KPI snapshot hằng ngày cho Executive + Manager.</p>
+      <p><strong>Cơ chế:</strong> dedup theo (loại, đối tượng tham chiếu, 7 ngày) chống nhân đôi; auto-resolve khi điều kiện hết; escalate cảnh báo Critical/Warning quá 48h (bump severity, email lên cấp trên); gửi KPI snapshot hằng ngày cho Executive + Manager. Mọi email cảnh báo nay dùng <strong>mẫu thống nhất</strong> có tiêu đề, bảng thông tin (loại/mức độ/đối tượng liên quan) và nút "Xem cảnh báo" trỏ thẳng vào SPA.</p>
     </div>
   </section>
 
@@ -830,29 +955,56 @@ flowchart LR
     <div class="modcard">
       <h3>Mục đích</h3>
       <p>Cổng self-service <code>/portal</code> (web page riêng, mobile-first) để khách xem hợp đồng/danh mục, tự đặt hàng, theo dõi đơn theo 4 mốc, tự xác nhận nhận hàng, xem hóa đơn/công nợ và tải chứng từ — với <strong>cô lập dữ liệu tuyệt đối</strong> theo từng khách.</p>
+      <p><small><strong>Lưu ý kiến trúc:</strong> M12 không phải một thư mục module như M1–M11. Portal được hiện thực bằng <code>www/portal</code> (giao diện) + <code>api/portal.py</code> (16 API) + role <code>SC Customer Portal</code> + tầng cô lập trong <code>utils/permissions.py</code>.</small></p>
 
       <h3>Khách hàng làm được gì</h3>
       <div class="tw"><table>
         <thead><tr><th>Nhóm</th><th>Chức năng</th></tr></thead>
         <tbody>
           <tr><td><strong>Hồ sơ</strong></td><td>Xem thông tin, hạn mức tín dụng, dư nợ</td></tr>
-          <tr><td><strong>Danh mục &amp; giá</strong></td><td>Xem HĐ khung còn hiệu lực + bảng giá; danh mục bán online chung</td></tr>
-          <tr><td><strong>Đặt hàng</strong></td><td>Đặt theo HĐ khung (giá server-side) hoặc đặt lẻ theo giá niêm yết</td></tr>
-          <tr><td><strong>Theo dõi đơn</strong></td><td>Tracker 4 mốc: Đã đặt → Bàn giao/nghiệm thu → Cấp hóa đơn → Thu tiền</td></tr>
-          <tr><td><strong>Tự nghiệm thu</strong></td><td>Khi phiếu giao "Đã giao", khách tự xác nhận → tạo &amp; submit Biên bản nghiệm thu</td></tr>
+          <tr><td><strong>Danh mục &amp; giá</strong></td><td>Xem HĐ khung còn hiệu lực + bảng giá (hiện <strong>tên vật tư</strong>, không chỉ mã); danh mục bán online chung</td></tr>
+          <tr><td><strong>Đặt hàng</strong></td><td>Đặt theo HĐ khung (giá server-side) hoặc đặt lẻ theo giá niêm yết; chặn SL ≤ 0; chặn HĐ khung hết hạn; chặn khi tồn không đủ (BRU-INV-002)</td></tr>
+          <tr><td><strong>Theo dõi đơn</strong></td><td>Tracker 4 mốc: Đã đặt → Bàn giao/nghiệm thu → Cấp hóa đơn → Thu tiền. Đơn bị <strong>Từ chối</strong> hiển thị rõ, chuỗi mốc dừng lại</td></tr>
+          <tr><td><strong>Tự nghiệm thu</strong></td><td>Khi phiếu giao "Đã giao", khách tự xác nhận → tạo &amp; submit Biên bản nghiệm thu (có bước xác nhận 2 nấc, hủy được)</td></tr>
           <tr><td><strong>Chứng từ</strong></td><td>Tải Hóa đơn / Phiếu giao / Biên bản nghiệm thu của chính mình</td></tr>
-          <tr><td><strong>Đăng ký</strong></td><td>Khách vãng lai tự đăng ký (tạo Website User + SC Customer + gán role)</td></tr>
+          <tr><td><strong>Đăng ký</strong></td><td>Khách vãng lai tự đăng ký (tạo Website User + SC Customer đã gắn Portal + gán role) — thỏa BRU-CUS-001</td></tr>
+          <tr><td><strong>Điều hướng</strong> <span class="nw">v1.1</span></td><td>Nút Quay lại / Tiến tới / Làm mới; lịch sử trình duyệt hoạt động sạch; cảnh báo khi rời trang lúc giỏ hàng còn dở</td></tr>
         </tbody>
       </table></div>
 
-      <div class="note crit"><b>RSK-01 — Rủi ro rò rỉ dữ liệu chéo (cao nhất)</b>Trục cô lập là <code>SC Customer.portal_user == user đăng nhập</code>. Portal <strong>không bao giờ tin</strong> tham số <code>customer</code> do client gửi. Chi tiết ở mục Bảo mật (§20). Tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.</div>
+      <div class="note crit"><b>RSK-01 — Rủi ro rò rỉ dữ liệu chéo (cao nhất)</b>Trục cô lập là <code>SC Customer.portal_user == user đăng nhập</code>. Portal <strong>không bao giờ tin</strong> tham số <code>customer</code> do client gửi. Chi tiết ở mục Bảo mật (§21). Tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.</div>
     </div>
   </section>
 
-  <!-- ============ 18 Business Rules ============ -->
+  <!-- ============ 18 Đơn vị kép ============ -->
+  <section id="don-vi-kep">
+    <h2><span class="h2n">18</span>Đơn vị kép &amp; quy đổi <span class="nw">v1.1</span></h2>
+    <p>Ngành phân phối vật tư thường <strong>mua theo thùng/hộp nhưng xuất theo cái</strong>. SupplyCore MVL xử lý bằng một đơn vị gốc duy nhất cộng bảng quy đổi.</p>
+
+    <h3>18.1 Mô hình</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Khái niệm</th><th>Trường</th><th>Ý nghĩa</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Đơn vị tồn kho</strong> (base)</td><td><code>SC Item.uom</code></td><td>Đơn vị duy nhất mà <strong>sổ kho SLE ghi nhận</strong>. Mọi tồn, mọi FEFO, mọi giá vốn đều tính theo đơn vị này. Hệ số quy đổi của chính nó luôn = 1.</td></tr>
+        <tr><td><strong>Đơn vị mua</strong></td><td><code>SC Item.buy_uom</code></td><td>Đơn vị thường dùng khi đặt hàng NCC (hộp, thùng).</td></tr>
+        <tr><td><strong>Đơn vị sử dụng</strong></td><td><code>SC Item.use_uom</code></td><td>Đơn vị thường dùng khi xuất/bán. Tự điền = đơn vị tồn kho nếu bỏ trống.</td></tr>
+        <tr><td><strong>Bảng quy đổi</strong></td><td><code>SC Item.uom_conversions</code><br><span class="chip">SC Item UOM Conversion</span></td><td>Mỗi dòng: <code>uom</code> + <code>conversion_factor</code> = "1 đơn vị này bằng bao nhiêu đơn vị tồn kho". VD: <em>1 hộp = 50 cái</em> → nhập 50. Khai được nhiều đơn vị (hộp, thùng, tá…).</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>18.2 Quy tắc kiểm tra</h3>
+    <ul>
+      <li>Hệ số quy đổi phải <strong>&gt; 0</strong> — hệ số 0 hoặc âm bị chặn ngay khi lưu vật tư.</li>
+      <li><strong>Không khai trùng</strong> một đơn vị hai lần trong cùng bảng.</li>
+      <li><strong>Không khai chính đơn vị tồn kho</strong> — nó luôn = 1 theo định nghĩa, khai lại chỉ tạo mâu thuẫn.</li>
+    </ul>
+    <div class="note"><b>Vì sao đơn vị gốc là bất biến</b>Sổ kho chỉ hiểu <em>một</em> đơn vị cho mỗi vật tư. Quy đổi là chuyện của lớp nhập liệu (đặt bao nhiêu hộp) và lớp hiển thị — không phải chuyện của sổ. Nhờ vậy tồn kho, FEFO, giá vốn và kiểm kê không bao giờ phải "đoán" đang nói về đơn vị nào. Trường <code>uom_conversion_factor</code> (hệ số mua → dùng) vẫn còn để tương thích ngược, nhưng bảng <code>uom_conversions</code> là cơ chế chính.</div>
+  </section>
+
+  <!-- ============ 19 Business Rules ============ -->
   <section id="business-rules">
-    <h2><span class="h2n">18</span>Danh mục Business Rules</h2>
-    <p>Các quy tắc nghiệp vụ được <strong>mã hóa &amp; enforce trong controller</strong>. Mức độ: <span class="sev block">Chặn</span> ngăn hành động · <span class="sev warn">Điều kiện</span> yêu cầu bổ sung/quyền · <span class="sev info">Ràng buộc</span> tính toán/toàn vẹn.</p>
+    <h2><span class="h2n">19</span>Danh mục Business Rules</h2>
+    <p>Các quy tắc nghiệp vụ được <strong>mã hóa &amp; enforce trong controller</strong> (hoặc DocPerm với các quy tắc về quyền). Mức độ: <span class="sev block">Chặn</span> ngăn hành động · <span class="sev warn">Điều kiện</span> yêu cầu bổ sung/quyền · <span class="sev info">Ràng buộc</span> tính toán/toàn vẹn.</p>
 
     <h3>Mua hàng &amp; hợp đồng (M1–M2)</h3>
     <div class="tw"><table>
@@ -860,8 +1012,9 @@ flowchart LR
       <tbody>
         <tr><td><span class="chip">SC-E-FC-LOCKED</span></td><td><span class="sev block">Chặn</span></td><td>HĐ khung đã Approved: chặn sửa, chỉ Submit/Reject.</td></tr>
         <tr><td><span class="chip">SC-E-FC-NOT-APPROVED</span></td><td><span class="sev block">Chặn</span></td><td>Chưa qua duyệt 3 cấp thì không được Submit.</td></tr>
+        <tr><td><span class="chip">SC-E-FC-STAGE</span></td><td><span class="sev block">Chặn</span></td><td>Duyệt sai giai đoạn (vd Executive duyệt khi HĐ chưa qua Manager).</td></tr>
         <tr><td><span class="chip">SC-E-FC-BLACKLIST</span></td><td><span class="sev warn">Điều kiện</span></td><td>NCC blacklist phải có cờ override của Executive.</td></tr>
-        <tr><td><span class="chip">SC-E026</span></td><td><span class="sev warn">Điều kiện</span></td><td>Ý kiến duyệt ≥ 10 ký tự.</td></tr>
+        <tr><td><span class="chip">SC-E-FC-BULK-ROLE</span> <span class="nw">v1.1</span></td><td><span class="sev warn">Điều kiện</span></td><td>Chỉ SupplyCore Manager / System Manager được duyệt &amp; submit HĐ khung hàng loạt.</td></tr>
         <tr><td><span class="chip">SC-E002 FC_EXCEEDED</span></td><td><span class="sev block">Chặn</span></td><td>Lệnh gọi hàng không vượt hạn mức SL/giá trị còn lại của HĐ.</td></tr>
         <tr><td><span class="chip">QA-BUG-M1-02</span></td><td><span class="sev info">Ràng buộc</span></td><td>Hạn mức ≤ 0 → HĐ Exhausted, không tạo PO mới.</td></tr>
         <tr><td><span class="chip">SC-E-BUDGET-EXCEEDED</span></td><td><span class="sev block">Chặn</span></td><td>Kế hoạch mua vượt ngân sách chưa xác nhận → chặn Submit.</td></tr>
@@ -879,40 +1032,65 @@ flowchart LR
         <tr><td><span class="chip">SC-E010 NEGATIVE_STOCK</span></td><td><span class="sev block">Chặn</span></td><td>Không làm tồn khả dụng âm.</td></tr>
         <tr><td><span class="chip">SC-E024 SAME_WAREHOUSE</span></td><td><span class="sev block">Chặn</span></td><td>Kho nguồn phải khác kho đích.</td></tr>
         <tr><td><span class="chip">SC-E-TRANSFER-INSUFFICIENT</span></td><td><span class="sev block">Chặn</span></td><td>Số duyệt chuyển không vượt tồn nguồn.</td></tr>
+        <tr><td><span class="chip">SC-E-TRANSFER-MANAGER-REQUIRED</span></td><td><span class="sev warn">Điều kiện</span></td><td>Chuyển cross-tier cần Manager duyệt.</td></tr>
         <tr><td><span class="chip">SC-E-ICS-WITNESS-REQUIRED</span></td><td><span class="sev warn">Điều kiện</span></td><td>Đếm kiểm kê lần 3 phải có Manager chứng kiến.</td></tr>
         <tr><td><span class="chip">SC-E-SR-INVESTIGATION-REQUIRED</span></td><td><span class="sev warn">Điều kiện</span></td><td>Lệch giá trị lớn phải điền ghi chú điều tra.</td></tr>
         <tr><td><span class="chip">SC-E025</span></td><td><span class="sev info">Ràng buộc</span></td><td>Chống can thiệp số tổng hợp phiếu kiểm kê (ghi đè + log).</td></tr>
+        <tr><td><span class="chip">SC-E016</span></td><td><span class="sev warn">Điều kiện</span></td><td>Tiêu hủy hàng thu hồi phải đủ audit (lý do + người chứng kiến + ngày).</td></tr>
       </tbody>
     </table></div>
 
-    <h3>Bán hàng, kế toán &amp; QC (M3, M7–M8)</h3>
+    <h3>Soạn hàng &amp; giao hàng (M7 — quét xác nhận) <span class="nw">v1.1</span></h3>
     <div class="tw"><table>
       <thead><tr><th>Mã</th><th>Mức</th><th>Phát biểu</th></tr></thead>
       <tbody>
-        <tr><td><span class="chip">BRU-QC-002</span></td><td><span class="sev warn">Điều kiện</span></td><td>Chỉ QC Officer/Manager được kết luận QC.</td></tr>
-        <tr><td><span class="chip">BRU-SFC-001</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ đặt đơn trên HĐ khung còn hiệu lực theo ngày.</td></tr>
-        <tr><td><span class="chip">BRU-SFC-002</span></td><td><span class="sev info">Ràng buộc</span></td><td>Giá khóa theo HĐ khung, không sửa tại đơn/hóa đơn.</td></tr>
-        <tr><td><span class="chip">BRU-SO-001</span></td><td><span class="sev block">Chặn</span></td><td>SL đặt không vượt SL trần HĐ khung (tính live).</td></tr>
-        <tr><td><span class="chip">BRU-SO-002</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ giao khi đơn Đã duyệt.</td></tr>
-        <tr><td><span class="chip">BRU-AR-001</span></td><td><span class="sev block">Chặn</span></td><td>Vượt hạn mức tín dụng → giữ đơn (credit hold).</td></tr>
-        <tr><td><span class="chip">BRU-DEL-001</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ lập hóa đơn khi đã nghiệm thu.</td></tr>
-        <tr><td><span class="chip">BRU-INVC-001</span></td><td><span class="sev block">Chặn</span></td><td>Hóa đơn phải khớp chính xác item+SL+khách của phiếu giao.</td></tr>
-        <tr><td><span class="chip">BRU-PAY-001</span></td><td><span class="sev block">Chặn</span></td><td>Không submit/hủy chứng từ kế toán trong kỳ đã khóa sổ.</td></tr>
-        <tr><td><span class="chip">BRU-REC-001</span></td><td><span class="sev info">Ràng buộc</span></td><td>Thu hồi phải truy được toàn bộ lô đã bán theo khách + thông báo từng khách.</td></tr>
-        <tr><td><span class="chip">BRU-CUS-002</span></td><td><span class="sev block">Chặn</span></td><td>Mỗi tài khoản Portal chỉ gắn đúng 1 khách hàng.</td></tr>
-        <tr><td><span class="chip">SC-E016</span></td><td><span class="sev warn">Điều kiện</span></td><td>Tiêu hủy thu hồi phải đủ audit (lý do + người chứng kiến + ngày).</td></tr>
+        <tr><td><span class="chip">SC-E-DN-NOT-SCANNED</span></td><td><span class="sev block">Chặn</span></td><td>Phiếu giao cần soạn hàng chỉ submit khi mọi dòng đã quét xác nhận.</td></tr>
+        <tr><td><span class="chip">SC-E-DN-CANCEL-REASON</span></td><td><span class="sev block">Chặn</span></td><td>Hủy phiếu giao bắt buộc nhập lý do (lưu vào phiếu).</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-BATCH</span></td><td><span class="sev block">Chặn</span></td><td>Không nhận dạng được lô từ mã/barcode đã quét.</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-ITEM</span></td><td><span class="sev block">Chặn</span></td><td>Lô đã quét thuộc vật tư khác với dòng trên phiếu.</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-BLOCKED</span></td><td><span class="sev block">Chặn</span></td><td>Lô đang bị khóa (thu hồi hoặc lý do khác).</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-QC</span></td><td><span class="sev block">Chặn</span></td><td>Lô chưa đạt QC (Pending/Rejected).</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-EXPIRED</span></td><td><span class="sev block">Chặn</span></td><td>Lô đã hết hạn dùng.</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-STOCK</span></td><td><span class="sev block">Chặn</span></td><td>Tồn khả dụng của lô tại kho xuất không đủ số cần lấy.</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-QTY</span></td><td><span class="sev block">Chặn</span></td><td>Số lượng lấy phải &gt; 0.</td></tr>
+        <tr><td><span class="chip">SC-E-PICK-BIN / -BIN-WH</span></td><td><span class="sev block">Chặn</span></td><td>Vị trí không tồn tại, hoặc thuộc kho khác kho xuất.</td></tr>
       </tbody>
     </table></div>
+
+    <h3>Bán hàng, khách hàng, kế toán &amp; QC (M3, M7–M8, M12)</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Mã</th><th>Mức</th><th>Phát biểu</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip">BRU-QC-002</span></td><td><span class="sev warn">Điều kiện</span></td><td>Chỉ QC Officer / SupplyCore Manager được kết luận (submit) Kiểm định.</td></tr>
+        <tr><td><span class="chip">BRU-CUS-001</span></td><td><span class="sev info">Ràng buộc</span></td><td>Tài khoản Portal chỉ hoạt động khi đã gắn đúng một SC Customer đang hoạt động.</td></tr>
+        <tr><td><span class="chip">BRU-CUS-002</span></td><td><span class="sev block">Chặn</span></td><td>Mỗi tài khoản Portal chỉ gắn đúng 1 khách hàng.</td></tr>
+        <tr><td><span class="chip">BRU-SFC-001</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ đặt đơn trên HĐ khung còn hiệu lực theo ngày.</td></tr>
+        <tr><td><span class="chip">BRU-SFC-002</span></td><td><span class="sev info">Ràng buộc</span></td><td>Giá khóa theo HĐ khung, không sửa tại đơn/hóa đơn (chặn cả đường Desk).</td></tr>
+        <tr><td><span class="chip">BRU-SO-001</span></td><td><span class="sev block">Chặn</span></td><td>SL đặt không vượt SL trần HĐ khung (tính live, kiểm lại khi duyệt).</td></tr>
+        <tr><td><span class="chip">BRU-SO-002</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ giao khi đơn Đã duyệt (hoặc Đang xử lý — phiếu nháp của chính đơn).</td></tr>
+        <tr><td><span class="chip">BRU-INV-001</span></td><td><span class="sev block">Chặn</span></td><td>Tồn khả dụng phải đủ khi xuất kho.</td></tr>
+        <tr><td><span class="chip">BRU-INV-002</span></td><td><span class="sev block">Chặn</span></td><td>Chặn sớm ngay lúc đặt hàng nếu tồn khả dụng không đủ.</td></tr>
+        <tr><td><span class="chip">BRU-EXP-001</span></td><td><span class="sev block">Chặn</span></td><td>Không xuất lô hết hạn.</td></tr>
+        <tr><td><span class="chip">BRU-AR-001</span></td><td><span class="sev block">Chặn</span></td><td>Vượt hạn mức tín dụng → giữ đơn (credit hold).</td></tr>
+        <tr><td><span class="chip">BRU-DEL-001</span></td><td><span class="sev block">Chặn</span></td><td>Chỉ lập hóa đơn khi đã nghiệm thu.</td></tr>
+        <tr><td><span class="chip">BRU-INVC-001</span></td><td><span class="sev block">Chặn</span></td><td>Hóa đơn phải khớp chính xác item + SL + khách của phiếu giao.</td></tr>
+        <tr><td><span class="chip">BRU-PAY-001</span></td><td><span class="sev block">Chặn</span></td><td>Không submit/hủy chứng từ kế toán trong kỳ đã khóa sổ.</td></tr>
+        <tr><td><span class="chip">SC-E-PE-PAYMENT-HOLD</span> <span class="nw">v1.1</span></td><td><span class="sev block">Chặn</span></td><td>Không lập thanh toán cho hóa đơn mua đang giữ do lệch 3-way.</td></tr>
+        <tr><td><span class="chip">BRU-REC-001</span></td><td><span class="sev info">Ràng buộc</span></td><td>Thu hồi phải truy được toàn bộ lô đã bán theo khách + thông báo từng khách.</td></tr>
+        <tr><td><span class="chip">BRU-SEC-001</span></td><td><span class="sev block">Chặn</span></td><td>Tài khoản Portal không được thấy dữ liệu của khách khác qua bất kỳ đường nào (xem §21).</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><b>Đã gỡ khỏi hệ thống</b><span class="chip">SC-E026</span> (ý kiến duyệt ≥ 10 ký tự) và <span class="chip">SC-E033</span> (ràng buộc bộ tiêu chí QC theo template) không còn hiệu lực — xem §6 và §8.</div>
   </section>
 
-  <!-- ============ 19 ============ -->
+  <!-- ============ 20 ============ -->
   <section id="du-lieu">
-    <h2><span class="h2n">19</span>Sổ kho &amp; sổ cái tự quản</h2>
+    <h2><span class="h2n">20</span>Sổ kho &amp; sổ cái tự quản</h2>
     <p>Hai sổ append-only là xương sống dữ liệu, đảm bảo tính bất biến và truy vết:</p>
     <div class="tw"><table>
       <thead><tr><th>Sổ</th><th>Ghi khi</th><th>Nguyên tắc</th><th>Dùng cho</th></tr></thead>
       <tbody>
-        <tr><td><strong>SC Stock Ledger Entry</strong></td><td>Submit Purchase Receipt / Stock Entry / Stock Reconciliation</td><td>Bất biến; tồn = SUM(qty_change); hủy = dòng đối ứng</td><td>Tính tồn, FEFO, truy xuất lô, kiểm kê</td></tr>
+        <tr><td><strong>SC Stock Ledger Entry</strong></td><td>Submit Purchase Receipt / Stock Entry / Delivery Note / Stock Reconciliation</td><td>Bất biến; tồn = SUM(qty_change); hủy = dòng đối ứng</td><td>Tính tồn, FEFO, truy xuất lô, kiểm kê</td></tr>
         <tr><td><strong>SC GL Entry</strong></td><td>Submit Sales/Purchase Invoice, Payment/Receipt, Stock Reconciliation</td><td>Bất biến; hủy = đảo bút toán vào posting_date gốc</td><td>Công nợ, doanh thu, giá vốn, khóa kỳ</td></tr>
       </tbody>
     </table></div>
@@ -936,84 +1114,113 @@ flowchart TB
     </div>
   </section>
 
-  <!-- ============ 20 ============ -->
+  <!-- ============ 21 ============ -->
   <section id="bao-mat">
-    <h2><span class="h2n">20</span>Bảo mật &amp; cô lập dữ liệu Portal (RSK-01)</h2>
+    <h2><span class="h2n">21</span>Bảo mật &amp; cô lập dữ liệu Portal (RSK-01)</h2>
     <p>Rủi ro nghiêm trọng nhất là <strong>rò rỉ dữ liệu chéo giữa các khách</strong>. Hệ thống phòng thủ nhiều lớp quanh trục <code>SC Customer.portal_user == frappe.session.user</code>:</p>
     <div class="tw"><table>
       <thead><tr><th>#</th><th>Lớp</th><th>Chặn gì</th></tr></thead>
       <tbody>
-        <tr><td>1</td><td><code>permission_query_conditions</code></td><td>Lọc list-query 6 doctype bán + 4 child theo customer của user. Child đăng ký riêng vì Frappe tra theo doctype của truy vấn, không kế thừa từ cha.</td></tr>
+        <tr><td>1</td><td><code>permission_query_conditions</code></td><td>Lọc list-query <strong>6 doctype bán</strong> (Đơn hàng, Phiếu giao, Hóa đơn bán, Phiếu thu, HĐ khung bán, Biên bản nghiệm thu) + <strong>4 bảng con</strong> (SO/DN/SI/SFC Item) theo customer của user. Child đăng ký riêng vì Frappe tra theo doctype của truy vấn, không kế thừa từ cha.</td></tr>
         <tr><td>2</td><td><code>has_permission</code> → <code>portal_doc_permission</code></td><td>Chặn đọc single-doc của khách khác; chặn mọi ghi (write/create/submit/cancel/delete) cho role Portal.</td></tr>
         <tr><td>3</td><td><code>guarded_client_get</code></td><td>Override <code>frappe.client.get</code> — chặn Portal đọc child-row đơn lẻ (bịt lỗ scoping của child).</td></tr>
         <tr><td>4</td><td><code>portal_block_rest_child</code></td><td>Chặn ở request-path các REST <code>/api/resource</code>, <code>/api/v1/resource</code>, <code>/api/v2/document</code> cho 4 child.</td></tr>
-        <tr><td>5</td><td><code>block_portal()</code></td><td>Block-list chặn role Portal khỏi mọi API nội bộ (KPI, báo cáo tài chính, approve/reject, truy xuất, WMS, FEFO…).</td></tr>
+        <tr><td>5</td><td><code>block_portal()</code></td><td>Block-list chặn role Portal khỏi mọi API nội bộ: KPI, báo cáo tài chính, approve/reject, truy xuất, WMS, FEFO, xuất dữ liệu hàng loạt (data_io), <code>related_docs</code>, lịch sử phiên bản, và <code>run_doc_method</code> tới các method nội bộ.</td></tr>
       </tbody>
     </table></div>
-    <div class="note"><b>Nguyên tắc vàng</b>Portal <strong>không bao giờ tin</strong> tham số do client gửi; mọi API portal gọi <code>_require_portal_customer()</code> để tự xác định khách từ session. Tạo chứng từ (đặt hàng, tự nghiệm thu) thực hiện với <code>ignore_permissions</code> sau khi đã tự kiểm ownership. Kiểm thử cô lập là UAT bắt buộc.</div>
+    <div class="note"><b>Nguyên tắc vàng</b>Portal <strong>không bao giờ tin</strong> tham số do client gửi; mọi API portal gọi <code>_require_portal_customer()</code> để tự xác định khách từ session. Tạo chứng từ (đặt hàng, tự nghiệm thu) thực hiện với <code>ignore_permissions</code> <em>sau khi</em> đã tự kiểm ownership. Kiểm thử cô lập là UAT bắt buộc.</div>
+    <div class="note warn"><b>Chống leo thang đặc quyền</b>Ngoài rò rỉ đọc, hệ thống còn chặn Portal <strong>tự duyệt đơn hàng của mình</strong> (gọi <code>approve()</code>/<code>reject()</code> qua <code>run_doc_method</code>) và tự gọi các hàm tính lại số liệu như <code>recalculate_sold_qty</code>. Các hàm whitelisted ở mức module cũng đã được rà soát và gate toàn bộ.</div>
+
+    <h3>21.1 Quản lý tài khoản nội bộ</h3>
+    <ul>
+      <li><strong>Mật khẩu mạnh</strong> bắt buộc khi tạo/đổi mật khẩu người dùng.</li>
+      <li><strong>Xóa user an toàn</strong>: kiểm ràng buộc trước khi xóa, tránh để lại chứng từ mồ côi.</li>
+      <li><strong>Đặt lại mật khẩu</strong> có trang riêng trong SPA (không phải màn Desk mặc định).</li>
+    </ul>
   </section>
 
-  <!-- ============ 21 ============ -->
+  <!-- ============ 22 ============ -->
   <section id="phi-chuc-nang">
-    <h2><span class="h2n">21</span>Yêu cầu phi chức năng</h2>
+    <h2><span class="h2n">22</span>Yêu cầu phi chức năng</h2>
     <div class="tw"><table>
       <thead><tr><th>Nhóm</th><th>Yêu cầu</th></tr></thead>
       <tbody>
-        <tr><td><strong>Đa ngôn ngữ</strong></td><td>Giao diện tiếng Việt là chính; backend lưu key tiếng Anh, FE dịch qua bảng nhãn (status/field) + i18n. Manifest <code>lang: vi</code>.</td></tr>
-        <tr><td><strong>Hiển thị tên nghiệp vụ</strong></td><td>List view hiện <strong>TÊN</strong> (nhà cung cấp, khách, vật tư…), mã kỹ thuật chỉ phụ — giảm tải nhận thức.</td></tr>
+        <tr><td><strong>Đa ngôn ngữ</strong></td><td>Giao diện tiếng Việt là chính; backend lưu key tiếng Anh, FE dịch qua bảng nhãn (status/field) + i18n. Bảng nhãn đã phủ toàn bộ nghiệp vụ bán hàng, kế hoạch, chuyển kho, kiểm kê. Manifest <code>lang: vi</code>.</td></tr>
+        <tr><td><strong>Hiển thị tên nghiệp vụ</strong></td><td>List view hiện <strong>TÊN</strong> (nhà cung cấp, khách, vật tư…), mã kỹ thuật chỉ phụ — giảm tải nhận thức. Danh sách Kiểm định hiện cả lô hệ thống và <strong>số lô NCC</strong>.</td></tr>
+        <tr><td><strong>Nhập liệu tiền tệ</strong></td><td>Ô nhập số có ngăn cách hàng nghìn kiểu Việt Nam (dấu "." mỗi 3 chữ số); giá trị lưu là số thô. Hiển thị VND precision = 0.</td></tr>
+        <tr><td><strong>Xem nhanh chứng từ</strong></td><td>Drawer xem nhanh chi tiết một phiếu tham chiếu ngay tại chỗ; drawer chi tiết một dòng bảng con (sửa nháp, duyệt dòng trước/sau) — không phải rời màn hình.</td></tr>
         <tr><td><strong>PWA / Offline</strong></td><td>Cài như app (standalone); service worker precache shell (NetworkFirst), API NetworkOnly; banner cảnh báo mất mạng.</td></tr>
-        <tr><td><strong>In ấn</strong></td><td>Print Format theo 12 module; hóa đơn theo mẫu TT99 (số tiền bằng chữ, thông tin bên bán).</td></tr>
-        <tr><td><strong>Barcode</strong></td><td>Bin Location &amp; SC Batch có barcode; hỗ trợ quét cho PDA/putaway.</td></tr>
-        <tr><td><strong>Thông báo</strong></td><td>Đa kênh email/in-app/SMS; tần suất Realtime/Hourly/Daily/Weekly; KPI hằng ngày qua scheduler.</td></tr>
+        <tr><td><strong>In ấn</strong></td><td>Print Format theo module; hóa đơn bán theo mẫu <strong>TT99</strong> (số tiền bằng chữ, thông tin bên bán từ Settings); Phiếu nhập kho có mẫu riêng; in nhãn lô hàng loạt.</td></tr>
+        <tr><td><strong>Barcode</strong></td><td>Bin Location, SC Batch và SC Item (nhiều mã/vật tư) đều có barcode; hỗ trợ quét cho PDA / putaway / soạn hàng.</td></tr>
+        <tr><td><strong>Nhập/xuất Excel</strong></td><td>Xuất/nhập phiếu cha-con bằng Excel 2 sheet; import ngay tại lưới trong form; trường bắt buộc đánh dấu <code>*</code> trên file mẫu.</td></tr>
+        <tr><td><strong>Thông báo</strong></td><td>Đa kênh email/in-app/SMS; tần suất Realtime/Hourly/Daily/Weekly; email theo mẫu thống nhất (§23.2); KPI hằng ngày qua scheduler.</td></tr>
         <tr><td><strong>Bảo mật dữ liệu</strong></td><td>Cô lập dữ liệu Portal (RSK-01); tuân thủ NĐ 13/2023/NĐ-CP; audit trail bất biến qua bản ghi phiên bản.</td></tr>
       </tbody>
     </table></div>
   </section>
 
-  <!-- ============ 22 ============ -->
+  <!-- ============ 23 ============ -->
   <section id="tu-dong-hoa">
-    <h2><span class="h2n">22</span>Tự động hóa &amp; lịch chạy</h2>
+    <h2><span class="h2n">23</span>Tự động hóa, lịch chạy &amp; email</h2>
+
+    <h3>23.1 Lịch chạy (scheduler)</h3>
     <div class="tw"><table>
       <thead><tr><th>Tác vụ</th><th>Tần suất</th><th>Chức năng</th></tr></thead>
       <tbody>
         <tr><td><code>check_contract_expiry</code> (M1)</td><td>Hằng ngày</td><td>Đánh dấu HĐ sắp/đã hết hạn, email tổng hợp.</td></tr>
-        <tr><td><code>check_reorder_levels</code> (M2)</td><td>Hằng ngày</td><td>Quét tồn dưới ngưỡng → tạo MR nháp.</td></tr>
-        <tr><td><code>check_po_response</code> (M2)</td><td>Hằng ngày</td><td>Nhắc NCC khi PO gửi quá lâu chưa phản hồi.</td></tr>
+        <tr><td><code>check_po_response</code> (M2)</td><td>Hằng ngày</td><td>Email nhắc NCC khi PO gửi quá lâu chưa phản hồi.</td></tr>
         <tr><td><code>check_return_responses</code> (M3)</td><td>Hằng ngày</td><td>Escalate phiếu trả NCC quá hạn.</td></tr>
-        <tr><td><code>scan_expiring_batches</code> (M5)</td><td>Hằng ngày</td><td>Quét lô sắp hết hạn → Batch Expiry Alert.</td></tr>
+        <tr><td><code>scan_expiring_batches</code> (M5)</td><td>Hằng ngày</td><td>Quét lô sắp hết hạn → Batch Expiry Alert + email.</td></tr>
         <tr><td><code>scan_alerts</code> (M11)</td><td>Hằng ngày</td><td>Quét toàn bộ quy tắc → tạo cảnh báo (dedup) + gửi kênh.</td></tr>
         <tr><td><code>send_daily_kpi</code> (M11)</td><td>Hằng ngày</td><td>Email snapshot KPI cho Executive + Manager.</td></tr>
         <tr><td><code>auto_resolve_alerts</code> (M11)</td><td>Hằng ngày</td><td>Tự đóng cảnh báo hết điều kiện.</td></tr>
         <tr><td><code>escalate_overdue_alerts</code> (M11)</td><td>Hằng ngày</td><td>Escalate cảnh báo quá 48h.</td></tr>
-        <tr><td><code>generate_procurement_forecast</code> (M2)</td><td>Hằng tuần</td><td>Dự báo mua (hiện là placeholder — xem §23).</td></tr>
-        <tr><td><code>create_periodic_count</code> (M9)</td><td>Cron 01:00</td><td>Tạo phiếu kiểm kê định kỳ (hiện là stub — xem §23).</td></tr>
+        <tr><td><code>generate_procurement_forecast</code> (M2)</td><td>Hằng tuần</td><td>Dự báo mua (hiện là placeholder — xem §24).</td></tr>
+        <tr><td><code>create_periodic_count</code> (M9)</td><td>Cron 01:00</td><td>Tạo phiếu kiểm kê định kỳ (hiện là stub — xem §24).</td></tr>
+        <tr><td><code>check_reorder_levels</code> (M2) <span class="nw">v1.1</span></td><td>Cron 08:00</td><td>Quét tồn dưới mức tối thiểu → tạo Yêu cầu mua nháp (gắn HĐ khung NCC theo dòng) + email quản lý.</td></tr>
       </tbody>
     </table></div>
-    <p>Ngoài scheduler, hook sự kiện chính: <code>SC Batch after_insert → register_batch</code> (cảnh báo lô hết hạn ngay khi tạo); và guard <code>before_delete</code> chặn xóa chứng từ đã submit trên toàn bộ 21 doctype.</p>
+    <p>Ngoài scheduler, hook sự kiện chính: <code>SC Batch after_insert → register_batch</code> (cảnh báo lô hết hạn ngay khi tạo); và guard <code>before_delete</code> chặn xóa chứng từ đã submit trên toàn bộ 21 doctype có luồng duyệt.</p>
+
+    <h3>23.2 Hệ thống email thông báo <span class="nw">v1.1</span></h3>
+    <p>Trước đây mỗi nơi tự dựng HTML email bằng <code>frappe.sendmail</code>, dẫn tới nội dung sơ sài và không nhất quán. Nay toàn hệ thống dùng chung <code>utils/emailer</code>:</p>
+    <div class="tw"><table>
+      <thead><tr><th>Hàm</th><th>Dùng khi</th><th>Nội dung sinh ra</th></tr></thead>
+      <tbody>
+        <tr><td><code>send_doc_email(...)</code></td><td>Thông báo gắn với <strong>một phiếu cụ thể</strong></td><td>Tiêu đề + đoạn mở + bảng thông tin phiếu + dòng người thao tác/hành động + khối ghi chú (info/warn/crit) + nút mở phiếu trên SPA.</td></tr>
+        <tr><td><code>send_email(...)</code></td><td>Digest, cảnh báo, danh sách</td><td>Như trên nhưng thân email tự do (bảng dữ liệu) + nút mở danh sách.</td></tr>
+        <tr><td><code>role_emails(roles)</code></td><td>Chọn người nhận theo vai trò</td><td>Email của mọi user đang bật thuộc một trong các role chỉ định.</td></tr>
+        <tr><td><code>sc_doc_url / sc_list_url</code></td><td>Nút hành động trong email</td><td>Link tuyệt đối (kèm domain) tới phiếu / danh sách trên SPA nội bộ.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Đã chuyển sang mẫu chung: duyệt HĐ khung (5 sự kiện), duyệt Đơn mua (4 sự kiện), quét tồn tối thiểu, nhắc NCC xác nhận PO, cảnh báo lô sắp hết hạn, cảnh báo hệ thống (SC Alert), email test quy tắc cảnh báo, nhắc NCC từ cảnh báo, và email tổng kết duyệt hàng loạt.</p>
+    <div class="note"><b>Không để email làm hỏng nghiệp vụ</b>Mọi lệnh gửi email đều bọc <code>try/except</code> và <code>log_error</code> — mail server hỏng không được phép làm thất bại giao dịch nghiệp vụ. Email gửi <code>delayed=True</code> (qua hàng đợi) trừ khi cần gửi ngay.</div>
   </section>
 
-  <!-- ============ 23 ============ -->
+  <!-- ============ 24 ============ -->
   <section id="trang-thai">
-    <h2><span class="h2n">23</span>Trạng thái hoàn thiện &amp; hạng mục defer</h2>
+    <h2><span class="h2n">24</span>Trạng thái hoàn thiện &amp; hạng mục defer</h2>
     <p>Để minh bạch, các hạng mục sau <strong>chưa hoàn thiện</strong> trong code hiện tại (tài liệu phản ánh đúng thực trạng, không tô hồng):</p>
     <div class="tw"><table>
       <thead><tr><th>Hạng mục</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
       <tbody>
-        <tr><td>Dự báo mua tự động (M2)</td><td><span class="sev warn">Placeholder</span></td><td><code>generate_procurement_forecast</code> mới log; heuristic 3 tháng defer.</td></tr>
+        <tr><td>Dự báo mua tự động (M2)</td><td><span class="sev warn">Placeholder</span></td><td><code>generate_procurement_forecast</code> mới log; heuristic 3 tháng defer. Thư mục DocType <code>Demand Forecast</code> rỗng (chưa có schema/controller).</td></tr>
         <tr><td>Kiểm kê định kỳ tự tạo (M9)</td><td><span class="sev warn">Stub</span></td><td><code>create_periodic_count</code> hiện là <code>pass</code>.</td></tr>
-        <tr><td>PDA offline (M4)</td><td><span class="sev warn">Một phần</span></td><td>Online hoạt động; đồng bộ offline IndexedDB defer.</td></tr>
-        <tr><td>PDA Session, Pick List (M4)</td><td><span class="sev block">Chưa có</span></td><td>Thư mục stub, chưa có schema/controller.</td></tr>
-        <tr><td>Báo cáo tài chính chi tiết (M8)</td><td><span class="sev warn">Một phần</span></td><td>KPI realtime có; Trial Balance/AP Aging cấu hình qua Report Builder.</td></tr>
+        <tr><td>PDA offline (M4)</td><td><span class="sev warn">Một phần</span></td><td>Online hoạt động (quét lô/bin qua trình duyệt PDA); đồng bộ offline IndexedDB defer.</td></tr>
+        <tr><td>PDA Session, Pick List (M4)</td><td><span class="sev block">Chưa có</span></td><td>Thư mục stub, chưa có schema/controller. Nghiệp vụ soạn hàng hiện thực hiện <strong>trực tiếp trên Phiếu giao hàng</strong> (§12), không qua Pick List.</td></tr>
+        <tr><td>Goods Receipt Discrepancy (M3)</td><td><span class="sev block">Chưa có</span></td><td>Thư mục stub. Lệch nhận hàng hiện xử lý bằng <code>over_received_qty</code> trên dòng Phiếu nhập + 3-way match ở M8.</td></tr>
+        <tr><td>QC Checklist Template (M3)</td><td><span class="sev info">Di sản</span></td><td>DocType còn tồn tại nhưng đã <strong>ra khỏi luồng chính</strong> — thay bằng 5 tiêu chí mẫu điền sẵn trên Kiểm định.</td></tr>
+        <tr><td>Báo cáo tài chính chi tiết (M8)</td><td><span class="sev warn">Một phần</span></td><td>KPI realtime + màn Báo cáo tài chính có; Trial Balance / AP Aging đầy đủ cấu hình qua Report Builder.</td></tr>
         <tr><td>SMS gateway (M11)</td><td><span class="sev info">Cấu hình</span></td><td>Kênh SMS cần khai báo <code>sms_gateway_endpoint</code>.</td></tr>
       </tbody>
     </table></div>
-    <div class="note warn"><b>Lưu ý biên tập</b>Tài liệu UC gốc (<code>UC_COVERAGE.md</code>, 05/2026) còn phản ánh bản bệnh viện (BHYT/cấp phát/bệnh nhân). Bản MVL đã gỡ các phần này — tài liệu này lấy <strong>code hiện tại</strong> làm chuẩn.</div>
+    <div class="note ok"><b>Đã sạch nghiệp vụ bệnh viện</b>Rà soát mã nguồn hiện tại không còn DocType, role, API, field hay màn hình nào thuộc nghiệp vụ bệnh viện (bệnh nhân / BHYT / cấp phát / tích hợp HIS). Các tài liệu BA thời bệnh viện đã được gỡ khỏi kho mã; tài liệu này là <strong>tài liệu BA duy nhất</strong> của dự án.</div>
   </section>
 
-  <!-- ============ 24 ============ -->
+  <!-- ============ 25 ============ -->
   <section id="thuat-ngu">
-    <h2><span class="h2n">24</span>Thuật ngữ &amp; Phụ lục</h2>
-    <h3>24.1 Thuật ngữ</h3>
+    <h2><span class="h2n">25</span>Thuật ngữ &amp; Phụ lục</h2>
+    <h3>25.1 Thuật ngữ</h3>
     <div class="tw"><table>
       <thead><tr><th>Thuật ngữ</th><th>Ý nghĩa</th></tr></thead>
       <tbody>
@@ -1022,24 +1229,44 @@ flowchart TB
         <tr><td><strong>GL</strong></td><td>General Ledger — sổ cái kế toán tự quản.</td></tr>
         <tr><td><strong>O2C / P2P</strong></td><td>Order-to-Cash (đặt→thu) / Procure-to-Pay (mua→trả).</td></tr>
         <tr><td><strong>HĐ khung</strong></td><td>Hợp đồng khung — khóa giá &amp; hạn mức với NCC (mua) hoặc khách (bán).</td></tr>
+        <tr><td><strong>Soạn hàng (picking)</strong></td><td>Nhân viên kho lấy hàng theo phiếu giao và <strong>quét xác nhận</strong> từng dòng (lô, vị trí, số lượng) trước khi xuất kho.</td></tr>
+        <tr><td><strong>Đơn vị tồn kho</strong></td><td>Đơn vị gốc duy nhất mà sổ kho ghi nhận; mọi đơn vị khác quy đổi về nó (§18).</td></tr>
+        <tr><td><strong>Số lô NCC</strong></td><td><code>supplier_batch_no</code> — mã lô in trên bao bì của nhà sản xuất/nhà cung cấp, song song với mã lô hệ thống tự sinh.</td></tr>
         <tr><td><strong>docstatus</strong></td><td>Trạng thái chứng từ Frappe: 0 Nháp · 1 Đã submit · 2 Đã hủy.</td></tr>
         <tr><td><strong>Bin</strong></td><td>Vị trí lưu trữ chi tiết trong kho (kệ/ô).</td></tr>
         <tr><td><strong>3-way match</strong></td><td>Đối chiếu Đơn mua ↔ Phiếu nhập ↔ Hóa đơn NCC.</td></tr>
         <tr><td><strong>Persona</strong></td><td>Lăng kính UI suy dẫn từ role, quyết định menu/widget hiển thị.</td></tr>
+        <tr><td><strong>Fiscal lock</strong></td><td>Ngày khóa sổ — chặn ghi (và chặn hủy) chứng từ kế toán vào kỳ đã chốt.</td></tr>
       </tbody>
     </table></div>
 
-    <h3>24.2 Phụ lục — Cài đặt &amp; triển khai</h3>
+    <h3>25.2 Phụ lục — Cài đặt &amp; triển khai</h3>
     <div class="lead-card" style="font-family:var(--font-mono);font-size:.82rem;white-space:pre-wrap;line-height:1.7">bench get-app supplycore /path/to/supplycore
-bench --site &lt;site&gt; install-app supplycore   # tạo 10+ role mặc định
-bench --site &lt;site&gt; migrate                   # đồng bộ DocType/permission
+bench --site &lt;site&gt; install-app supplycore   # tạo 10 role mặc định
+bench --site &lt;site&gt; migrate                   # đồng bộ DocType/permission + chạy patch
 cd frontend &amp;&amp; yarn build                     # build SPA → public/frontend/  (KHÔNG dùng bench build)
 # Hard-refresh trình duyệt sau build (do PWA/service worker cache)</div>
     <p style="font-size:.85rem"><strong>Stack:</strong> Frappe v15+, Python 3.11+, MariaDB 10.6+, Redis 7+. Không cần ERPNext. Cấu hình vận hành tập trung ở Single <code>SupplyCore Settings</code>.</p>
+  </section>
+
+  <!-- ============ 26 ============ -->
+  <section id="lich-su">
+    <h2><span class="h2n">26</span>Lịch sử phiên bản tài liệu</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Phiên bản</th><th>Ngày</th><th>Thay đổi chính</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1.0</strong></td><td>2026-07-21</td><td>Bản đầu tiên — 12 phân hệ, trích xuất từ mã nguồn nhánh <code>feat/mvl-distributor</code>.</td></tr>
+        <tr><td><strong>1.1</strong></td><td>2026-08-03</td><td>
+          <strong>Sửa sai so với code:</strong> gỡ quy tắc SC-E026 (ý kiến duyệt ≥10 ký tự) đã bị bỏ khỏi hệ thống; QC Checklist Template chuyển sang di sản (thay bằng 5 tiêu chí mẫu); <code>check_reorder_levels</code> chuyển sang cron 08:00; BRU-QC-002 nêu đúng role (QC Officer / SupplyCore Manager).<br>
+          <strong>Bổ sung nghiệp vụ mới:</strong> §18 Đơn vị kép &amp; quy đổi; soạn hàng &amp; quét xác nhận phiếu giao (M7) với 10 mã lỗi mới; hủy phiếu giao bắt buộc lý do; duyệt &amp; kích hoạt HĐ khung hàng loạt (M1); thanh toán NCC 1 chạm (M8); §23.2 Hệ thống email thông báo; tự gắn HĐ khung NCC khi quét tồn tối thiểu (M2); số lô NCC &amp; xuất xứ/model trên lô và phiếu nhập; in nhãn lô hàng loạt; panel vị trí trên màn kho; chuỗi chứng từ O2C; lọc &amp; tự nạp danh mục HĐ khung bán.<br>
+          <strong>Bổ sung minh bạch:</strong> BRU-CUS-001, BRU-INV-002, BRU-SEC-001, SC-E-FC-STAGE, SC-E-PE-PAYMENT-HOLD, SC-E-FC-BULK-ROLE vào danh mục quy tắc; Demand Forecast &amp; Goods Receipt Discrepancy vào danh sách stub; bổ sung DocType nền còn thiếu (SC Department, SC Item Barcode, SC UOM, SC Supplier Item Group, SC Audit Log, SC QI Reading, SC Payment Reference, Putaway Rule).
+        </td></tr>
+      </tbody>
+    </table></div>
 
     <div class="foot">
-      <p><strong>SupplyCore MVL</strong> — Tài liệu Phân tích Nghiệp vụ v1.0 · Công ty Miyano Việt Nam.<br>
-      Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code> (2026-07-21). Khi hệ thống thay đổi, code sống là chuẩn — tài liệu cần cập nhật theo.</p>
+      <p><strong>SupplyCore MVL</strong> — Tài liệu Phân tích Nghiệp vụ v1.1 · Công ty Miyano Việt Nam.<br>
+      Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code> (2026-08-03). Khi hệ thống thay đổi, code sống là chuẩn — tài liệu cần cập nhật theo.</p>
     </div>
   </section>
 </main>
