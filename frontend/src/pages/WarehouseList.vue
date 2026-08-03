@@ -140,7 +140,7 @@ function newWarehouse() {
       <Icon name="x" :size="12" /> Xoá lọc</button>
   </div>
 
-  <div v-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải...</div>
+  <div v-if="loading" class="sc-card p-4 space-y-2.5"><div v-for="n in 6" :key="n" class="sc-skeleton h-9 w-full" :style="{ opacity: 1 - n * 0.12 }" /></div>
   <div v-else-if="!total" class="sc-card p-10 text-center text-sc-text-muted">
     Không có kho khớp với bộ lọc
   </div>

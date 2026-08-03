@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { FORM_SCHEMAS } from '../schemas'
 import FormField from './FormField.vue'
 import ChildTable from './ChildTable.vue'
+import Icon from './Icon.vue'
 import { today } from '../utils'
 import { call } from '../api'
 import { useToastStore } from '../stores/toast'
@@ -111,20 +112,67 @@ function applyDerives(next, name, value) {
 function updateField(name, value) {
   const next = { ...doc.value, [name]: value }
   applyDerives(next, name, value)
+  // Bảng con → cộng dồn vào field header (vd Σ Số tiền phân bổ → Số tiền phiếu
+  // thanh toán). Cấu hình: schema.items.sumInto = { column, target }
+  const si = schema.value?.items
+  if (si && name === si.field && si.sumInto && Array.isArray(value)) {
+    next[si.sumInto.target] = value.reduce((s, r) => s + Number(r[si.sumInto.column] || 0), 0)
+  }
   emit('update:modelValue', next)
 }
 
+// Khoá chi tiết theo HĐ khung (đơn bán): local ref (KHÔNG lưu DB, KHÔNG suy từ
+// việc framework_contract có giá trị — vì "Đặt lại" phải mở khoá mà VẪN giữ HĐ
+// khung để bộ lọc vật tư còn hiệu lực). Chọn HĐ khung → true; Đặt lại → false.
+const fcLocked = ref(false)
+onMounted(() => { if (doc.value?.framework_contract) fcLocked.value = true })
+function resetFcLock() { fcLocked.value = false }
+// Xoá HĐ khung → mở khoá luôn (tránh kẹt: khoá còn nhưng không còn nút Đặt lại).
+// CHỈ mở khi rỗng — KHÔNG tự khoá lại khi có giá trị (Đặt lại phải giữ mở).
+watch(() => doc.value?.framework_contract, (v) => { if (!v) fcLocked.value = false })
+
 async function handleLinkSelected(field, linked) {
-  if (!field.fetchFrom || !linked?.name) return
-  try {
-    const d = await call('frappe.client.get_value', {
-      doctype: field.fetchFrom.target_doctype,
-      filters: { name: linked.name },
-      fieldname: field.fetchFrom.target_field,
-    })
-    const v = d?.[field.fetchFrom.target_field]
-    if (v != null) emit('update:modelValue', { ...doc.value, [field.fetchFrom.target_field]: v })
-  } catch (e) {}
+  if (!linked?.name) return
+  const patch = {}
+  // 1) Tự điền 1 field (vd Khách hàng lấy từ HĐ khung)
+  if (field.fetchFrom) {
+    try {
+      const d = await call('frappe.client.get_value', {
+        doctype: field.fetchFrom.target_doctype,
+        filters: { name: linked.name },
+        fieldname: field.fetchFrom.target_field,
+      })
+      const v = d?.[field.fetchFrom.target_field]
+      if (v != null) patch[field.fetchFrom.target_field] = v
+    } catch (e) {}
+  }
+  // 2) Nạp chi tiết vật tư từ HĐ khung → điền vào bảng & khoá lại
+  if (field.loadItemsFrom) {
+    const lf = field.loadItemsFrom
+    try {
+      const rows = await call(lf.api, { [lf.arg]: linked.name })
+      const items = (rows || []).map(src => {
+        const r = {}
+        for (const [tgt, srcKey] of Object.entries(lf.map)) r[tgt] = src[srcKey]
+        r.qty = r.qty ?? 0
+        r.amount = Number(r.qty || 0) * Number(r.unit_price || 0)  // qty=0 → 0, cập nhật khi nhập SL
+        return r
+      })
+      if (schema.value?.items?.field) patch[schema.value.items.field] = items
+      fcLocked.value = true
+    } catch (e) {
+      toast.error(`Không nạp được vật tư từ HĐ khung: ${e.message}`)
+    }
+  }
+  if (Object.keys(patch).length) {
+    const next = { ...doc.value, ...patch }
+    // sumInto: vừa nạp bảng con → cập nhật tổng ở header
+    const si = schema.value?.items
+    if (si?.sumInto && patch[si.field]) {
+      next[si.sumInto.target] = patch[si.field].reduce((s, r) => s + Number(r[si.sumInto.column] || 0), 0)
+    }
+    emit('update:modelValue', next)
+  }
 }
 
 function isVisible(field) {
@@ -181,8 +229,20 @@ function fieldReadonly(field) {
     </div>
 
     <div v-if="schema.items" class="sc-card p-5 mb-4">
+      <!-- Đơn bán có HĐ khung: báo trạng thái khoá + nút Đặt lại để mở sửa -->
+      <div v-if="doc.framework_contract" class="flex items-center justify-between mb-3 gap-2 flex-wrap">
+        <span class="text-xs px-2 py-1 rounded"
+          :class="fcLocked ? 'bg-sc-royal-50 text-sc-royal' : 'bg-sc-warning-50 text-sc-warning'">
+          <template v-if="fcLocked">🔒 Chi tiết khoá theo HĐ khung — bấm "Đặt lại" để sửa</template>
+          <template v-else>✏️ Đang cho sửa — ô Vật tư chỉ hiện hàng trong HĐ khung</template>
+        </span>
+        <button v-if="fcLocked && !readonly" @click="resetFcLock" type="button" class="sc-btn-secondary text-xs">
+          <Icon name="unlock" :size="13" /> Đặt lại để sửa
+        </button>
+      </div>
       <ChildTable :model-value="doc[schema.items.field] || []"
         :schema="schema.items" :readonly="readonly" :parent-doc="doc" :doctype="doctype"
+        :lock-cols="fcLocked"
         @update:model-value="v => updateField(schema.items.field, v)"
         @create-new="(p) => emit('createNew', p)" />
     </div>

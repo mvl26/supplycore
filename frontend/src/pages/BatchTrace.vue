@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber, fmtVND, fmtDate } from '../utils'
+import { qcBadge, qcLabel, expiryInfo } from '../utils/status'
 
 const route = useRoute()
 const router = useRouter()
@@ -48,7 +49,7 @@ async function searchByItem() {
   try {
     batchList.value = await call(API_PREFIX + 'list_batches_for_item',
       { item_code_or_name: itemInput.value.trim(), limit: 30 })
-    if (!batchList.value.length) toast.info('Không tìm thấy lô khớp tên/mã VT')
+    if (!batchList.value.length) toast.push('Không tìm thấy lô khớp tên/mã VT', 'info')
   } catch (e) {
     toast.error(`Lỗi: ${e.message}`)
   } finally {
@@ -69,25 +70,7 @@ function goToDoc(dt, name) {
 // Auto-load nếu URL có batch param
 if (route.query.batch) lookup()
 
-const qcBadge = (s) => ({
-  Accepted: 'sc-badge-success', Rejected: 'sc-badge-critical',
-  Pending: 'sc-badge-warning', Conditional: 'sc-badge-warning',
-}[s] || 'sc-badge-neutral')
-
-const qcLabel = (s) => ({
-  Accepted: 'Đạt', Rejected: 'Không đạt',
-  Pending: 'Chờ KCS', Conditional: 'Có điều kiện',
-}[s] || s)
-
-const expiryStatus = computed(() => {
-  if (!trace.value?.header?.expiry_date) return null
-  const exp = new Date(trace.value.header.expiry_date)
-  const days = (exp - new Date()) / (1000 * 60 * 60 * 24)
-  if (days < 0) return { cls: 'text-red-700 bg-red-100', label: 'ĐÃ HẾT HẠN' }
-  if (days < 30) return { cls: 'text-red-700 bg-red-50', label: `Còn ${Math.floor(days)} ngày` }
-  if (days < 90) return { cls: 'text-amber-700 bg-amber-50', label: `Còn ${Math.floor(days)} ngày` }
-  return { cls: 'text-green-700 bg-green-50', label: `Còn ${Math.floor(days)} ngày` }
-})
+const expiryStatus = computed(() => expiryInfo(trace.value?.header?.expiry_date))
 
 function totalConsumption(movements) {
   return movements.filter(m => !m.is_cancelled)
@@ -176,10 +159,10 @@ const missingLabel = {
   <div v-else class="space-y-4">
     <!-- Data quality warning -->
     <div v-if="!trace.data_quality.complete"
-      class="sc-card p-3 bg-amber-50 border-amber-200">
+      class="sc-card p-3 bg-sc-warning-50 border-sc-warning/40">
       <div class="flex items-start gap-2">
-        <span class="text-amber-700 text-lg"><Icon name="alert-triangle" :size="18" /></span>
-        <div class="text-sm text-amber-900 flex-1">
+        <span class="text-sc-warning text-lg"><Icon name="alert-triangle" :size="18" /></span>
+        <div class="text-sm text-sc-warning flex-1">
           <strong>Dữ liệu chưa đầy đủ</strong> — các trường còn thiếu:
           <ul class="mt-1 list-disc list-inside text-xs">
             <li v-for="m in trace.data_quality.missing" :key="m">{{ missingLabel[m] || m }}</li>
@@ -191,7 +174,7 @@ const missingLabel = {
     <!-- Section 1: Header -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy text-lg mb-3 flex items-center gap-2">
-        <span class="text-2xl"><Icon name="package" :size="20" /></span>
+        <Icon name="package" :size="20" />
         <span>Lô <span class="font-mono">{{ trace.header.name }}</span></span>
         <span v-if="trace.header.blocked" class="sc-badge sc-badge-critical"><Icon name="ban" :size="14" /> ĐÃ KHOÁ</span>
         <span :class="['sc-badge', qcBadge(trace.header.qc_status)]">
@@ -235,7 +218,7 @@ const missingLabel = {
         </div>
         <div v-if="trace.header.block_reason" class="md:col-span-2">
           <div class="text-xs text-sc-text-muted">Lý do khoá</div>
-          <div class="text-red-700">{{ trace.header.block_reason }}</div>
+          <div class="text-sc-danger">{{ trace.header.block_reason }}</div>
         </div>
       </div>
     </div>
@@ -243,7 +226,7 @@ const missingLabel = {
     <!-- Section 2: Origin -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl"><Icon name="building-2" :size="18" /></span> Nguồn gốc (PR → PO → QI)
+        <Icon name="building-2" :size="18" /> Nguồn gốc (PR → PO → QI)
       </h3>
       <div v-if="!trace.origin" class="text-sc-text-muted text-sm">
         <Icon name="alert-triangle" :size="14" /> Không tìm thấy PR gốc — có thể là lô nhập từ kho khác hoặc data import
@@ -258,14 +241,14 @@ const missingLabel = {
           <div class="text-xs mt-1"><Icon name="calendar" :size="14" /> {{ fmtDate(trace.origin.received_date) }}</div>
           <div class="text-xs"><Icon name="building" :size="14" /> {{ trace.origin.supplier }}</div>
         </div>
-        <div v-if="trace.origin.purchase_order" class="border-l-4 border-amber-500 pl-3">
+        <div v-if="trace.origin.purchase_order" class="border-l-4 border-sc-warning/40 pl-3">
           <div class="text-xs text-sc-text-muted">Đơn mua (PO)</div>
           <div class="cursor-pointer text-sc-royal hover:underline font-mono text-sm"
             @click="goToDoc('SC Purchase Order', trace.origin.purchase_order)">
             {{ trace.origin.purchase_order }}
           </div>
         </div>
-        <div v-if="trace.origin.qc_inspection" class="border-l-4 border-green-500 pl-3">
+        <div v-if="trace.origin.qc_inspection" class="border-l-4 border-sc-success/40 pl-3">
           <div class="text-xs text-sc-text-muted">Phiếu KCS</div>
           <div class="cursor-pointer text-sc-royal hover:underline font-mono text-sm"
             @click="goToDoc('SC Quality Inspection', trace.origin.qc_inspection)">
@@ -282,7 +265,7 @@ const missingLabel = {
     <!-- Section 3: Current Stock -->
     <div class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl"><Icon name="map-pin" :size="18" /></span> Tồn kho hiện tại
+        <Icon name="map-pin" :size="18" /> Tồn kho hiện tại
         <span class="ml-auto font-mono text-lg font-bold text-sc-success">
           {{ fmtNumber(trace.current_stock.total_qty) }}
         </span>
@@ -303,7 +286,7 @@ const missingLabel = {
     <!-- Section 3b: Đã bán cho khách hàng (BRU-REC-001) -->
     <div v-if="trace.sold_to && trace.sold_to.length" class="sc-card p-5">
       <h3 class="font-semibold text-sc-navy mb-3 flex items-center gap-2">
-        <span class="text-xl"><Icon name="users" :size="18" /></span> Đã bán cho khách hàng
+        <Icon name="users" :size="18" /> Đã bán cho khách hàng
         <span class="ml-auto font-mono text-sm text-sc-text-muted">
           {{ trace.sold_to.length }} khách ·
           <span class="text-sc-danger font-semibold">
@@ -347,7 +330,7 @@ const missingLabel = {
     <div class="sc-card overflow-hidden">
       <div class="p-5 pb-3">
         <h3 class="font-semibold text-sc-navy flex items-center gap-2">
-          <span class="text-xl"><Icon name="clipboard-list" :size="18" /></span> Sổ cái tồn kho ({{ trace.movements.length }} bút toán)
+          <Icon name="clipboard-list" :size="18" /> Sổ cái tồn kho ({{ trace.movements.length }} bút toán)
           <span class="ml-auto text-xs text-sc-text-muted">
             Nhập: <span class="text-sc-success font-mono">+{{ fmtNumber(totalReceived(trace.movements)) }}</span>
             · Xuất: <span class="text-sc-danger font-mono">-{{ fmtNumber(totalConsumption(trace.movements)) }}</span>

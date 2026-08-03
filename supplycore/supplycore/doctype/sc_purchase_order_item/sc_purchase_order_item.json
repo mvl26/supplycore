@@ -1,7 +1,8 @@
 {
  "actions": [], "creation": "2026-05-07 00:00:00", "doctype": "DocType", "engine": "InnoDB", "istable": 1,
  "field_order": ["item", "item_name", "qty", "uom", "rate", "amount", "warehouse", "schedule_date", "received_qty",
-                  "fc_unit_price", "price_variance_pct", "has_price_variance"],
+                  "fc_unit_price", "price_variance_pct", "has_price_variance",
+                  "section_supplier_trace", "supplier_item_name", "supplier_item_code", "remarks"],
  "fields": [
   {"fieldname": "item", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
   {"fieldname": "item_name", "fieldtype": "Data", "fetch_from": "item.item_name", "label": "Tên", "read_only": 1, "in_list_view": 1, "columns": 3},
@@ -14,7 +15,11 @@
   {"fieldname": "received_qty", "fieldtype": "Float", "label": "SL đã nhận", "read_only": 1, "default": "0"},
   {"fieldname": "fc_unit_price", "fieldtype": "Currency", "precision": "0", "options": "VND", "label": "Giá FC tham chiếu", "read_only": 1, "default": "0"},
   {"fieldname": "price_variance_pct", "fieldtype": "Percent", "label": "Lệch giá (%)", "read_only": 1, "default": "0"},
-  {"fieldname": "has_price_variance", "fieldtype": "Check", "label": "Lệch giá > 1%", "read_only": 1, "default": "0"}
+  {"fieldname": "has_price_variance", "fieldtype": "Check", "label": "Lệch giá > 1%", "read_only": 1, "default": "0"},
+  {"fieldname": "section_supplier_trace", "fieldtype": "Section Break", "label": "Truy vết NCC & ghi chú"},
+  {"fieldname": "supplier_item_name", "fieldtype": "Data", "label": "Tên hàng theo NCC", "in_list_view": 0},
+  {"fieldname": "supplier_item_code", "fieldtype": "Data", "label": "Mã hàng theo NCC", "in_list_view": 0},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú dòng", "in_list_view": 0}
  ],
  "owner": "Administrator", "modified_by": "Administrator", "modified": "2026-05-11 00:00:00",
  "module": "Supplycore", "name": "SC Purchase Order Item", "permissions": [],

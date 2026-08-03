@@ -25,6 +25,12 @@ export default {
         'sc-warning': '#B45309',
         'sc-danger': '#C2362F',
         'sc-info': '#0E7AB5',
+        // — Semantic tints (nền mờ nhã — thay palette Tailwind thô bg-red-50…) —
+        'sc-success-50': '#E7F4EC',
+        'sc-warning-50': '#FCF1E4',
+        'sc-danger-50': '#FBE9E8',
+        'sc-info-50': '#E6F2FA',
+        'sc-critical-50': '#FBE9E8',
         // — Severity (Alert) —
         'sc-critical': '#C2362F',
         'sc-high': '#C2410C',

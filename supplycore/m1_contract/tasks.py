@@ -50,20 +50,19 @@ def check_contract_expiry():
         f"<td>{frappe.format(c.remaining_value, {'fieldtype': 'Currency'})}</td></tr>"
         for c in expiring
     )
-    message = f"""
-        <h3>SupplyCore — Hợp đồng khung sắp hết hạn</h3>
-        <table border="1" cellpadding="6" cellspacing="0">
-            <tr>
-                <th>Mã HĐ</th><th>NCC</th><th>Hết hạn</th>
-                <th>Số ngày còn lại</th><th>Hạn mức còn lại</th>
-            </tr>
+    from supplycore.utils.emailer import send_email, sc_list_url
+    table = f"""
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px">
+            <tr style="background:#f3f6fb"><th align="left">Mã HĐ</th><th align="left">NCC</th>
+                <th>Hết hạn</th><th>Số ngày còn lại</th><th align="right">Hạn mức còn lại</th></tr>
             {rows}
         </table>
-        <p><a href="/app/framework-contract">Mở danh sách HĐK</a></p>
     """
-    frappe.sendmail(
+    send_email(
         recipients=recipients,
-        subject=f"[SupplyCore] {len(expiring)} HĐK sắp hết hạn",
-        message=message,
-        delayed=True,
+        subject=f"[SupplyCore] {len(expiring)} HĐ khung sắp hết hạn",
+        title="Hợp đồng khung sắp hết hạn",
+        intro=f"Có <b>{len(expiring)}</b> hợp đồng khung sắp hết hạn — cần theo dõi để gia hạn hoặc thanh lý:",
+        body_html=table, note_kind="warn",
+        cta_url=sc_list_url("Framework Contract"), cta_label="Mở danh sách HĐ khung",
     )

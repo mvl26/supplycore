@@ -122,12 +122,16 @@ def sales_order_approve(name) -> dict:
 # 4. Delivery Note create + submit
 # ---------------------------------------------------------------------------
 @frappe.whitelist()
-def make_delivery(sales_order, from_warehouse=None, delivery_date=None) -> dict:
-    """Nút 'Tạo phiếu giao' trên SC Sales Order (GĐ MVL b5 — bán tự động).
+def make_delivery(sales_order, from_warehouse=None, delivery_date=None, submit=1) -> dict:
+    """Nút 'Tạo phiếu giao' trên SC Sales Order.
 
     Wrapper kwargs-phẳng cho ActionPanel (delivery_create nhận dict `data` không
     hợp injection phẳng). Copy đầy đủ dòng hàng/SL từ SO; batch do controller DN
     tự FEFO auto-pick. from_warehouse rỗng → lấy Settings.default_warehouse.
+
+    submit=1 (mặc định): tạo + submit ngay (giữ hành vi cũ cho test/seed/luồng
+    tự động). submit=0: tạo NHÁP cần soạn hàng (picking_required=1) — nhân viên
+    kho quét xác nhận từng dòng rồi mới submit.
     Trả {name} để ActionPanel navigate sang DN vừa tạo.
     """
     if not from_warehouse:
@@ -140,19 +144,24 @@ def make_delivery(sales_order, from_warehouse=None, delivery_date=None) -> dict:
         "sales_order": sales_order,
         "from_warehouse": from_warehouse,
         "delivery_date": delivery_date,
-    })
+    }, submit=submit)
     return {"name": dn_name}
 
 
 @frappe.whitelist()
-def delivery_create(data) -> str:
-    """Tạo + submit SC Delivery Note từ SC Sales Order.
+def delivery_create(data, submit=1) -> str:
+    """Tạo SC Delivery Note từ SC Sales Order.
 
     data: {sales_order, from_warehouse, delivery_date?, items?}
     Nếu items không truyền → suy ra từ SO Item (item, uom, qty đầy đủ theo SO);
-    batch được controller tự FEFO auto-pick (BRU-INV-001/BRU-EXP-001).
+    batch được controller tự FEFO auto-pick (gợi ý, sửa được ở luồng soạn hàng).
+
+    submit=1 (mặc định): insert + submit ngay (trừ tồn kho luôn) — giữ hành vi cũ.
+    submit=0: chỉ insert NHÁP với picking_required=1 (chờ quét xác nhận từng
+    dòng qua confirm_pick_line, đủ mới submit → trừ tồn ở bước submit đó).
     Trả về: tên (name) của SC Delivery Note.
     """
+    from frappe.utils import cint
     data = _to_dict(data)
     if not frappe.has_permission("SC Delivery Note", "create"):
         frappe.throw(_("Không có quyền tạo Phiếu giao hàng"), frappe.PermissionError)
@@ -162,6 +171,7 @@ def delivery_create(data) -> str:
     doc.sales_order = sales_order
     doc.from_warehouse = data.get("from_warehouse")
     doc.delivery_date = data.get("delivery_date") or today()
+    doc.picking_required = 0 if cint(submit) else 1
 
     items = data.get("items")
     if not items:
@@ -178,7 +188,13 @@ def delivery_create(data) -> str:
             "warehouse": row.get("warehouse"),
         })
     doc.insert()
-    doc.submit()
+    if cint(submit):
+        doc.submit()
+    elif sales_order:
+        # Đánh dấu SO "Đang xử lý" → nút "Tạo phiếu giao" (when: status=="Đã duyệt")
+        # ẩn đi, tránh tạo TRÙNG phiếu giao nháp → trừ tồn 2 lần. Khôi phục
+        # "Đã duyệt" khi hủy (on_cancel) hoặc xóa phiếu nháp (on_trash).
+        frappe.db.set_value("SC Sales Order", sales_order, "status", "Đang xử lý")
     return doc.name
 
 
@@ -268,3 +284,31 @@ def receipt_collect(sales_invoice, amount, mode: str = "Chuyển khoản") -> di
 
     outstanding = frappe.db.get_value("SC Sales Invoice", sales_invoice, "outstanding_amount")
     return {"name": doc.name, "outstanding": flt(outstanding)}
+
+
+@frappe.whitelist()
+def sales_framework_items(framework_contract: str) -> list:
+    """Danh mục vật tư của 1 HĐ khung bán — dùng cho màn Đơn bán:
+    (1) tự nạp chi tiết vào đơn khi chọn HĐ khung,
+    (2) lọc ô chọn Vật tư ở dòng chi tiết chỉ trong HĐ khung (yêu cầu #5).
+
+    Trả về mỗi dòng: item, item_name, uom, unit_price, remaining_qty, contract_qty.
+    unit_price lấy đúng theo HĐ khung (BRU-SFC-002 — server ghi đè lại khi lưu)."""
+    from supplycore.utils.permissions import block_portal
+    block_portal()
+    if not frappe.has_permission("SC Sales Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung bán"), frappe.PermissionError)
+    if not framework_contract:
+        return []
+    rows = frappe.get_all(
+        "SFC Item",
+        filters={"parent": framework_contract, "parenttype": "SC Sales Framework Contract"},
+        fields=["item", "uom", "unit_price", "contract_qty", "remaining_qty"],
+        order_by="idx asc",
+    )
+    for r in rows:
+        r["item_name"] = frappe.db.get_value("SC Item", r["item"], "item_name") or r["item"]
+        r["unit_price"] = flt(r.get("unit_price"))
+        r["remaining_qty"] = flt(r.get("remaining_qty"))
+        r["contract_qty"] = flt(r.get("contract_qty"))
+    return rows

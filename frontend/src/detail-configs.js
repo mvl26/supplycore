@@ -383,7 +383,7 @@ export const DETAIL_CONFIGS = {
   'SC Material Request': {
     icon: 'clipboard-plus',
     accentLabel: 'Yêu cầu vật tư',
-    title: (d) => d.department || d.name,
+    title: (d) => d.customer || d.name,
     subtitleMono: (d) => d.name,
     meta: [
       { icon: 'calendar', text: (d) => d.transaction_date ? `Yêu cầu ${fmtDate(d.transaction_date)}` : null },
@@ -415,7 +415,8 @@ export const DETAIL_CONFIGS = {
           const acc = d.requested_by || d.owner || '—'
           return d.requested_by_name ? `${d.requested_by_name} (${acc})` : acc
         } },
-        { label: 'Khoa yêu cầu', value: (d) => d.department || '—' },
+        { label: 'Khách hàng yêu cầu', value: (d) => d.customer || '—',
+          link: (d) => d.customer ? `/doc/SC Customer/${d.customer}` : null },
         { label: 'Kho đích', value: (d) => d.warehouse },
         { label: 'Procurement Plan', value: (d) => d.procurement_plan,
           link: (d) => d.procurement_plan ? `/doc/Procurement Plan/${d.procurement_plan}` : null },

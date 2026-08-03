@@ -143,7 +143,7 @@ async function logout() {
         </div>
         <div v-if="!collapsed" class="min-w-0 overflow-hidden">
           <div class="text-[15px] font-extrabold tracking-tight leading-tight">SupplyCore</div>
-          <div class="text-[10.5px] uppercase tracking-[0.14em] text-white/45 leading-tight mt-0.5">
+          <div class="text-[10.5px] uppercase tracking-[0.14em] text-white/70 leading-tight mt-0.5">
             Chuỗi cung ứng Phân phối
           </div>
         </div>
@@ -188,13 +188,13 @@ async function logout() {
           <!-- Header nhóm (không phải link — bấm để collapse) -->
           <button v-if="!collapsed" type="button" @click="toggleBlock(b.id)"
             class="w-full flex items-center gap-2 px-4 mb-1 group/hd select-none">
-            <span class="text-[13px] leading-none">{{ b.emoji }}</span>
+            <Icon :name="b.icon" :size="14" class="flex-shrink-0" :style="{ color: b.accent }" />
             <span class="text-[10.5px] font-extrabold uppercase tracking-[0.15em]"
               :style="{ color: b.accent }">{{ b.label }}</span>
             <span class="ml-auto flex items-center gap-1.5">
               <span class="h-[3px] w-6 rounded-full opacity-70" :style="{ background: b.accent }" />
               <Icon name="chevron-down" :size="14"
-                class="text-white/35 group-hover/hd:text-white/70 transition-transform duration-200"
+                class="text-white/60 group-hover/hd:text-white/80 transition-transform duration-200"
                 :class="isBlockOpen(b) ? '' : '-rotate-90'" />
             </span>
           </button>
@@ -223,7 +223,7 @@ async function logout() {
 
       <!-- Scope note (named persona only) -->
       <div v-if="persona && !persona.flat && !collapsed"
-        class="mx-3 mb-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-400/20
+        class="mx-3 mb-2 px-3 py-2 rounded-lg bg-sc-success/10 border border-sc-success/40
                text-[10.5px] leading-relaxed text-emerald-100/85">
         <div class="flex items-start gap-1.5">
           <Icon name="shield-check" :size="13" class="mt-[1px] flex-shrink-0 text-emerald-300" />
@@ -246,10 +246,10 @@ async function logout() {
           <span v-if="!collapsed" class="text-xs font-medium">Thu gọn thanh điều hướng</span>
         </button>
         <button v-if="!collapsed" @click="showVersionModal = true"
-          class="w-full px-3 pt-1.5 text-[10.5px] text-white/35 hover:text-white/80 flex items-center gap-1.5 cursor-pointer text-left">
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+          class="w-full px-3 pt-1.5 text-[10.5px] text-white/65 hover:text-white/90 flex items-center gap-1.5 cursor-pointer text-left">
+          <span class="h-1.5 w-1.5 rounded-full bg-sc-success/80" />
           <span>v{{ APP_VERSION }} · {{ auth.primaryRole }}</span>
-          <span class="ml-auto text-white/30">›</span>
+          <Icon name="chevron-right" :size="14" class="ml-auto text-white/60" />
         </button>
       </div>
     </aside>
@@ -270,7 +270,7 @@ async function logout() {
             :style="{ background: activeBlock.accentBase + '1A', color: activeBlock.accentBase,
                       boxShadow: `inset 3px 0 0 ${activeBlock.accentBase}` }"
             :title="`Phân hệ: ${activeBlock.label}`">
-            <span>{{ activeBlock.emoji }}</span>
+            <Icon :name="activeBlock.icon" :size="13" />
             <span class="hidden sm:inline">{{ activeBlock.label }}</span>
           </span>
           <span v-else class="hidden sm:inline-flex h-7 w-7 items-center justify-center rounded-md
@@ -334,7 +334,7 @@ async function logout() {
               </div>
               <button @click="userMenuOpen = false; logout()"
                 class="flex items-center gap-2.5 w-full text-left px-3.5 py-2.5 text-[13px]
-                       font-medium text-sc-danger hover:bg-red-50 transition-colors">
+                       font-medium text-sc-danger hover:bg-sc-danger-50 transition-colors">
                 <Icon name="log-out" :size="17" />
                 Đăng xuất
               </button>
@@ -368,11 +368,11 @@ async function logout() {
             <li v-for="(i, k) in r.items" :key="k" class="flex items-start gap-2">
               <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 mt-0.5"
                 :class="{
-                  'bg-red-100 text-red-700':    i.type === 'fix',
-                  'bg-blue-100 text-blue-700':  i.type === 'feat',
+                  'bg-sc-danger-50 text-sc-danger':    i.type === 'fix',
+                  'bg-sc-info-50 text-sc-info':  i.type === 'feat',
                   'bg-purple-100 text-purple-700': i.type === 'ux',
-                  'bg-amber-100 text-amber-700':i.type === 'perf',
-                  'bg-gray-100 text-gray-700':  i.type === 'docs',
+                  'bg-sc-warning-50 text-sc-warning':i.type === 'perf',
+                  'bg-sc-bg-soft text-gray-700':  i.type === 'docs',
                 }">
                 {{ i.type.toUpperCase() }}
               </span>

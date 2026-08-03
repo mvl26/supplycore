@@ -29,6 +29,7 @@ class SCDeliveryNote(Document):
         self._resolve_batches()
 
     def before_submit(self):
+        self._check_scan_confirmed()
         self._check_expiry_and_stock()
 
     def on_submit(self):
@@ -37,10 +38,39 @@ class SCDeliveryNote(Document):
         if self.sales_order:
             frappe.db.set_value("SC Sales Order", self.sales_order, "status", "Đã bàn giao")
 
+    def before_cancel(self):
+        # Hủy phiếu giao (soạn hàng) phải nêu lý do — set cancellation_reason
+        # TRƯỚC khi cancel (frontend gán vào doc rồi mới gọi cancel).
+        if self.picking_required and not (self.cancellation_reason or "").strip():
+            frappe.throw(_(
+                "SC-E-DN-CANCEL-REASON: Phải nhập lý do hủy phiếu giao hàng."
+            ), title="Thiếu lý do hủy")
+
     def on_cancel(self):
-        self._reverse_stock_ledger()
+        self._reverse_stock_ledger()   # hoàn tồn kho về như cũ (append-only +qty)
         if self.sales_order:
             frappe.db.set_value("SC Sales Order", self.sales_order, "status", "Đã duyệt")
+
+    def on_trash(self):
+        # Xóa phiếu giao NHÁP đang soạn → trả SO về "Đã duyệt" để hiện lại nút
+        # "Tạo phiếu giao" (tránh SO kẹt ở "Đang xử lý" khi bỏ phiếu nháp).
+        if self.docstatus == 0 and self.picking_required and self.sales_order:
+            if frappe.db.get_value("SC Sales Order", self.sales_order, "status") == "Đang xử lý":
+                frappe.db.set_value("SC Sales Order", self.sales_order, "status", "Đã duyệt")
+
+    # ------------------------------------------------------------------
+    # Luồng soạn hàng: chỉ cho submit khi MỌI dòng đã quét xác nhận đúng lô/SL.
+    # ------------------------------------------------------------------
+    def _check_scan_confirmed(self):
+        if not self.picking_required:
+            return   # phiếu tạo tự động (không qua soạn hàng) — giữ hành vi cũ
+        chua = [r for r in self.items if not r.scan_confirmed]
+        if chua:
+            ten = ", ".join(sorted({(r.item or "?") for r in chua}))
+            frappe.throw(_(
+                "SC-E-DN-NOT-SCANNED: Còn {0} dòng chưa quét xác nhận ({1}). "
+                "Phải quét đủ lô & số lượng mới được submit."
+            ).format(len(chua), ten), title="Chưa quét xác nhận")
 
     # ------------------------------------------------------------------
     # BRU-SO-002
@@ -49,7 +79,9 @@ class SCDeliveryNote(Document):
         if not self.sales_order:
             return
         so_status = frappe.db.get_value("SC Sales Order", self.sales_order, "status")
-        if so_status != "Đã duyệt":
+        # "Đang xử lý" = đã có phiếu giao nháp đang soạn hàng cho SO này (đặt ở
+        # delivery_create khi submit=0). Vẫn cho lưu/soạn phiếu nháp đó tiếp.
+        if so_status not in ("Đã duyệt", "Đang xử lý"):
             frappe.throw(_(
                 "BRU-SO-002: Đơn hàng bán {0} chưa được duyệt (trạng thái hiện tại: "
                 "{1}) — không thể tạo Phiếu giao hàng."
@@ -215,3 +247,119 @@ def _get_valuation(item, warehouse, batch=None):
     if batch:
         return _get_valuation(item, warehouse, batch=None)
     return 0.0
+
+
+@frappe.whitelist()
+def confirm_pick_line(delivery_note, row, scanned_batch, scanned_bin=None, qty=None):
+    """Quét xác nhận 1 dòng soạn hàng của Phiếu giao hàng (nháp).
+
+    - scanned_batch: mã/barcode lô nhân viên quét trên hàng thực tế. CHO PHÉP
+      chọn LÔ KHÁC với lô gợi ý — server validate hợp lệ rồi cập nhật dòng.
+    - scanned_bin: (tùy chọn) mã/barcode vị trí (bin) đã quét — phải thuộc kho xuất.
+    - qty: SL thực lấy (mặc định = SL dòng).
+
+    Validate server-side (KHÔNG tin client): lô đúng vật tư, chưa hết hạn, chưa
+    khóa/QC đạt, tồn khả dụng đủ (get_available_qty đã loại Pending/Rejected/
+    blocked), bin thuộc kho. Đạt → set batch/bin_location/qty + scan_confirmed=1.
+    Trả tiến độ còn lại (để UI biết khi nào cho submit).
+    """
+    from supplycore.supplycore.doctype.sc_stock_ledger_entry.sc_stock_ledger_entry import (
+        SCStockLedgerEntry,
+    )
+
+    doc = frappe.get_doc("SC Delivery Note", delivery_note)
+    if not frappe.has_permission("SC Delivery Note", "write", doc=doc):
+        frappe.throw(_("Không có quyền soạn phiếu giao hàng"), frappe.PermissionError)
+    if doc.docstatus != 0:
+        frappe.throw(_("Phiếu đã submit/hủy — không soạn được nữa"))
+
+    line = next((r for r in doc.items if r.name == row), None)
+    if not line:
+        frappe.throw(_("Không tìm thấy dòng {0} trên phiếu").format(row))
+
+    # 1) Nhận dạng lô đã quét (theo barcode hoặc mã lô)
+    bcode = (scanned_batch or "").strip()
+    batch_name = frappe.db.get_value("SC Batch", {"barcode": bcode}, "name") \
+        or frappe.db.get_value("SC Batch", bcode, "name")
+    if not batch_name:
+        frappe.throw(_("SC-E-PICK-BATCH: Không nhận dạng được lô đã quét: {0}").format(bcode))
+    bt = frappe.db.get_value("SC Batch", batch_name,
+                             ["item", "expiry_date", "blocked", "qc_status"], as_dict=True)
+    if bt.item != line.item:
+        frappe.throw(_(
+            "SC-E-PICK-ITEM: Lô {0} thuộc vật tư {1}, không khớp dòng ({2})."
+        ).format(batch_name, bt.item, line.item))
+    if bt.blocked:
+        frappe.throw(_("SC-E-PICK-BLOCKED: Lô {0} đang bị khóa.").format(batch_name))
+    if bt.qc_status in ("Pending", "Rejected"):
+        frappe.throw(_("SC-E-PICK-QC: Lô {0} chưa đạt QC ({1}).").format(batch_name, bt.qc_status))
+    if bt.expiry_date and getdate(bt.expiry_date) < getdate(today()):
+        frappe.throw(_("SC-E-PICK-EXPIRED: Lô {0} đã hết hạn ({1}).").format(batch_name, bt.expiry_date))
+
+    # 2) SL cần lấy
+    need = flt(qty) if flt(qty) > 0 else flt(line.qty)
+    if need <= 0:
+        frappe.throw(_("SC-E-PICK-QTY: Số lượng phải lớn hơn 0."))
+
+    # 3) Tồn khả dụng của lô tại kho xuất (authoritative)
+    wh = line.warehouse or doc.from_warehouse
+    avail = flt(SCStockLedgerEntry.get_available_qty(line.item, wh, batch_name))
+    if need > avail + 0.001:
+        frappe.throw(_(
+            "SC-E-PICK-STOCK: Lô {0} tại kho {1} chỉ còn {2}, không đủ để lấy {3}."
+        ).format(batch_name, wh, avail, need))
+
+    # 4) Vị trí (bin) — tùy chọn, phải thuộc kho xuất
+    bin_name = None
+    if scanned_bin and str(scanned_bin).strip():
+        bc = str(scanned_bin).strip()
+        bin_name = frappe.db.get_value("Bin Location", {"barcode": bc}, "name") \
+            or frappe.db.get_value("Bin Location", bc, "name")
+        if not bin_name:
+            frappe.throw(_("SC-E-PICK-BIN: Không nhận dạng được vị trí đã quét: {0}").format(bc))
+        bin_wh = frappe.db.get_value("Bin Location", bin_name, "warehouse")
+        if bin_wh and wh and bin_wh != wh:
+            frappe.throw(_(
+                "SC-E-PICK-BIN-WH: Vị trí {0} thuộc kho {1}, không phải kho xuất {2}."
+            ).format(bin_name, bin_wh, wh))
+
+    # 5) Ghi nhận dòng đã soạn
+    line.batch = batch_name
+    line.qty = need
+    line.warehouse = wh
+    if bin_name:
+        line.bin_location = bin_name
+    line.scan_confirmed = 1
+    doc.save(ignore_permissions=True)
+
+    remaining = len([r for r in doc.items if not r.scan_confirmed])
+    return {
+        "ok": True,
+        "row": line.name,
+        "batch": batch_name,
+        "qty": need,
+        "bin_location": bin_name,
+        "remaining_unconfirmed": remaining,
+        "all_confirmed": remaining == 0,
+    }
+
+
+@frappe.whitelist()
+def cancel_delivery(delivery_note, reason):
+    """Hủy Phiếu giao hàng đã submit + ghi lý do + hoàn tồn kho.
+
+    reason bắt buộc. Dùng db_set để ghi cancellation_reason lên phiếu đã submit
+    (field thường không cho sửa sau submit → UpdateAfterSubmitError); sau đó
+    doc.cancel() chạy on_cancel → _reverse_stock_ledger hoàn tồn về như cũ.
+    """
+    reason = (reason or "").strip()
+    if not reason:
+        frappe.throw(_("SC-E-DN-CANCEL-REASON: Phải nhập lý do hủy."), title="Thiếu lý do hủy")
+    doc = frappe.get_doc("SC Delivery Note", delivery_note)
+    if not frappe.has_permission("SC Delivery Note", "cancel", doc=doc):
+        frappe.throw(_("Không có quyền hủy phiếu giao hàng"), frappe.PermissionError)
+    if doc.docstatus != 1:
+        frappe.throw(_("Chỉ hủy được phiếu đã submit"))
+    doc.db_set("cancellation_reason", reason)   # ghi trước, tránh UpdateAfterSubmit
+    doc.cancel()
+    return {"ok": True, "name": doc.name, "status": doc.status}

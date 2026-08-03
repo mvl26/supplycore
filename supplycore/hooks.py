@@ -62,7 +62,6 @@ for _dt in _SUBMITTABLE_DOCTYPES:
 scheduler_events = {
     "daily": [
         "supplycore.m1_contract.tasks.check_contract_expiry",
-        "supplycore.m2_planning.tasks.check_reorder_levels",
         "supplycore.m2_planning.tasks.check_po_response",
         "supplycore.m3_receiving.tasks.check_return_responses",
         "supplycore.m5_fefo.api.fefo_picker.scan_expiring_batches",
@@ -76,6 +75,9 @@ scheduler_events = {
     ],
     "cron": {
         "0 1 * * *": ["supplycore.m9_stocktake.tasks.create_periodic_count"],
+        # 8h sáng (giờ site Asia/Ho_Chi_Minh): quét tồn dưới mức tối thiểu → tạo
+        # Yêu cầu mua NHÁP (stamp HĐ khung NCC theo từng dòng) + email quản lý.
+        "0 8 * * *": ["supplycore.m2_planning.tasks.check_reorder_levels"],
     },
 }
 

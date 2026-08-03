@@ -220,7 +220,7 @@ const actionLabel = (a) => ({
   <!-- ===== EXPORT MODAL ===== -->
   <Modal :open="exportOpen" title="Xuất danh sách" size="lg" @close="exportOpen = false">
     <div class="space-y-4 text-sm">
-      <div class="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
+      <div class="bg-sc-info-50 border border-sc-info/40 rounded p-2 text-xs text-sc-info">
         File xuất ra có <b>3 phần</b>: dòng 1 = tên cột hiển thị · dòng 2 = mã trường (fieldname) ·
         dòng 3 trở đi = dữ liệu. Giữ nguyên 2 dòng đầu để nhập lại được.
       </div>
@@ -289,7 +289,7 @@ const actionLabel = (a) => ({
   <!-- ===== IMPORT MODAL ===== -->
   <Modal :open="importOpen" title="Nhập dữ liệu từ file" size="lg" @close="importOpen = false">
     <div class="space-y-4 text-sm">
-      <div class="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
+      <div class="bg-sc-warning-50 border border-sc-warning/40 rounded p-2 text-xs text-sc-warning">
         File nhập phải đúng <b>format 3 phần</b>: dòng 1 = tên hiển thị (chỉ để đọc) ·
         <b>dòng 2 = fieldname</b> (bắt buộc, hệ thống dùng dòng này) · dòng 3+ = dữ liệu.
         Tải template bên dưới để có sẵn đúng cấu trúc.
@@ -297,7 +297,7 @@ const actionLabel = (a) => ({
 
       <!-- BƯỚC 1: Tải template -->
       <div class="border border-sc-border rounded p-3 bg-sc-bg">
-        <div class="text-xs font-semibold text-sc-navy mb-2">① Tải template (đúng format 3 dòng)</div>
+        <div class="text-xs font-semibold text-sc-navy mb-2"><span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-sc-royal text-white text-[10px] font-bold mr-1 align-[-2px]">1</span> Tải template (đúng format 3 dòng)</div>
         <div class="flex flex-wrap items-center gap-2">
           <select v-model="tplFileType" class="sc-input text-sm py-1">
             <option value="csv">CSV (.csv)</option>
@@ -320,7 +320,7 @@ const actionLabel = (a) => ({
 
       <!-- BƯỚC 2: Chọn file -->
       <div>
-        <label class="text-xs font-semibold text-sc-navy block mb-1">② Chọn file đã điền (.csv / .xlsx)</label>
+        <label class="text-xs font-semibold text-sc-navy block mb-1"><span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-sc-royal text-white text-[10px] font-bold mr-1 align-[-2px]">2</span> Chọn file đã điền (.csv / .xlsx)</label>
         <input type="file" accept=".csv,.xlsx" @change="onFileChosen" class="block w-full text-sm" />
         <div v-if="importFile" class="text-xs text-sc-text-muted mt-1">
           {{ importFile.name }} · {{ (importFile.size/1024).toFixed(1) }} KB
@@ -333,7 +333,7 @@ const actionLabel = (a) => ({
       </label>
 
       <div>
-        <div class="text-xs font-semibold text-sc-navy mb-1">③ Kiểm tra & nhập</div>
+        <div class="text-xs font-semibold text-sc-navy mb-1"><span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-sc-royal text-white text-[10px] font-bold mr-1 align-[-2px]">3</span> Kiểm tra & nhập</div>
         <div class="flex gap-2">
           <button @click="runDryRun" :disabled="!importFile || importBusy"
             class="sc-btn-secondary text-sm">
@@ -361,19 +361,19 @@ const actionLabel = (a) => ({
             }[k] || k }}</span>
           </span>
         </div>
-        <div v-if="result.errors?.length" class="bg-red-50 px-3 py-2 border-t border-red-200">
-          <div class="text-xs font-semibold text-red-700 mb-1">{{ result.errors.length }} lỗi:</div>
-          <ul class="text-xs text-red-700 list-disc list-inside max-h-32 overflow-y-auto">
+        <div v-if="result.errors?.length" class="bg-sc-danger-50 px-3 py-2 border-t border-sc-danger/40">
+          <div class="text-xs font-semibold text-sc-danger mb-1">{{ result.errors.length }} lỗi:</div>
+          <ul class="text-xs text-sc-danger list-disc list-inside max-h-32 overflow-y-auto">
             <li v-for="(e,i) in result.errors" :key="i">{{ e }}</li>
           </ul>
         </div>
         <div v-if="result.unmapped_headers?.length"
-          class="bg-yellow-50 px-3 py-1.5 border-t border-yellow-200 text-xs text-yellow-800">
+          class="bg-sc-warning-50 px-3 py-1.5 border-t border-sc-warning/40 text-xs text-sc-warning">
           Cột không khớp (bỏ qua):
           <code v-for="h in result.unmapped_headers" :key="h" class="mx-1">{{ h }}</code>
         </div>
         <div class="max-h-56 overflow-y-auto">
-          <table class="w-full text-xs">
+          <table class="sc-table text-xs">
             <thead class="bg-sc-bg sticky top-0">
               <tr>
                 <th class="px-2 py-1 text-left">Dòng</th>
@@ -392,7 +392,7 @@ const actionLabel = (a) => ({
                 </td>
                 <td class="px-2 py-1 font-mono">{{ row.name || '—' }}</td>
                 <td class="px-2 py-1">
-                  <span v-if="row.error" class="text-red-600">{{ row.error }}</span>
+                  <span v-if="row.error" class="text-sc-danger">{{ row.error }}</span>
                   <span v-else-if="row.reason" class="text-sc-text-muted">{{ row.reason }}</span>
                   <span v-else-if="row.fields_count" class="text-sc-text-muted">{{ row.fields_count }} trường</span>
                 </td>

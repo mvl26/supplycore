@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtDate, fmtNumber } from '../utils'
+import { qcBadge, qcLabel, expiryClass } from '../utils/status'
 
 const router = useRouter()
 const route = useRoute()
@@ -193,7 +194,7 @@ async function saveAll() {
     </div>
   </div>
 
-  <div v-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải...</div>
+  <div v-if="loading" class="sc-card p-4 space-y-2.5"><div v-for="n in 6" :key="n" class="sc-skeleton h-9 w-full" :style="{ opacity: 1 - n * 0.12 }" /></div>
   <div v-else-if="!items.length" class="sc-card p-10 text-center text-sc-text-muted">
     <Icon name="check" :size="16" /> Không có hàng chờ xếp lên kệ
     <div class="text-xs mt-1">(Hàng vừa nhận qua PR/SE chưa được gán vị trí)</div>
@@ -241,11 +242,10 @@ async function saveAll() {
           <td class="text-sm">{{ r.item_name || '—' }}</td>
           <td class="text-xs">{{ r.warehouse }}</td>
           <td class="font-mono text-xs">{{ r.batch || '—' }}</td>
-          <td class="text-xs">{{ r.expiry_date ? fmtDate(r.expiry_date) : '—' }}</td>
+          <td class="text-xs"><span class="px-1.5 py-0.5 rounded" :class="expiryClass(r.expiry_date)">{{ r.expiry_date ? fmtDate(r.expiry_date) : '—' }}</span></td>
           <td>
-            <span v-if="r.qc_status" :class="['sc-badge',
-              r.qc_status === 'Accepted' ? 'sc-badge-success' : 'sc-badge-warning']">
-              {{ r.qc_status === 'Accepted' ? 'Đạt' : r.qc_status === 'Rejected' ? 'Không đạt' : r.qc_status }}
+            <span v-if="r.qc_status" :class="['sc-badge', qcBadge(r.qc_status)]">
+              {{ qcLabel(r.qc_status) }}
             </span>
           </td>
           <td class="text-right font-mono font-semibold">{{ fmtNumber(r.qty) }}</td>

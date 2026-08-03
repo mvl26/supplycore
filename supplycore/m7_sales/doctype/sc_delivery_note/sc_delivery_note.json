@@ -15,9 +15,11 @@
   "from_warehouse",
   "delivery_date",
   "status",
+  "picking_required",
   "acceptance_ref",
   "section_items",
   "items",
+  "cancellation_reason",
   "amended_from"
  ],
  "fields": [
@@ -87,6 +89,20 @@
    "options": "SC Acceptance Record",
    "label": "Biên bản nghiệm thu",
    "read_only": 1
+  },
+  {
+   "fieldname": "picking_required",
+   "fieldtype": "Check",
+   "label": "Cần soạn hàng & quét xác nhận",
+   "default": "0",
+   "read_only": 1,
+   "description": "Bật khi phiếu tạo theo luồng soạn hàng — phải quét xác nhận đủ lô/SL mới được submit"
+  },
+  {
+   "fieldname": "cancellation_reason",
+   "fieldtype": "Small Text",
+   "label": "Lý do hủy",
+   "depends_on": "eval:doc.docstatus==2 || doc.cancellation_reason"
   },
   {
    "fieldname": "section_items",

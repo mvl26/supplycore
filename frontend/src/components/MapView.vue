@@ -52,9 +52,9 @@ const gridCols = computed(() => {
 
 // Màu ô site theo loại kho
 const SITE_TYPE = {
-  Main:       { bg: '#1F4E79', fg: '#fff', icon: 'building-2', label: 'Kho tổng' },
-  Sub:        { bg: '#2E75B6', fg: '#fff', icon: 'package', label: 'Kho con' },
-  Department: { bg: '#5B9BD5', fg: '#fff', icon: 'heart-pulse', label: 'Kho khoa' },
+  Main:       { bg: 'var(--sc-navy)', fg: '#fff', icon: 'building-2', label: 'Kho tổng' },
+  Sub:        { bg: 'var(--sc-royal)', fg: '#fff', icon: 'package', label: 'Kho con' },
+  Department: { bg: 'var(--sc-royal-light)', fg: '#fff', icon: 'heart-pulse', label: 'Kho khoa' },
   Quarantine: { bg: '#C55A11', fg: '#fff', icon: 'alert-triangle', label: 'Cách ly' },
   Transit:    { bg: '#7F7F7F', fg: '#fff', icon: 'arrow-left-right', label: 'Trung chuyển' },
 }
@@ -127,7 +127,7 @@ const legend = computed(() => {
     </div>
 
     <!-- Grid -->
-    <div class="overflow-auto border border-sc-border rounded-lg bg-gray-50 p-3">
+    <div class="overflow-auto border border-sc-border rounded-lg bg-sc-bg-soft p-3">
       <div class="inline-grid gap-1"
         :style="{ gridTemplateColumns: `repeat(${cols}, ${cellSize}px)` }">
         <template v-for="r in gridRows" :key="`row-${r}`">

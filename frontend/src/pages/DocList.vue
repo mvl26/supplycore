@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getList, count, deleteDoc, VOUCHER_IO_DOCTYPES as VIO_LIST } from '../api'
+import { getList, count, deleteDoc, bulkApproveFC, batchLabels, VOUCHER_IO_DOCTYPES as VIO_LIST } from '../api'
+import { printLabels, batchLabelItem } from '../utils/labels'
 import { DT, isSubmittable } from '../modules'
 import PageHeader from '../components/PageHeader.vue'
 import Icon from '../components/Icon.vue'
@@ -54,9 +55,21 @@ const columnFilters = ref({})  // { fieldName: 'value' }
 const confirmRef = ref(null)
 const selectedKeys = ref([])
 const deleting = ref(false)
+const submitting = ref(false)
 const bulkDeletable = computed(() =>
   !!cfg.value && isSubmittable(doctype.value) && access.canDoctype(doctype.value, 'delete'))
+// Duyệt & submit hàng loạt HĐ khung — chỉ Manager (phân quyền cao) mới thấy nút.
+const isManager = computed(() => access.is_admin
+  || (access.roles || []).some(r => ['SupplyCore Manager', 'System Manager'].includes(r)))
+const bulkApprovable = computed(() =>
+  doctype.value === 'Framework Contract' && isManager.value)
+// In nhãn hàng loạt — chỉ ở danh sách Lô (SC Batch)
+const bulkPrintable = computed(() => doctype.value === 'SC Batch')
+const printing = ref(false)
+const bulkQty = ref(1)   // số nhãn in cho MỖI lô đã chọn
 const rowIsDraft = (r) => (r.docstatus ?? 0) === 0
+// In nhãn hàng loạt: mọi lô chọn được; xóa/duyệt hàng loạt: chỉ dòng nháp
+const rowSelectableFn = (r) => bulkPrintable.value ? true : rowIsDraft(r)
 // Đảm bảo docstatus có trong data để gate checkbox từng dòng.
 const fetchFields = computed(() => {
   const f = [...(cfg.value?.listFields || [])]
@@ -375,6 +388,52 @@ async function doBulkDelete() {
   await load()
 }
 
+// Duyệt & Submit hàng loạt HĐ khung (chỉ Manager). Backend tôn trọng ngưỡng
+// Executive: HĐ giá trị lớn dừng ở "Chờ Lãnh đạo duyệt".
+async function doBulkApprove() {
+  const keys = [...selectedKeys.value]
+  if (!keys.length) return
+  if (!await confirmRef.value.ask({
+    title: 'Duyệt & Submit hàng loạt',
+    message: `Duyệt và submit ${keys.length} hợp đồng khung đã chọn? `
+      + `HĐ giá trị vượt ngưỡng sẽ chuyển sang "Chờ Lãnh đạo duyệt". Kết quả sẽ gửi email cho bạn.`,
+    confirmText: `Duyệt ${keys.length} HĐ`, variant: 'primary',
+  })) return
+  submitting.value = true
+  try {
+    const res = await bulkApproveFC(keys)
+    const c = res?.counts || {}
+    if (c.submitted) toast.success(`Đã duyệt & kích hoạt ${c.submitted} HĐ`)
+    if (c.pending_executive) toast.warning(`${c.pending_executive} HĐ chờ Lãnh đạo duyệt (vượt ngưỡng)`)
+    if (c.errors) toast.error(`${c.errors} HĐ lỗi — xem email tổng kết`)
+    if (!c.submitted && !c.pending_executive && !c.errors) toast.push('Không có HĐ nào được xử lý')
+    selectedKeys.value = []
+  } catch (e) {
+    toast.error(e.message || 'Không duyệt được hàng loạt')
+  } finally {
+    submitting.value = false
+    await load()
+  }
+}
+
+// In nhãn hàng loạt cho các Lô đã chọn (1 lần in — mỗi lô 1 tem)
+async function doBulkPrintLabels() {
+  const keys = [...selectedKeys.value]
+  if (!keys.length) return
+  printing.value = true
+  try {
+    const rows = await batchLabels(keys)
+    if (!rows || !rows.length) { toast.error('Không lấy được dữ liệu lô để in'); return }
+    const copies = Math.max(1, Math.floor(Number(bulkQty.value) || 1))
+    printLabels(rows.map((r) => ({ ...batchLabelItem(r), copies })))
+    toast.success(`Đang in ${rows.length * copies} nhãn (${rows.length} lô × ${copies})`)
+  } catch (e) {
+    toast.error(e.message || 'Không in được nhãn hàng loạt')
+  } finally {
+    printing.value = false
+  }
+}
+
 onMounted(() => {
   suppressWatch = true
   loadFromRoute()
@@ -527,11 +586,28 @@ onMounted(() => {
     </div>
 
     <template v-else>
-      <!-- Thanh xóa hàng loạt — chỉ hiện khi có phiếu nháp được chọn -->
-      <div v-if="bulkDeletable && selectedKeys.length"
-        class="sc-card px-4 py-2.5 mb-2 flex items-center gap-3 border-sc-danger/40 bg-sc-danger/5">
-        <span class="text-sm font-medium text-sc-text">Đã chọn {{ selectedKeys.length }} phiếu nháp</span>
-        <button @click="doBulkDelete" :disabled="deleting"
+      <!-- Thanh thao tác hàng loạt — hiện khi có bản ghi nháp được chọn -->
+      <div v-if="(bulkDeletable || bulkApprovable || bulkPrintable) && selectedKeys.length"
+        class="sc-card px-4 py-2.5 mb-2 flex flex-wrap items-center gap-3">
+        <span class="text-sm font-medium text-sc-text">
+          Đã chọn {{ selectedKeys.length }} {{ bulkApprovable ? 'hợp đồng nháp' : bulkPrintable ? 'lô' : 'phiếu nháp' }}
+        </span>
+        <template v-if="bulkPrintable">
+          <label class="text-sm text-sc-text-muted">Số nhãn/lô</label>
+          <input v-model.number="bulkQty" type="number" min="1" max="200"
+            class="sc-input py-1 w-16 text-sm text-center" title="Số tem in cho mỗi lô đã chọn" />
+          <button @click="doBulkPrintLabels" :disabled="printing"
+            class="bg-sc-royal hover:brightness-110 text-white px-3 py-1.5 rounded-md font-medium text-sm disabled:opacity-60">
+            <Icon name="printer" :size="14" />
+            {{ printing ? 'Đang in...' : `In nhãn (${selectedKeys.length}×${bulkQty > 1 ? bulkQty : 1})` }}
+          </button>
+        </template>
+        <button v-if="bulkApprovable" @click="doBulkApprove" :disabled="submitting"
+          class="bg-sc-royal hover:brightness-110 text-white px-3 py-1.5 rounded-md font-medium text-sm disabled:opacity-60">
+          <Icon name="check-circle" :size="14" />
+          {{ submitting ? 'Đang duyệt...' : `Duyệt & Submit ${selectedKeys.length} HĐ` }}
+        </button>
+        <button v-if="bulkDeletable" @click="doBulkDelete" :disabled="deleting"
           class="bg-sc-danger hover:brightness-110 text-white px-3 py-1.5 rounded-md font-medium text-sm disabled:opacity-60">
           <Icon name="trash-2" :size="14" />
           {{ deleting ? 'Đang xóa...' : `Xóa ${selectedKeys.length} phiếu` }}
@@ -542,9 +618,9 @@ onMounted(() => {
       <DataTable :rows="rows" :columns="columns" :loading="loading"
         empty="Chưa có bản ghi nào"
         :sortKey="sortKey" :sortDir="sortDir"
-        :selectable="bulkDeletable"
+        :selectable="bulkDeletable || bulkApprovable || bulkPrintable"
         :selectedKeys="selectedKeys"
-        :rowSelectable="rowIsDraft"
+        :rowSelectable="rowSelectableFn"
         @update:selectedKeys="selectedKeys = $event"
         @rowClick="openRow" @sort="onSort" />
     </template>

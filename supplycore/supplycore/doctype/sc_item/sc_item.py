@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt
 
 
 _THRESHOLD_FIELDS = ("safety_stock", "reorder_level", "max_stock",
@@ -10,8 +11,7 @@ _THRESHOLD_FIELDS = ("safety_stock", "reorder_level", "max_stock",
 class SCItem(Document):
 
     def validate(self):
-        if self.uom_conversion_factor and self.uom_conversion_factor <= 0:
-            frappe.throw(_("uom_conversion_factor phải > 0"))
+        self._validate_uom_conversions()
         # Auto-fill use_uom = stock UOM nếu chưa nhập
         if not self.use_uom:
             self.use_uom = self.uom
@@ -21,6 +21,22 @@ class SCItem(Document):
         self._validate_thresholds()
         self._validate_lead_time()
         self._validate_reorder_rows()
+
+    def _validate_uom_conversions(self):
+        """Bảng quy đổi đơn vị kép: mỗi dòng {uom, conversion_factor} nghĩa
+        1 uom = conversion_factor đơn vị tồn kho (uom gốc). Kiểm: hệ số > 0,
+        không trùng đơn vị, không trùng chính đơn vị tồn kho (base đã = 1)."""
+        seen = set()
+        for row in (self.uom_conversions or []):
+            if flt(row.conversion_factor) <= 0:
+                frappe.throw(_("Hệ số quy đổi của đơn vị {0} phải > 0").format(row.uom or "?"))
+            if row.uom == self.uom:
+                frappe.throw(_(
+                    "Đơn vị {0} trùng đơn vị tồn kho — không cần khai quy đổi (mặc định = 1)."
+                ).format(row.uom))
+            if row.uom in seen:
+                frappe.throw(_("Đơn vị {0} bị khai quy đổi trùng lặp.").format(row.uom))
+            seen.add(row.uom)
 
     def _validate_thresholds(self):
         """UC-05: 5 trường ngưỡng không âm; max_stock>0 → safety ≤ reorder ≤ max."""

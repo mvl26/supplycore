@@ -83,10 +83,6 @@ function downloadCsv() {
 function printNow() {
   window.print()
 }
-
-const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
-                       Math.abs(v) >= 1e3 ? (v / 1e3).toFixed(1) + 'k' :
-                       String(v)
 </script>
 
 <template>
@@ -106,43 +102,43 @@ const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-      <div class="border rounded p-3">
+      <div class="border border-sc-border rounded p-3">
         <div class="text-xs text-sc-text-muted">Tổng items</div>
         <div class="text-2xl font-bold font-mono">{{ stats.total }}</div>
       </div>
-      <div class="border rounded p-3"
-        :class="stats.counted === stats.total ? 'border-green-300 bg-green-50' : 'border-amber-300 bg-amber-50'">
+      <div class="border border-sc-border rounded p-3"
+        :class="stats.counted === stats.total ? 'border-sc-success/40 bg-sc-success-50' : 'border-sc-warning/40 bg-sc-warning-50'">
         <div class="text-xs text-sc-text-muted">Đã đếm</div>
         <div class="text-2xl font-bold font-mono"
-          :class="stats.counted === stats.total ? 'text-green-700' : 'text-amber-700'">
+          :class="stats.counted === stats.total ? 'text-sc-success' : 'text-sc-warning'">
           {{ stats.counted }} / {{ stats.total }}
         </div>
       </div>
-      <div class="border rounded p-3"
-        :class="stats.mismatch > 0 ? 'border-red-300 bg-red-50' : 'border-green-300 bg-green-50'">
+      <div class="border border-sc-border rounded p-3"
+        :class="stats.mismatch > 0 ? 'border-sc-danger/40 bg-sc-danger-50' : 'border-sc-success/40 bg-sc-success-50'">
         <div class="text-xs text-sc-text-muted">Items lệch</div>
         <div class="text-2xl font-bold font-mono"
-          :class="stats.mismatch > 0 ? 'text-red-700' : 'text-green-700'">
+          :class="stats.mismatch > 0 ? 'text-sc-danger' : 'text-sc-success'">
           {{ stats.mismatch }}
         </div>
       </div>
-      <div class="border rounded p-3"
-        :class="stats.recount > 0 ? 'border-amber-300 bg-amber-50' : ''">
+      <div class="border border-sc-border rounded p-3"
+        :class="stats.recount > 0 ? 'border-sc-warning/40 bg-sc-warning-50' : ''">
         <div class="text-xs text-sc-text-muted">Cần đếm lại</div>
         <div class="text-2xl font-bold font-mono"
-          :class="stats.recount > 0 ? 'text-amber-700' : ''">
+          :class="stats.recount > 0 ? 'text-sc-warning' : ''">
           {{ stats.recount }}
         </div>
         <div v-if="stats.recount > 0" class="text-xs">
           Đã L2: <strong>{{ stats.recounted2 }}</strong> · L3: <strong>{{ stats.recounted3 }}</strong>
         </div>
       </div>
-      <div class="border rounded p-3"
-        :class="stats.totalVarianceValue < 0 ? 'border-red-300 bg-red-50' : (stats.totalVarianceValue > 0 ? 'border-blue-300 bg-blue-50' : '')">
+      <div class="border border-sc-border rounded p-3"
+        :class="stats.totalVarianceValue < 0 ? 'border-sc-danger/40 bg-sc-danger-50' : (stats.totalVarianceValue > 0 ? 'border-sc-info/40 bg-sc-info-50' : '')">
         <div class="text-xs text-sc-text-muted">Tổng lệch giá trị</div>
         <div class="text-xl font-bold font-mono"
-          :class="stats.totalVarianceValue < 0 ? 'text-red-700' : (stats.totalVarianceValue > 0 ? 'text-blue-700' : '')">
-          {{ stats.totalVarianceValue >= 0 ? '+' : '' }}{{ fmtVal(stats.totalVarianceValue) }}
+          :class="stats.totalVarianceValue < 0 ? 'text-sc-danger' : (stats.totalVarianceValue > 0 ? 'text-sc-info' : '')">
+          {{ stats.totalVarianceValue >= 0 ? '+' : '' }}{{ fmtNumber(stats.totalVarianceValue) }}
         </div>
         <div class="text-xs">VND</div>
       </div>
@@ -151,11 +147,11 @@ const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
     <!-- Workflow hint -->
     <div v-if="doc.docstatus === 0" class="mt-4 text-sm">
       <div v-if="stats.counted === 0"
-        class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+        class="bg-sc-info-50 border-l-4 border-sc-info/40 p-3 rounded">
         <Icon name="info" :size="16" /> <strong>Bước 1:</strong> Bấm <em>"Tự nạp items"</em> để load danh sách vật tư trong phạm vi, rồi nhập SL đếm vào bảng dưới.
       </div>
       <div v-else-if="!isReady"
-        class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded">
+        class="bg-sc-warning-50 border-l-4 border-sc-warning/40 p-3 rounded">
         <Icon name="clock" :size="16" /> <strong>Đang đếm:</strong>
         <span v-if="stats.counted < stats.total">
           Còn <strong>{{ stats.total - stats.counted }}</strong> items chưa đếm.
@@ -164,16 +160,16 @@ const fmtVal = (v) => Math.abs(v) >= 1e6 ? (v / 1e6).toFixed(2) + ' tr' :
           Còn <strong>{{ stats.recount - stats.recounted2 }}</strong> items cần đếm lại lần 2.
         </span>
       </div>
-      <div v-else class="bg-green-50 border-l-4 border-green-400 p-3 rounded">
+      <div v-else class="bg-sc-success-50 border-l-4 border-sc-success/40 p-3 rounded">
         <Icon name="check" :size="16" /> <strong>Đã đếm xong</strong> — Submit phiếu rồi bấm <em>"Tạo SR đối soát"</em> để tạo phiếu điều chỉnh kho.
       </div>
     </div>
     <div v-else-if="doc.docstatus === 1 && doc.status === 'Counted' && !doc.stock_reconciliation"
-      class="mt-4 bg-green-50 border-l-4 border-green-400 p-3 rounded text-sm">
+      class="mt-4 bg-sc-success-50 border-l-4 border-sc-success/40 p-3 rounded text-sm">
       <Icon name="check" :size="16" /> <strong>Phiếu đã submit</strong> — Bấm <em>"Tạo SR đối soát"</em> để điều chỉnh tồn kho theo kết quả đếm.
     </div>
     <div v-else-if="doc.stock_reconciliation"
-      class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
+      class="mt-4 bg-sc-info-50 border-l-4 border-sc-info/40 p-3 rounded text-sm">
       <Icon name="settings" :size="16" /> SR đối soát đã tạo:
       <router-link :to="`/doc/SC Stock Reconciliation/${encodeURIComponent(doc.stock_reconciliation)}`"
         class="text-sc-royal hover:underline font-mono">{{ doc.stock_reconciliation }}</router-link>

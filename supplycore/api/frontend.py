@@ -117,11 +117,14 @@ def search_framework_contract(q=None, limit=20):
 
 
 @frappe.whitelist()
-def search_sales_framework_contract(q=None, limit=20):
+def search_sales_framework_contract(q=None, limit=20, customer=None):
     """M7 UX: tìm HĐ khung BÁN theo TÊN khách hàng (chính), mã HĐ, mã khách,
     và mã/tên vật tư trong danh mục (child) — trả kèm customer_name để hiển thị
     tường minh (SFC không có field tên riêng, chỉ định danh bằng khách + kỳ).
-    Mirror search_framework_contract (chiều mua)."""
+    Mirror search_framework_contract (chiều mua).
+
+    customer: nếu truyền → chỉ trả HĐ khung của khách đó (dùng khi màn Đơn bán
+    đã chọn khách trước — lọc HĐ khung theo khách, yêu cầu #5)."""
     # SQL thô bỏ qua permission_query_conditions → chặn Portal (nếu không, portal
     # user thấy HĐ + tên KH của MỌI khách — rò chéo BRU-SEC-001). Nội bộ SPA dùng.
     block_portal()
@@ -129,17 +132,21 @@ def search_sales_framework_contract(q=None, limit=20):
         frappe.throw(_("Không có quyền đọc HĐ khung bán"), frappe.PermissionError)
     q = (q or "").strip()
     params = {"lim": int(limit or 20)}
-    cond = ""
+    conds = []
+    if customer:
+        params["customer"] = customer
+        conds.append("sfc.customer = %(customer)s")
     if q:
         params["like"] = f"%{q}%"
-        cond = """WHERE sfc.name LIKE %(like)s
+        conds.append("""(sfc.name LIKE %(like)s
                   OR sfc.customer LIKE %(like)s
                   OR cust.customer_name LIKE %(like)s
                   OR EXISTS (
                      SELECT 1 FROM `tabSFC Item` sfci
                      WHERE sfci.parent = sfc.name
                        AND sfci.item LIKE %(like)s
-                  )"""
+                  ))""")
+    cond = ("WHERE " + " AND ".join(conds)) if conds else ""
     return frappe.db.sql(f"""
         SELECT sfc.name, sfc.customer, cust.customer_name,
                sfc.valid_from, sfc.valid_to, sfc.status
@@ -316,7 +323,8 @@ def related_docs(doctype, name):
             order_by="inspection_date desc", limit=50)
         # Batches từ PR Item
         out["batches"] = frappe.db.sql("""
-            SELECT DISTINCT pri.batch_no AS name, b.item, b.expiry_date, b.qc_status
+            SELECT DISTINCT pri.batch_no AS name, b.item, b.supplier_batch_no,
+                   b.expiry_date, b.qc_status
             FROM `tabSC Purchase Receipt Item` pri
             LEFT JOIN `tabSC Batch` b ON b.name = pri.batch_no
             WHERE pri.parent = %s AND pri.batch_no IS NOT NULL
@@ -409,6 +417,78 @@ def related_docs(doctype, name):
                      "recovered_qty", "destroyed_qty", "status"],
             limit=50)
 
+    # === Chuỗi BÁN HÀNG (O2C) — đối xứng với chuỗi mua hàng ở trên ===
+    # Khách hàng → HĐ khung bán → Đơn hàng → Phiếu giao → Nghiệm thu → Hóa đơn → Thu tiền.
+    elif doctype == "SC Customer":
+        out["sales_framework_contracts"] = frappe.db.get_all("SC Sales Framework Contract",
+            filters={"customer": name},
+            fields=["name", "valid_from", "valid_to", "total_value", "remaining_value",
+                     "status", "docstatus"],
+            order_by="valid_from desc", limit=20)
+        out["sales_orders"] = frappe.db.get_all("SC Sales Order",
+            filters={"customer": name},
+            fields=["name", "order_date", "total_amount", "status", "docstatus"],
+            order_by="order_date desc", limit=20)
+        out["sales_invoices"] = frappe.db.get_all("SC Sales Invoice",
+            filters={"customer": name},
+            fields=["name", "invoice_date", "grand_total", "outstanding_amount",
+                     "status", "docstatus"],
+            order_by="invoice_date desc", limit=20)
+
+    elif doctype == "SC Sales Framework Contract":
+        out["sales_orders"] = frappe.db.get_all("SC Sales Order",
+            filters={"framework_contract": name},
+            fields=["name", "order_date", "customer", "total_amount", "status", "docstatus"],
+            order_by="order_date desc", limit=50)
+
+    elif doctype == "SC Sales Order":
+        out["delivery_notes"] = frappe.db.get_all("SC Delivery Note",
+            filters={"sales_order": name},
+            fields=["name", "delivery_date", "customer", "status", "docstatus"],
+            order_by="delivery_date desc", limit=20)
+        # Hóa đơn bán phát sinh qua các phiếu giao của đơn này.
+        out["sales_invoices"] = frappe.db.sql("""
+            SELECT si.name, si.invoice_date, si.grand_total, si.outstanding_amount,
+                   si.status, si.docstatus
+            FROM `tabSC Sales Invoice` si
+            JOIN `tabSC Delivery Note` dn ON dn.name = si.delivery_note
+            WHERE dn.sales_order = %s
+            ORDER BY si.invoice_date DESC LIMIT 20
+        """, name, as_dict=True)
+
+    elif doctype == "SC Delivery Note":
+        out["acceptance_records"] = frappe.db.get_all("SC Acceptance Record",
+            filters={"delivery_note": name},
+            fields=["name", "acceptance_date", "accepted_by", "status", "docstatus"],
+            limit=10)
+        out["sales_invoices"] = frappe.db.get_all("SC Sales Invoice",
+            filters={"delivery_note": name},
+            fields=["name", "invoice_date", "grand_total", "outstanding_amount",
+                     "status", "docstatus"],
+            limit=10)
+        out["sold_batches"] = frappe.db.sql("""
+            SELECT DISTINCT dni.batch AS name, b.item, b.supplier_batch_no,
+                   b.expiry_date, b.qc_status
+            FROM `tabDN Item` dni
+            LEFT JOIN `tabSC Batch` b ON b.name = dni.batch
+            WHERE dni.parent = %s AND dni.batch IS NOT NULL AND dni.batch != ''
+        """, name, as_dict=True)
+
+    elif doctype == "SC Sales Invoice":
+        out["sales_receipts"] = frappe.db.get_all("SC Sales Receipt",
+            filters={"sales_invoice": name},
+            fields=["name", "receipt_date", "amount", "docstatus"],
+            order_by="receipt_date desc", limit=20)
+
+    elif doctype == "SC Sales Receipt":
+        _si = frappe.db.get_value("SC Sales Receipt", name, "sales_invoice")
+        if _si:
+            out["sales_invoices"] = frappe.db.get_all("SC Sales Invoice",
+                filters={"name": _si},
+                fields=["name", "invoice_date", "grand_total", "outstanding_amount",
+                         "status", "docstatus"],
+                limit=1)
+
     return out
 
 
@@ -428,7 +508,7 @@ def stock_balance(item=None, warehouse=None, batch=None, item_group=None):
         conds.append("i.item_group = %(g)s"); params["g"] = item_group
 
     rows = frappe.db.sql(f"""
-        SELECT sle.item, i.item_name, sle.warehouse, sle.batch,
+        SELECT sle.item, i.item_name, sle.warehouse, sle.batch, b.supplier_batch_no,
                COALESCE(SUM(sle.qty_change), 0) AS qty,
                COALESCE(SUM(sle.qty_change * sle.valuation_rate), 0) AS value,
                b.expiry_date, b.qc_status, b.blocked
@@ -482,7 +562,7 @@ def warehouse_stock_for_item(warehouse, item=None):
         conds.append("sle.item = %(item)s")
         params["item"] = item
     return frappe.db.sql(f"""
-        SELECT sle.item, i.item_name, i.uom, sle.batch, sle.bin_location,
+        SELECT sle.item, i.item_name, i.uom, sle.batch, b.supplier_batch_no, sle.bin_location,
                COALESCE(SUM(sle.qty_change), 0) AS qty,
                MIN(sle.posting_date) AS received_date,
                b.expiry_date, b.qc_status, b.blocked,
@@ -643,6 +723,30 @@ def assign_bin(assignments):
         updated += 1
     frappe.db.commit()
     return {"updated": updated}
+
+
+@frappe.whitelist()
+def batch_labels(names):
+    """Dữ liệu in nhãn cho NHIỀU Lô (in hàng loạt từ danh sách Lô).
+    names: JSON list (hoặc chuỗi phẩy) các mã lô. Trả field cần cho nhãn."""
+    import json as _json
+    block_portal()
+    if not frappe.has_permission("SC Batch", "read"):
+        frappe.throw(_("Không có quyền đọc Lô"), frappe.PermissionError)
+    if isinstance(names, str):
+        try:
+            names = _json.loads(names)
+        except Exception:
+            names = [n.strip() for n in names.split(",") if n.strip()]
+    if not names:
+        return []
+    return frappe.get_all(
+        "SC Batch",
+        filters={"name": ["in", list(names)]},
+        fields=["name", "barcode", "batch_id", "item", "item_name",
+                "supplier_batch_no", "manufacturing_date", "expiry_date",
+                "model", "country_of_origin"],
+    )
 
 
 @frappe.whitelist()

@@ -38,7 +38,7 @@ def check_return_responses():
                 frappe.sendmail(
                     recipients=managers,
                     subject=f"[SupplyCore][ESCALATE] Return PR {r.name} chưa xử lý sau 7 ngày",
-                    message=(f"<p>Return PR <a href='/app/sc-purchase-receipt/{r.name}'>{r.name}</a> "
+                    message=(f"<p>Return PR <a href='{frappe.utils.get_url('/supplycore/doc/SC%20Purchase%20Receipt/' + r.name)}'>{r.name}</a> "
                              f"gửi NCC <b>{r.supplier_name or r.supplier}</b> ngày {r.posting_date} "
                              f"chưa nhận được phản hồi xác nhận đổi hàng / hoàn tiền.</p>"
                              f"<p>Giá trị: {frappe.format(r.total_value, {'fieldtype':'Currency'})}</p>"

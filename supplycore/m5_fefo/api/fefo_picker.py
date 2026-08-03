@@ -136,21 +136,23 @@ def _send_expiry_email(rows, critical_days):
         f"<td>{flt(r.current_qty)}</td></tr>"
         for r in rows
     )
-    msg = f"""
-        <h3>SupplyCore — Cảnh báo lô hàng sắp hết hạn</h3>
-        <p>Có <b>{len(rows)}</b> lô hàng sắp hết hạn cần xử lý ưu tiên.</p>
-        <table border="1" cellpadding="6" cellspacing="0">
-            <tr><th>Lô</th><th>Mã VT</th><th>Tên</th><th>Kho</th>
-                <th>Hạn dùng</th><th>Ngày còn</th><th>SL</th></tr>
+    from supplycore.utils.emailer import send_email, sc_list_url
+    table = f"""
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px">
+            <tr style="background:#f3f6fb"><th>Lô</th><th>Mã VT</th><th align="left">Tên</th><th>Kho</th>
+                <th>Hạn dùng</th><th>Ngày còn</th><th align="right">SL</th></tr>
             {body}
         </table>
-        <p><a href="/app/batch-expiry-alert?resolved=0">Xem danh sách Alert</a></p>
     """
     try:
-        frappe.sendmail(
+        send_email(
             recipients=recipients,
             subject=f"[SupplyCore] {len(rows)} lô sắp hết hạn",
-            message=msg, delayed=True,
+            title="Cảnh báo lô hàng sắp hết hạn",
+            intro=f"Có <b>{len(rows)}</b> lô hàng sắp hết hạn — cần xử lý ưu tiên "
+                  "(chuyển cách ly / ưu tiên xuất / trả NCC):",
+            body_html=table, note_kind="warn",
+            cta_url=sc_list_url("Batch Expiry Alert"), cta_label="Xem danh sách cảnh báo",
         )
     except Exception as e:
         frappe.log_error(message=f"Email scan_expiring failed: {e}",

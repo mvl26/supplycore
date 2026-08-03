@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination.vue'
 import Icon from '../components/Icon.vue'
 import { useToastStore } from '../stores/toast'
 import { fmtNumber, fmtVNDShort, fmtVND, fmtDate } from '../utils'
+import { qcBadge, qcLabel } from '../utils/status'
 
 const router = useRouter()
 const toast = useToastStore()
@@ -106,9 +107,6 @@ const isExpiringSoon = (date) => {
   return days < 30 && days >= 0
 }
 const isExpired = (date) => date && new Date(date) < new Date()
-const qcLabel = (s) => ({
-  Accepted: 'Đạt', Rejected: 'Không đạt', Conditional: 'Có điều kiện',
-}[s] || s)
 </script>
 
 <template>
@@ -170,7 +168,7 @@ const qcLabel = (s) => ({
 
   <!-- Data table -->
   <div class="sc-card overflow-hidden">
-    <div v-if="loading" class="p-10 text-center text-sc-text-muted">Đang tải...</div>
+    <div v-if="loading" class="sc-card p-4 space-y-2.5"><div v-for="n in 6" :key="n" class="sc-skeleton h-9 w-full" :style="{ opacity: 1 - n * 0.12 }" /></div>
     <div v-else-if="!rows.length" class="p-10 text-center text-sc-text-muted">
       Không có tồn kho khớp với bộ lọc
     </div>
@@ -188,7 +186,10 @@ const qcLabel = (s) => ({
               Kho <span class="text-xs text-sc-royal"><Icon :name="sortIcon('warehouse')" :size="12" /></span>
             </th>
             <th @click="setSort('batch')" class="cursor-pointer select-none hover:bg-sc-bg">
-              Lô <span class="text-xs text-sc-royal"><Icon :name="sortIcon('batch')" :size="12" /></span>
+              Lô hệ thống <span class="text-xs text-sc-royal"><Icon :name="sortIcon('batch')" :size="12" /></span>
+            </th>
+            <th @click="setSort('supplier_batch_no')" class="cursor-pointer select-none hover:bg-sc-bg">
+              Lô NCC <span class="text-xs text-sc-royal"><Icon :name="sortIcon('supplier_batch_no')" :size="12" /></span>
             </th>
             <th @click="setSort('qc_status')" class="cursor-pointer select-none hover:bg-sc-bg">
               KCS <span class="text-xs text-sc-royal"><Icon :name="sortIcon('qc_status')" :size="12" /></span>
@@ -207,13 +208,14 @@ const qcLabel = (s) => ({
         <tbody>
           <tr v-for="(r, idx) in pagedRows" :key="idx"
             class="cursor-pointer"
-            :class="{ 'bg-red-50': isExpired(r.expiry_date), 'bg-amber-50': isExpiringSoon(r.expiry_date) && !isExpired(r.expiry_date) }">
+            :class="{ 'bg-sc-danger-50': isExpired(r.expiry_date), 'bg-sc-warning-50': isExpiringSoon(r.expiry_date) && !isExpired(r.expiry_date) }">
             <td class="font-mono text-xs" @click="openItem(r.item)">{{ r.item }}</td>
             <td>{{ r.item_name || '—' }}</td>
             <td>{{ r.warehouse }}</td>
             <td class="font-mono text-xs" @click="openBatch(r.batch)">{{ r.batch || '—' }}</td>
+            <td class="font-mono text-xs">{{ r.supplier_batch_no || '—' }}</td>
             <td>
-              <span v-if="r.qc_status" :class="['sc-badge', r.qc_status === 'Accepted' ? 'sc-badge-success' : r.qc_status === 'Rejected' ? 'sc-badge-critical' : 'sc-badge-warning']">
+              <span v-if="r.qc_status" :class="['sc-badge', qcBadge(r.qc_status)]">
                 {{ qcLabel(r.qc_status) }}
               </span>
               <span v-if="r.blocked" class="sc-badge sc-badge-critical ml-1">Khoá</span>

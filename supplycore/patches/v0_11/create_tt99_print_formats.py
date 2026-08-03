@@ -131,13 +131,14 @@ ITEMS_INVOICE = """
 
 ITEMS_DELIVERY = """
 <table class="items">
-  <thead><tr><th>STT</th><th>Tên vật tư</th><th>ĐVT</th><th>Số lô</th><th>SL giao</th></tr></thead>
+  <thead><tr><th>STT</th><th>Tên vật tư</th><th>ĐVT</th><th>Số lô NCC</th><th>SL giao</th></tr></thead>
   <tbody>
   {%- for it in doc.items %}
+    {%- set _sbn = frappe.db.get_value("SC Batch", it.get("batch"), "supplier_batch_no") if it.get("batch") else "" %}
     <tr><td class="center">{{ loop.index }}</td>
       <td>{{ frappe.db.get_value("SC Item", it.item, "item_name") or it.item }}</td>
       <td class="center">{{ it.get("uom") or "" }}</td>
-      <td class="center">{{ it.get("batch") or "" }}</td>
+      <td class="center">{{ _sbn or "" }}</td>
       <td class="num">{{ "{:,.0f}".format(it.qty or 0).replace(",", ".") }}</td></tr>
   {%- endfor %}
   </tbody>

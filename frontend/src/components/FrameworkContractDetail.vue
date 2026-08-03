@@ -1,11 +1,18 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Icon from './Icon.vue'
 import { fmtNumber, fmtVND, fmtVNDShort, fmtDate, fmtDateTime } from '../utils'
+import DocPreviewDrawer from './DocPreviewDrawer.vue'
 
 const props = defineProps({
   doc: { type: Object, required: true },
 })
+
+const router = useRouter()
+const preview = ref({ open: false, doctype: '', name: '' })
+function goDoc(dt, name) { router.push(`/doc/${encodeURIComponent(dt)}/${encodeURIComponent(name)}`) }
+function openPreview(dt, name) { preview.value = { open: true, doctype: dt, name: String(name) } }
 
 const items = computed(() => Array.isArray(props.doc.items) ? props.doc.items : [])
 
@@ -138,7 +145,14 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
                   {{ doc.supplier_name || doc.supplier || '—' }}
                 </h1>
                 <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-sc-text-muted">
-                  <span v-if="doc.supplier" class="font-mono text-xs">{{ doc.supplier }}</span>
+                  <span v-if="doc.supplier" class="inline-flex items-center gap-1">
+                    <a href="#" @click.prevent="goDoc('SC Supplier', doc.supplier)"
+                      class="font-mono text-xs text-sc-royal hover:underline">{{ doc.supplier }}</a>
+                    <button type="button" @click="openPreview('SC Supplier', doc.supplier)"
+                      class="text-sc-text-muted hover:text-sc-royal" title="Xem nhanh nhà cung cấp">
+                      <Icon name="eye" :size="13" />
+                    </button>
+                  </span>
                   <span v-if="doc.contract_date" class="inline-flex items-center gap-1.5">
                     <Icon name="calendar" :size="13" /> Ký {{ fmtDate(doc.contract_date) }}
                   </span>
@@ -229,15 +243,15 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
         <div class="text-xs text-sc-text-muted mt-1">{{ value.committedPct.toFixed(1) }}% chưa convert PO</div>
       </div>
 
-      <div class="sc-card p-4 ring-1 ring-emerald-200/70 bg-emerald-50/30">
-        <div class="flex items-center gap-2 text-xs uppercase tracking-wider text-emerald-800/80 mb-2">
+      <div class="sc-card p-4 ring-1 ring-sc-success/30 bg-sc-success-50/30">
+        <div class="flex items-center gap-2 text-xs uppercase tracking-wider text-sc-success/80 mb-2">
           <Icon name="check-circle-2" :size="13" />
           <span>Còn lại khả dụng</span>
         </div>
-        <div class="font-mono text-xl font-semibold text-emerald-700 leading-none">
+        <div class="font-mono text-xl font-semibold text-sc-success leading-none">
           {{ fmtMoneyShort(value.remaining) }}
         </div>
-        <div class="text-xs text-emerald-700/70 mt-1">{{ value.remainingPct.toFixed(1) }}% còn dùng</div>
+        <div class="text-xs text-sc-success/70 mt-1">{{ value.remainingPct.toFixed(1) }}% còn dùng</div>
       </div>
     </div>
 
@@ -254,7 +268,7 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
           :title="`Đã sử dụng ${value.usedPct.toFixed(1)}%`"></div>
         <div class="bg-sc-royal-light transition-all" :style="{ width: value.committedPct + '%' }"
           :title="`Đang gọi ${value.committedPct.toFixed(1)}%`"></div>
-        <div class="bg-emerald-400 transition-all" :style="{ width: value.remainingPct + '%' }"
+        <div class="bg-sc-success transition-all" :style="{ width: value.remainingPct + '%' }"
           :title="`Còn lại ${value.remainingPct.toFixed(1)}%`"></div>
       </div>
       <div class="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-xs">
@@ -267,7 +281,7 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
           <span class="text-sc-text-muted">Đang gọi</span>
         </span>
         <span class="inline-flex items-center gap-1.5">
-          <span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-400"></span>
+          <span class="inline-block w-2.5 h-2.5 rounded-sm bg-sc-success"></span>
           <span class="text-sc-text-muted">Còn lại</span>
         </span>
       </div>
@@ -320,11 +334,11 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
             <!-- Connector line -->
             <span v-if="i < approvalSteps.length - 1"
               class="absolute left-[10px] top-6 bottom-[-1rem] w-px"
-              :class="s.done ? 'bg-emerald-300' : 'bg-sc-border'"></span>
+              :class="s.done ? 'bg-sc-success' : 'bg-sc-border'"></span>
             <!-- Step marker -->
             <span class="absolute left-0 top-0.5 inline-flex items-center justify-center
                          w-5 h-5 rounded-full ring-2 ring-white"
-              :class="s.done ? 'bg-emerald-500 text-white' : 'bg-sc-border text-sc-text-muted'">
+              :class="s.done ? 'bg-sc-success text-white' : 'bg-sc-border text-sc-text-muted'">
               <Icon v-if="s.done" name="check" :size="12" />
               <span v-else class="w-1.5 h-1.5 rounded-full bg-white"></span>
             </span>
@@ -420,5 +434,7 @@ const hasApprovalData = computed(() => approvalSteps.value.some(s => s.done || s
         </table>
       </div>
     </div>
+    <DocPreviewDrawer :open="preview.open" :doctype="preview.doctype" :name="preview.name"
+      @close="preview.open = false" />
   </div>
 </template>

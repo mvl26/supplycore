@@ -16,11 +16,11 @@ export const MODULES = [
 ]
 
 // Status → badge class mapping
-const STATUS_BADGE = {
+export const STATUS_BADGE = {
   Draft: 'sc-badge-neutral', Pending: 'sc-badge-warning',
   Submitted: 'sc-badge-info', Approved: 'sc-badge-success',
   Rejected: 'sc-badge-critical', Cancelled: 'sc-badge-neutral',
-  Active: 'sc-badge-success', Expired: 'sc-badge-warning', Exhausted: 'sc-badge-critical',
+  Active: 'sc-badge-success', Expired: 'sc-badge-critical', Exhausted: 'sc-badge-critical',
   Terminated: 'sc-badge-critical',
   Issued: 'sc-badge-info', 'In Progress': 'sc-badge-warning',
   Converted: 'sc-badge-info', Generated: 'sc-badge-info',
@@ -29,7 +29,7 @@ const STATUS_BADGE = {
   Paid: 'sc-badge-success', Unpaid: 'sc-badge-warning',
   Accepted: 'sc-badge-success',
   Critical: 'sc-badge-critical', Warning: 'sc-badge-warning', Info: 'sc-badge-info',
-  Pending: 'sc-badge-warning', 'Sent to Supplier': 'sc-badge-info',
+  'Sent to Supplier': 'sc-badge-info',
   'Partially Received': 'sc-badge-warning', Received: 'sc-badge-success',
   'Material Receipt': 'sc-badge-success', 'Material Issue': 'sc-badge-warning',
   'Material Transfer': 'sc-badge-info',
@@ -67,6 +67,12 @@ export const STATUS_LABEL = {
   Completed: 'Hoàn tất', Resolved: 'Đã xử lý',
   Investigating: 'Đang điều tra', Closed: 'Đã đóng',
   Paid: 'Đã thanh toán', Unpaid: 'Chưa thanh toán',
+  // Approval stages / lifecycle bổ sung
+  'Manager Review': 'Chờ Quản lý duyệt', 'Executive Review': 'Chờ Lãnh đạo duyệt',
+  'Pending Approval': 'Chờ duyệt', 'Pending Supplier Response': 'Chờ NCC phản hồi',
+  Counted: 'Đã đếm', Reconciled: 'Đã đối soát',
+  Notified: 'Đã thông báo', Recovered: 'Đã thu hồi', Destroyed: 'Đã hủy', Used: 'Đã sử dụng',
+  'Partly Paid': 'Thu/trả một phần', 'Partially Paid': 'Trả một phần', Overdue: 'Quá hạn',
   // QC outcomes
   Accepted: 'Đạt', Pass: 'Đạt', Fail: 'Không đạt',
   'Partial Pass': 'Đạt một phần', Conditional: 'Có điều kiện',
@@ -130,6 +136,18 @@ export const SUBMITTABLE_DOCTYPES = new Set([
 
 export function isSubmittable(doctype) {
   return SUBMITTABLE_DOCTYPES.has(doctype)
+}
+
+// Doctype BẮT BUỘC duyệt 3 cấp (approval_stage) TRƯỚC khi Submit — controller
+// before_submit chặn cứng nếu chưa Approved (vd Framework Contract:
+// SC-E-FC-NOT-APPROVED). Với các doctype này KHÔNG hiện nút "Gửi duyệt" generic
+// của DocView (submit docstatus, sẽ lỗi ở Draft) — quy trình gửi duyệt dùng nút
+// "Gửi duyệt" (submit_for_review) trong ActionPanel để tránh 2 nút trùng.
+// (SC Purchase Order KHÔNG thuộc nhóm này: before_submit tự-Approve nên submit
+// trực tiếp vẫn hợp lệ.)
+export const APPROVAL_REQUIRED_DOCTYPES = new Set(['Framework Contract'])
+export function requiresApproval(doctype) {
+  return APPROVAL_REQUIRED_DOCTYPES.has(doctype)
 }
 
 // QA-BUG-M3-01: Per-field label override — cùng value 'Pending' có thể
@@ -347,13 +365,15 @@ export const DT = {
     listColumns: [
       { key: 'item', displayKey: 'item_name', label: 'Vật tư' },
       { key: 'supplier', displayKey: 'supplier_name', label: 'NCC' },
+      { key: 'batch', label: 'Lô hệ thống', type: 'code' },
+      { key: 'supplier_batch_no', label: 'Số lô NCC', mono: true },
       { key: 'name', label: 'Mã QI', type: 'code' },
       { key: 'inspection_date', label: 'Ngày', type: 'date' },
       { key: 'purchase_receipt', label: 'Phiếu nhận', type: 'code' },
       { key: 'overall_status', label: 'Kết quả', type: 'badge', badgeMap: STATUS_BADGE },
     ],
     listFields: ['name', 'inspection_date', 'purchase_receipt', 'item', 'item_name', 'supplier',
-                  'supplier_name', 'overall_status', 'docstatus'],
+                  'supplier_name', 'batch', 'supplier_batch_no', 'overall_status', 'docstatus'],
   },
 
   // === M4 ===

@@ -144,6 +144,29 @@ def _compute_qty(th: dict, current: float) -> float:
     return max(0.0, th["reorder_level"] * 2 - current)
 
 
+def _resolve_item_fc(item: str):
+    """Chọn HĐ khung NCC (Active) để gán cho dòng Yêu cầu mua — "gọi hàng theo
+    HĐ khung của NCC". 1 HĐ khung chứa item → dùng luôn; nhiều HĐ khung → ưu tiên
+    HĐ khớp NCC mặc định của item; vẫn mơ hồ → để TRỐNG cho người mua tự chọn
+    (không đoán bừa). Item không thuộc HĐ khung nào → None (vẫn mua qua NCC mặc định)."""
+    fcs = frappe.db.sql("""
+        SELECT fc.name, fc.supplier
+        FROM `tabFC Item` fci
+        JOIN `tabFramework Contract` fc ON fc.name = fci.parent
+        WHERE fci.item_code = %s AND fc.docstatus = 1 AND fc.status = 'Active'
+    """, item, as_dict=True)
+    if not fcs:
+        return None
+    if len(fcs) == 1:
+        return fcs[0].name
+    dsup = frappe.db.get_value("SC Item", item, "default_supplier")
+    if dsup:
+        match = [f.name for f in fcs if f.supplier == dsup]
+        if len(match) == 1:
+            return match[0]
+    return None   # mơ hồ → để trống
+
+
 def _create_reorder_mr(warehouse: str, rows: list) -> str:
     """Tạo Draft SC Material Request auto-generated từ reorder candidates."""
     from frappe.utils import getdate
@@ -164,6 +187,7 @@ def _create_reorder_mr(warehouse: str, rows: list) -> str:
             "qty": r["suggested_qty"],
             "uom": item_uom,
             "warehouse": warehouse,
+            "framework_contract": _resolve_item_fc(r["item"]),  # gọi hàng theo HĐ khung NCC
             "schedule_date": add_days(today(), 14),
             "remarks": f"Tồn={r['current_qty']:.1f}, Reorder={r['reorder_level']:.1f}",
         })
@@ -181,7 +205,12 @@ def _create_reorder_mr(warehouse: str, rows: list) -> str:
 
 
 def _send_reorder_summary(pairs: list, drafts: list, skipped: list):
-    recipients = _get_alert_recipients()
+    from supplycore.utils.emailer import role_emails
+    recipients = list(_get_alert_recipients() or [])
+    # + Quản lý (role SupplyCore Manager) — yêu cầu: thông báo tới quản lý
+    for e in (role_emails("SupplyCore Manager") or []):
+        if e not in recipients:
+            recipients.append(e)
     if not recipients:
         return
     rows = "".join(
@@ -197,24 +226,25 @@ def _send_reorder_summary(pairs: list, drafts: list, skipped: list):
     skipped_html = ""
     if skipped:
         skipped_html = (f"<p><b>Bỏ qua (chưa có NCC):</b> {', '.join(sorted(set(skipped))[:20])}</p>")
-    message = f"""
-        <h3>SupplyCore — Vật tư dưới Reorder Level</h3>
-        <p>Đã quét {len(pairs)} cặp (item, warehouse). Tạo {len(drafts)} Draft MR.</p>
-        <table border="1" cellpadding="6" cellspacing="0">
-            <tr><th>Mã VT</th><th>Tên</th><th>Kho</th>
-                <th>Tồn hiện tại</th><th>Reorder Level</th><th>SL đề xuất</th></tr>
+    from supplycore.utils.emailer import send_email, sc_list_url
+    body = f"""
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px">
+            <tr style="background:#f3f6fb"><th>Mã VT</th><th align="left">Tên</th><th>Kho</th>
+                <th align="right">Tồn hiện tại</th><th align="right">Mức tối thiểu</th><th align="right">SL đề xuất</th></tr>
             {rows}
         </table>
-        <h4>Draft MR đã tạo</h4>
-        <ul>{draft_links or '<li>—</li>'}</ul>
+        <p style="margin:12px 0 4px;font-weight:600;color:#111827">Yêu cầu mua nháp đã tạo:</p>
+        <ul style="margin:0">{draft_links or '<li>—</li>'}</ul>
         {skipped_html}
     """
     try:
-        frappe.sendmail(
+        send_email(
             recipients=recipients,
-            subject=f"[SupplyCore] {len(drafts)} Draft MR tự tạo từ Reorder Level",
-            message=message,
-            delayed=True,
+            subject=f"[SupplyCore] {len(drafts)} Yêu cầu mua tự tạo (dưới tồn tối thiểu)",
+            title="Vật tư dưới mức tồn tối thiểu",
+            intro=f"Đã quét {len(pairs)} cặp (vật tư, kho) và tạo <b>{len(drafts)}</b> Yêu cầu mua nháp:",
+            body_html=body, note_kind="warn",
+            cta_url=sc_list_url("SC Material Request"), cta_label="Mở danh sách Yêu cầu mua",
         )
     except Exception as e:
         frappe.log_error(message=str(e)[:1000], title="UC-07 _send_reorder_summary")
@@ -248,14 +278,16 @@ def check_po_response():
     sent = 0
     for po in rows:
         try:
-            frappe.sendmail(
+            from supplycore.utils.emailer import send_email
+            send_email(
                 recipients=[po.email_id],
-                subject=f"[SupplyCore] Nhắc nhở PO {po.name} chờ xác nhận",
-                message=(f"<p>Kính gửi {po.supplier_name or po.supplier},</p>"
-                         f"<p>PO <b>{po.name}</b> đã gửi lúc {po.sent_to_supplier_at} nhưng chưa nhận được xác nhận. "
-                         f"Vui lòng phản hồi sớm nhất có thể.</p>"
-                         f"<p>Link: /app/sc-purchase-order/{po.name}</p>"),
-                delayed=True,
+                subject=f"[SupplyCore] Nhắc xác nhận Đơn mua {po.name}",
+                title=f"Nhắc xác nhận Đơn mua {po.name}",
+                intro=f"Kính gửi <b>{po.supplier_name or po.supplier}</b>,",
+                info_rows=[("Mã đơn mua", po.name),
+                           ("Ngày gửi", frappe.format(po.sent_to_supplier_at, {'fieldtype': 'Datetime'}))],
+                note="Đơn mua đã gửi nhưng chưa nhận được xác nhận từ Quý công ty. "
+                     "Vui lòng phản hồi sớm nhất có thể.", note_kind="warn",
             )
             frappe.db.set_value("SC Purchase Order", po.name,
                                  "last_reminder_sent_at", frappe.utils.now())

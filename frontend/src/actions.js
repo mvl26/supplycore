@@ -154,11 +154,13 @@ export const ACTIONS = {
       when: (d) => d.docstatus === 1 && d.status === 'Chờ duyệt' },
     { method: 'reject',  label: 'Từ chối', icon: 'x', variant: 'danger',
       when: (d) => d.docstatus === 1 && d.status === 'Chờ duyệt' },
-    // GĐ MVL b5 — bán tự động: sau khi duyệt, nhân viên bấm tạo phiếu giao.
+    // Sau khi duyệt: tạo phiếu giao NHÁP để soạn hàng (quét xác nhận từng dòng
+    // rồi mới submit → trừ tồn). submit:0 = luồng soạn hàng (không xuất kho ngay).
     { apiMethod: 'supplycore.api.sales.make_delivery',
       apiNameArg: 'sales_order',
-      label: 'Tạo phiếu giao', icon: 'truck', variant: 'primary',
+      label: 'Tạo phiếu giao (soạn hàng)', icon: 'truck', variant: 'primary',
       when: (d) => d.docstatus === 1 && d.status === 'Đã duyệt',
+      fixedArgs: { submit: 0 },
       args: [
         { key: 'from_warehouse', label: 'Kho xuất (để trống = kho mặc định)', type: 'link',
           linkTo: 'SC Warehouse', placeholder: '— Chọn kho (để trống = kho mặc định) —' },
@@ -203,23 +205,20 @@ export const ACTIONS = {
 
   // === M8 Purchase Invoice — UC-24 (3-way match indicator) ===
   'SC Purchase Invoice': [
-    // UC-24 step 6: nếu mismatch → field mismatch_explanation reqd; UI hiển thị
-    // payment_hold; submit để post GL Dr152+Dr1331/Cr331 (via doc.submit).
-    // Không cần button riêng — workflow theo docstatus chuẩn.
-  ],
-
-  // === M8 Payment Entry — UC-25 ===
-  'SC Payment Entry': [
-    // UC-25 step 2: Auto-load các PI outstanding của supplier để chọn references
-    { apiMethod: 'supplycore.m8_accounting.doctype.sc_payment_entry.sc_payment_entry.auto_load_outstanding_invoices',
-      apiNameArg: null,  // không inject doc.name
-      label: 'Auto-load PI chưa thanh toán', icon: 'clipboard-list', variant: 'primary',
-      when: (d) => d.docstatus === 0 && d.supplier,
+    // Thanh toán NCC 1-chạm (mirror "Thu tiền" bên bán hàng): tạo phiếu
+    // thanh toán NHÁP đã gán sẵn hóa đơn này → điều hướng sang để duyệt.
+    // Không auto-submit vì PE có ngưỡng duyệt (Manager/Executive theo số tiền).
+    { apiMethod: 'supplycore.m8_accounting.doctype.sc_payment_entry.sc_payment_entry.create_payment_for_invoice',
+      apiNameArg: 'purchase_invoice',
+      label: 'Thanh toán NCC', icon: 'banknote', variant: 'success',
+      when: (d) => d.docstatus === 1 && Number(d.outstanding_amount) > 0 && !d.payment_hold,
       args: [
-        { key: 'supplier', label: 'NCC', type: 'link', linkTo: 'SC Supplier', required: true,
-          placeholder: '— Chọn nhà cung cấp —' },
-        { key: 'limit', label: 'Số PI tối đa', type: 'number', default: 50 },
-      ]},
+        { key: 'amount', label: 'Số tiền trả', type: 'number', required: true,
+          default: (d) => Number(d.outstanding_amount) || 0 },
+        { key: 'mode', label: 'Phương thức', type: 'select',
+          options: ['Chuyển khoản', 'Tiền mặt', 'Séc'], default: 'Chuyển khoản' },
+      ],
+      navigateOnSuccess: { type: 'doc', dt: 'SC Payment Entry', from: 'name' } },
   ],
 
   // === M6 Transfer Request — UC-18 ===

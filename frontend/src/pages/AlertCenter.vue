@@ -84,6 +84,13 @@ const sevLabel = (s) => ({
   Critical: 'Nghiêm trọng', Warning: 'Cảnh báo', Info: 'Thông tin',
 }[s] || s)
 
+// Viền trái + nền nhẹ theo severity → Critical nổi bật thị giác (không chỉ badge nhỏ).
+const sevEdge = (s) => ({
+  Critical: 'border-l-4 border-l-sc-critical bg-sc-danger-50/40',
+  Warning: 'border-l-4 border-l-sc-warning bg-sc-warning-50/40',
+  Info: 'border-l-4 border-l-sc-info',
+}[s] || '')
+
 const fmt = (d) => d ? fmtDateTime(d) : ''
 
 function openAction(a, type) {
@@ -172,13 +179,15 @@ function openRef(a) {
     </div>
   </div>
 
-  <div v-if="loading" class="text-center py-20 text-sc-text-muted">Đang tải...</div>
+  <div v-if="loading" class="sc-card p-4 space-y-2.5"><div v-for="n in 6" :key="n" class="sc-skeleton h-9 w-full" :style="{ opacity: 1 - n * 0.12 }" /></div>
   <div v-else-if="alerts.length === 0" class="sc-card p-10 text-center text-sc-text-muted">
     <Icon name="check" :size="16" /> Không có cảnh báo
   </div>
   <div v-else>
   <div class="space-y-3">
-    <div v-for="a in alerts" :key="a.name" class="sc-card p-4 hover:shadow-sc-md transition">
+    <div v-for="a in alerts" :key="a.name"
+      class="sc-card p-4 hover:shadow-sc-md transition"
+      :class="!a.resolved ? sevEdge(a.severity) : ''">
       <div class="flex items-start gap-3">
         <div class="flex-shrink-0 mt-1">
           <span :class="['sc-badge', sevCls(a.severity)]">{{ sevLabel(a.severity) }}</span>

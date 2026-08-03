@@ -149,7 +149,7 @@ class SCMaterialRequest(Document):
             frappe.sendmail(
                 recipients=recipients,
                 subject=f"[SupplyCore] MR {self.name} chờ duyệt",
-                message=(f"<p>MR <a href='/app/sc-material-request/{self.name}'>{self.name}</a> "
+                message=(f"<p>MR <a href='{frappe.utils.get_url('/supplycore/doc/SC%20Material%20Request/' + self.name)}'>{self.name}</a> "
                          f"({self.request_type}) chờ phê duyệt.</p>"
                          f"<p>Tổng: {frappe.format(self.total_estimated_cost, {'fieldtype':'Currency'})}</p>"),
                 delayed=True,
@@ -160,7 +160,7 @@ class SCMaterialRequest(Document):
     def _notify_owner(self, status: str, reason: str = None):
         if not self.owner or self.owner in ("Administrator", "Guest"):
             return
-        body = f"<p>MR <a href='/app/sc-material-request/{self.name}'>{self.name}</a> đã được <b>{status}</b>.</p>"
+        body = f"<p>MR <a href='{frappe.utils.get_url('/supplycore/doc/SC%20Material%20Request/' + self.name)}'>{self.name}</a> đã được <b>{status}</b>.</p>"
         if reason:
             body += f"<p><b>Lý do:</b> {frappe.utils.escape_html(reason)}</p>"
         try:

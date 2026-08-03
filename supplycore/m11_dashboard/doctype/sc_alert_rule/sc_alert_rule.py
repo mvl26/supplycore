@@ -61,16 +61,15 @@ class SCAlertRule(Document):
                 recipients = self._resolve_email_recipients()
                 if not recipients:
                     raise Exception("Không có recipient email khả dụng")
-                frappe.sendmail(
+                from supplycore.utils.emailer import send_email
+                send_email(
                     recipients=recipients,
-                    subject=f"[TEST] {self.title}",
-                    message=(
-                        f"<h3>Test Alert Rule</h3>"
-                        f"<p>Rule: <b>{self.name}</b> — {self.title}</p>"
-                        f"<p>Type: {self.alert_type} / Severity: {self.severity}</p>"
-                        f"<p>Đây là email test — không phải cảnh báo thật.</p>"
-                    ),
-                    queue=True, now=False,
+                    subject=f"[SupplyCore][TEST] {self.title}",
+                    title="Email test quy tắc cảnh báo",
+                    intro="Đây là email TEST — không phải cảnh báo thật.",
+                    info_rows=[("Quy tắc", f"{self.name} — {self.title}"),
+                               ("Loại", self.alert_type), ("Mức độ", self.severity)],
+                    delayed=True,
                 )
                 results["email"] = {"status": "OK", "recipients": len(recipients)}
             except Exception as e:
@@ -134,19 +133,18 @@ class SCAlertRule(Document):
             recipients = self._resolve_email_recipients()
             if recipients:
                 try:
-                    frappe.sendmail(
-                        recipients=recipients,
-                        subject=f"[{self.severity}] {alert_doc.title}",
-                        message=(
-                            f"<h3>{alert_doc.title}</h3>"
-                            f"<p>{alert_doc.message or ''}</p>"
-                            f"<p>Reference: {alert_doc.reference_doctype} "
-                            f"{alert_doc.reference_name}</p>"
-                            f"<p><a href='/app/sc-alert/{alert_doc.name}'>"
-                            f"Xem Alert Center</a></p>"
-                        ),
-                        queue=True, now=False,
-                    )
+                    from supplycore.utils.emailer import send_doc_email
+                    _ref = f"{alert_doc.reference_doctype or ''} {alert_doc.reference_name or ''}".strip()
+                    send_doc_email(
+                        doctype="SC Alert", name=alert_doc.name, recipients=recipients,
+                        subject=f"[SupplyCore][{self.severity}] {alert_doc.title}",
+                        title=alert_doc.title,
+                        intro=alert_doc.message or "",
+                        info_rows=[("Loại cảnh báo", self.alert_type),
+                                   ("Mức độ", self.severity),
+                                   ("Đối tượng liên quan", _ref)],
+                        note_kind=("crit" if self.severity == "Critical" else "warn"),
+                        cta_label="Xem cảnh báo", delayed=True)
                 except Exception as e:
                     frappe.log_error(
                         message=str(e)[:1000],

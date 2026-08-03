@@ -95,18 +95,23 @@ function onPageSizeChange(e) {
   min-width: 32px;
   height: 32px;
   padding: 0 8px;
-  border: 1px solid var(--sc-border, #E5EAF1);
-  background: #fff;
+  border: 1px solid var(--sc-border);
+  background: var(--sc-surface);
   border-radius: 7px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--sc-text, #1D2A3A);
+  color: var(--sc-text);
   transition: background 120ms, border-color 120ms, color 120ms;
 }
 .sc-pg-btn:hover:not(:disabled) {
-  background: #EAF2FB;
-  border-color: var(--sc-royal, #2E75B6);
-  color: var(--sc-royal, #2E75B6);
+  background: var(--sc-royal-50);
+  border-color: var(--sc-royal);
+  color: var(--sc-royal);
+}
+.sc-pg-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 117, 182, 0.35);
+  border-color: var(--sc-royal);
 }
 .sc-pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .sc-pg-btn-active,

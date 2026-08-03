@@ -32,13 +32,14 @@ HEADER = """{%- set S = sc_seller_info() -%}
 
 # ITEMS: in TẤT CẢ dòng (dùng cho phiếu tiếp nhận tạm — hàng chưa QC).
 ITEMS = """<table>
- <thead><tr><th>STT</th><th>Tên vật tư</th><th>ĐVT</th><th>Số lô</th><th>HSD</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+ <thead><tr><th>STT</th><th>Tên vật tư</th><th>ĐVT</th><th>Số lô NCC</th><th>HSD</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
  <tbody>
  {%- for it in doc.items %}
  <tr><td class="center">{{ loop.index }}</td>
   <td>{{ frappe.db.get_value("SC Item", it.item, "item_name") or it.item }}</td>
   <td class="center">{{ it.get("uom") or "" }}</td>
-  <td class="center">{{ it.get("batch_no") or "" }}</td>
+  {%- set _sbn = it.get("supplier_batch_no") or (frappe.db.get_value("SC Batch", it.get("batch_no"), "supplier_batch_no") if it.get("batch_no") else "") %}
+  <td class="center">{{ _sbn or "" }}</td>
   <td class="center">{{ it.get("expiry_date") or "" }}</td>
   <td class="num">{{ "{:,.0f}".format(it.qty or 0).replace(",", ".") }}</td>
   <td class="num">{{ "{:,.0f}".format(it.get("rate") or 0).replace(",", ".") }}</td>

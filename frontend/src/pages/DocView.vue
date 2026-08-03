@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, deleteDoc, call } from '../api'
+import { getDoc, submitDoc, cancelDoc, updateDoc, createDoc, deleteDoc, cancelDelivery, call } from '../api'
 import { DT } from '../modules'
 import { FORM_SCHEMAS, QUICK_CREATE } from '../schemas'
 import QuickCreateModal from '../components/QuickCreateModal.vue'
@@ -21,12 +21,15 @@ import BarcodeDisplay from '../components/BarcodeDisplay.vue'
 import FefoPickGuide from '../components/FefoPickGuide.vue'
 import FrameworkContractDetail from '../components/FrameworkContractDetail.vue'
 import DetailViewGeneric from '../components/DetailViewGeneric.vue'
+import DocPreviewDrawer from '../components/DocPreviewDrawer.vue'
+import PickingPanel from '../components/PickingPanel.vue'
+import WarehouseBinsPanel from '../components/WarehouseBinsPanel.vue'
 import Confirm from '../components/Confirm.vue'
 import { DETAIL_CONFIGS } from '../detail-configs'
 import { useToastStore } from '../stores/toast'
 import { useAccessStore } from '../stores/access'
 import { fmtDate, fmtDateTime, fmtNumber, today } from '../utils'
-import { statusLabel, isSubmittable } from '../modules'
+import { statusLabel, isSubmittable, requiresApproval } from '../modules'
 import { fieldLabel } from '../i18n'
 
 const route = useRoute()
@@ -39,6 +42,14 @@ const name = computed(() => decodeURIComponent(route.params.name))
 const cfg = computed(() => DT[doctype.value])
 const schema = computed(() => FORM_SCHEMAS[doctype.value])
 const isNew = computed(() => name.value === 'new')
+// DN đang ở luồng soạn hàng (nháp + cần quét) → dùng PickingPanel thay form thô
+const isDnPicking = computed(() =>
+  doctype.value === 'SC Delivery Note' && !isNew.value
+  && doc.value?.docstatus === 0 && !!doc.value?.picking_required)
+// DN đã submit (đã lấy hàng) → hiện danh sách lô/vị trí/SL đã lấy (không FEFO nữa)
+const isDnPicked = computed(() =>
+  doctype.value === 'SC Delivery Note' && !isNew.value
+  && doc.value?.docstatus === 1 && !!doc.value?.picking_required)
 
 const doc = ref(null)
 const loading = ref(false)
@@ -74,6 +85,13 @@ async function load() {
       const pending = JSON.parse(sessionStorage.getItem(LINK_PENDING_KEY) || 'null')
       if (pending && pending.newDoctype === doctype.value && pending.prefill) {
         doc.value = { ...doc.value, ...pending.prefill }
+      }
+    } catch (e) {}
+    // Prefill tổng quát qua query ?prefill={...} (vd tạo Vị trí từ màn Kho: điền sẵn kho)
+    try {
+      if (route.query.prefill) {
+        const pf = JSON.parse(route.query.prefill)
+        if (pf && typeof pf === 'object') doc.value = { ...doc.value, ...pf }
       }
     } catch (e) {}
     return
@@ -410,11 +428,22 @@ const barcodeInfo = computed(() => {
   if (doctype.value === 'SC Batch') {
     const v = d.barcode || d.batch_id
     if (!v) return null
-    // Nhãn lô: mã vạch (kèm mã barcode) + tên vật tư + HSD
+    // Nhãn lô: mã vạch + tên VT + NSX/HSD + Lô NCC + Model + Xuất xứ (bỏ trường trống)
+    const lines = []
+    if (d.supplier_batch_no) lines.push(`Lô NCC: ${d.supplier_batch_no}`)
+    const dates = []
+    if (d.manufacturing_date) dates.push(`NSX: ${d.manufacturing_date}`)
+    if (d.expiry_date) dates.push(`HSD: ${d.expiry_date}`)
+    if (dates.length) lines.push(dates.join(' · '))
+    const mo = []
+    if (d.model) mo.push(`Model: ${d.model}`)
+    if (d.country_of_origin) mo.push(`Xuất xứ: ${d.country_of_origin}`)
+    if (mo.length) lines.push(mo.join(' · '))
     return {
       value: v,
       title: batchItemName.value || d.item || '',
       subtitle: d.expiry_date ? `HSD: ${d.expiry_date}` : '',
+      lines,
     }
   }
   if (doctype.value === 'Bin Location') {
@@ -527,16 +556,25 @@ const POST_SUBMIT_NAV = {
     ? { path: '/putaway', query: { warehouse: d.to_warehouse } } : null,
 }
 
+// PO submit thẳng = duyệt nhanh + gửi NCC (before_submit tự-Approve) → nhãn rõ hơn
+// để không trùng chữ "Gửi duyệt" với nút review (submit_for_review) của ActionPanel.
+const isQuickApprove = computed(() => doctype.value === 'SC Purchase Order')
+const genericSubmitLabel = computed(() =>
+  isQuickApprove.value ? 'Duyệt nhanh & Gửi NCC' : 'Gửi duyệt')
+
 async function doSubmit() {
   if (!doc.value?.name) return
   if (!await confirmRef.value.ask({
-    title: 'Gửi duyệt', message: 'Gửi bản ghi này vào quy trình duyệt? Sau khi gửi, bản ghi sẽ KHÔNG sửa được trừ khi Huỷ duyệt.',
-    confirmText: 'Gửi duyệt',
+    title: genericSubmitLabel.value,
+    message: isQuickApprove.value
+      ? 'Duyệt nhanh và gửi Đơn mua này cho nhà cung cấp ngay? Sau khi gửi sẽ không sửa được trừ khi Huỷ.'
+      : 'Gửi bản ghi này vào quy trình duyệt? Sau khi gửi, bản ghi sẽ KHÔNG sửa được trừ khi Huỷ duyệt.',
+    confirmText: genericSubmitLabel.value,
   })) return
   saving.value = true
   try {
     await submitDoc(doctype.value, name.value)
-    toast.success('Đã gửi duyệt')
+    toast.success(isQuickApprove.value ? 'Đã duyệt & gửi NCC' : 'Đã gửi duyệt')
     await load()
     const navFn = POST_SUBMIT_NAV[doctype.value]
     const nav = navFn?.(doc.value)
@@ -552,6 +590,28 @@ async function doSubmit() {
 }
 
 async function doCancel() {
+  // Phiếu giao đã soạn hàng: hủy phải nêu lý do + hoàn tồn kho (cancel_delivery).
+  const isDnPickCancel = doctype.value === 'SC Delivery Note'
+    && doc.value?.docstatus === 1 && !!doc.value?.picking_required
+  if (isDnPickCancel) {
+    const reason = await confirmRef.value.ask({
+      title: 'Hủy phiếu giao hàng', variant: 'danger', confirmText: 'Hủy & hoàn tồn kho',
+      message: 'Hủy phiếu giao này sẽ hoàn trả tồn kho về như trước khi giao. Nhập lý do hủy:',
+      input: { label: 'Lý do hủy', placeholder: 'VD: khách đổi ý, sai đơn…', required: true },
+    })
+    if (!reason || reason === true) return   // hủy thao tác hoặc chưa nhập lý do
+    saving.value = true
+    try {
+      await cancelDelivery(name.value, reason)
+      toast.success('Đã hủy phiếu giao & hoàn tồn kho')
+      await load()
+    } catch (e) {
+      toast.error(e.message)
+    } finally {
+      saving.value = false
+    }
+    return
+  }
   if (!await confirmRef.value.ask({
     title: 'Huỷ bản ghi', message: 'Huỷ bản ghi này?', confirmText: 'Huỷ bản ghi', variant: 'danger',
   })) return
@@ -632,6 +692,30 @@ function displayField(value, key) {
   }
   return value
 }
+
+// === Tham chiếu: trường Link → đường link mở phiếu + xem nhanh chi tiết ===
+// Map field name → doctype đích, dựng từ schema form của doctype hiện tại.
+const linkFieldMap = computed(() => {
+  const map = {}
+  const schema = FORM_SCHEMAS[doctype.value]
+  if (schema) {
+    for (const sec of (schema.sections || [])) {
+      for (const f of (sec.fields || [])) {
+        if (f.type === 'Link' && f.linkTo) map[f.name] = f.linkTo
+      }
+    }
+  }
+  return map
+})
+function linkTarget(key) { return linkFieldMap.value[key] || null }
+function goDoc(dt, name) {
+  router.push(`/doc/${encodeURIComponent(dt)}/${encodeURIComponent(name)}`)
+}
+// Drawer xem nhanh chi tiết phiếu tham chiếu.
+const preview = ref({ open: false, doctype: '', name: '' })
+function openPreview(dt, name) {
+  preview.value = { open: true, doctype: dt, name: String(name) }
+}
 </script>
 
 <template>
@@ -661,19 +745,19 @@ function displayField(value, key) {
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
         </template>
-        <template v-else-if="editing">
+        <template v-else-if="editing && !isDnPicking">
           <button @click="load" class="sc-btn-secondary text-sm"><Icon name="refresh-ccw" :size="14" /> Hoàn tác</button>
           <button @click="save" :disabled="saving" class="sc-btn-primary text-sm">
             <template v-if="saving">Đang lưu...</template>
             <template v-else><Icon name="save" :size="14" /> Lưu</template>
           </button>
-          <button v-if="doc.docstatus === 0 && isSubmittable(doctype) && !dirty" @click="doSubmit"
+          <button v-if="doc.docstatus === 0 && isSubmittable(doctype) && !requiresApproval(doctype) && !dirty && !isDnPicking" @click="doSubmit"
             :disabled="saving" class="bg-sc-success hover:brightness-110 text-white px-4 py-2 rounded-md font-medium text-sm"
-            title="Gửi bản ghi vào quy trình duyệt. Sau khi gửi sẽ không sửa được trừ khi Huỷ duyệt.">
-            <Icon name="upload" :size="14" /> Gửi duyệt
+            :title="isQuickApprove ? 'Duyệt nhanh và gửi Đơn mua cho NCC ngay.' : 'Gửi bản ghi vào quy trình duyệt. Sau khi gửi sẽ không sửa được trừ khi Huỷ duyệt.'">
+            <Icon name="upload" :size="14" /> {{ genericSubmitLabel }}
           </button>
-          <span v-else-if="doc.docstatus === 0 && isSubmittable(doctype) && dirty"
-            class="text-xs text-sc-text-muted self-center italic">Lưu để hiện nút Gửi duyệt</span>
+          <span v-else-if="doc.docstatus === 0 && isSubmittable(doctype) && !requiresApproval(doctype) && dirty"
+            class="text-xs text-sc-text-muted self-center italic">Lưu để hiện nút {{ genericSubmitLabel }}</span>
         </template>
         <template v-else>
           <!-- Đã duyệt 3-tier nhưng chưa Submit → cho Submit kích hoạt -->
@@ -701,7 +785,7 @@ function displayField(value, key) {
 
     <!-- Mã vạch quét được — SC Batch / Bin Location -->
     <BarcodeDisplay v-if="barcodeInfo" :value="barcodeInfo.value"
-      :title="barcodeInfo.title" :subtitle="barcodeInfo.subtitle" />
+      :title="barcodeInfo.title" :subtitle="barcodeInfo.subtitle" :lines="barcodeInfo.lines || []" />
 
     <!-- M10 Recall Notice: panel theo dõi thu hồi với inline edit per row -->
     <RecallRecoveryPanel v-if="doctype === 'SC Recall Notice' && !isNew && doc?.name"
@@ -715,15 +799,23 @@ function displayField(value, key) {
     <CountEntryPanel v-if="doctype === 'SC Inventory Count Sheet' && !isNew && doc?.name && doc.docstatus === 0"
       :doctype="doctype" :doc="doc" @after="load" />
 
+    <!-- M7 soạn hàng: quét xác nhận lô/vị trí/SL cho Phiếu giao (nháp) -->
+    <PickingPanel v-if="isDnPicking" :doc="doc" @after="load" />
+    <!-- Đã submit: danh sách lô/vị trí/tên VT/SL đã lấy (thay hướng dẫn FEFO) -->
+    <PickingPanel v-else-if="isDnPicked" :doc="doc" readonly />
+
     <!-- M10 Investigation Report: scope hint + variance display -->
     <IrScopePanel v-if="doctype === 'SC Investigation Report' && !isNew && doc?.name"
       :doc="doc" />
+
+    <!-- Setup vị trí (bin) ngay trên màn Kho -->
+    <WarehouseBinsPanel v-if="doctype === 'SC Warehouse' && !isNew && doc?.name" :doc="doc" />
 
     <!-- Bản đồ chỉ đường: Chuyển kho / Xuất kho / Vị trí lưu trữ -->
     <RouteGuidePanel v-if="!isNew && doc?.name" :doctype="doctype" :doc="doc" />
 
     <!-- UC-19 FEFO: hướng dẫn lấy hàng theo hạn dùng cho phiếu xuất/giao/chuyển -->
-    <div v-if="fefoLines.length" class="mb-4">
+    <div v-if="fefoLines.length && !isDnPicking && !isDnPicked" class="mb-4">
       <FefoPickGuide v-for="ln in fefoLines" :key="ln.key"
         :item="ln.item" :warehouse="ln.warehouse" :qty-needed="ln.qty" /></div>
 
@@ -744,8 +836,8 @@ function displayField(value, key) {
       :title="isNew || editing ? 'Chọn tồn kho nguồn — tích để điền vào bảng chi tiết' : 'Tồn kho nguồn'"
       @fill="onStockFill" />
 
-    <!-- New / Edit mode → DocForm -->
-    <template v-if="isNew || editing">
+    <!-- New / Edit mode → DocForm (ẩn khi DN đang soạn hàng → dùng PickingPanel) -->
+    <template v-if="(isNew || editing) && !isDnPicking">
       <!-- Fetch upstream — chỉ hiện ở form New để pull data từ doc cha -->
       <FetchUpstream v-if="isNew" :target-doctype="doctype" @merge="onUpstreamMerge" />
       <DocForm ref="docFormRef" v-model="doc" :doctype="doctype" @submit="save" @create-new="onCreateNewLink" />
@@ -777,7 +869,18 @@ function displayField(value, key) {
             <div v-for="f in fieldGroups.main.slice(0, 12)" :key="f.key"
               class="grid grid-cols-[140px_1fr] gap-2">
               <dt class="text-sc-text-muted truncate">{{ fieldLabel(f.key) }}</dt>
-              <dd class="text-sc-text font-medium break-all">{{ displayField(f.value, f.key) }}</dd>
+              <dd class="break-all">
+                <template v-if="linkTarget(f.key) && f.value">
+                  <a href="#" @click.prevent="goDoc(linkTarget(f.key), f.value)"
+                    class="text-sc-royal hover:underline font-medium cursor-pointer">{{ f.value }}</a>
+                  <button type="button" @click="openPreview(linkTarget(f.key), f.value)"
+                    class="align-middle ml-1 text-sc-text-muted hover:text-sc-royal"
+                    title="Xem nhanh chi tiết phiếu">
+                    <Icon name="eye" :size="14" />
+                  </button>
+                </template>
+                <span v-else class="text-sc-text font-medium">{{ displayField(f.value, f.key) }}</span>
+              </dd>
             </div>
           </dl>
         </div>
@@ -787,7 +890,18 @@ function displayField(value, key) {
             <div v-for="f in fieldGroups.main.slice(12)" :key="f.key"
               class="grid grid-cols-[140px_1fr] gap-2">
               <dt class="text-sc-text-muted truncate">{{ fieldLabel(f.key) }}</dt>
-              <dd class="text-sc-text font-medium break-all">{{ displayField(f.value, f.key) }}</dd>
+              <dd class="break-all">
+                <template v-if="linkTarget(f.key) && f.value">
+                  <a href="#" @click.prevent="goDoc(linkTarget(f.key), f.value)"
+                    class="text-sc-royal hover:underline font-medium cursor-pointer">{{ f.value }}</a>
+                  <button type="button" @click="openPreview(linkTarget(f.key), f.value)"
+                    class="align-middle ml-1 text-sc-text-muted hover:text-sc-royal"
+                    title="Xem nhanh chi tiết phiếu">
+                    <Icon name="eye" :size="14" />
+                  </button>
+                </template>
+                <span v-else class="text-sc-text font-medium">{{ displayField(f.value, f.key) }}</span>
+              </dd>
             </div>
           </dl>
         </div>
@@ -880,5 +994,7 @@ function displayField(value, key) {
     <RelatedDocs v-if="!isNew && doc?.name" :doctype="doctype" :name="doc.name" />
 
     <Confirm ref="confirmRef" />
+    <DocPreviewDrawer :open="preview.open" :doctype="preview.doctype" :name="preview.name"
+      @close="preview.open = false" />
   </div>
 </template>

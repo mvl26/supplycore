@@ -27,9 +27,9 @@ const mode = ref('place')
 const cellModal = ref(null)  // { row, col, existing? }
 
 const TYPE_META = {
-  Main:       { color: '#1F4E79', label: 'Kho tổng',     icon: 'building-2' },
-  Sub:        { color: '#2E75B6', label: 'Kho con',      icon: 'package' },
-  Department: { color: '#5B9BD5', label: 'Kho khoa',     icon: 'heart-pulse' },
+  Main:       { color: 'var(--sc-navy)', label: 'Kho tổng',     icon: 'building-2' },
+  Sub:        { color: 'var(--sc-royal)', label: 'Kho con',      icon: 'package' },
+  Department: { color: 'var(--sc-royal-light)', label: 'Kho khoa',     icon: 'heart-pulse' },
   Quarantine: { color: '#C55A11', label: 'Cách ly',      icon: 'alert-triangle' },
   Transit:    { color: '#7F7F7F', label: 'Trung chuyển', icon: 'arrow-left-right' },
 }
@@ -168,7 +168,7 @@ function gridCols() {
     </template>
   </PageHeader>
 
-  <div v-if="loading" class="sc-card p-10 text-center text-sc-text-muted">Đang tải...</div>
+  <div v-if="loading" class="sc-card p-4 space-y-2.5"><div v-for="n in 6" :key="n" class="sc-skeleton h-9 w-full" :style="{ opacity: 1 - n * 0.12 }" /></div>
 
   <div v-else class="space-y-4">
     <!-- =================== CONFIG PANEL =================== -->
@@ -180,28 +180,28 @@ function gridCols() {
         <label class="flex flex-col gap-1">
           <span class="text-xs uppercase tracking-wider text-sc-text-muted">Tên công ty</span>
           <input v-model="config.site_name"
-            class="border border-sc-border rounded-md px-3 py-1.5" placeholder="VD: Công ty Miyano Việt Nam" />
+            class="sc-input" placeholder="VD: Công ty Miyano Việt Nam" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-xs uppercase tracking-wider text-sc-text-muted">Địa chỉ</span>
           <input v-model="config.site_address"
-            class="border border-sc-border rounded-md px-3 py-1.5" placeholder="VD: Đống Đa, Hà Nội" />
+            class="sc-input" placeholder="VD: Đống Đa, Hà Nội" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-xs uppercase tracking-wider text-sc-text-muted">Nhãn cổng</span>
           <input v-model="config.site_entrance_label"
-            class="border border-sc-border rounded-md px-3 py-1.5" placeholder="Cổng chính" />
+            class="sc-input" placeholder="Cổng chính" />
         </label>
         <div class="flex gap-2">
           <label class="flex-1 flex flex-col gap-1">
             <span class="text-xs uppercase tracking-wider text-sc-text-muted">Hàng</span>
             <input type="number" v-model.number="config.site_map_rows" min="1" max="40"
-              class="border border-sc-border rounded-md px-3 py-1.5 font-mono" />
+              class="sc-input font-mono" />
           </label>
           <label class="flex-1 flex flex-col gap-1">
             <span class="text-xs uppercase tracking-wider text-sc-text-muted">Cột</span>
             <input type="number" v-model.number="config.site_map_cols" min="1" max="40"
-              class="border border-sc-border rounded-md px-3 py-1.5 font-mono" />
+              class="sc-input font-mono" />
           </label>
         </div>
       </div>
@@ -218,7 +218,7 @@ function gridCols() {
         <span class="text-sc-text-muted">·</span>
         <span class="text-sc-text-muted">
           Kho đã đặt: <b class="text-sc-navy">{{ stats.placed }}</b> / {{ stats.total }} ·
-          chưa đặt: <b :class="stats.unassigned > 0 ? 'text-amber-700' : 'text-sc-text-muted'">{{ stats.unassigned }}</b>
+          chưa đặt: <b :class="stats.unassigned > 0 ? 'text-sc-warning' : 'text-sc-text-muted'">{{ stats.unassigned }}</b>
         </span>
       </div>
     </div>
@@ -344,7 +344,7 @@ function gridCols() {
     <!-- PLACE new (pick from unassigned) -->
     <div v-else class="space-y-3 text-sm">
       <div class="text-sc-text-muted">Chọn kho chưa đặt để đưa vào ô này:</div>
-      <div v-if="!unassigned.length" class="text-sm text-amber-700 bg-amber-50 p-3 rounded-md">
+      <div v-if="!unassigned.length" class="text-sm text-sc-warning bg-sc-warning-50 p-3 rounded-md">
         Tất cả kho đã được đặt. Để tạo kho mới, dùng trang
         <router-link to="/list/SC Warehouse" class="underline">Danh sách kho</router-link>
         rồi quay lại đây.
@@ -368,7 +368,7 @@ function gridCols() {
 
     <template #footer>
       <button v-if="cellModal?.existing" @click="removeFromCell"
-        class="bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+        class="bg-sc-danger hover:brightness-110 text-white px-4 py-2 rounded-md text-sm font-medium">
         <Icon name="trash-2" :size="14" class="inline mr-1" />Gỡ khỏi bản đồ
       </button>
       <button @click="cellModal = null" class="sc-btn-secondary text-sm">

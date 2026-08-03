@@ -5,10 +5,10 @@ const toast = useToastStore()
 
 const ICON = { success: 'check-circle', warning: 'alert-triangle', error: 'x-circle', info: 'info' }
 const STYLE = {
-  success: 'bg-emerald-50 text-sc-success ring-emerald-200',
-  warning: 'bg-amber-50 text-sc-warning ring-amber-200',
-  error:   'bg-red-50 text-sc-danger ring-red-200',
-  info:    'bg-sky-50 text-sc-info ring-sky-200',
+  success: 'bg-sc-success-50 text-sc-success ring-sc-success/30',
+  warning: 'bg-sc-warning-50 text-sc-warning ring-sc-warning/30',
+  error:   'bg-sc-danger-50 text-sc-danger ring-sc-danger/30',
+  info:    'bg-sc-info-50 text-sc-info ring-sc-info/30',
 }
 </script>
 

@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-07-24 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "uom",
+  "conversion_factor"
+ ],
+ "fields": [
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "options": "SC UOM",
+   "label": "Đơn vị",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 4
+  },
+  {
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "= ? đơn vị tồn kho",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 4,
+   "description": "Số đơn vị tồn kho trong 1 đơn vị này. VD: 1 hộp = 50 cái → nhập 50"
+  }
+ ],
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "modified": "2026-07-24 00:00:00",
+ "module": "Supplycore",
+ "name": "SC Item UOM Conversion",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

@@ -17,6 +17,7 @@
   "supplier",
   "supplier_name",
   "batch",
+  "supplier_batch_no",
   "received_qty",
   "section_inspector",
   "inspected_by",
@@ -107,8 +108,16 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "options": "SC Batch",
-   "label": "Lô",
+   "label": "Lô (hệ thống)",
    "read_only": 1
+  },
+  {
+   "fieldname": "supplier_batch_no",
+   "fieldtype": "Data",
+   "label": "Số lô NCC",
+   "fetch_from": "batch.supplier_batch_no",
+   "read_only": 1,
+   "description": "Số lô in trên hàng của nhà cung cấp — phân biệt với lô hệ thống"
   },
   {
    "fieldname": "received_qty",

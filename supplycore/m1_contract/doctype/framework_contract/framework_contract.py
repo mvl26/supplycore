@@ -170,6 +170,13 @@ class FrameworkContract(Document):
             "approval_stage": "Manager Review",
             "rejection_reason": None,
         })
+        from supplycore.utils.emailer import role_emails
+        self._notify_stage(
+            recipients=role_emails("SupplyCore Manager"),
+            subject=f"[SupplyCore] HĐ khung {self.name} chờ Quản lý duyệt",
+            title="Hợp đồng khung chờ duyệt — cấp Quản lý",
+            intro=f"Hợp đồng khung <b>{self.name}</b> vừa được gửi và đang chờ Quản lý phê duyệt.",
+            actor=frappe.session.user, action="Gửi duyệt")
         return {"stage": "Manager Review"}
 
     @frappe.whitelist()
@@ -179,7 +186,6 @@ class FrameworkContract(Document):
         if self.approval_stage != "Manager Review":
             frappe.throw(_("FC chưa ở stage Manager Review (hiện: {0})").format(self.approval_stage),
                           title="SC-E-FC-STAGE")
-        _validate_approval_comment(comment, "Manager")
         threshold = _get_executive_threshold()
         next_stage = "Executive Review" if flt(self.total_value) >= threshold else "Approved"
         self.db_set({
@@ -188,6 +194,22 @@ class FrameworkContract(Document):
             "manager_approved_at": now(),
             "manager_comment": (comment or "").strip() or self.manager_comment,
         })
+        from supplycore.utils.emailer import role_emails
+        if next_stage == "Executive Review":
+            self._notify_stage(
+                recipients=role_emails("SupplyCore Executive"),
+                subject=f"[SupplyCore] HĐ khung {self.name} chờ Lãnh đạo duyệt",
+                title="Hợp đồng khung chờ duyệt — cấp Lãnh đạo",
+                intro=f"Hợp đồng khung <b>{self.name}</b> (giá trị lớn) đã qua Quản lý, "
+                      "đang chờ Lãnh đạo phê duyệt cấp cao.",
+                actor=frappe.session.user, action="Quản lý duyệt")
+        else:  # Approved thẳng (dưới ngưỡng)
+            self._notify_stage(
+                recipients=[self.owner],
+                subject=f"[SupplyCore] HĐ khung {self.name} đã được duyệt",
+                title="Hợp đồng khung đã được duyệt",
+                intro=f"Hợp đồng khung <b>{self.name}</b> của bạn đã được duyệt và sẵn sàng kích hoạt.",
+                actor=frappe.session.user, action="Duyệt (Quản lý)")
         return {"stage": next_stage, "threshold": threshold}
 
     @frappe.whitelist()
@@ -197,13 +219,18 @@ class FrameworkContract(Document):
         if self.approval_stage != "Executive Review":
             frappe.throw(_("FC chưa ở stage Executive Review (hiện: {0})").format(self.approval_stage),
                           title="SC-E-FC-STAGE")
-        _validate_approval_comment(comment, "Executive")
         self.db_set({
             "approval_stage": "Approved",
             "executive_approved_by": frappe.session.user,
             "executive_approved_at": now(),
             "executive_comment": (comment or "").strip() or self.executive_comment,
         })
+        self._notify_stage(
+            recipients=[self.owner],
+            subject=f"[SupplyCore] HĐ khung {self.name} đã được duyệt",
+            title="Hợp đồng khung đã được duyệt — cấp Lãnh đạo",
+            intro=f"Hợp đồng khung <b>{self.name}</b> đã được Lãnh đạo phê duyệt và sẵn sàng kích hoạt.",
+            actor=frappe.session.user, action="Duyệt (Lãnh đạo)")
         return {"stage": "Approved"}
 
     @frappe.whitelist()
@@ -226,7 +253,44 @@ class FrameworkContract(Document):
             "approval_stage": "Rejected",
             "rejection_reason": reason.strip(),
         })
+        self._notify_stage(
+            recipients=[self.owner],
+            subject=f"[SupplyCore] HĐ khung {self.name} bị từ chối",
+            title="Hợp đồng khung bị từ chối",
+            intro=f"Hợp đồng khung <b>{self.name}</b> đã bị từ chối. "
+                  "Vui lòng chỉnh sửa và gửi duyệt lại.",
+            actor=frappe.session.user, action="Từ chối",
+            note=f"Lý do từ chối: {reason.strip()}", note_kind="crit")
         return {"stage": "Rejected"}
+
+    # ------------------------------------------------------------------
+    # Email thông báo chi tiết theo luồng duyệt (người duyệt + thông tin phiếu + link)
+    # ------------------------------------------------------------------
+    def _fc_info_rows(self):
+        cur = {"fieldtype": "Currency"}
+        dt = {"fieldtype": "Date"}
+        return [
+            ("Mã hợp đồng", self.name),
+            ("Nhà cung cấp", self.supplier_name or self.supplier),
+            ("Giá trị HĐ", frappe.format(self.total_value, cur)),
+            ("Hạn mức còn lại", frappe.format(self.remaining_value, cur)),
+            ("Hiệu lực", f"{frappe.format(self.valid_from, dt)} → {frappe.format(self.valid_to, dt)}"),
+            ("Giai đoạn duyệt", self.approval_stage),
+        ]
+
+    def _notify_stage(self, *, recipients, subject, title, intro,
+                      actor=None, action=None, note=None, note_kind="info"):
+        # Duyệt hàng loạt → chặn email từng phiếu, gửi 1 email tổng kết ở cuối.
+        if frappe.flags.get("suppress_fc_notify"):
+            return
+        from supplycore.utils.emailer import send_doc_email
+        try:
+            send_doc_email(
+                doctype="Framework Contract", name=self.name, recipients=recipients,
+                subject=subject, title=title, intro=intro, info_rows=self._fc_info_rows(),
+                actor=actor, action=action, note=note, note_kind=note_kind, delayed=True)
+        except Exception as e:
+            frappe.log_error(str(e)[:1000], "FC notify email")
 
     # ------------------------------------------------------------------
     # UC-04 Renewal & Termination
@@ -519,17 +583,92 @@ def _get_executive_threshold() -> float:
         return DEFAULT_FC_EXECUTIVE_THRESHOLD
 
 
-# QAv3-BUG-M1-07: Comment duyệt HĐ "d" (1 ký tự) không phù hợp tiêu chuẩn
-# audit. Bắt buộc tối thiểu 10 ký tự không phải khoảng trắng.
-MIN_APPROVAL_COMMENT_LEN = 10
+# QAv3-BUG-M1-07 (đã gỡ theo yêu cầu): trước đây bắt comment duyệt Manager/
+# Executive tối thiểu 10 ký tự (SC-E026). Nay comment là TÙY CHỌN — vẫn được
+# lưu vào manager_comment/executive_comment nếu người duyệt có nhập.
 
 
-def _validate_approval_comment(comment, level: str):
-    """Throw nếu comment < MIN_APPROVAL_COMMENT_LEN ký tự."""
-    txt = (comment or "").strip()
-    if len(txt) < MIN_APPROVAL_COMMENT_LEN:
-        frappe.throw(_(
-            "SC-E026 APPROVAL_COMMENT_TOO_SHORT: Comment duyệt {0} phải tối "
-            "thiểu {1} ký tự (hiện {2}). Ghi rõ lý do/cơ sở duyệt để audit."
-        ).format(level, MIN_APPROVAL_COMMENT_LEN, len(txt)),
-            title="SC-E026 APPROVAL_COMMENT_TOO_SHORT")
+@frappe.whitelist()
+def bulk_approve_submit(names):
+    """Duyệt & Submit HÀNG LOẠT Hợp đồng khung (dùng khi import loạt HĐ nháp).
+
+    Quyền: CHỈ SupplyCore Manager / System Manager (phân quyền cao).
+    Với mỗi HĐ đang Draft/Rejected: submit_for_review → approve_as_manager →
+    - nếu Approved (giá trị < ngưỡng Executive) → submit (Active);
+    - nếu ≥ ngưỡng → dừng ở 'Chờ Lãnh đạo duyệt' (Manager không đủ quyền submit).
+    Chặn email từng phiếu, gửi 1 EMAIL TỔNG KẾT cho chính người thực hiện.
+    """
+    import json
+    roles = frappe.get_roles(frappe.session.user)
+    if not any(r in roles for r in ("SupplyCore Manager", "System Manager")):
+        frappe.throw(
+            _("Chỉ Quản lý (SupplyCore Manager) mới được duyệt & submit hàng loạt"),
+            title="SC-E-FC-BULK-ROLE")
+    if isinstance(names, str):
+        names = json.loads(names)
+    names = [n for n in (names or []) if n]
+
+    submitted, pending_exec, skipped, errors = [], [], [], []
+    frappe.flags.suppress_fc_notify = True   # chặn email từng phiếu
+    try:
+        for name in names:
+            try:
+                doc = frappe.get_doc("Framework Contract", name)
+                if doc.docstatus != 0:
+                    skipped.append({"name": name, "reason": "Đã submit/hủy"}); continue
+                if (doc.approval_stage or "Draft") in ("Draft", "Rejected"):
+                    doc.submit_for_review(); doc.reload()
+                if doc.approval_stage == "Manager Review":
+                    doc.approve_as_manager(comment="Duyệt hàng loạt"); doc.reload()
+                if doc.approval_stage == "Approved":
+                    doc.submit()
+                    submitted.append(name)
+                elif doc.approval_stage == "Executive Review":
+                    pending_exec.append(name)
+                else:
+                    skipped.append({"name": name, "reason": f"Giai đoạn {doc.approval_stage}"})
+                frappe.db.commit()       # giữ thành công của phiếu này
+            except Exception as e:
+                frappe.db.rollback()     # chỉ hoàn tác phiếu lỗi (về commit gần nhất)
+                errors.append({"name": name, "error": str(e)[:150]})
+    finally:
+        frappe.flags.suppress_fc_notify = False
+
+    _bulk_notify_result(submitted, pending_exec, errors)
+    return {"submitted": submitted, "pending_executive": pending_exec,
+            "skipped": skipped, "errors": errors,
+            "counts": {"submitted": len(submitted), "pending_executive": len(pending_exec),
+                       "skipped": len(skipped), "errors": len(errors)}}
+
+
+def _bulk_notify_result(submitted, pending_exec, errors):
+    """Gửi 1 email tổng kết duyệt hàng loạt cho chính người thực hiện."""
+    try:
+        from supplycore.utils.emailer import send_email, sc_list_url
+        me = frappe.session.user
+        email = frappe.db.get_value("User", me, "email") or me
+        if not email or email in ("Administrator", "Guest"):
+            return
+
+        def _ul(rows):
+            return "".join(f"<li>{r}</li>" for r in rows) or "<li>—</li>"
+
+        body = (
+            f"<p style='font-weight:600;color:#1B7A4E'>Đã duyệt & kích hoạt ({len(submitted)}):</p>"
+            f"<ul>{_ul(submitted)}</ul>"
+            f"<p style='font-weight:600;color:#9C6511'>Chờ Lãnh đạo duyệt ({len(pending_exec)}):</p>"
+            f"<ul>{_ul(pending_exec)}</ul>"
+        )
+        if errors:
+            body += ("<p style='font-weight:600;color:#BE3A3A'>Lỗi ({}):</p><ul>".format(len(errors))
+                     + "".join(f"<li>{e['name']}: {e['error']}</li>" for e in errors) + "</ul>")
+        total = len(submitted) + len(pending_exec) + len(errors)
+        send_email(
+            recipients=[email],
+            subject=f"[SupplyCore] Kết quả duyệt hàng loạt HĐ khung — {len(submitted)} đã kích hoạt",
+            title="Kết quả duyệt & submit hàng loạt Hợp đồng khung",
+            intro=f"Bạn vừa thao tác duyệt hàng loạt {total} hợp đồng khung. Kết quả:",
+            body_html=body,
+            cta_url=sc_list_url("Framework Contract"), cta_label="Mở danh sách HĐ khung")
+    except Exception as e:
+        frappe.log_error(str(e)[:1000], "FC bulk notify email")

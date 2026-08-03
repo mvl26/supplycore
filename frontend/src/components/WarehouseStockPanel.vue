@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { call } from '../api'
 import { fmtDate, fmtNumber } from '../utils'
+import { qcBadge, qcLabel, expiryClass } from '../utils/status'
 import Icon from './Icon.vue'
 import Pagination from './Pagination.vue'
 
@@ -170,7 +171,8 @@ const isBelowSafety = (r) => r.safety_stock > 0 && r.qty < r.safety_stock
               </th>
               <th>Mã VT</th>
               <th>Tên</th>
-              <th>Lô</th>
+              <th>Lô hệ thống</th>
+              <th>Lô NCC</th>
               <th>Vị trí</th>
               <th>KCS</th>
               <th>Ngày nhập</th>
@@ -182,7 +184,7 @@ const isBelowSafety = (r) => r.safety_stock > 0 && r.qty < r.safety_stock
           <tbody>
             <tr v-for="r in pageRows" :key="rowKey(r)"
               :class="[
-                isBelowSafety(r) ? 'bg-amber-50' : '',
+                isBelowSafety(r) ? 'bg-sc-warning-50' : '',
                 selectable && !r.blocked ? 'cursor-pointer' : '',
                 selectable && isSel(r) ? '!bg-sc-royal-50' : '',
               ]"
@@ -195,6 +197,7 @@ const isBelowSafety = (r) => r.safety_stock > 0 && r.qty < r.safety_stock
               <td class="font-mono text-xs">{{ r.item }}</td>
               <td>{{ r.item_name || '—' }}</td>
               <td class="font-mono text-xs">{{ r.batch || '—' }}</td>
+              <td class="font-mono text-xs">{{ r.supplier_batch_no || '—' }}</td>
               <td>
                 <span v-if="r.bin_location" class="font-mono text-xs px-2 py-0.5 bg-sc-bg-soft rounded">
                   {{ r.bin_location }}
@@ -202,15 +205,13 @@ const isBelowSafety = (r) => r.safety_stock > 0 && r.qty < r.safety_stock
                 <span v-else class="text-xs text-sc-text-muted italic">chưa xếp</span>
               </td>
               <td>
-                <span v-if="r.qc_status" :class="['sc-badge',
-                  r.qc_status === 'Accepted' ? 'sc-badge-success' :
-                  r.qc_status === 'Rejected' ? 'sc-badge-critical' : 'sc-badge-warning']">
-                  {{ r.qc_status === 'Accepted' ? 'Đạt' : r.qc_status === 'Rejected' ? 'Không đạt' : r.qc_status }}
+                <span v-if="r.qc_status" :class="['sc-badge', qcBadge(r.qc_status)]">
+                  {{ qcLabel(r.qc_status) }}
                 </span>
                 <span v-if="r.blocked" class="sc-badge sc-badge-critical ml-1">Khoá</span>
               </td>
               <td class="text-xs">{{ r.received_date ? fmtDate(r.received_date) : '—' }}</td>
-              <td class="text-xs">{{ r.expiry_date ? fmtDate(r.expiry_date) : '—' }}</td>
+              <td class="text-xs"><span class="px-1.5 py-0.5 rounded" :class="expiryClass(r.expiry_date)">{{ r.expiry_date ? fmtDate(r.expiry_date) : '—' }}</span></td>
               <td class="text-right font-mono font-semibold"
                 :class="{ 'text-sc-warning': isBelowSafety(r) }">
                 {{ fmtNumber(r.qty) }}

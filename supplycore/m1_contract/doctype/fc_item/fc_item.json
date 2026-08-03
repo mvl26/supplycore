@@ -14,7 +14,11 @@
   "remaining_qty",
   "section_price",
   "unit_price",
-  "total_amount"
+  "total_amount",
+  "section_supplier_trace",
+  "supplier_item_name",
+  "supplier_item_code",
+  "remarks"
  ],
  "fields": [
   {"fieldname": "item_code", "fieldtype": "Link", "options": "SC Item", "label": "Mã VT", "reqd": 1, "in_list_view": 1, "columns": 2},
@@ -26,7 +30,11 @@
   {"fieldname": "remaining_qty", "fieldtype": "Float", "label": "SL còn lại", "read_only": 1, "no_copy": 1},
   {"fieldname": "section_price", "fieldtype": "Section Break"},
   {"fieldname": "unit_price", "fieldtype": "Currency", "precision": "0", "label": "Đơn giá", "options": "VND", "reqd": 1, "in_list_view": 1, "non_negative": 1, "columns": 1},
-  {"fieldname": "total_amount", "fieldtype": "Currency", "precision": "0", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1}
+  {"fieldname": "total_amount", "fieldtype": "Currency", "precision": "0", "label": "Thành tiền", "options": "VND", "read_only": 1, "in_list_view": 1, "columns": 1},
+  {"fieldname": "section_supplier_trace", "fieldtype": "Section Break", "label": "Truy vết NCC & ghi chú"},
+  {"fieldname": "supplier_item_name", "fieldtype": "Data", "label": "Tên hàng theo NCC", "in_list_view": 0},
+  {"fieldname": "supplier_item_code", "fieldtype": "Data", "label": "Mã hàng theo NCC", "in_list_view": 0},
+  {"fieldname": "remarks", "fieldtype": "Small Text", "label": "Ghi chú dòng", "in_list_view": 0}
  ],
  "owner": "Administrator",
  "modified_by": "Administrator",

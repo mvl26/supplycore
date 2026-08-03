@@ -23,14 +23,17 @@ for (const f of cfg.value.fields) {
 }
 
 const busy = ref(false)
+const errors = reactive({})
 
 async function save() {
+  // Required → hiện lỗi INLINE dưới từng field (không chỉ toast).
+  Object.keys(errors).forEach(k => delete errors[k])
   for (const f of cfg.value.fields) {
     if (f.required && !String(form[f.name] ?? '').trim()) {
-      toast.error(`Vui lòng nhập: ${f.label}`)
-      return
+      errors[f.name] = `Vui lòng nhập: ${f.label}`
     }
   }
+  if (Object.keys(errors).length) return
   busy.value = true
   try {
     const payload = {}
@@ -51,9 +54,11 @@ async function save() {
 <template>
   <Modal :open="true" :title="cfg.title" @close="emit('close')">
     <div class="space-y-3">
-      <FormField v-for="f in cfg.fields" :key="f.name"
-        :field="f" :model-value="form[f.name]"
-        @update:model-value="v => form[f.name] = v" />
+      <div v-for="f in cfg.fields" :key="f.name" :class="{ 'sc-field-invalid': errors[f.name] }">
+        <FormField :field="f" :model-value="form[f.name]"
+          @update:model-value="v => { form[f.name] = v; if (errors[f.name]) delete errors[f.name] }" />
+        <div v-if="errors[f.name]" class="text-xs text-sc-danger mt-1">{{ errors[f.name] }}</div>
+      </div>
       <div class="flex justify-end gap-2 pt-2 border-t border-sc-border mt-2">
         <button type="button" class="sc-btn-secondary text-sm" :disabled="busy"
           @click="emit('close')">Huỷ</button>

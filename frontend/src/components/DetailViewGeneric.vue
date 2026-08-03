@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import Icon from './Icon.vue'
 import { fmtNumber, fmtVND, fmtVNDShort, fmtDate, fmtDateTime } from '../utils'
 import { DETAIL_CONFIGS } from '../detail-configs'
+import DocPreviewDrawer from './DocPreviewDrawer.vue'
 
 const props = defineProps({
   doctype: { type: String, required: true },
@@ -10,6 +11,20 @@ const props = defineProps({
 })
 
 const cfg = computed(() => DETAIL_CONFIGS[props.doctype] || null)
+
+// Xem nhanh chi tiết phiếu tham chiếu — tách doctype/name từ path route `/doc/<DT>/<name>`.
+const preview = ref({ open: false, doctype: '', name: '' })
+function openPreviewFromLink(link) {
+  if (!link || typeof link !== 'string') return
+  const rest = link.replace(/^\/doc\//, '')
+  const i = rest.lastIndexOf('/')
+  if (i < 0) return
+  preview.value = {
+    open: true,
+    doctype: decodeURIComponent(rest.slice(0, i)),
+    name: decodeURIComponent(rest.slice(i + 1)),
+  }
+}
 
 function call(fn, doc) {
   if (typeof fn === 'function') {
@@ -97,17 +112,17 @@ function cellValue(row, col) {
 
 const tileAccentClass = {
   default: 'text-sc-navy',
-  emerald: 'text-emerald-700',
-  amber:   'text-amber-700',
+  emerald: 'text-sc-success',
+  amber:   'text-sc-warning',
   royal:   'text-sc-royal',
   critical:'text-sc-critical',
 }
 const tileCardClass = {
   default: '',
-  emerald: 'ring-1 ring-emerald-200/70 bg-emerald-50/30',
-  amber:   'ring-1 ring-amber-200/70 bg-amber-50/30',
+  emerald: 'ring-1 ring-sc-success/30 bg-sc-success-50/30',
+  amber:   'ring-1 ring-sc-warning/30 bg-sc-warning-50/30',
   royal:   '',
-  critical:'ring-1 ring-red-200/70 bg-red-50/30',
+  critical:'ring-1 ring-sc-danger/30 bg-sc-danger-50/30',
 }
 </script>
 
@@ -183,9 +198,13 @@ const tileCardClass = {
           <div v-for="(f, j) in s.fields" :key="j" class="flex gap-3">
             <dt class="w-32 text-sc-text-muted flex-shrink-0">{{ f.label }}</dt>
             <dd v-if="f.link" class="min-w-0 flex-1">
-              <router-link :to="f.link" class="text-sc-royal hover:text-sc-navy hover:underline break-all">
+              <router-link :to="f.link" class="text-sc-royal hover:text-sc-navy hover:underline break-all font-medium">
                 {{ f.value || '—' }}
               </router-link>
+              <button v-if="f.value" type="button" @click="openPreviewFromLink(f.link)"
+                class="align-middle ml-1 text-sc-text-muted hover:text-sc-royal" title="Xem nhanh chi tiết phiếu">
+                <Icon name="eye" :size="14" />
+              </button>
             </dd>
             <dd v-else-if="f.pre" class="text-sc-text whitespace-pre-line min-w-0 flex-1">{{ f.value || '—' }}</dd>
             <dd v-else class="text-sc-text font-medium break-all min-w-0 flex-1">{{ f.value || '—' }}</dd>
@@ -202,10 +221,10 @@ const tileCardClass = {
           <li v-for="(s, i) in approvalSteps" :key="i" class="relative pl-8">
             <span v-if="i < approvalSteps.length - 1"
               class="absolute left-[10px] top-6 bottom-[-1rem] w-px"
-              :class="s.done ? 'bg-emerald-300' : 'bg-sc-border'"></span>
+              :class="s.done ? 'bg-sc-success' : 'bg-sc-border'"></span>
             <span class="absolute left-0 top-0.5 inline-flex items-center justify-center
                          w-5 h-5 rounded-full ring-2 ring-white"
-              :class="s.done ? 'bg-emerald-500 text-white' : 'bg-sc-border text-sc-text-muted'">
+              :class="s.done ? 'bg-sc-success text-white' : 'bg-sc-border text-sc-text-muted'">
               <Icon v-if="s.done" name="check" :size="12" />
               <span v-else class="w-1.5 h-1.5 rounded-full bg-white"></span>
             </span>
@@ -290,5 +309,7 @@ const tileCardClass = {
         </table>
       </div>
     </div>
+    <DocPreviewDrawer :open="preview.open" :doctype="preview.doctype" :name="preview.name"
+      @close="preview.open = false" />
   </div>
 </template>

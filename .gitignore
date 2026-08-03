@@ -18,3 +18,9 @@ dist/
 
 # Claude Code local state (worktrees, session)
 .claude/
+
+# UI/UX Pro Max — design-system output (local, không commit)
+design-system/
+
+# UI audit deliverables (local)
+frontend/UI_AUDIT/

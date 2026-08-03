@@ -403,10 +403,12 @@ class SCPurchaseReceipt(Document):
         # Set timestamp trước để track intent — sendmail có thể fail trong env không SMTP
         self.db_set("notification_sent_at", frappe.utils.now())
         try:
-            frappe.sendmail(
+            from supplycore.utils.emailer import send_email
+            send_email(
                 recipients=[email],
                 subject=f"[SupplyCore] Phiếu trả hàng {self.name}",
-                message=msg, delayed=True,
+                title=f"Phiếu trả hàng {self.name}",
+                body_html=msg, note_kind="warn",
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-11 _send_return_notification")
@@ -555,9 +557,10 @@ class SCPurchaseReceipt(Document):
             b.manufacturing_date = r.manufacturing_date
             b.supplier = self.supplier
             b.supplier_batch_no = r.supplier_batch_no
-            # BUG-004: truy xuất nguồn gốc — manufacturer + country_of_origin
+            # BUG-004: truy xuất nguồn gốc — manufacturer + country_of_origin + model
             b.manufacturer = r.get("manufacturer") or None
             b.country_of_origin = r.get("country_of_origin") or None
+            b.model = r.get("model") or None
             b.flags.ignore_permissions = True
             b.flags.ignore_short_expiry = 1
             try:

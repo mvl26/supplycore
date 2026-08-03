@@ -15,25 +15,27 @@ def send_daily_kpi():
         return
 
     kpis = snapshot["kpis"]
-    body = f"""
-        <h3>SupplyCore — Daily KPI Snapshot</h3>
-        <table border="1" cellpadding="6" cellspacing="0">
-            <tr><th>KPI</th><th>Giá trị</th></tr>
-            <tr><td>Tổng giá trị tồn kho</td><td>{frappe.format(kpis['stock_value'], {'fieldtype': 'Currency'})}</td></tr>
-            <tr><td>Chi phí tháng này</td><td>{frappe.format(kpis['monthly_cost'], {'fieldtype': 'Currency'})}</td></tr>
-            <tr><td>Công nợ NCC</td><td>{frappe.format(kpis['ap_outstanding'], {'fieldtype': 'Currency'})}</td></tr>
-            <tr><td>PO chờ duyệt/giao</td><td>{kpis['pending_pos']}</td></tr>
-            <tr><td>Lô sắp hết hạn (≤30 ngày)</td><td>{kpis['expiring_soon']}</td></tr>
-            <tr><td>Items tồn dưới safety stock</td><td>{kpis['low_stock_items']}</td></tr>
+    from supplycore.utils.emailer import send_email, sc_list_url
+    table = f"""
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px">
+            <tr style="background:#f3f6fb"><th align="left">Chỉ số</th><th align="right">Giá trị</th></tr>
+            <tr><td>Tổng giá trị tồn kho</td><td align="right">{frappe.format(kpis['stock_value'], {'fieldtype': 'Currency'})}</td></tr>
+            <tr><td>Chi phí tháng này</td><td align="right">{frappe.format(kpis['monthly_cost'], {'fieldtype': 'Currency'})}</td></tr>
+            <tr><td>Công nợ nhà cung cấp</td><td align="right">{frappe.format(kpis['ap_outstanding'], {'fieldtype': 'Currency'})}</td></tr>
+            <tr><td>Đơn mua chờ duyệt/giao</td><td align="right">{kpis['pending_pos']}</td></tr>
+            <tr><td>Lô sắp hết hạn (≤30 ngày)</td><td align="right">{kpis['expiring_soon']}</td></tr>
+            <tr><td>Vật tư dưới tồn an toàn</td><td align="right">{kpis['low_stock_items']}</td></tr>
         </table>
-        <p>Cảnh báo open: <b>{snapshot['open_alerts_total']}</b>
+        <p style="margin:12px 0 0;font-size:13px">Cảnh báo đang mở: <b>{snapshot['open_alerts_total']}</b>
            ({', '.join(f'{k}={v}' for k, v in snapshot['open_alerts'].items())})</p>
-        <p><a href="/app/sc-alert?resolved=0">Mở Alert Center</a></p>
     """
     try:
-        frappe.sendmail(recipients=recipients,
-                         subject=f"[SupplyCore] Daily KPI {today()}",
-                         message=body, delayed=True)
+        send_email(recipients=recipients,
+                   subject=f"[SupplyCore] KPI điều hành ngày {today()}",
+                   title=f"KPI điều hành — {today()}",
+                   intro="Bản tóm tắt các chỉ số điều hành trong kỳ này:",
+                   body_html=table,
+                   cta_url=sc_list_url("SC Alert"), cta_label="Mở Trung tâm cảnh báo")
     except Exception as e:
         frappe.log_error(message=str(e)[:1000], title="M11 send_daily_kpi")
 
@@ -429,18 +431,16 @@ def escalate_overdue_alerts(threshold_hours: int = 48):
                 "severity": "Critical",  # Bump
             })
             try:
-                frappe.sendmail(
-                    recipients=[escalation_user],
-                    subject=f"[ESCALATED] {a.title}",
-                    message=(
-                        f"<p>Alert <b>{a.name}</b> đã không được resolve trong "
-                        f"{threshold_hours} giờ.</p>"
-                        f"<p>Title: {a.title}</p>"
-                        f"<p>Type: {a.alert_type} / Severity: {a.severity}</p>"
-                        f"<p>Vui lòng xem: /app/sc-alert/{a.name}</p>"
-                    ),
-                    queue=True, now=False,
-                )
+                from supplycore.utils.emailer import send_doc_email
+                send_doc_email(
+                    doctype="SC Alert", name=a.name, recipients=[escalation_user],
+                    subject=f"[SupplyCore][LEO THANG] {a.title}",
+                    title="Cảnh báo chưa xử lý — đã leo thang",
+                    intro=f"Cảnh báo <b>{a.name}</b> chưa được xử lý sau {threshold_hours} giờ "
+                          "và đã được leo thang lên bạn để xử lý.",
+                    info_rows=[("Tiêu đề", a.title), ("Loại", a.alert_type),
+                               ("Mức độ", "Critical")],
+                    note_kind="crit", cta_label="Xem cảnh báo", delayed=True)
             except Exception:
                 pass
             escalated_count += 1

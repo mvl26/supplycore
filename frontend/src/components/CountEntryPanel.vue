@@ -67,9 +67,9 @@ function variancePct(row) {
 function rowCls(row) {
   if (Number(row.is_counted) !== 1) return ''
   const v = variancePct(row)
-  if (Math.abs(v) > threshold.value) return 'bg-red-50'
-  if (Math.abs(v) > 0) return 'bg-amber-50'
-  return 'bg-green-50'
+  if (Math.abs(v) > threshold.value) return 'bg-sc-danger-50'
+  if (Math.abs(v) > 0) return 'bg-sc-warning-50'
+  return 'bg-sc-success-50'
 }
 
 async function saveRow(row, key, val) {
@@ -157,7 +157,7 @@ function reloadDoc() {
         </span>
       </h3>
       <div class="flex items-center gap-2 text-sm">
-        <span v-if="saving" class="text-amber-700 text-xs inline-flex items-center gap-1"><Icon name="save" :size="14" /> Đang lưu...</span>
+        <span v-if="saving" class="text-sc-warning text-xs inline-flex items-center gap-1"><Icon name="save" :size="14" /> Đang lưu...</span>
         <button @click="reloadDoc" class="sc-btn-secondary text-xs inline-flex items-center gap-1"><Icon name="rotate-cw" :size="14" /> Reload</button>
       </div>
     </div>
@@ -170,12 +170,12 @@ function reloadDoc() {
           ({{ progressPct }}%)
         </span>
         <span class="text-sc-text-muted">
-          Lệch: <strong class="text-amber-700">{{ stats.mismatch }}</strong>
-          · Cần đếm lại: <strong class="text-red-700">{{ stats.recount }}</strong>
+          Lệch: <strong class="text-sc-warning">{{ stats.mismatch }}</strong>
+          · Cần đếm lại: <strong class="text-sc-danger">{{ stats.recount }}</strong>
           · Còn: <strong>{{ stats.remaining }}</strong>
         </span>
       </div>
-      <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div class="h-2 bg-sc-border rounded-full overflow-hidden">
         <div class="h-full bg-sc-success transition-all"
           :style="{ width: progressPct + '%' }"></div>
       </div>
@@ -237,13 +237,13 @@ function reloadDoc() {
                 placeholder="—" />
             </td>
             <td class="text-right font-mono"
-              :class="Math.abs(variancePct(r)) > threshold ? 'text-red-700 font-bold' : (Math.abs(variancePct(r)) > 0 ? 'text-amber-700' : 'text-sc-text-muted')">
+              :class="Math.abs(variancePct(r)) > threshold ? 'text-sc-danger font-bold' : (Math.abs(variancePct(r)) > 0 ? 'text-sc-warning' : 'text-sc-text-muted')">
               {{ Number(r.is_counted) === 1 ? variancePct(r).toFixed(1) + '%' : '—' }}
             </td>
             <td>
               <span v-if="r.needs_recount" class="sc-badge sc-badge-warning text-xs">Đếm lại</span>
               <span v-else-if="Number(r.is_counted) === 1 && Number(r.actual_qty) === Number(r.system_qty || 0)"
-                class="text-green-700"><Icon name="check" :size="14" /></span>
+                class="text-sc-success"><Icon name="check" :size="14" /></span>
             </td>
             <td class="text-right">
               <input v-if="r.needs_recount"
@@ -268,7 +268,7 @@ function reloadDoc() {
     </div>
 
     <div class="mt-3 text-xs text-sc-text-muted">
-      <Icon name="info" :size="14" /> Mẹo: Bấm <kbd class="px-1 py-0.5 bg-gray-100 rounded">Enter</kbd> hoặc <kbd class="px-1 py-0.5 bg-gray-100 rounded">↓</kbd> để chuyển ô tiếp theo · <kbd class="px-1 py-0.5 bg-gray-100 rounded">↑</kbd> quay lại.
+      <Icon name="info" :size="14" /> Mẹo: Bấm <kbd class="px-1 py-0.5 bg-sc-bg-soft rounded">Enter</kbd> hoặc <kbd class="px-1 py-0.5 bg-sc-bg-soft rounded">↓</kbd> để chuyển ô tiếp theo · <kbd class="px-1 py-0.5 bg-sc-bg-soft rounded">↑</kbd> quay lại.
       Ngưỡng đếm lại: <strong>{{ threshold }}%</strong>. Item có |% lệch| > ngưỡng sẽ tự bật cờ "Đếm lại".
     </div>
   </div>

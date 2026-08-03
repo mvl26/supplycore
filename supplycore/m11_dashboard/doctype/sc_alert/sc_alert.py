@@ -170,16 +170,14 @@ class SCAlert(Document):
         if not supplier_email:
             frappe.throw(_("NCC {0} không có email").format(supplier))
         try:
-            frappe.sendmail(
+            from supplycore.utils.emailer import send_email
+            send_email(
                 recipients=[supplier_email],
                 subject=f"[SupplyCore] {self.title}",
-                message=(
-                    f"<p>Kính gửi {supplier},</p>"
-                    f"<p>{message or self.message or self.title}</p>"
-                    f"<p>Reference: {self.reference_doctype} {self.reference_name}</p>"
-                    f"<p>Vui lòng phản hồi sớm.</p>"
-                ),
-                queue=True, now=False,
+                title=self.title,
+                intro=f"Kính gửi <b>{supplier}</b>,<br>{message or self.message or self.title}",
+                info_rows=[("Liên quan", f"{self.reference_doctype or ''} {self.reference_name or ''}".strip())],
+                note="Vui lòng phản hồi sớm.", note_kind="warn", delayed=True,
             )
         except Exception as e:
             frappe.log_error(message=str(e)[:1000],

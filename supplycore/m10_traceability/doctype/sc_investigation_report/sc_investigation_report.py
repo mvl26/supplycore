@@ -155,13 +155,14 @@ class SCInvestigationReport(Document):
                 filters={"enabled": 1, "name": ["in", sm_users]},
                 pluck="name") if sm_users else []
             if recipients:
-                frappe.sendmail(
-                    recipients=recipients,
-                    subject=f"[FRAUD ALERT] Investigation {self.name}: user {user} locked",
-                    message=f"User <b>{user}</b> đã bị khóa do điều tra {self.name}.<br>"
-                            f"Lý do: {reason}",
-                    now=False,
-                )
+                from supplycore.utils.emailer import send_doc_email
+                send_doc_email(
+                    doctype="SC Investigation Report", name=self.name, recipients=recipients,
+                    subject=f"[SupplyCore][GIAN LẬN] Điều tra {self.name}: đã khóa tài khoản {user}",
+                    title="Cảnh báo gian lận — đã khóa tài khoản",
+                    intro=f"Trong quá trình điều tra <b>{self.name}</b>, tài khoản <b>{user}</b> đã bị khóa.",
+                    info_rows=[("Mã điều tra", self.name), ("Tài khoản bị khóa", user)],
+                    note=f"Lý do: {reason}", note_kind="crit", cta_label="Xem điều tra")
         except Exception:
             pass
         return {"user": user, "locked": True}

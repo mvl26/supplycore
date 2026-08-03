@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import Icon from './Icon.vue'
+import { fmtNumber } from '../utils'
 
 const props = defineProps({
   doc: Object,
@@ -33,17 +34,15 @@ const anomaliesList = computed(() => {
     return []
   } catch (e) { return [] }
 })
-
-const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
 </script>
 
 <template>
   <div v-if="doc">
     <!-- Banner gợi ý phạm vi nếu thiếu -->
     <div v-if="doc.docstatus === 0 && !hasScope"
-      class="sc-card border-l-4 border-amber-400 bg-amber-50 px-4 py-3 mb-4 text-sm">
-      <div class="font-semibold text-amber-900 flex items-center gap-1.5"><Icon name="alert-triangle" :size="16" /> Cần xác định phạm vi điều tra</div>
-      <div class="text-amber-800 mt-1">
+      class="sc-card border-l-4 border-sc-warning/40 bg-sc-warning-50 px-4 py-3 mb-4 text-sm">
+      <div class="font-semibold text-sc-warning flex items-center gap-1.5"><Icon name="alert-triangle" :size="16" /> Cần xác định phạm vi điều tra</div>
+      <div class="text-sc-warning mt-1">
         Phải nhập <strong>ít nhất 1</strong> trong: <em>Vật tư</em>, <em>Kho</em>, <em>Lô</em>.
         Càng cụ thể, audit trail càng chính xác.
       </div>
@@ -55,29 +54,29 @@ const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
         <Icon name="git-compare" :size="18" /> Kết quả so sánh tồn kho
       </h3>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="border rounded p-3">
+        <div class="border border-sc-border rounded p-3">
           <div class="text-xs text-sc-text-muted">SL lý thuyết (SLE)</div>
-          <div class="text-xl font-bold font-mono">{{ fmt(doc.theoretical_qty) }}</div>
+          <div class="text-xl font-bold font-mono">{{ fmtNumber(doc.theoretical_qty) }}</div>
         </div>
-        <div class="border rounded p-3"
-          :class="doc.actual_qty != doc.theoretical_qty ? 'bg-amber-50 border-amber-300' : 'bg-green-50 border-green-300'">
+        <div class="border border-sc-border rounded p-3"
+          :class="doc.actual_qty != doc.theoretical_qty ? 'bg-sc-warning-50 border-sc-warning/40' : 'bg-sc-success-50 border-sc-success/40'">
           <div class="text-xs text-sc-text-muted">SL thực tế (đếm)</div>
-          <div class="text-xl font-bold font-mono">{{ fmt(doc.actual_qty) }}</div>
+          <div class="text-xl font-bold font-mono">{{ fmtNumber(doc.actual_qty) }}</div>
         </div>
-        <div class="border rounded p-3"
-          :class="doc.variance_qty == 0 ? 'border-green-300 bg-green-50' : (doc.variance_qty < 0 ? 'border-red-300 bg-red-50' : 'border-blue-300 bg-blue-50')">
+        <div class="border border-sc-border rounded p-3"
+          :class="doc.variance_qty == 0 ? 'border-sc-success/40 bg-sc-success-50' : (doc.variance_qty < 0 ? 'border-sc-danger/40 bg-sc-danger-50' : 'border-sc-info/40 bg-sc-info-50')">
           <div class="text-xs text-sc-text-muted">Δ Số lượng</div>
           <div class="text-xl font-bold font-mono"
-            :class="doc.variance_qty < 0 ? 'text-red-700' : (doc.variance_qty > 0 ? 'text-blue-700' : 'text-green-700')">
-            {{ doc.variance_qty > 0 ? '+' : '' }}{{ fmt(doc.variance_qty) }}
+            :class="doc.variance_qty < 0 ? 'text-sc-danger' : (doc.variance_qty > 0 ? 'text-sc-info' : 'text-sc-success')">
+            {{ doc.variance_qty > 0 ? '+' : '' }}{{ fmtNumber(doc.variance_qty) }}
           </div>
         </div>
-        <div class="border rounded p-3"
-          :class="doc.variance_value == 0 ? 'border-green-300 bg-green-50' : (doc.variance_value < 0 ? 'border-red-300 bg-red-50' : 'border-blue-300 bg-blue-50')">
+        <div class="border border-sc-border rounded p-3"
+          :class="doc.variance_value == 0 ? 'border-sc-success/40 bg-sc-success-50' : (doc.variance_value < 0 ? 'border-sc-danger/40 bg-sc-danger-50' : 'border-sc-info/40 bg-sc-info-50')">
           <div class="text-xs text-sc-text-muted">Δ Giá trị (VND)</div>
           <div class="text-lg font-bold font-mono"
-            :class="doc.variance_value < 0 ? 'text-red-700' : (doc.variance_value > 0 ? 'text-blue-700' : 'text-green-700')">
-            {{ doc.variance_value > 0 ? '+' : '' }}{{ fmt(doc.variance_value) }}
+            :class="doc.variance_value < 0 ? 'text-sc-danger' : (doc.variance_value > 0 ? 'text-sc-info' : 'text-sc-success')">
+            {{ doc.variance_value > 0 ? '+' : '' }}{{ fmtNumber(doc.variance_value) }}
           </div>
         </div>
       </div>
@@ -95,15 +94,15 @@ const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
       </h3>
       <div class="space-y-2">
         <div v-for="(a, i) in anomaliesList" :key="i"
-          class="border-l-4 border-amber-500 bg-amber-50 p-3 rounded">
-          <div class="font-medium text-amber-900 flex items-center gap-2">
+          class="border-l-4 border-sc-warning/40 bg-sc-warning-50 p-3 rounded">
+          <div class="font-medium text-sc-warning flex items-center gap-2">
             <Icon name="alert-triangle" :size="18" />
             {{ a.type || a.kind || 'Anomaly #' + (i + 1) }}
           </div>
-          <div class="text-xs text-amber-800 mt-1 grid grid-cols-2 gap-1">
+          <div class="text-xs text-sc-warning mt-1 grid grid-cols-2 gap-1">
             <template v-for="(v, k) in a" :key="k">
               <div v-if="k !== 'type' && k !== 'kind'" class="contents">
-                <span class="text-amber-700">{{ k }}:</span>
+                <span class="text-sc-warning">{{ k }}:</span>
                 <span class="font-mono">{{ typeof v === 'object' ? JSON.stringify(v) : v }}</span>
               </div>
             </template>
@@ -114,7 +113,7 @@ const fmt = (v) => Number(v || 0).toLocaleString('vi-VN')
 
     <!-- System error adjustment linked -->
     <div v-if="doc.system_error_adjustment"
-      class="sc-card border-l-4 border-green-400 bg-green-50 px-4 py-3 mb-4 text-sm">
+      class="sc-card border-l-4 border-sc-success/40 bg-sc-success-50 px-4 py-3 mb-4 text-sm">
       <Icon name="check" :size="16" /> <strong>SR điều chỉnh đã được tạo:</strong>
       <router-link :to="`/doc/SC Stock Reconciliation/${encodeURIComponent(doc.system_error_adjustment)}`"
         class="text-sc-royal hover:underline font-mono ml-1">

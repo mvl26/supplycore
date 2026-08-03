@@ -1,6 +1,8 @@
 <script setup>
 import { ref, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { getList, call } from '../api'
+import Icon from './Icon.vue'
+import DocPreviewDrawer from './DocPreviewDrawer.vue'
 
 const props = defineProps({
   modelValue: String,
@@ -13,6 +15,12 @@ const props = defineProps({
   extraFilters: { type: Array, default: () => [] }, // [[field, op, value], ...] AND với search
 })
 const emit = defineEmits(['update:modelValue', 'selected', 'createNew'])
+
+// Xem nhanh chi tiết phiếu tham chiếu ngay trong form (khi đã chọn giá trị).
+const previewOpen = ref(false)
+function openPreview() {
+  if (props.modelValue) previewOpen.value = true
+}
 
 // L03/T05: ưu tiên hiển thị TÊN (mã làm phụ). Map field tên theo doctype.
 const NAME_FIELD = {
@@ -173,7 +181,13 @@ async function doSearch(q) {
     // (join customer_name, tìm theo tên/mã khách + mã phiếu).
     const c = composed()
     if (c) {
-      const rows = await call(c.endpoint, { ...c.args, q: q || '', limit: 20 })
+      // HĐ khung bán: nếu header đã chọn khách → lọc theo khách (customer filter
+      // do FormField scope.customerField sinh ra trong extraFilters). Endpoint
+      // search_sales_framework_contract nhận kwarg `customer`.
+      const extra = {}
+      const cf = (props.extraFilters || []).find(f => Array.isArray(f) && f[0] === 'customer' && f[1] === '=')
+      if (cf) extra.customer = cf[2]
+      const rows = await call(c.endpoint, { ...c.args, ...extra, q: q || '', limit: 20 })
       if (my !== _seq) return
       results.value = rows || []
       return
@@ -275,23 +289,38 @@ const hasName = (r) => {
   const nf = nameFieldOf(props.linkTo)
   return !!(nf && r[nf] && r[nf] !== r.name)
 }
+
+// Nhãn VN cho placeholder — tránh lộ mã doctype tiếng Anh ("— Chọn SC Item —").
+const DOCTYPE_NOUN = {
+  'SC Item': 'vật tư', 'SC Supplier': 'nhà cung cấp', 'SC Customer': 'khách hàng',
+  'SC Warehouse': 'kho', 'SC UOM': 'đơn vị tính', 'SC Batch': 'lô vật tư',
+  'SC Item Group': 'nhóm vật tư', 'SC Department': 'khoa/phòng', 'User': 'người dùng',
+  'Framework Contract': 'hợp đồng khung mua', 'SC Sales Framework Contract': 'hợp đồng khung bán',
+  'SC Purchase Order': 'đơn mua', 'SC Sales Order': 'đơn bán',
+}
+const placeholderText = () => props.placeholder || `— Chọn ${DOCTYPE_NOUN[props.linkTo] || props.linkTo} —`
 </script>
 
 <template>
   <div class="relative">
-    <input ref="inputEl" :value="search" :placeholder="placeholder || `— Chọn ${linkTo} —`"
+    <input ref="inputEl" :value="search" :placeholder="placeholderText()"
       :readonly="readonly" :required="required"
       @input="onInput" @focus="onFocus" @blur="onBlur"
-      class="sc-input pr-8"
-      :class="size === 'sm' ? 'py-1.5 text-sm' : ''" />
-    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-sc-text-muted text-xs pointer-events-none">▾</span>
+      :class="[modelValue ? 'pr-14' : 'pr-8', size === 'sm' ? 'py-1.5 text-sm' : '']"
+      class="sc-input" />
+    <button v-if="modelValue" type="button" @mousedown.prevent="openPreview"
+      class="absolute right-7 top-1/2 -translate-y-1/2 text-sc-text-muted hover:text-sc-royal"
+      title="Xem nhanh chi tiết phiếu đã chọn">
+      <Icon name="eye" :size="15" />
+    </button>
+    <Icon name="chevron-down" :size="14" class="absolute right-2 top-1/2 -translate-y-1/2 text-sc-text-muted pointer-events-none" />
 
     <Teleport to="body">
       <div v-if="open && !readonly" :style="dropdownStyle"
         class="bg-white border border-sc-border rounded-md shadow-lg max-h-72 overflow-y-auto">
         <button v-if="allowCreate" type="button"
           @mousedown.prevent="emit('createNew', { search }); open = false"
-          class="w-full text-left px-3 py-2 text-sm font-semibold text-sc-royal hover:bg-sc-bg border-b border-sc-border bg-blue-50">
+          class="w-full text-left px-3 py-2 text-sm font-semibold text-sc-royal hover:bg-sc-bg border-b border-sc-border bg-sc-info-50">
           + Tạo mới {{ dtLabel(linkTo) }}{{ typing && search ? ` "${search}"` : '' }}
         </button>
         <div v-if="loading" class="px-3 py-2 text-sm text-sc-text-muted">Đang tìm...</div>
@@ -302,7 +331,7 @@ const hasName = (r) => {
           <!-- UX-004: gợi ý "Tạo mới" inline khi không tìm thấy + user đã gõ search -->
           <button v-if="typing && search && !allowCreate" type="button"
             @mousedown.prevent="emit('createNew', { search }); open = false"
-            class="w-full text-left px-3 py-2 text-sm font-medium text-sc-royal hover:bg-sc-bg border-t border-sc-border bg-blue-50">
+            class="w-full text-left px-3 py-2 text-sm font-medium text-sc-royal hover:bg-sc-bg border-t border-sc-border bg-sc-info-50">
             + Tạo mới {{ dtLabel(linkTo) }} "{{ search }}"
           </button>
         </template>
@@ -315,5 +344,7 @@ const hasName = (r) => {
         </button>
       </div>
     </Teleport>
+    <DocPreviewDrawer :open="previewOpen" :doctype="linkTo" :name="modelValue"
+      @close="previewOpen = false" />
   </div>
 </template>

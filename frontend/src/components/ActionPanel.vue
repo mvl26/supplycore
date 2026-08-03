@@ -79,7 +79,11 @@ function openAction(a) {
   if (a.args && a.args.length) {
     selected.value = a
     args.value = {}
-    a.args.forEach(f => { args.value[f.key] = f.default ?? '' })
+    argErrors.value = {}
+    a.args.forEach(f => {
+      const dv = typeof f.default === 'function' ? f.default(props.doc || {}) : f.default
+      args.value[f.key] = dv ?? ''
+    })
   } else {
     runAction(a, {})
   }
@@ -94,7 +98,7 @@ async function runAction(a, argsObj) {
       // Module-level whitelisted function — supplycore.<module>.<func>
       // apiNameArg = key để inject doc name vào payload; null/''/undefined → bỏ qua
       const argKey = a.apiNameArg === undefined ? 'name' : a.apiNameArg
-      const payload = { ...argsObj }
+      const payload = { ...(a.fixedArgs || {}), ...argsObj }
       if (argKey && props.doc?.name) payload[argKey] = props.doc.name
       const msg2 = await call(a.apiMethod, payload)
       r = { message: msg2 }
@@ -146,24 +150,28 @@ async function runAction(a, argsObj) {
   }
 }
 
+const argErrors = ref({})
+
 function confirmModal() {
   if (!selected.value) return
-  // Validate required
+  // Validate required — hiện lỗi INLINE dưới từng field (không chỉ toast).
+  const errs = {}
   for (const f of selected.value.args || []) {
     if (f.required && (args.value[f.key] === '' || args.value[f.key] == null)) {
-      toast.warning(`Vui lòng nhập ${f.label}`)
-      return
+      errs[f.key] = `Vui lòng nhập ${f.label}`
     }
   }
+  argErrors.value = errs
+  if (Object.keys(errs).length) return
   runAction(selected.value, args.value)
 }
 
 const btnClass = {
   primary:   'sc-btn-primary',
   secondary: 'sc-btn-secondary',
-  success:   'bg-sc-success hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium',
-  warning:   'bg-sc-warning hover:bg-amber-600 text-white px-4 py-2 rounded-md font-medium',
-  danger:    'bg-sc-danger hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium',
+  success:   'bg-sc-success hover:brightness-110 text-white px-4 py-2 rounded-md font-medium',
+  warning:   'bg-sc-warning hover:brightness-110 text-white px-4 py-2 rounded-md font-medium',
+  danger:    'bg-sc-danger hover:brightness-110 text-white px-4 py-2 rounded-md font-medium',
 }
 </script>
 
@@ -190,7 +198,8 @@ const btnClass = {
         v-model="args[f.key]"
         :label="f.label" :type="f.type || 'text'"
         :link-to="f.linkTo" :placeholder="f.placeholder"
-        :options="f.options" :required="f.required" :hint="f.hint" />
+        :options="f.options" :required="f.required" :hint="f.hint"
+        :error="argErrors[f.key]" />
     </div>
     <template #footer>
       <button @click="selected = null" class="sc-btn-secondary text-sm">Hủy</button>
@@ -213,9 +222,9 @@ const btnClass = {
         </div>
         <div v-else class="space-y-2">
           <div v-for="(a, i) in result.anomalies" :key="i"
-            class="border-l-4 border-amber-500 bg-amber-50 p-2 rounded">
-            <div class="font-medium text-amber-900">{{ a.type || a.kind || 'Anomaly' }}</div>
-            <div class="text-xs text-amber-800 mt-1">
+            class="border-l-4 border-sc-warning/40 bg-sc-warning-50 p-2 rounded">
+            <div class="font-medium text-sc-warning">{{ a.type || a.kind || 'Anomaly' }}</div>
+            <div class="text-xs text-sc-warning mt-1">
               <template v-for="(v, k) in a" :key="k">
                 <div v-if="k !== 'type' && k !== 'kind'"><strong>{{ k }}:</strong> {{ v }}</div>
               </template>
@@ -266,17 +275,17 @@ const btnClass = {
             <div class="text-xs text-sc-text-muted">SL thực tế</div>
             <div class="text-lg font-mono font-bold">{{ result.actual_qty }}</div>
           </div>
-          <div class="border rounded p-2" :class="result.variance_qty != 0 ? 'border-red-300 bg-red-50' : ''">
+          <div class="border rounded p-2" :class="result.variance_qty != 0 ? 'border-sc-danger/40 bg-sc-danger-50' : ''">
             <div class="text-xs text-sc-text-muted">Chênh lệch SL</div>
             <div class="text-lg font-mono font-bold"
-              :class="result.variance_qty != 0 ? 'text-red-700' : ''">
+              :class="result.variance_qty != 0 ? 'text-sc-danger' : ''">
               {{ result.variance_qty > 0 ? '+' : '' }}{{ result.variance_qty }}
             </div>
           </div>
-          <div class="border rounded p-2" :class="result.variance_value != 0 ? 'border-red-300 bg-red-50' : ''">
+          <div class="border rounded p-2" :class="result.variance_value != 0 ? 'border-sc-danger/40 bg-sc-danger-50' : ''">
             <div class="text-xs text-sc-text-muted">Chênh lệch giá trị</div>
             <div class="text-lg font-mono font-bold"
-              :class="result.variance_value != 0 ? 'text-red-700' : ''">
+              :class="result.variance_value != 0 ? 'text-sc-danger' : ''">
               {{ fmtVND(result.variance_value || 0) }}
             </div>
           </div>
@@ -379,12 +388,12 @@ const btnClass = {
         </div>
 
         <div v-if="result.unmatched_items?.length"
-          class="mt-3 border-l-4 border-amber-500 bg-amber-50 p-2 rounded">
-          <div class="font-semibold text-amber-900 text-sm mb-1">
-            ⚠ {{ result.unmatched_items.length }} vật tư chưa có HĐK phù hợp — chưa vào PO
+          class="mt-3 border-l-4 border-sc-warning/40 bg-sc-warning-50 p-2 rounded">
+          <div class="font-semibold text-sc-warning text-sm mb-1 flex items-center gap-1">
+            <Icon name="alert-triangle" :size="14" /> {{ result.unmatched_items.length }} vật tư chưa có HĐK phù hợp — chưa vào PO
           </div>
           <div v-for="(u, ui) in result.unmatched_items" :key="ui"
-            class="text-xs text-amber-800">
+            class="text-xs text-sc-warning">
             {{ u.item }} (SL {{ u.qty }} {{ u.uom }}) — {{ u.reason }}
           </div>
         </div>
@@ -393,7 +402,7 @@ const btnClass = {
       <!-- Generic fallback: pretty JSON -->
       <details v-else>
         <summary class="cursor-pointer text-sc-text-muted text-xs">Xem raw JSON</summary>
-        <pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto mt-2">{{ JSON.stringify(result, null, 2) }}</pre>
+        <pre class="text-xs bg-sc-bg-soft p-2 rounded overflow-x-auto mt-2">{{ JSON.stringify(result, null, 2) }}</pre>
       </details>
     </div>
     <template #footer>

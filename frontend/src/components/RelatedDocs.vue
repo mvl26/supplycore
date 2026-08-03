@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { call } from '../api'
 import { fmtDate, fmtNumber, fmtShort, fmtVND } from '../utils'
 import { fieldLabel } from '../i18n'
-import { statusLabel } from '../modules'
+import { statusLabel, STATUS_BADGE } from '../modules'
+import { severityBadge } from '../utils/status'
 import Icon from './Icon.vue'
 
 const props = defineProps({
@@ -31,6 +32,10 @@ async function load() {
 watch(() => [props.doctype, props.name], load)
 onMounted(load)
 
+// True nếu CÓ ít nhất 1 section tham chiếu có dữ liệu (để hiện empty-state tổng).
+const hasAnyRelated = computed(() =>
+  Object.values(related.value).some(rows => Array.isArray(rows) && rows.length))
+
 const SECTION_LABELS = {
   purchase_orders:      { title: 'Đơn mua hàng (PO)', icon: 'shopping-cart', dt: 'SC Purchase Order' },
   material_requests:    { title: 'Yêu cầu mua (MR)',  icon: 'file-text', dt: 'SC Material Request' },
@@ -44,6 +49,14 @@ const SECTION_LABELS = {
   recalls:              { title: 'Recall liên quan',  icon: 'siren', dt: 'SC Recall Notice' },
   framework_contracts:  { title: 'HĐ khung',           icon: 'file-text', dt: 'Framework Contract' },
   affected_items:       { title: 'Vật tư bị ảnh hưởng', icon: 'alert-triangle', dt: null },
+  // === Chuỗi bán hàng (O2C) ===
+  sales_framework_contracts: { title: 'HĐ khung bán',   icon: 'file-text',      dt: 'SC Sales Framework Contract' },
+  sales_orders:         { title: 'Đơn hàng (SO)',       icon: 'shopping-cart',  dt: 'SC Sales Order' },
+  delivery_notes:       { title: 'Phiếu giao (DN)',     icon: 'truck',          dt: 'SC Delivery Note' },
+  acceptance_records:   { title: 'Biên bản nghiệm thu', icon: 'clipboard-check', dt: 'SC Acceptance Record' },
+  sales_invoices:       { title: 'Hóa đơn bán (SI)',    icon: 'receipt',        dt: 'SC Sales Invoice' },
+  sales_receipts:       { title: 'Phiếu thu (SR)',      icon: 'banknote',       dt: 'SC Sales Receipt' },
+  sold_batches:         { title: 'Lô đã giao',           icon: 'tag',            dt: 'SC Batch' },
 }
 
 const STATUS_KEYS = new Set(['status', 'qc_status', 'overall_status', 'severity',
@@ -83,6 +96,14 @@ function fmt(value, key) {
   return value
 }
 
+// Chọn biến thể badge cho ô trạng thái — chỉ TRÌNH BÀY, dựa nhãn hiển thị.
+// severity dùng thang mức nghiêm trọng chung; còn lại heuristic theo nhãn tiếng Việt.
+function statusBadgeClass(value, key) {
+  if (key === 'severity') return severityBadge(value)
+  // Dùng CHUNG bảng màu STATUS_BADGE với DataTable → 1 trạng thái = 1 màu toàn hệ.
+  return STATUS_BADGE[value] || 'sc-badge-neutral'
+}
+
 function columnsFor(rows) {
   if (!rows.length) return []
   const skip = new Set(['name', 'doctype', 'parent', 'idx', 'creation', 'modified',
@@ -95,6 +116,11 @@ function columnsFor(rows) {
 <template>
   <div v-if="loading" class="text-sm text-sc-text-muted px-5 py-3">Đang tải tham chiếu...</div>
   <div v-else>
+    <div v-if="!hasAnyRelated"
+      class="sc-card px-5 py-8 flex flex-col items-center gap-2 text-center text-sm text-sc-text-muted">
+      <Icon name="inbox" :size="28" />
+      Không có chứng từ liên quan
+    </div>
     <div v-for="(rows, key) in related" :key="key">
       <div v-if="Array.isArray(rows) && rows.length" class="sc-card mb-4 overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 border-b border-sc-border">
@@ -119,7 +145,11 @@ function columnsFor(rows) {
                 <td v-for="c in columnsFor(rows)" :key="c"
                   :class="[typeof r[c] === 'number' ? 'font-mono text-right' : '',
                             c === 'name' ? 'font-mono text-xs' : '']">
-                  {{ fmt(r[c], c) }}
+                  <span v-if="STATUS_KEYS.has(c) && typeof r[c] === 'string' && r[c] !== ''"
+                    class="sc-badge" :class="statusBadgeClass(r[c], c)">
+                    {{ statusLabel(r[c], c) }}
+                  </span>
+                  <template v-else>{{ fmt(r[c], c) }}</template>
                 </td>
                 <td v-if="SECTION_LABELS[key]?.dt && r.name" class="text-right">
                   <span class="text-sc-royal"><Icon name="arrow-right" :size="12" /></span>

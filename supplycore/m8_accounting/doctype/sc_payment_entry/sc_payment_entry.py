@@ -3,7 +3,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, now
+from frappe.utils import flt, now, today
 
 from supplycore.utils.permissions import block_portal
 
@@ -17,6 +17,11 @@ class SCPaymentEntry(Document):
         from supplycore.utils.validators import validate_supplier
         validate_supplier(self.supplier)
         self._compute_allocated_total()
+        # Nếu chưa nhập Số tiền → mặc định = tổng phân bổ. Picker chỉ điền bảng
+        # references (không đụng field amount ở header); tránh submit lỗi "Tổng
+        # phân bổ ≠ Số tiền". Guard lệch >0.01 vẫn chặn typo thật (amount != 0).
+        if not flt(self.amount) and flt(self.allocated_total):
+            self.amount = flt(self.allocated_total)
         self._validate_references()
         self._determine_approval_level()
         if self.docstatus == 0:
@@ -180,6 +185,60 @@ def _get_exec_threshold() -> float:
 def _resolve_account(code: str) -> str:
     return frappe.db.get_value("SC GL Account", code, "name") or \
            frappe.db.get_value("SC GL Account", {"account_code": code}, "name")
+
+
+@frappe.whitelist()
+def create_payment_for_invoice(purchase_invoice: str, amount=None,
+                                mode: str = "Chuyển khoản") -> dict:
+    """Tạo phiếu thanh toán NCC (NHÁP) đã gán sẵn 1 hóa đơn mua.
+
+    Điểm vào 1-chạm từ màn Hóa đơn mua (mirror nút "Thu tiền" bên bán hàng),
+    thay cho việc dựng SC Payment Entry thủ công (tự gõ NCC + số PI + phân bổ).
+
+    KHÔNG submit: phiếu để trạng thái Nháp để người có quyền
+    (SupplyCore Manager/Executive theo ngưỡng) rà soát số tiền + phương thức
+    rồi bấm Duyệt — submit chuẩn mới kiểm tra ngưỡng duyệt và post GL.
+
+    Trả về: {name} để điều hướng sang PE vừa tạo.
+    """
+    block_portal()
+    if not frappe.has_permission("SC Payment Entry", "create"):
+        frappe.throw(_("Không có quyền lập phiếu thanh toán NCC"), frappe.PermissionError)
+
+    pi = frappe.db.get_value(
+        "SC Purchase Invoice", purchase_invoice,
+        ["supplier", "outstanding_amount", "docstatus", "payment_hold"],
+        as_dict=True,
+    )
+    if not pi or pi.docstatus != 1:
+        frappe.throw(_("Hóa đơn mua {0} không tồn tại hoặc chưa duyệt").format(purchase_invoice))
+    if pi.payment_hold:
+        frappe.throw(_(
+            "SC-E-PE-PAYMENT-HOLD: Hóa đơn {0} đang bị giữ thanh toán "
+            "(lệch 3-way chưa xử lý)"
+        ).format(purchase_invoice))
+
+    outstanding = flt(pi.outstanding_amount)
+    if outstanding <= 0:
+        frappe.throw(_("Hóa đơn {0} đã thanh toán đủ").format(purchase_invoice))
+
+    pay_amount = flt(amount) if flt(amount) > 0 else outstanding
+    if pay_amount > outstanding + 0.01:
+        frappe.throw(_("Số tiền {0} vượt quá còn phải trả {1}").format(pay_amount, outstanding))
+
+    method_map = {"Chuyển khoản": "Bank Transfer", "Tiền mặt": "Cash", "Séc": "Cheque"}
+
+    doc = frappe.new_doc("SC Payment Entry")
+    doc.supplier = pi.supplier
+    doc.payment_date = today()
+    doc.payment_method = method_map.get(mode, "Bank Transfer")
+    doc.amount = pay_amount
+    doc.append("references", {
+        "purchase_invoice": purchase_invoice,
+        "allocated_amount": pay_amount,
+    })
+    doc.insert()
+    return {"name": doc.name}
 
 
 @frappe.whitelist()

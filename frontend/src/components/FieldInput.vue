@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { statusLabel } from '../modules'
 import Icon from './Icon.vue'
 import LinkAutocomplete from './LinkAutocomplete.vue'
+import FormattedNumberInput from './FormattedNumberInput.vue'
 
 const props = defineProps({
   modelValue: [String, Number, Boolean, Date],
@@ -34,8 +35,7 @@ function update(v) {
 
 <template>
   <div>
-    <label v-if="label && type !== 'check'" :for="inputId"
-      class="text-xs font-medium text-sc-text-muted block mb-1">
+    <label v-if="label && type !== 'check'" :for="inputId" class="sc-label">
       {{ label }}
       <span v-if="required" class="text-sc-danger">*</span>
     </label>
@@ -68,6 +68,11 @@ function update(v) {
           class="w-4 h-4 text-sc-royal rounded" />
         <span class="text-sm">{{ label }}</span>
       </label>
+      <FormattedNumberInput v-else-if="type === 'number'"
+        :id="inputId" :model-value="modelValue" :readonly="readonly"
+        :placeholder="placeholder"
+        @update:model-value="v => emit('update:modelValue', v)"
+        class="sc-input" :class="{ 'pl-9': hasPrefix, 'pr-8': suffix }" />
       <input v-else
         :id="inputId" :type="type" :value="modelValue ?? ''" :readonly="readonly"
         :placeholder="placeholder"

@@ -10,7 +10,7 @@ export const NAV_BLOCKS = [
   {
     id: 'mua',
     label: 'MUA HÀNG',
-    emoji: '🛒',
+    icon: 'shopping-cart',
     // Khối chỉ hiện cho các vai này (ngoài item-gate theo quyền). [] = mọi vai.
     roles: [...MGMT, 'SupplyCore Purchaser', 'SupplyCore Accountant', 'SupplyCore Storekeeper', 'QC Officer', 'Warehouse Officer'],
     // accent trên nền tối (sidebar) + base cho page-header sáng
@@ -30,7 +30,7 @@ export const NAV_BLOCKS = [
   {
     id: 'ban',
     label: 'BÁN HÀNG',
-    emoji: '💰',
+    icon: 'banknote',
     // Q2: Quản lý kiêm bán hàng — không có role bán riêng. Kế toán thấy (công nợ phải thu).
     roles: [...MGMT, 'SupplyCore Accountant'],
     accent: '#F0B45E', accentBase: '#C77A1F',
@@ -49,7 +49,7 @@ export const NAV_BLOCKS = [
   {
     id: 'chung',
     label: 'DÙNG CHUNG',
-    emoji: '⚙️',
+    icon: 'settings',
     accent: '#A9B7C6', accentBase: '#64748B',
     tint: 'rgba(169,183,198,0.26)', tintSoft: 'rgba(169,183,198,0.06)',
     items: [

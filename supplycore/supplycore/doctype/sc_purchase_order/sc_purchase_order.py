@@ -60,6 +60,13 @@ class SCPurchaseOrder(Document):
                          .format(self.approval_stage))
         self.db_set("approval_stage", "Manager Review")
         self.db_set("rejection_reason", None)
+        from supplycore.utils.emailer import role_emails
+        self._po_notify(
+            recipients=role_emails("SupplyCore Manager"),
+            subject=f"[SupplyCore] Đơn mua {self.name} chờ Quản lý duyệt",
+            title="Đơn mua chờ duyệt — cấp Quản lý",
+            intro=f"Đơn mua <b>{self.name}</b> vừa được gửi và đang chờ Quản lý phê duyệt.",
+            actor=frappe.session.user, action="Gửi duyệt")
         return {"stage": "Manager Review"}
 
     @frappe.whitelist()
@@ -71,10 +78,23 @@ class SCPurchaseOrder(Document):
         threshold = flt(frappe.db.get_single_value("SupplyCore Settings", "po_approval_threshold") or 50_000_000)
         self.db_set("manager_approved_by", frappe.session.user)
         self.db_set("manager_approved_at", now())
+        from supplycore.utils.emailer import role_emails
         if flt(self.grand_total) < threshold:
             self.db_set("approval_stage", "Approved")
+            self._po_notify(
+                recipients=[self.owner],
+                subject=f"[SupplyCore] Đơn mua {self.name} đã được duyệt",
+                title="Đơn mua đã được duyệt",
+                intro=f"Đơn mua <b>{self.name}</b> của bạn đã được duyệt.",
+                actor=frappe.session.user, action="Duyệt (Quản lý)")
         else:
             self.db_set("approval_stage", "Executive Review")
+            self._po_notify(
+                recipients=role_emails("SupplyCore Executive"),
+                subject=f"[SupplyCore] Đơn mua {self.name} chờ Lãnh đạo duyệt",
+                title="Đơn mua chờ duyệt — cấp Lãnh đạo",
+                intro=f"Đơn mua <b>{self.name}</b> (giá trị lớn) đã qua Quản lý, chờ Lãnh đạo duyệt.",
+                actor=frappe.session.user, action="Quản lý duyệt")
         return {"stage": self.approval_stage, "comment": comment}
 
     @frappe.whitelist()
@@ -86,6 +106,12 @@ class SCPurchaseOrder(Document):
         self.db_set("executive_approved_by", frappe.session.user)
         self.db_set("executive_approved_at", now())
         self.db_set("approval_stage", "Approved")
+        self._po_notify(
+            recipients=[self.owner],
+            subject=f"[SupplyCore] Đơn mua {self.name} đã được duyệt",
+            title="Đơn mua đã được duyệt — cấp Lãnh đạo",
+            intro=f"Đơn mua <b>{self.name}</b> đã được Lãnh đạo phê duyệt.",
+            actor=frappe.session.user, action="Duyệt (Lãnh đạo)")
         return {"stage": "Approved", "comment": comment}
 
     @frappe.whitelist()
@@ -279,20 +305,37 @@ class SCPurchaseOrder(Document):
         except Exception as e:
             frappe.log_error(message=str(e)[:1000], title="UC-08 _send_po_to_supplier")
 
+    def _po_info_rows(self):
+        cur = {"fieldtype": "Currency"}
+        return [
+            ("Mã đơn mua", self.name),
+            ("Nhà cung cấp", getattr(self, "supplier_name", None) or self.supplier),
+            ("Tổng tiền", frappe.format(self.grand_total, cur)),
+            ("Ngày lập", frappe.format(getattr(self, "transaction_date", None), {"fieldtype": "Date"})),
+            ("Giai đoạn duyệt", self.approval_stage),
+        ]
+
+    def _po_notify(self, *, recipients, subject, title, intro,
+                   actor=None, action=None, note=None, note_kind="info"):
+        from supplycore.utils.emailer import send_doc_email
+        try:
+            send_doc_email(
+                doctype="SC Purchase Order", name=self.name, recipients=recipients,
+                subject=subject, title=title, intro=intro, info_rows=self._po_info_rows(),
+                actor=actor, action=action, note=note, note_kind=note_kind, delayed=True)
+        except Exception as e:
+            frappe.log_error(str(e)[:1000], "PO notify email")
+
     def _notify_creator_rejected(self, reason: str):
         if not self.owner or self.owner in ("Administrator", "Guest"):
             return
-        body = (f"<p>PO <a href='/app/sc-purchase-order/{self.name}'>{self.name}</a> "
-                f"đã bị <b>từ chối</b>.</p>"
-                f"<p><b>Lý do:</b> {frappe.utils.escape_html(reason)}</p>")
-        try:
-            frappe.sendmail(
-                recipients=[self.owner],
-                subject=f"[SupplyCore] PO {self.name} bị từ chối",
-                message=body, delayed=True,
-            )
-        except Exception as e:
-            frappe.log_error(message=str(e)[:1000], title="UC-08 _notify_creator_rejected")
+        self._po_notify(
+            recipients=[self.owner],
+            subject=f"[SupplyCore] Đơn mua {self.name} bị từ chối",
+            title="Đơn mua bị từ chối",
+            intro=f"Đơn mua <b>{self.name}</b> đã bị từ chối. Vui lòng chỉnh sửa và gửi duyệt lại.",
+            actor=frappe.session.user, action="Từ chối",
+            note=f"Lý do từ chối: {frappe.utils.escape_html(reason)}", note_kind="crit")
 
     @frappe.whitelist()
     def make_purchase_receipt(self):

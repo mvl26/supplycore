@@ -198,6 +198,12 @@ export async function deleteDoc(doctype, name) {
   })
 }
 
+// Duyệt & Submit hàng loạt Hợp đồng khung (chỉ Manager) — trả về tổng kết.
+export async function bulkApproveFC(names) {
+  return call('supplycore.m1_contract.doctype.framework_contract.framework_contract.bulk_approve_submit',
+    { names: JSON.stringify(names) })
+}
+
 export async function count(doctype, filters = {}, or_filters = null) {
   const payload = { doctype, filters }
   if (or_filters && or_filters.length) payload.or_filters = or_filters
@@ -207,6 +213,23 @@ export async function count(doctype, filters = {}, or_filters = null) {
 export async function submitDoc(doctype, name) {
   // Dùng backend wrapper để tránh TimestampMismatchError
   return call('supplycore.api.frontend.submit_doc', { doctype, name })
+}
+
+// M7 soạn hàng: quét xác nhận 1 dòng phiếu giao (đúng lô/SL mới cho submit)
+export async function confirmPickLine(delivery_note, row, scanned_batch, scanned_bin = null, qty = null) {
+  return call('supplycore.m7_sales.doctype.sc_delivery_note.sc_delivery_note.confirm_pick_line',
+    { delivery_note, row, scanned_batch, scanned_bin, qty })
+}
+
+// M7: hủy phiếu giao đã submit — bắt buộc lý do, hoàn tồn kho về như cũ
+export async function cancelDelivery(delivery_note, reason) {
+  return call('supplycore.m7_sales.doctype.sc_delivery_note.sc_delivery_note.cancel_delivery',
+    { delivery_note, reason })
+}
+
+// In nhãn hàng loạt: lấy dữ liệu nhãn cho nhiều Lô
+export async function batchLabels(names) {
+  return call('supplycore.api.frontend.batch_labels', { names: JSON.stringify(names) })
 }
 
 export async function cancelDoc(doctype, name) {

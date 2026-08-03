@@ -39,8 +39,8 @@ defineExpose({ reload: load })
 
 function urgencyClass(days) {
   if (days == null) return ''
-  if (days < 30) return 'bg-red-50 border-l-4 border-sc-danger'
-  if (days < 90) return 'bg-amber-50 border-l-4 border-sc-warning'
+  if (days < 30) return 'bg-sc-danger-50 border-l-4 border-sc-danger'
+  if (days < 90) return 'bg-sc-warning-50 border-l-4 border-sc-warning'
   return ''
 }
 </script>
@@ -95,7 +95,7 @@ function urgencyClass(days) {
     </div>
 
     <div v-if="!guide.is_sufficient && guide.shortage > 0"
-      class="bg-red-50 border-t border-red-200 px-4 py-2 text-sm text-sc-danger flex items-center gap-1">
+      class="bg-sc-danger-50 border-t border-sc-danger/40 px-4 py-2 text-sm text-sc-danger flex items-center gap-1">
       <Icon name="alert-triangle" :size="14" /> <b>Thiếu {{ fmtNumber(guide.shortage) }} đơn vị</b> — không có đủ tồn kho khả dụng tại {{ warehouse }}
     </div>
   </div>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import LinkAutocomplete from './LinkAutocomplete.vue'
+import FormattedNumberInput from './FormattedNumberInput.vue'
 import Icon from './Icon.vue'
 import { call } from '../api'
 import { QUICK_CREATE } from '../schemas'
@@ -35,6 +36,25 @@ const extraFilters = ref([])
 async function resolveScope() {
   const scope = props.field.scope
   if (!scope) { extraFilters.value = []; return }
+  // Lọc HĐ khung bán theo khách đã chọn ở header (yêu cầu #5 — chiều ngược).
+  // Chưa chọn khách → không lọc (hiện tất cả), mirror cách scope kho tự thoát.
+  if (scope.customerField) {
+    const cust = props.context?.[scope.customerField] ?? props.parentDoc?.[scope.customerField]
+    extraFilters.value = cust ? [['customer', '=', cust]] : []
+    return
+  }
+  // Lọc ô chọn Vật tư ở dòng chi tiết chỉ trong HĐ khung của đơn (yêu cầu #5).
+  // Chưa chọn HĐ khung → không lọc; HĐ khung không có vật tư → dropdown rỗng.
+  if (props.field.linkTo === 'SC Item' && scope.salesFcField) {
+    const fc = props.parentDoc?.[scope.salesFcField] ?? props.context?.[scope.salesFcField]
+    if (!fc) { extraFilters.value = []; return }
+    try {
+      const items = await call('supplycore.api.sales.sales_framework_items', { framework_contract: fc })
+      const codes = (items || []).map(r => r.item).filter(Boolean)
+      extraFilters.value = [['name', 'in', codes.length ? codes : ['__no_fc_item__']]]
+    } catch (e) { extraFilters.value = [] }
+    return
+  }
   // SC Item giới hạn theo KHO: chỉ hiện vật tư có tồn (>0) trong kho nguồn của phiếu.
   // warehouseFromParent=true → kho ở header (doc cha); ngược lại kho ở chính dòng (context).
   // Chưa chọn kho → không giới hạn (hiện toàn bộ); kho không có tồn → dropdown rỗng.
@@ -77,6 +97,8 @@ watch(() => {
     s?.warehouseField
       ? (s.warehouseFromParent ? props.parentDoc?.[s.warehouseField] : props.context?.[s.warehouseField])
       : null,
+    s?.customerField ? (props.context?.[s.customerField] ?? props.parentDoc?.[s.customerField]) : null,
+    s?.salesFcField ? (props.parentDoc?.[s.salesFcField] ?? props.context?.[s.salesFcField]) : null,
   ]
 }, resolveScope, { immediate: true })
 
@@ -181,8 +203,7 @@ function removeAttachAt(idx) {
 
 <template>
   <div :class="field.type === 'Check' ? '' : 'flex flex-col'">
-    <label v-if="showLabel && field.type !== 'Check'"
-      class="text-xs font-medium text-sc-text-muted mb-1">
+    <label v-if="showLabel && field.type !== 'Check'" class="sc-label">
       {{ field.label }}
       <span v-if="field.required" class="text-sc-danger">*</span>
     </label>
@@ -209,7 +230,7 @@ function removeAttachAt(idx) {
     <textarea v-else-if="field.type === 'Small Text' || field.type === 'Long Text' || field.type === 'Text'"
       :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"
       :rows="field.type === 'Long Text' ? 5 : 3"
-      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-sc-bg-soft']" />
 
     <!-- Check -->
     <label v-else-if="field.type === 'Check'" class="flex items-center gap-2 cursor-pointer py-1.5">
@@ -222,24 +243,24 @@ function removeAttachAt(idx) {
     <!-- Date -->
     <input v-else-if="field.type === 'Date'" type="date"
       :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"
-      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-sc-bg-soft']" />
 
     <!-- Datetime -->
     <input v-else-if="field.type === 'Datetime'" type="datetime-local"
       :value="modelValue ? new Date(modelValue).toISOString().slice(0, 16) : ''"
       :required="field.required" :readonly="isReadonly()"
-      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-sc-bg-soft']" />
 
     <!-- Time -->
     <input v-else-if="field.type === 'Time'" type="time"
       :value="modelValue ?? ''" :required="field.required" step="1" :readonly="isReadonly()"
-      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-sc-bg-soft']" />
 
-    <!-- Number-like -->
-    <input v-else-if="['Int','Float','Currency','Percent'].includes(field.type)" type="number"
-      :step="field.type === 'Int' ? '1' : '0.01'"
-      :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"
-      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+    <!-- Number-like — ngăn cách hàng nghìn kiểu VN (1.000.000) -->
+    <FormattedNumberInput v-else-if="['Int','Float','Currency','Percent'].includes(field.type)"
+      :model-value="modelValue" :allow-decimal="field.type !== 'Int'"
+      :readonly="isReadonly()" @update:model-value="update"
+      :class="[inputClass, isReadonly() && 'bg-sc-bg-soft']" />
 
     <!-- Attach: file upload via /api/method/upload_file -->
     <div v-else-if="field.type === 'Attach'" class="flex items-center gap-2 flex-wrap">
@@ -291,14 +312,14 @@ function removeAttachAt(idx) {
     <input v-else-if="field.type === 'Password'" type="password"
       :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"
       autocomplete="new-password"
-      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-sc-bg-soft']" />
 
     <!-- Default: text/data -->
     <input v-else type="text"
       :value="modelValue ?? ''" :required="field.required" :readonly="isReadonly()"
-      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-gray-50']" />
+      @input="e => update(e.target.value)" :class="[inputClass, isReadonly() && 'bg-sc-bg-soft']" />
 
     <div v-if="field.hint" class="text-xs text-sc-text-muted mt-1">{{ field.hint }}</div>
-    <div v-if="isPastDateWarn" class="text-xs text-sc-warning mt-1">⚠ Ngày đã ở quá khứ (trước hôm nay)</div>
+    <div v-if="isPastDateWarn" class="text-xs text-sc-warning mt-1 flex items-center gap-1"><Icon name="alert-triangle" :size="12" /> Ngày đã ở quá khứ (trước hôm nay)</div>
   </div>
 </template>

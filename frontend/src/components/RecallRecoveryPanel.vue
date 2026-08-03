@@ -32,11 +32,11 @@ const summary = computed(() => {
 })
 
 const STATUS_COLOR = {
-  Pending: 'bg-gray-100 text-gray-700',
-  'In Progress': 'bg-amber-100 text-amber-800',
-  Recovered: 'bg-green-100 text-green-800',
-  Destroyed: 'bg-red-100 text-red-800',
-  Closed: 'bg-blue-100 text-blue-800',
+  Pending: 'sc-badge-neutral',
+  'In Progress': 'sc-badge-warning',
+  Recovered: 'sc-badge-success',
+  Destroyed: 'sc-badge-critical',
+  Closed: 'sc-badge-info',
 }
 
 function openRecovery(row) {
@@ -133,33 +133,33 @@ function pct(part, whole) {
 
     <!-- Status summary chips -->
     <div class="flex flex-wrap gap-2 mb-3 text-xs">
-      <span class="px-2 py-1 rounded bg-gray-100">
+      <span class="sc-badge sc-badge-neutral">
         Tổng: <strong>{{ summary.total }}</strong>
       </span>
-      <span class="px-2 py-1 rounded" :class="STATUS_COLOR.Pending">
+      <span class="sc-badge" :class="STATUS_COLOR.Pending">
         Chờ xử lý: <strong>{{ summary.pending }}</strong>
       </span>
-      <span class="px-2 py-1 rounded" :class="STATUS_COLOR['In Progress']">
+      <span class="sc-badge" :class="STATUS_COLOR['In Progress']">
         Đang xử lý: <strong>{{ summary.inProgress }}</strong>
       </span>
-      <span class="px-2 py-1 rounded" :class="STATUS_COLOR.Recovered">
+      <span class="sc-badge" :class="STATUS_COLOR.Recovered">
         Đã thu: <strong>{{ summary.recovered }}</strong>
       </span>
-      <span class="px-2 py-1 rounded" :class="STATUS_COLOR.Destroyed">
+      <span class="sc-badge" :class="STATUS_COLOR.Destroyed">
         Đã huỷ: <strong>{{ summary.destroyed }}</strong>
       </span>
-      <span class="px-2 py-1 rounded" :class="STATUS_COLOR.Closed">
+      <span class="sc-badge" :class="STATUS_COLOR.Closed">
         Đã đóng: <strong>{{ summary.closed }}</strong>
       </span>
     </div>
 
     <!-- Recovery progress bar -->
     <div class="mb-4">
-      <div class="h-3 bg-gray-200 rounded-full overflow-hidden flex">
-        <div class="bg-green-500" :style="{ width: pct(summary.recovered, summary.total) + '%' }"></div>
-        <div class="bg-red-400" :style="{ width: pct(summary.destroyed, summary.total) + '%' }"></div>
-        <div class="bg-blue-400" :style="{ width: pct(summary.closed, summary.total) + '%' }"></div>
-        <div class="bg-amber-400" :style="{ width: pct(summary.inProgress, summary.total) + '%' }"></div>
+      <div class="h-3 bg-sc-border rounded-full overflow-hidden flex">
+        <div class="bg-sc-success" :style="{ width: pct(summary.recovered, summary.total) + '%' }"></div>
+        <div class="bg-sc-danger" :style="{ width: pct(summary.destroyed, summary.total) + '%' }"></div>
+        <div class="bg-sc-info" :style="{ width: pct(summary.closed, summary.total) + '%' }"></div>
+        <div class="bg-sc-warning" :style="{ width: pct(summary.inProgress, summary.total) + '%' }"></div>
       </div>
     </div>
 
@@ -190,14 +190,14 @@ function pct(part, whole) {
               <div class="text-xs text-sc-text-muted">{{ r.voucher_type?.replace('SC ', '') }}</div>
             </td>
             <td class="text-right font-mono font-semibold">{{ r.qty_issued }}</td>
-            <td class="text-right font-mono text-green-700">{{ r.recovered_qty || 0 }}</td>
-            <td class="text-right font-mono text-red-700">{{ r.destroyed_qty || 0 }}</td>
+            <td class="text-right font-mono text-sc-success">{{ r.recovered_qty || 0 }}</td>
+            <td class="text-right font-mono text-sc-danger">{{ r.destroyed_qty || 0 }}</td>
             <td class="text-right font-mono"
-              :class="r.outstanding_qty > 0 ? 'text-amber-700 font-bold' : 'text-sc-text-muted'">
+              :class="r.outstanding_qty > 0 ? 'text-sc-warning font-bold' : 'text-sc-text-muted'">
               {{ r.outstanding_qty }}
             </td>
             <td>
-              <span class="px-2 py-0.5 rounded text-xs"
+              <span class="sc-badge"
                 :class="STATUS_COLOR[r.status] || STATUS_COLOR.Pending">
                 {{ r.status || 'Pending' }}
               </span>
@@ -208,10 +208,10 @@ function pct(part, whole) {
                   class="text-xs px-2 py-1 rounded bg-sc-royal text-white hover:bg-sc-navy"
                   title="Cập nhật chi tiết"><Icon name="edit" :size="14" /> Cập nhật</button>
                 <button v-if="r.outstanding_qty > 0" @click="quickFullRecover(r)"
-                  class="text-xs px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700"
+                  class="text-xs px-2 py-1 rounded bg-sc-success text-white hover:brightness-110"
                   title="Thu hồi toàn bộ"><Icon name="check" :size="14" /> Thu</button>
                 <button v-if="r.outstanding_qty > 0" @click="quickFullDestroy(r)"
-                  class="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+                  class="text-xs px-2 py-1 rounded bg-sc-danger text-white hover:brightness-110"
                   title="Huỷ toàn bộ"><Icon name="trash" :size="14" /> Huỷ</button>
               </div>
             </td>

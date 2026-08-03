@@ -12,7 +12,7 @@
   "transaction_date",
   "schedule_date",
   "column_break_1",
-  "department",
+  "customer",
   "warehouse",
   "requested_by",
   "requested_by_name",
@@ -66,10 +66,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "department",
+   "fieldname": "customer",
    "fieldtype": "Link",
-   "options": "SC Department",
-   "label": "Khoa phòng yêu cầu",
+   "options": "SC Customer",
+   "label": "Khách hàng yêu cầu",
    "in_standard_filter": 1
   },
   {

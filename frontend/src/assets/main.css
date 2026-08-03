@@ -12,6 +12,7 @@
   --sc-navy-deep: #173A5C;
   --sc-royal: #2E75B6;
   --sc-royal-light: #5B9BD5;
+  --sc-royal-50: #EAF2FB;
   --sc-bg: #F3F6FA;
   --sc-surface: #FFFFFF;
   --sc-border: #E5EAF1;
@@ -132,7 +133,10 @@ h1, h2, h3, h4 { letter-spacing: -0.012em; }
   .sc-field-invalid textarea,
   .sc-field-invalid input[type="text"],
   .sc-field-invalid input[type="number"],
-  .sc-field-invalid input[type="date"] {
+  .sc-field-invalid input[type="date"],
+  .sc-field-invalid input[type="datetime-local"],
+  .sc-field-invalid input[type="time"],
+  .sc-field-invalid input[type="password"] {
     @apply border-sc-danger ring-1 ring-sc-danger/30 bg-red-50/30;
   }
   .sc-field-invalid label > span.text-sc-danger {
@@ -163,6 +167,15 @@ h1, h2, h3, h4 { letter-spacing: -0.012em; }
   /* Recessed section / panel */
   .sc-panel {
     @apply bg-sc-bg-soft rounded-lg border border-sc-border;
+  }
+
+  /* Nút submit tích cực (xanh) — thay hardcode bg-sc-success hover:bg-green-700 */
+  .sc-btn-success {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2
+           text-sm font-semibold text-white bg-sc-success
+           shadow-sc-xs transition-all duration-150 ease-sc
+           hover:brightness-110 hover:shadow-sc-md hover:-translate-y-[1px]
+           disabled:opacity-50 disabled:pointer-events-none;
   }
 }
 

@@ -10,6 +10,7 @@ import Icon from '../components/Icon.vue'
 import { useAuthStore } from '../stores/auth'
 import { useAccessStore } from '../stores/access'
 import { useToastStore } from '../stores/toast'
+import { fmtVND, fmtShort, fmtVNDShort } from '../utils'
 import { PERSONA_WIDGETS, PERSONA_QUICK_ACTIONS } from '../personas'
 import { Line } from 'vue-chartjs'
 import {
@@ -113,29 +114,25 @@ onMounted(async () => {
   load(1)
 })
 
-const fmtVND = (v) => new Intl.NumberFormat('vi-VN', {
-  style: 'currency', currency: 'VND', maximumFractionDigits: 0,
-}).format(Number(v) || 0)
+// Màu chart đọc từ token CSS var (main.css :root) — không hardcode hex.
+const cssVar = (name, fallback) =>
+  (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback)
 
-const fmtShort = (v) => {
-  const n = Number(v) || 0
-  if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(2) + ' tỷ'
-  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1) + ' tr'
-  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'k'
-  return n.toLocaleString('vi-VN')
-}
-
-const chartData = computed(() => ({
-  labels: trend.value.map(r => r.month),
-  datasets: [{
-    label: 'Chi phí mua (VND)',
-    data: trend.value.map(r => r.cost),
-    borderColor: '#2E75B6',
-    backgroundColor: 'rgba(46, 117, 182, 0.1)',
-    fill: true, tension: 0.3,
-    pointRadius: 4, pointBackgroundColor: '#1F4E79',
-  }],
-}))
+const chartData = computed(() => {
+  const royal = cssVar('--sc-royal', '#2E75B6')
+  const navy = cssVar('--sc-navy', '#1F4E79')
+  return {
+    labels: trend.value.map(r => r.month),
+    datasets: [{
+      label: 'Chi phí mua (VND)',
+      data: trend.value.map(r => r.cost),
+      borderColor: royal,
+      backgroundColor: royal + '1A', // ~10% alpha
+      fill: true, tension: 0.3,
+      pointRadius: 4, pointBackgroundColor: navy,
+    }],
+  }
+})
 
 const chartOptions = {
   responsive: true, maintainAspectRatio: false,
@@ -240,7 +237,7 @@ function exportTrend() {
     </template>
   </PageHeader>
 
-  <div v-if="loading && !dashboard" class="text-center py-20 text-sc-text-muted">Đang tải...</div>
+  <div v-if="loading && !dashboard" class="sc-card p-4 space-y-2.5"><div v-for="n in 6" :key="n" class="sc-skeleton h-9 w-full" :style="{ opacity: 1 - n * 0.12 }" /></div>
   <template v-else-if="dashboard">
     <!-- Persona quick actions (hidden for admin / empty list) -->
     <div v-if="quickActions.length" class="flex flex-wrap gap-2 mb-4">
@@ -250,9 +247,9 @@ function exportTrend() {
                border transition-all duration-150 shadow-sc-xs hover:shadow-sc"
         :class="{
           'bg-sc-navy text-white border-sc-navy hover:bg-sc-navy-deep': qa.variant === 'primary',
-          'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700': qa.variant === 'success',
-          'bg-amber-500 text-white border-amber-500 hover:bg-amber-600': qa.variant === 'warning',
-          'bg-red-600 text-white border-red-600 hover:bg-red-700': qa.variant === 'danger',
+          'bg-sc-success text-white border-sc-success/40 hover:brightness-110': qa.variant === 'success',
+          'bg-sc-warning text-white border-sc-warning/40 hover:brightness-110': qa.variant === 'warning',
+          'bg-sc-danger text-white border-sc-danger/40 hover:brightness-110': qa.variant === 'danger',
           'bg-sc-surface text-sc-navy border-sc-border hover:bg-sc-royal-50':
             !qa.variant || qa.variant === 'ghost',
         }">
@@ -263,13 +260,13 @@ function exportTrend() {
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5 sc-stagger">
       <KpiCard v-if="showKpi('stock_value')" label="Tổng giá trị tồn kho"
-        :value="fmtShort(dashboard.kpis.stock_value)" unit="VND" icon="package"
+        :value="fmtVNDShort(dashboard.kpis.stock_value)" :title="fmtVND(dashboard.kpis.stock_value)" icon="package"
         @click="gotoDrill('stock_value')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('monthly_cost')" label="Chi phí mua kỳ này"
-        :value="fmtShort(dashboard.kpis.monthly_cost)" unit="VND" icon="banknote"
+        :value="fmtVNDShort(dashboard.kpis.monthly_cost)" :title="fmtVND(dashboard.kpis.monthly_cost)" icon="banknote"
         @click="gotoDrill('monthly_cost')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('ap_outstanding')" label="Công nợ NCC"
-        :value="fmtShort(dashboard.kpis.ap_outstanding)" unit="VND" icon="receipt" variant="warning"
+        :value="fmtVNDShort(dashboard.kpis.ap_outstanding)" :title="fmtVND(dashboard.kpis.ap_outstanding)" icon="receipt" variant="warning"
         @click="gotoDrill('ap_outstanding')" class="cursor-pointer" />
       <KpiCard v-if="showKpi('pending_pos')" label="PO đang chờ"
         :value="dashboard.kpis.pending_pos" unit="đơn" icon="inbox"
@@ -296,8 +293,8 @@ function exportTrend() {
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-semibold text-sc-navy">Xu hướng chi phí 12 tháng</h3>
           <button v-if="trend.length" @click="exportTrend"
-            class="text-xs text-sc-royal hover:underline" title="Xuất dữ liệu chart sang CSV">
-            ⬇ CSV
+            class="text-xs text-sc-royal hover:underline inline-flex items-center gap-1" title="Xuất dữ liệu chart sang CSV">
+            <Icon name="download" :size="13" /> CSV
           </button>
         </div>
         <div class="h-72">
@@ -313,7 +310,7 @@ function exportTrend() {
         </div>
         <div v-if="dashboard.open_alerts_total === 0"
           class="flex flex-col items-center gap-2 text-sm text-sc-text-muted text-center py-10">
-          <span class="h-10 w-10 rounded-full bg-emerald-50 text-sc-success flex items-center justify-center">
+          <span class="h-10 w-10 rounded-full bg-sc-success-50 text-sc-success flex items-center justify-center">
             <Icon name="check" :size="20" />
           </span>
           Không có cảnh báo đang mở
@@ -336,8 +333,8 @@ function exportTrend() {
         <h3 class="font-semibold text-sc-navy">Top 10 vật tư tiêu thụ</h3>
         <div class="flex items-center gap-3">
           <button v-if="dashboard.top_items.length" @click="exportTopItems"
-            class="text-xs text-sc-royal hover:underline" title="Xuất bảng sang CSV">
-            ⬇ CSV
+            class="text-xs text-sc-royal hover:underline inline-flex items-center gap-1" title="Xuất bảng sang CSV">
+            <Icon name="download" :size="13" /> CSV
           </button>
           <router-link to="/m4" class="text-xs text-sc-royal hover:underline">Xem kho →</router-link>
         </div>

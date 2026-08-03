@@ -15,9 +15,9 @@ const props = defineProps({
 
 const ACCENT = {
   default:  { tile: 'bg-sc-royal-50 text-sc-royal',   bar: 'bg-sc-royal-light' },
-  critical: { tile: 'bg-red-50 text-sc-danger',       bar: 'bg-sc-danger' },
-  warning:  { tile: 'bg-amber-50 text-sc-warning',    bar: 'bg-sc-warning' },
-  success:  { tile: 'bg-emerald-50 text-sc-success',  bar: 'bg-sc-success' },
+  critical: { tile: 'bg-sc-danger-50 text-sc-danger',       bar: 'bg-sc-danger' },
+  warning:  { tile: 'bg-sc-warning-50 text-sc-warning',    bar: 'bg-sc-warning' },
+  success:  { tile: 'bg-sc-success-50 text-sc-success',  bar: 'bg-sc-success' },
 }
 const a = computed(() => ACCENT[props.variant] || ACCENT.default)
 </script>

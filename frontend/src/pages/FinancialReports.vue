@@ -163,11 +163,11 @@ const apBuckets = computed(() => {
 })
 
 const bucketCls = {
-  current: 'bg-green-50 border-green-200',
-  '0_30':  'bg-blue-50 border-blue-200',
-  '31_60': 'bg-amber-50 border-amber-200',
-  '61_90': 'bg-orange-50 border-orange-200',
-  over_90: 'bg-red-50 border-red-200',
+  current: 'bg-sc-success-50 border-sc-success/40',
+  '0_30':  'bg-sc-info-50 border-sc-info/40',
+  '31_60': 'bg-sc-warning-50 border-sc-warning/40',
+  '61_90': 'bg-sc-warning-50 border-sc-warning/40',
+  over_90: 'bg-sc-danger-50 border-sc-danger/40',
 }
 
 const bucketLabels = {
@@ -272,11 +272,11 @@ onMounted(loadSuggestions)
     </div>
     <div v-else-if="active === 'period'" class="grid grid-cols-1 md:grid-cols-4 gap-3">
       <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Từ ngày <span class="text-red-500">*</span></label>
+        <label class="text-xs text-sc-text-muted block mb-1">Từ ngày <span class="text-sc-danger">*</span></label>
         <input v-model="filters.from_date" type="date" class="sc-input" />
       </div>
       <div>
-        <label class="text-xs text-sc-text-muted block mb-1">Đến ngày <span class="text-red-500">*</span></label>
+        <label class="text-xs text-sc-text-muted block mb-1">Đến ngày <span class="text-sc-danger">*</span></label>
         <input v-model="filters.to_date" type="date" class="sc-input" />
       </div>
       <div>
@@ -295,10 +295,10 @@ onMounted(loadSuggestions)
 
   <!-- Period finalization warning -->
   <div v-if="data && (data.period_finalized === false)"
-    class="sc-card p-3 mb-4 bg-amber-50 border-amber-200">
+    class="sc-card p-3 mb-4 bg-sc-warning-50 border-sc-warning/40">
     <div class="flex items-start gap-2">
-      <span class="text-amber-700"><Icon name="alert-triangle" :size="18" /></span>
-      <div class="text-sm text-amber-900 flex-1">
+      <span class="text-sc-warning"><Icon name="alert-triangle" :size="18" /></span>
+      <div class="text-sm text-sc-warning flex-1">
         <strong>Kỳ chưa khóa sổ</strong>
         — vẫn còn chứng từ <em>Draft</em> trong kỳ. Số liệu có thể thay đổi:
         <span v-if="data.pending_drafts">
@@ -447,7 +447,7 @@ onMounted(loadSuggestions)
             <tr v-for="r in data.rows" :key="r.customer"
               class="hover:bg-sc-bg cursor-pointer"
               @click="goToDoc('SC Customer', r.customer)"
-              :class="r.over_limit ? 'bg-red-50' : ''">
+              :class="r.over_limit ? 'bg-sc-danger-50' : ''">
               <td>
                 <span class="text-sc-royal hover:underline">{{ r.customer_name }}</span>
                 <span class="block text-xs text-sc-text-muted font-mono">{{ r.customer }}</span>
