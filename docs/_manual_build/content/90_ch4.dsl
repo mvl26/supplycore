@@ -30,7 +30,7 @@ H3	4.1.5	Chuyển kho & Bán hàng
 TABLE	Tôi muốn…|Vào đâu|Mục
 ROW	Chuyển kho nội bộ|M6 → Yêu cầu chuyển kho|3.6
 ROW	Tạo đơn hàng cho khách|M7 → Đơn hàng bán|3.7
-ROW	Soạn hàng & quét xác nhận trước khi giao|Đơn đã duyệt → Tạo phiếu giao|3.7
+ROW	Soạn hàng & quét xác nhận trước khi giao|Đơn đã duyệt → Tạo phiếu giao (soạn hàng)|3.7
 ROW	Xuất hóa đơn bán & thu tiền|Phiếu giao đã nghiệm thu → Hóa đơn bán|3.7
 ROW	Cấp tài khoản để khách tự đặt hàng|Hồ sơ Khách hàng → Tài khoản Portal|3.12
 H3	4.1.6	Tài chính, Kiểm kê, Truy xuất

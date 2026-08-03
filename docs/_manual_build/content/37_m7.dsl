@@ -34,7 +34,7 @@ IMG	Đơn hàng bán với hợp đồng khung đã chọn và bảng chi tiết
 WARN	Nếu khách vượt hạn mức tín dụng, đơn bị đặt cờ **Giữ do công nợ (credit hold)** và không duyệt được. Phải thu bớt công nợ hoặc nâng hạn mức trên hồ sơ khách trước.
 H4	3.7.3.4	Soạn hàng & quét xác nhận (Thủ kho)
 FIRST	Đây là bước bảo đảm hàng giao đúng lô, đúng số lượng. Từ đơn đã duyệt, hệ thống tạo một Phiếu giao hàng **nháp** với lô do FEFO gợi ý; thủ kho ra kho lấy hàng thật rồi quét xác nhận từng dòng. Chỉ khi quét đủ mọi dòng mới nộp được phiếu và trừ tồn kho.
-OL	Mở Đơn hàng bán ở trạng thái **Đã duyệt**, bấm **Tạo phiếu giao**. Hệ thống tạo Phiếu giao hàng nháp và chuyển đơn sang **Đang xử lý** (nút Tạo phiếu giao ẩn đi để tránh tạo trùng).
+OL	Mở Đơn hàng bán ở trạng thái **Đã duyệt**, bấm **Tạo phiếu giao (soạn hàng)**. Hệ thống tạo Phiếu giao hàng nháp và chuyển đơn sang **Đang xử lý** (nút Tạo phiếu giao (soạn hàng) ẩn đi để tránh tạo trùng).
 OL	Trên phiếu giao nháp, xem bảng **Hướng dẫn lấy hàng**: mỗi dòng hiển thị lô nên lấy (hạn dùng gần nhất), vị trí và số lượng.
 OL	Ra kho lấy hàng. Với từng dòng, quét **mã vạch lô** trên thùng/hộp; quét thêm **mã vị trí (bin)** nếu kho có khai vị trí; nhập **SL thực lấy** nếu khác số gợi ý.
 OL	Hệ thống kiểm tra ngay tại máy chủ: lô đúng vật tư, còn hạn, đã đạt QC, không bị khóa, đủ tồn tại kho xuất, và vị trí thuộc đúng kho. Đạt thì dòng được đánh dấu **Đã quét xác nhận** và hiện số dòng còn lại.
@@ -42,7 +42,7 @@ OL	Khi mọi dòng đã quét, nhấn **Nộp**. Hệ thống trừ tồn kho th
 IMG	Màn hình soạn hàng với ô quét lô, ô quét vị trí và tiến độ số dòng đã xác nhận.
 NOTE	**Được phép lấy lô khác lô gợi ý.** Thực tế kho không phải lúc nào cũng khớp gợi ý FEFO (hàng nằm sâu, thùng vỡ, lô lẻ). Cứ quét lô thực lấy — hệ thống kiểm tra và ghi nhận đúng lô đó, nên truy xuất nguồn gốc sau này vẫn chính xác.
 NOTE	Máy quét cầm tay (PDA) hoạt động như bàn phím: quét xong nó gõ mã vào ô đang chọn rồi Enter. Vì vậy dùng được ngay trên trình duyệt của máy PDA, không cần cài ứng dụng riêng.
-WARN	Nếu bỏ phiếu giao nháp: **Xóa** phiếu để đơn hàng tự quay lại **Đã duyệt** và hiện lại nút Tạo phiếu giao. Đừng để phiếu nháp treo — đơn sẽ kẹt ở Đang xử lý.
+WARN	Nếu bỏ phiếu giao nháp: **Xóa** phiếu để đơn hàng tự quay lại **Đã duyệt** và hiện lại nút Tạo phiếu giao (soạn hàng). Đừng để phiếu nháp treo — đơn sẽ kẹt ở Đang xử lý.
 H4	3.7.3.5	Lập Biên bản nghiệm thu
 OL	Sau khi giao hàng, mở Phiếu giao hàng đã nộp và bấm tạo **Biên bản nghiệm thu**; hoặc để khách tự xác nhận trên Cổng khách hàng (xem 3.12).
 OL	Điền **Ngày nghiệm thu**, **Người nghiệm thu** (đại diện bên khách) và ghi chú nếu có.

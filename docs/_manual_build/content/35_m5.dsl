@@ -36,7 +36,7 @@ OL	Thêm dòng vật tư rồi để hệ thống gợi ý lô: nó trả về d
 OL	Nếu vật tư chỉ có một lô, hệ thống tự chọn lô đó. Nếu cần nhiều hơn một lô để đủ số lượng, hệ thống tự chia số lượng lần lượt qua các lô theo thứ tự hết hạn.
 OL	Muốn xuất một lô **không** theo thứ tự FEFO, tích **FEFO Override** trên dòng và nhập **lý do**. Việc này yêu cầu vai trò Manager; hệ thống ghi người duyệt, thời điểm và lưu một bình luận kiểm toán trên phiếu.
 OL	Nhấn **Lưu** rồi **Nộp**. Khi nộp, Sổ kho (Stock Ledger) ghi giảm tồn theo từng lô đã chọn.
-IMG	Bảng dòng vật tư trên phiếu xuất với lô được gợi ý theo FEFO và cột mức cảnh báo màu.
+IMG	Bảng hướng dẫn lấy hàng trên phiếu giao: lô được gợi ý theo FEFO kèm cột mức cảnh báo màu.
 NOTE	FEFO chỉ ép buộc khi **xuất bán** (Material Issue). Với **chuyển kho** nội bộ (Material Transfer), hàng chưa rời hệ thống nên không kiểm tra thứ tự FEFO, nhưng vẫn chặn lô hết hạn và lô bị block.
 H4	3.5.3.5	Cấu hình FEFO Picker Rule
 OL	Mở thẻ **FEFO Picker Rule** trong M5, nhấn **Tạo mới**. Mã quy tắc tự sinh dạng **SC-FEFO-#####**.

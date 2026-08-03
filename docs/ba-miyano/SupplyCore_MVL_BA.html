@@ -736,12 +736,12 @@ flowchart TB
       </div>
 
       <h3>Soạn hàng &amp; quét xác nhận <span class="nw">v1.1</span></h3>
-      <p>Trước đây "Tạo phiếu giao" tạo <em>và submit ngay</em> (trừ tồn lập tức, lô do FEFO chọn cứng). Nay có <strong>hai chế độ</strong>, điều khiển bằng tham số <code>submit</code> của <code>make_delivery</code>:</p>
+      <p>Trước đây nút "Tạo phiếu giao" tạo <em>và submit ngay</em> (trừ tồn lập tức, lô do FEFO chọn cứng). Nay có <strong>hai chế độ</strong>, điều khiển bằng tham số <code>submit</code> của <code>make_delivery</code>:</p>
       <div class="tw"><table>
         <thead><tr><th>Chế độ</th><th>Khi nào dùng</th><th>Hành vi</th></tr></thead>
         <tbody>
           <tr><td><code>submit=1</code> (mặc định)</td><td>Luồng tự động, seed, test</td><td>Tạo + submit ngay; trừ tồn lập tức. <code>picking_required=0</code>.</td></tr>
-          <tr><td><code>submit=0</code></td><td>Vận hành thật ở kho</td><td>Tạo <strong>phiếu NHÁP</strong> với <code>picking_required=1</code>; FEFO chỉ <em>gợi ý</em> lô; đơn hàng chuyển sang <strong>"Đang xử lý"</strong>; tồn chưa bị động.</td></tr>
+          <tr><td><code>submit=0</code></td><td><strong>Luồng vận hành thật</strong> — nút &quot;Tạo phiếu giao (soạn hàng)&quot; trên SPA truyền sẵn <code>submit=0</code></td><td>Tạo <strong>phiếu NHÁP</strong> với <code>picking_required=1</code>; FEFO chỉ <em>gợi ý</em> lô; đơn hàng chuyển sang <strong>"Đang xử lý"</strong>; tồn chưa bị động.</td></tr>
         </tbody>
       </table></div>
 
