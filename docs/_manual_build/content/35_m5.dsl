@@ -1,9 +1,9 @@
 H2	3.5	M5 · Quản lý lô vật tư & FEFO
 H3	3.5.1	Mục đích & khi nào dùng
-FIRST	Module M5 quản lý thông tin từng lô vật tư (batch) và áp dụng nguyên tắc FEFO — First Expiry First Out (lô gần hết hạn xuất trước). Bạn dùng M5 để: khai báo và tra cứu lô (số lô NCC, ngày sản xuất, hạn dùng, kết quả QC, CoA); để hệ thống tự gợi ý / tự chọn lô theo hạn dùng gần nhất mỗi khi xuất kho, chuyển kho hay cấp phát; theo dõi cảnh báo lô sắp hết hạn; và chặn xuất các lô đã bị khóa do thu hồi (recall) hoặc cách ly (quarantine).
-BODY	Đây là tầng kiểm soát chất lượng và an toàn của kho: nó bảo đảm vật tư cấp cho khoa luôn là lô còn hạn lâu nhất hiện có, không cấp nhầm lô hết hạn hoặc lô đang bị thu hồi.
+FIRST	Module M5 quản lý thông tin từng lô vật tư (batch) và áp dụng nguyên tắc FEFO — First Expiry First Out (lô gần hết hạn xuất trước). Bạn dùng M5 để: khai báo và tra cứu lô (số lô NCC, ngày sản xuất, hạn dùng, kết quả QC, CoA); để hệ thống tự gợi ý / tự chọn lô theo hạn dùng gần nhất mỗi khi xuất kho, chuyển kho hay giao hàng cho khách; theo dõi cảnh báo lô sắp hết hạn; và chặn xuất các lô đã bị khóa do thu hồi (recall) hoặc cách ly (quarantine).
+BODY	Đây là tầng kiểm soát chất lượng và an toàn của kho: nó bảo đảm hàng giao cho khách luôn là lô cận hạn nhất còn dùng được, không giao nhầm lô hết hạn hoặc lô đang bị thu hồi.
 H3	3.5.2	Ai làm được & cần chuẩn bị gì
-BODY	**Vai trò:** Thủ kho (Storekeeper / Warehouse Officer) tạo và tra cứu lô, in nhãn, xuất kho theo FEFO, xử lý cảnh báo hết hạn. Kiểm soát Chất lượng (QC Officer / Pharmacy Officer) cập nhật kết quả QC của lô, khóa lô để cách ly hoặc thu hồi, truy xuất lô. Trưởng phòng Vật tư (SupplyCore Manager) là người duy nhất được xác nhận nhập lô hạn ngắn và phê duyệt khi xuất trái FEFO. Quản trị Hệ thống cấu hình FEFO Picker Rule và ngưỡng cảnh báo.
+BODY	**Vai trò:** Thủ kho (Storekeeper / Warehouse Officer) tạo và tra cứu lô, in nhãn, xuất kho theo FEFO, xử lý cảnh báo hết hạn. Kiểm định (QC Officer) cập nhật kết quả QC của lô, khóa lô để cách ly hoặc thu hồi, truy xuất lô. Trưởng phòng (SupplyCore Manager) là người duy nhất được xác nhận nhập lô hạn ngắn và phê duyệt khi xuất trái FEFO. Quản trị Hệ thống cấu hình FEFO Picker Rule và ngưỡng cảnh báo.
 BODY	**Cần có trước:** Vật tư (SC Item) đã khai báo và bật quản lý theo lô (has_batch_no); Kho (SC Warehouse) và Nhà cung cấp (SC Supplier) có trong Dữ liệu nền; ngưỡng cảnh báo trong **SupplyCore Settings** (mặc định Cảnh báo Warning 90 ngày, Critical 30 ngày); ít nhất một **FEFO Picker Rule** đang bật nếu muốn ép buộc FEFO khi xuất.
 NOTE	Phần lớn lô được tạo tự động khi tiếp nhận hàng (Phiếu nhập kho ở M3) — bạn ít khi phải tạo lô bằng tay. Khi đó hệ thống tự sinh **Batch ID** theo dạng [Mã VT]-YYYYMM-NNN và lấy hạn dùng, ngày SX, số lô NCC từ phiếu nhập.
 H3	3.5.3	Các bước thực hiện
@@ -31,13 +31,13 @@ OL	Nhấn **Lưu**. Hệ thống tự ghi **Người block** và **Thời điể
 OL	Từ lúc bị block, lô không còn được FEFO gợi ý và không thể xuất bằng phiếu xuất kho thông thường (xem 3.5.6).
 WARN	Lô đã thu hồi chỉ được xử lý qua quy trình thu hồi (Thông báo thu hồi — M10); phiếu xuất kho thường sẽ bị chặn với mã **SC-E008 BATCH_RECALLED**.
 H4	3.5.3.4	Xuất / chuyển kho theo FEFO
-OL	Tạo Phiếu kho (SC Stock Entry) loại **Material Issue** (cấp phát) hoặc **Material Transfer** (chuyển kho), chọn **Kho nguồn**.
+OL	Tạo Phiếu kho (SC Stock Entry) loại **Material Issue** (xuất kho) hoặc **Material Transfer** (chuyển kho), chọn **Kho nguồn**.
 OL	Thêm dòng vật tư rồi để hệ thống gợi ý lô: nó trả về danh sách lô sắp theo Hạn dùng gần nhất trước, kèm tồn khả dụng, số lượng đề xuất và mức cảnh báo màu (xanh OK / vàng Warning / đỏ Critical / Expired).
 OL	Nếu vật tư chỉ có một lô, hệ thống tự chọn lô đó. Nếu cần nhiều hơn một lô để đủ số lượng, hệ thống tự chia số lượng lần lượt qua các lô theo thứ tự hết hạn.
 OL	Muốn xuất một lô **không** theo thứ tự FEFO, tích **FEFO Override** trên dòng và nhập **lý do**. Việc này yêu cầu vai trò Manager; hệ thống ghi người duyệt, thời điểm và lưu một bình luận kiểm toán trên phiếu.
 OL	Nhấn **Lưu** rồi **Nộp**. Khi nộp, Sổ kho (Stock Ledger) ghi giảm tồn theo từng lô đã chọn.
 IMG	Bảng dòng vật tư trên phiếu xuất với lô được gợi ý theo FEFO và cột mức cảnh báo màu.
-NOTE	FEFO chỉ ép buộc khi **cấp phát** (Material Issue). Với **chuyển kho** nội bộ (Material Transfer), hàng chưa rời hệ thống nên không kiểm tra thứ tự FEFO, nhưng vẫn chặn lô hết hạn và lô bị block.
+NOTE	FEFO chỉ ép buộc khi **xuất bán** (Material Issue). Với **chuyển kho** nội bộ (Material Transfer), hàng chưa rời hệ thống nên không kiểm tra thứ tự FEFO, nhưng vẫn chặn lô hết hạn và lô bị block.
 H4	3.5.3.5	Cấu hình FEFO Picker Rule
 OL	Mở thẻ **FEFO Picker Rule** trong M5, nhấn **Tạo mới**. Mã quy tắc tự sinh dạng **SC-FEFO-#####**.
 OL	Nhập **Tiêu đề rule**, bật **Đang sử dụng**, đặt **Priority (cao thắng)** — khi nhiều quy tắc khớp, quy tắc có priority cao nhất được áp dụng (mặc định 100).
@@ -48,7 +48,7 @@ IMG	Form FEFO Picker Rule với mục Phạm vi áp dụng và Quy tắc.
 H4	3.5.3.6	Xử lý cảnh báo lô sắp hết hạn
 OL	Mỗi ngày hệ thống tự quét tồn kho và tạo **Cảnh báo hết hạn (Batch Expiry Alert)** cho từng cặp (lô, kho) còn tồn, phân mức theo số ngày còn lại.
 OL	Xem cảnh báo ở trang **Cảnh báo** (/alerts) hoặc **Danh sách** Batch Expiry Alert; lọc theo **Kho** và **Mức độ**.
-OL	Mở một cảnh báo và chọn hành động ở mục **Xử lý**: **Priority Issue** (ưu tiên cấp phát đợt tới — FEFO vốn đã xếp lô gần hết hạn lên trước), **Return to Supplier** (trả NCC), **Write Off** (hủy), hoặc **No Action**.
+OL	Mở một cảnh báo và chọn hành động ở mục **Xử lý**: **Priority Issue** (ưu tiên xuất đợt tới — FEFO vốn đã xếp lô gần hết hạn lên trước), **Return to Supplier** (trả NCC), **Write Off** (hủy), hoặc **No Action**.
 OL	Khi chọn hủy, hệ thống tạo Phiếu xuất kho **Material Issue** mục đích "Expired Disposal", ghi giảm tồn lô và đặt lô về trạng thái Disabled; cảnh báo được đánh dấu **Đã xử lý** kèm người và thời điểm xử lý.
 IMG	Trang Cảnh báo liệt kê các lô sắp hết hạn theo mức Critical / Warning / Info.
 H3	3.5.4	Trạng thái & phê duyệt
@@ -86,5 +86,5 @@ H3	3.5.7	Liên quan
 UL	Xem 3.3 — Tiếp nhận & Kiểm tra chất lượng (nơi lô được tạo tự động và đặt trạng thái QC).
 UL	Xem 3.4 — Quản lý kho & tồn (Sổ kho, putaway, bản đồ kho).
 UL	Xem 3.6 — Chuyển kho (Material Transfer áp dụng kiểm tra lô).
-UL	Xem 3.7 — Cấp phát & BHYT (cấp phát cho khoa theo FEFO).
+UL	Xem 3.7 — Bán hàng & Bàn giao (soạn hàng cho khách theo gợi ý FEFO).
 UL	Xem chương M10 — Thu hồi vật tư (khóa lô và xử lý thu hồi).

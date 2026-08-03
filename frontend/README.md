@@ -94,18 +94,30 @@ frontend/
         └── NotFound.vue
 ```
 
-## Phase 3 screen coverage
+## Màn hình hiện có
 
-| Screen | Status |
-|---|---|
-| SCR-01 Executive Dashboard | ✓ Built |
-| SCR-02 Warehouse Dashboard | TODO — extend ModuleHub for M4 |
-| SCR-03..04 PO list/form | TODO — link to Frappe Desk for now |
-| SCR-05..06 PR + QI | TODO |
-| SCR-07 Framework Contract | Link to Desk |
-| SCR-08 FEFO Picker | TODO |
-| SCR-09..10 Dispensing | Link to Desk |
-| SCR-11 Stock Balance | TODO — custom page |
-| SCR-12 Batch Trace | TODO — uses get_batch_trace API |
-| SCR-13 Alert Center | ✓ Built |
-| SCR-14 Mobile PDA | TODO — separate /pda PWA |
+SPA phủ toàn bộ nghiệp vụ nội bộ — **không còn màn hình nào phải chuyển sang Frappe Desk**.
+Mọi DocType dùng chung cặp `DocList` (danh sách) + `DocView` (chi tiết), cấu hình trong
+`modules.js` / `schemas.js` / `detail-configs.js`; các nghiệp vụ cần UI riêng có trang chuyên biệt.
+
+| Trang | Đường dẫn | Vai trò |
+|---|---|---|
+| `Login`, `ResetPassword` | `/login`, `/reset-password` | Đăng nhập, đặt lại mật khẩu |
+| `Dashboard` | `/` | KPI + lối tắt theo persona |
+| `ModuleHub` | `/m/:module` | Trang module M0–M11, thẻ DocType |
+| `DocList` / `DocView` | `/list/:doctype`, `/doc/:doctype/:name` | Danh sách + chi tiết dùng chung mọi DocType |
+| `StockBalance` | `/stock-balance` | Tồn kho theo vật tư / kho / lô |
+| `WarehouseList`, `WarehouseMapPage`, `MapEditor` | `/warehouses`, `/warehouse-map`, `/map-editor` | Kho, bản đồ mặt bằng, thiết kế bản đồ |
+| `Putaway` | `/putaway` | Xếp hàng lên kệ theo Putaway Rule |
+| `BatchTrace` | `/batch-trace` | Truy xuất lô (kèm khách đã mua) |
+| `FinancialReports` | `/financial-reports` | Báo cáo tài chính |
+| `AlertCenter` | `/alerts` | Trung tâm cảnh báo |
+| `Users` | `/users` | Người dùng & phân quyền |
+| `Forbidden`, `NotFound` | `/403`, `*` | Chặn theo quyền, 404 |
+
+Panel chuyên biệt nhúng trong `DocView` theo từng DocType: `PickingPanel` (soạn hàng &
+quét xác nhận phiếu giao), `FefoPickGuide` (hướng dẫn lấy hàng theo FEFO),
+`WarehouseStockPanel`, `WarehouseBinsPanel`, `IcsSummaryPanel`, `IrScopePanel`,
+`RecallRecoveryPanel`, `CountEntryPanel`, `VoucherIO`, `RelatedDocs`.
+
+Cổng khách hàng **không nằm trong SPA này** — đó là trang Frappe riêng `www/portal`.

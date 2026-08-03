@@ -1,75 +1,98 @@
-H2	3.7	M7 · Cấp phát & BHYT
+# Mục 3.7 — M7 · Bán hàng & Bàn giao (Order-to-Cash). Soạn theo AUTHOR_GUIDE; nhãn lấy đúng từ code.
+H2	3.7	M7 · Bán hàng & Bàn giao
 H3	3.7.1	Mục đích & khi nào dùng
-FIRST	Module M7 quản lý toàn bộ chuỗi cấp phát vật tư từ kho ra khoa phòng và xuống tới từng bệnh nhân, kèm tính chi phí Bảo hiểm Y tế (BHYT). Bạn dùng module này khi: khoa cần lĩnh vật tư cho hoạt động thường ngày, ca cấp cứu, hoặc cho một bệnh nhân cụ thể; khi Thủ kho xuất hàng theo nguyên tắc cận hạn xuất trước (FEFO); và khi cần ghi nhận vật tư đã dùng cho bệnh nhân để hệ thống tự chia phần BHYT chi trả và phần bệnh nhân tự trả.
-BODY	Module gồm ba loại phiếu nối tiếp nhau. **Yêu cầu cấp phát (SC Dispensing Request, mã SC-DR-…)** do khoa lập để xin vật tư. **Cấp phát cho bệnh nhân (SC Patient Dispensing, mã SC-PD-…)** ghi nhận vật tư thực dùng cho từng người bệnh và tính BHYT. **Cấu hình Mã BHYT (SC BHYT Code Config, mã SC-BHYT-…)** là danh mục tham số do Kế toán/BHYT khai báo để hệ thống biết tỷ lệ chi trả và giá trần cho mỗi vật tư.
+FIRST	Module M7 quản lý toàn bộ vòng đời bán hàng cho khách: từ hợp đồng khung bán, đơn hàng của khách, soạn hàng và giao hàng, biên bản nghiệm thu, đến hóa đơn bán và thu tiền. Bạn dùng module này khi: ký hợp đồng khung với một khách hàng để chốt danh mục và giá; nhận đơn đặt hàng (khách gọi điện, gửi email, hoặc tự đặt trên Cổng khách hàng); thủ kho soạn hàng và giao cho khách; và khi kế toán xuất hóa đơn, theo dõi công nợ phải thu.
+BODY	Chuỗi chứng từ nối tiếp nhau theo thứ tự cố định. **Khách hàng (SC Customer)** là hồ sơ khách. **Hợp đồng khung bán (SC Sales Framework Contract)** khóa danh mục vật tư, đơn giá và số lượng trần cho một kỳ. **Đơn hàng bán (SC Sales Order)** là đơn khách đặt. **Phiếu giao hàng (SC Delivery Note)** ghi nhận hàng thực xuất kho theo lô. **Biên bản nghiệm thu (SC Acceptance Record)** xác nhận khách đã nhận đủ. **Hóa đơn bán (SC Sales Invoice)** ghi doanh thu và công nợ. **Phiếu thu (SC Sales Receipt)** tất toán công nợ.
+NOTE	Nguyên tắc xuyên suốt: **giá luôn lấy từ hợp đồng khung**, người dùng và kế toán không sửa được; và **phải có nghiệm thu mới xuất được hóa đơn**. Hai chốt này bảo vệ doanh thu khỏi sai giá và khỏi xuất hóa đơn cho hàng khách chưa nhận.
 H3	3.7.2	Ai làm được & cần chuẩn bị gì
-BODY	**Vai trò:** Điều dưỡng / NV Khoa (SupplyCore Ward Staff) tạo Yêu cầu cấp phát và ghi nhận sử dụng cho bệnh nhân; Thủ kho (SupplyCore Storekeeper) xử lý phiếu, chọn lô theo FEFO và xuất kho; Trưởng phòng Vật tư (SupplyCore Manager) xác nhận khi vượt hạn mức tháng; Kế toán / BHYT Officer / Quản trị Hệ thống cấu hình Mã BHYT. Dược/QC (Pharmacy Officer) cũng được tạo và nộp phiếu.
-BODY	**Cần có trước:** Vật tư (SC Item), Kho (SC Warehouse), Khoa (SC Department) và — nếu cấp theo bệnh nhân — hồ sơ Bệnh nhân (SC Patient) đã khai báo. Vật tư cần có tồn kho khả dụng tại kho cấp. Mã BHYT của vật tư phải được cấu hình trước thì phiếu cấp phát cho bệnh nhân mới chia được phần BHYT. Khoa có thể đặt **Hạn mức cấp phát tháng (monthly_dispensing_quota)** để kiểm soát giá trị xuất.
-NOTE	Đơn vị kép (BR-BH-03): mỗi vật tư có thể khai **Đơn vị mua (buy_uom)** khác **Đơn vị sử dụng/BHYT (use_uom)** kèm **Hệ số quy đổi mua → dùng**. Ví dụ mua theo hộp nhưng cấp phát và tính BHYT theo viên. Hãy chọn đúng đơn vị trên dòng phiếu để số lượng và chi phí khớp với cách BHYT thanh toán.
+BODY	**Vai trò:** NV Mua & Bán hàng (SupplyCore Purchaser) tạo Khách hàng, Hợp đồng khung bán, Đơn hàng và duyệt đơn. Thủ kho (SupplyCore Storekeeper) soạn hàng, quét xác nhận và nộp Phiếu giao hàng, lập Biên bản nghiệm thu. Kế toán (SupplyCore Accountant) lập Hóa đơn bán và Phiếu thu, theo dõi công nợ phải thu. Trưởng phòng (SupplyCore Manager) có toàn quyền và giám sát toàn chuỗi. Khách hàng tự đặt hàng và tự nghiệm thu qua Cổng khách hàng (xem 3.12).
+BODY	**Cần có trước:** Vật tư (SC Item), Kho (SC Warehouse) và Đơn vị tính đã khai trong Dữ liệu nền. Khách hàng đã tạo hồ sơ, có **Hạn mức tín dụng** nếu muốn kiểm soát công nợ. Hợp đồng khung bán còn hiệu lực nếu bán theo hợp đồng. Kho xuất còn đủ **tồn khả dụng** (không tính lô đang chờ QC, bị từ chối hoặc bị khóa do thu hồi).
+NOTE	Đơn vị kép: một vật tư có thể mua theo thùng/hộp nhưng bán và xuất theo cái. Khai bảng **Quy đổi đơn vị kép** trên thẻ vật tư (1 đơn vị này = bao nhiêu đơn vị tồn kho). Sổ kho luôn ghi theo **đơn vị tồn kho**; quy đổi chỉ phục vụ nhập liệu và hiển thị.
 H3	3.7.3	Các bước thực hiện
-H4	3.7.3.1	Tạo Yêu cầu cấp phát (Điều dưỡng / NV Khoa)
-OL	Từ Trang chủ, mở **M7 · Cấp phát & BHYT**, bấm thẻ **Yêu cầu cấp phát** rồi nhấn **Tạo mới**.
-OL	Chọn **Ngày yêu cầu** (mặc định hôm nay), **Mục đích** (Routine = thường quy, Urgent = cấp cứu, Patient-Specific = theo bệnh nhân) và **Khoa yêu cầu** (bắt buộc). Trường **Người yêu cầu** tự điền theo tài khoản đăng nhập.
-OL	Nếu Mục đích là **Patient-Specific**, ô **Bệnh nhân** sẽ hiện ra và bắt buộc chọn; nếu là Routine/Urgent thì cấp cho khoa, không gắn bệnh nhân.
-OL	Chọn **Kho cấp** rồi thêm các dòng vật tư trong bảng **Vật tư**: **Mã VT**, **SL yêu cầu**, **UOM**. Có thể nhập **Lý do yêu cầu** và **Ngày cần**.
-OL	Nhấn **Lưu**. Hệ thống tính **Tổng SL** và **Tổng ước tính (VND)** theo giá mua gần nhất của vật tư.
-OL	Nhấn **Nộp** để gửi duyệt. Khi nộp, hệ thống kiểm tra hạn mức tháng của khoa và kiểm tra tồn khả dụng tại kho cấp; nếu hợp lệ, trạng thái chuyển sang **Approved** và Thủ kho nhận phiếu.
-IMG	Màn hình tạo Yêu cầu cấp phát với phần Mục đích, Khoa, Kho cấp và bảng dòng vật tư.
-NOTE	Khi tổng giá trị cấp phát trong tháng của khoa vượt **Hạn mức cấp phát tháng**, hệ thống chặn nộp (lỗi SC-E-DR-QUOTA-EXCEEDED). Trưởng phòng Vật tư phải tích ô **Xác nhận vượt hạn mức (Manager)** rồi nộp lại.
-H4	3.7.3.2	Thủ kho cấp phát theo FEFO
-OL	Mở **Danh sách** Yêu cầu cấp phát, lọc theo trạng thái **Approved** để xem các phiếu chờ xuất, rồi mở phiếu cần xử lý.
-OL	Dùng chức năng **Auto FEFO** (auto_pick_fefo_for_dr) để hệ thống tự chọn **Lô** cận hạn xuất trước và điền **SL duyệt** cho từng dòng. Nếu tồn không đủ, hệ thống tự ghi **Ghi chú thiếu hàng** và hạ SL duyệt xuống mức cấp được.
-OL	Kiểm tra lại **SL duyệt** và **Lô** từng dòng. Nếu cấp thiếu so với yêu cầu (partial), ghi rõ lý do vào **Ghi chú thiếu hàng**.
-OL	Bấm tạo Stock Entry (make_stock_entry). Hệ thống đối chiếu tồn hệ thống với tồn thực; nếu khớp sẽ sinh một **SC Stock Entry** loại **Material Issue** từ Kho cấp, ghi sổ kho và chuyển phiếu sang **Issued**. Trưởng khoa nhận email báo vật tư đã sẵn sàng.
-OL	Dùng dữ liệu phiếu cấp phát có mã vạch (get_dispensing_slip_data) để in phiếu giao cho khoa khi cần.
-IMG	Phiếu cấp phát ở trạng thái Approved với nút Auto FEFO và các dòng đã điền lô và SL duyệt.
-WARN	Nếu tồn kho hệ thống không khớp tồn thực (thiếu hụt), hệ thống chặn bước tạo Stock Entry với lỗi SC-E-DR-STOCK-MISMATCH. Phải tạo **SC Stock Reconciliation** để chỉnh tồn trước khi cấp phát.
-H4	3.7.3.3	Ghi nhận sử dụng cho bệnh nhân & tính BHYT
-OL	Mở thẻ **Cấp phát cho bệnh nhân** rồi **Tạo mới**; hoặc với phiếu DR Patient-Specific đã có Stock Entry, dùng chức năng make_patient_dispensing để sinh sẵn phiếu PD.
-OL	Chọn **Mã BN** (có thể tra theo số thẻ qua lookup_patient_by_bhyt). Hệ thống tự lấy **Họ tên**, **Số thẻ BHYT**, **Loại BHYT** và **Tỷ lệ BHYT BN** từ hồ sơ bệnh nhân. Chọn **Khoa** và **Ngày cấp phát**.
-OL	Thêm các dòng **Vật tư sử dụng** (có thể lấy từ phiếu đã cấp cho khoa qua get_dispensed_items_for_dr): nhập **SL dùng**, **Đơn giá**, **Lô** và **Kho cấp**.
-OL	Nhấn **Lưu**. Hệ thống tự tra Mã BHYT của từng vật tư theo ngày cấp và tính: **BHYT chi trả**, **BN tự trả**, **Phần vượt giá trần** cho từng dòng và tổng phiếu.
-OL	Nhấn **Nộp**. Hệ thống ghi sổ kho (xuất âm tồn theo lô) và đồng bộ phiếu DR liên kết sang trạng thái **Dispensed**.
-IMG	Phiếu Cấp phát cho bệnh nhân với cột BHYT chi trả, BN tự trả và Phần vượt giá trần.
-NOTE	Quy tắc tính BHYT mỗi dòng: nếu bệnh nhân không có thẻ BHYT, hoặc vật tư không có cấu hình BHYT → bệnh nhân tự trả 100%. Tỷ lệ áp dụng lấy theo cấu hình, nhưng nếu Tỷ lệ BHYT của bệnh nhân thấp hơn thì lấy tỷ lệ thấp hơn. Nếu đơn giá vượt **Giá trần**, phần vượt do bệnh nhân tự trả (Phần vượt giá trần).
-H4	3.7.3.4	Cấu hình Mã BHYT (Kế toán / BHYT Officer / Admin)
-OL	Mở thẻ **Cấu hình Mã BHYT** (SC BHYT Code Config) rồi **Tạo mới**.
-OL	Nhập **Mã BHYT**, **Tên BHYT**, chọn **Nhóm BHYT** (N01–N09, mặc định N05) và **Tỷ lệ thanh toán BHYT (%)** (mặc định 80). Nhập **Giá trần BHYT/đơn vị** nếu có (để trống = không áp giá trần).
-OL	Khai **Phạm vi áp dụng**: chọn **Vật tư cụ thể** cho cấu hình riêng một vật tư, hoặc để trống và chọn **Nhóm vật tư** để áp cho cả nhóm. Cần ít nhất một trong hai.
-OL	Đặt **Hiệu lực từ** và **Hết hiệu lực** (để trống = chưa kết thúc), ghi **Căn cứ pháp lý** (ví dụ TT 04/2024/TT-BYT) rồi **Lưu**.
-OL	Khi quy định thay đổi: đóng bản cũ bằng cách đặt **Hết hiệu lực**, sau đó tạo bản mới có **Hiệu lực từ** kế tiếp. Có thể nhập hàng loạt bằng Frappe Data Import (System Manager).
-IMG	Màn hình Cấu hình Mã BHYT với Nhóm, Tỷ lệ, Giá trần, Phạm vi và Hiệu lực.
-NOTE	Thứ tự ưu tiên khi tra BHYT cho một vật tư: (1) cấu hình theo Vật tư cụ thể, (2) cấu hình theo Nhóm vật tư, (3) thông tin BHYT khai sẵn trên thẻ vật tư (has_bhyt). Hệ thống luôn lấy bản đang hiệu lực tại ngày cấp.
+H4	3.7.3.1	Tạo hồ sơ Khách hàng
+OL	Từ Trang chủ, mở khối **BÁN HÀNG**, bấm thẻ **Khách hàng** rồi nhấn **Tạo mới**.
+OL	Điền **Tên khách hàng**, **Mã số thuế**, **Địa chỉ**, **Điện thoại**, **Người liên hệ**.
+OL	Đặt **Hạn mức tín dụng** nếu muốn hệ thống tự chặn đơn khi khách nợ quá mức. Để trống thì dùng hạn mức mặc định trong Cấu hình hệ thống.
+OL	Nếu khách sẽ tự đặt hàng qua Cổng khách hàng, điền **Tài khoản Portal** (email tài khoản đăng nhập của khách). Mỗi tài khoản Portal chỉ được gắn đúng một khách hàng.
+OL	Nhấn **Lưu**.
+IMG	Màn hình chi tiết Khách hàng với hạn mức tín dụng và tài khoản Portal.
+WARN	**Tài khoản Portal là trục cô lập dữ liệu.** Gán nhầm tài khoản sang khách khác sẽ khiến khách đó nhìn thấy đơn hàng, hóa đơn và công nợ của khách kia. Kiểm tra kỹ trước khi lưu.
+H4	3.7.3.2	Lập Hợp đồng khung bán
+OL	Bấm thẻ **HĐ khung bán** rồi **Tạo mới**. Chọn **Khách hàng**, đặt **Hiệu lực từ** và **Hiệu lực đến**.
+OL	Trong bảng danh mục, thêm từng dòng vật tư: **Mã VT**, **Đơn vị**, **Đơn giá** (giá chốt theo hợp đồng) và **SL hợp đồng** (số lượng trần khách được đặt trong kỳ).
+OL	Nhấn **Lưu** rồi **Nộp** để hợp đồng có hiệu lực.
+OL	Trong quá trình sử dụng, cột **SL đã bán** và **SL còn lại** tự cập nhật theo các đơn hàng đã đặt — không sửa tay.
+IMG	Hợp đồng khung bán với bảng danh mục, đơn giá và cột SL còn lại.
+NOTE	Hệ thống kiểm tra hiệu lực **theo ngày**, không tin vào trạng thái hiển thị. Hợp đồng hết ngày hiệu lực sẽ bị chặn đặt đơn ngay cả khi trạng thái chưa kịp cập nhật.
+H4	3.7.3.3	Tạo & duyệt Đơn hàng bán
+OL	Bấm thẻ **Đơn hàng bán** rồi **Tạo mới**. Chọn **Khách hàng** và **Ngày đặt hàng**.
+OL	Chọn **HĐ khung bán**. Ô chọn hợp đồng chỉ hiện hợp đồng của đúng khách đã chọn; khi chọn xong, hệ thống **tự nạp danh mục vật tư** kèm đơn giá hợp đồng và SL còn lại.
+OL	Nhập **SL đặt** cho từng dòng. Ô chọn vật tư chỉ cho chọn trong danh mục hợp đồng. Có thể xóa các dòng khách không đặt.
+OL	Nhấn **Lưu**. Hệ thống ghi đè lại đơn giá theo hợp đồng, tính tổng tiền, và kiểm tra: số lượng không vượt SL trần hợp đồng, tồn kho khả dụng đủ, và công nợ khách không vượt hạn mức tín dụng.
+OL	Nhấn **Duyệt** để chuyển đơn sang trạng thái **Đã duyệt** — từ đây thủ kho mới lập được Phiếu giao hàng.
+IMG	Đơn hàng bán với hợp đồng khung đã chọn và bảng chi tiết tự nạp.
+WARN	Nếu khách vượt hạn mức tín dụng, đơn bị đặt cờ **Giữ do công nợ (credit hold)** và không duyệt được. Phải thu bớt công nợ hoặc nâng hạn mức trên hồ sơ khách trước.
+H4	3.7.3.4	Soạn hàng & quét xác nhận (Thủ kho)
+FIRST	Đây là bước bảo đảm hàng giao đúng lô, đúng số lượng. Từ đơn đã duyệt, hệ thống tạo một Phiếu giao hàng **nháp** với lô do FEFO gợi ý; thủ kho ra kho lấy hàng thật rồi quét xác nhận từng dòng. Chỉ khi quét đủ mọi dòng mới nộp được phiếu và trừ tồn kho.
+OL	Mở Đơn hàng bán ở trạng thái **Đã duyệt**, bấm **Tạo phiếu giao**. Hệ thống tạo Phiếu giao hàng nháp và chuyển đơn sang **Đang xử lý** (nút Tạo phiếu giao ẩn đi để tránh tạo trùng).
+OL	Trên phiếu giao nháp, xem bảng **Hướng dẫn lấy hàng**: mỗi dòng hiển thị lô nên lấy (hạn dùng gần nhất), vị trí và số lượng.
+OL	Ra kho lấy hàng. Với từng dòng, quét **mã vạch lô** trên thùng/hộp; quét thêm **mã vị trí (bin)** nếu kho có khai vị trí; nhập **SL thực lấy** nếu khác số gợi ý.
+OL	Hệ thống kiểm tra ngay tại máy chủ: lô đúng vật tư, còn hạn, đã đạt QC, không bị khóa, đủ tồn tại kho xuất, và vị trí thuộc đúng kho. Đạt thì dòng được đánh dấu **Đã quét xác nhận** và hiện số dòng còn lại.
+OL	Khi mọi dòng đã quét, nhấn **Nộp**. Hệ thống trừ tồn kho theo đúng lô đã quét, ghi vào Sổ kho, và chuyển đơn hàng sang **Đã bàn giao**.
+IMG	Màn hình soạn hàng với ô quét lô, ô quét vị trí và tiến độ số dòng đã xác nhận.
+NOTE	**Được phép lấy lô khác lô gợi ý.** Thực tế kho không phải lúc nào cũng khớp gợi ý FEFO (hàng nằm sâu, thùng vỡ, lô lẻ). Cứ quét lô thực lấy — hệ thống kiểm tra và ghi nhận đúng lô đó, nên truy xuất nguồn gốc sau này vẫn chính xác.
+NOTE	Máy quét cầm tay (PDA) hoạt động như bàn phím: quét xong nó gõ mã vào ô đang chọn rồi Enter. Vì vậy dùng được ngay trên trình duyệt của máy PDA, không cần cài ứng dụng riêng.
+WARN	Nếu bỏ phiếu giao nháp: **Xóa** phiếu để đơn hàng tự quay lại **Đã duyệt** và hiện lại nút Tạo phiếu giao. Đừng để phiếu nháp treo — đơn sẽ kẹt ở Đang xử lý.
+H4	3.7.3.5	Lập Biên bản nghiệm thu
+OL	Sau khi giao hàng, mở Phiếu giao hàng đã nộp và bấm tạo **Biên bản nghiệm thu**; hoặc để khách tự xác nhận trên Cổng khách hàng (xem 3.12).
+OL	Điền **Ngày nghiệm thu**, **Người nghiệm thu** (đại diện bên khách) và ghi chú nếu có.
+OL	Nhấn **Lưu** rồi **Nộp**. Phiếu giao chuyển sang **Đã nghiệm thu** — mở khóa bước lập hóa đơn.
+IMG	Biên bản nghiệm thu gắn với phiếu giao hàng.
+H4	3.7.3.6	Xuất Hóa đơn bán & Thu tiền (Kế toán)
+OL	Mở Phiếu giao hàng đã nghiệm thu, bấm tạo **Hóa đơn bán**. Hệ thống chép nguyên vật tư và số lượng từ phiếu giao — không sửa được cho khác.
+OL	Kiểm tra **Thuế suất**, **Tiền thuế** và **Tổng tiền**, rồi **Nộp**. Hệ thống ghi bút toán: Nợ 131 Phải thu / Có 511 Doanh thu và Có 3331 Thuế; đồng thời ghi giá vốn Nợ 632 / Có 156.
+OL	In hóa đơn theo mẫu TT99 (có số tiền bằng chữ và thông tin bên bán lấy từ Cấu hình hệ thống).
+OL	Khi khách trả tiền, mở hóa đơn và bấm **Thu tiền**: nhập **Số tiền** và **Hình thức** (Tiền mặt / Chuyển khoản), rồi nộp. Hệ thống ghi Nợ tiền / Có 131 và cập nhật **Còn phải thu** trên hóa đơn.
+IMG	Hóa đơn bán với khối thuế, tổng tiền và số còn phải thu.
+WARN	Không thu tiền được trên hóa đơn **chưa nộp** — làm vậy sẽ tạo công nợ phải thu âm. Nộp hóa đơn trước rồi mới thu.
 H3	3.7.4	Trạng thái & phê duyệt
-BODY	Yêu cầu cấp phát (SC-DR-…) đi theo vòng đời sau; trạng thái do hệ thống tự đặt theo thao tác, người dùng không sửa tay.
-TABLE	Trạng thái|Ý nghĩa|Ai chuyển
-ROW	Draft (Nháp)|Đang soạn, chưa nộp|Điều dưỡng / NV Khoa
-ROW	Pending (Chờ duyệt)|Đã nộp, chờ xử lý (trạng thái trung gian)|Hệ thống
-ROW	Approved (Đã duyệt)|Đã nộp hợp lệ, sẵn sàng để Thủ kho xuất|Hệ thống khi Nộp
-ROW	Issued (Đã xuất)|Đã tạo Stock Entry Material Issue, ghi sổ kho|Thủ kho khi tạo Stock Entry
-ROW	Dispensed (Đã cấp cho BN)|Đã ghi nhận sử dụng cho bệnh nhân|Hệ thống khi nộp Cấp phát cho bệnh nhân
-ROW	Cancelled (Đã hủy)|Phiếu bị hủy|Người có quyền Hủy
-BODY	**Phê duyệt vượt hạn mức:** nếu giá trị cấp phát trong tháng của khoa vượt **Hạn mức cấp phát tháng**, chỉ Trưởng phòng Vật tư tích **Xác nhận vượt hạn mức (Manager)** mới nộp được phiếu. Phiếu Cấp phát cho bệnh nhân (SC-PD-…) là phiếu nộp/hủy: khi nộp thì ghi sổ kho và đẩy DR sang Dispensed; khi hủy thì đảo bút toán sổ kho.
+FIRST	Mỗi loại chứng từ có vòng đời riêng; trạng thái do hệ thống đặt theo thao tác, người dùng không sửa tay.
+TABLE	Chứng từ|Vòng đời trạng thái|Chốt quan trọng
+ROW	HĐ khung bán|Nháp - Chờ duyệt - Hiệu lực - Hết hạn / Thanh lý|Hết hiệu lực theo NGÀY thì chặn đặt đơn
+ROW	Đơn hàng bán|Chờ duyệt - Đã duyệt - Đang xử lý - Đã bàn giao - Hoàn tất / Từ chối|Đang xử lý = đang có phiếu giao nháp
+ROW	Phiếu giao hàng|Nháp (soạn hàng) - Đã giao - Đã nghiệm thu - Đã xuất HĐ|Chỉ nộp được khi quét đủ mọi dòng
+ROW	Biên bản nghiệm thu|Nháp - Đã nghiệm thu|Mở khóa lập hóa đơn
+ROW	Hóa đơn bán|Nháp - Đã phát hành - Thu một phần - Thu đủ - Hủy|Phải khớp đúng phiếu giao
+ROW	Phiếu thu|Nháp - Đã nộp|Cập nhật Còn phải thu trên hóa đơn
+BODY	**Bốn cột mốc khách nhìn thấy** trên Cổng khách hàng: (1) Đã đặt hàng, (2) Đã bàn giao và nghiệm thu, (3) Đã cấp hóa đơn, (4) Đã thu tiền. Mốc (2) và (3) kèm liên kết tải chứng từ. Đơn bị Từ chối thì chuỗi mốc dừng lại.
 H3	3.7.5	Kết quả & truy vết
-UL	Yêu cầu cấp phát tạo bản ghi mã **SC-DR-{YYYY}-{#####}** với Tổng SL và Tổng ước tính (VND).
-UL	Khi Thủ kho xuất kho: sinh **SC Stock Entry** loại **Material Issue**, ghi vào Sổ kho (SC Stock Ledger Entry) làm giảm tồn theo từng lô; phiếu liên kết qua trường **Stock Entry**.
-UL	Cấp phát cho bệnh nhân tạo bản ghi mã **SC-PD-{YYYY}-{#####}** với **Tổng chi phí**, **BHYT chi trả**, **BN tự trả**, **Phần vượt giá trần**; mỗi dòng lưu Mã BHYT, Nhóm, Tỷ lệ %, Giá trần áp dụng.
-UL	Cấu hình BHYT tạo bản ghi mã **SC-BHYT-{#####}**, lưu lịch sử thay đổi (track_changes) và căn cứ pháp lý phục vụ kiểm toán.
-UL	Lịch sử chi phí của bệnh nhân tổng hợp được qua get_patient_dispense_history; lịch sử cấu hình BHYT của một vật tư xem qua list_bhyt_configs_for_item / get_bhyt_history.
-UL	Trưởng khoa nhận email thông báo khi phiếu chuyển sang Issued (vật tư sẵn sàng).
+UL	Đơn hàng bán tạo bản ghi mã **SC-SO-…**; phiếu giao **SC-DN-…**; nghiệm thu **SC-AR-…**; hóa đơn **SC-SI-…**; phiếu thu **SC-SR-…**.
+UL	Khi nộp Phiếu giao hàng: ghi vào **Sổ kho (Stock Ledger)** làm giảm tồn theo đúng từng lô đã quét, kèm kho và vị trí.
+UL	Khi nộp Hóa đơn bán và Phiếu thu: ghi vào **Sổ cái (GL Entry)** — công nợ phải thu, doanh thu, thuế và giá vốn.
+UL	Mỗi phiếu có khối **Chứng từ liên quan** cho xem cả chuỗi hai chiều: Khách hàng, HĐ khung, Đơn hàng, Phiếu giao (kèm **các lô đã giao** và số lô nhà cung cấp), Nghiệm thu, Hóa đơn, Phiếu thu.
+UL	Truy xuất lô (mục 3.10) dựng lại được lô này đã bán cho **khách nào**, phục vụ thu hồi khi cần.
+UL	Hạn mức hợp đồng khung tự trừ theo từng đơn; Dashboard có nhóm chỉ số **công nợ phải thu**.
 H3	3.7.6	Lỗi thường gặp & mẹo
-UL	**SC-E-DR-QUOTA-EXCEEDED — Vượt hạn mức cấp phát tháng:** Trưởng phòng Vật tư tích **Xác nhận vượt hạn mức (Manager)** rồi nộp lại.
-UL	**SC-E010 NEGATIVE_STOCK — Không đủ tồn khả dụng:** giảm SL duyệt hoặc tạo Stock Reconciliation; tồn khả dụng đã loại trừ lô đang QC Pending/Rejected hoặc bị khóa.
-UL	**SC-E-DR-STOCK-MISMATCH — Tồn hệ thống lệch tồn thực:** tạo SC Stock Reconciliation trước rồi mới tạo Stock Entry.
-UL	**SC-E-RCL-BATCH-RECALLED — Lô đang bị thu hồi/khóa:** không thể cấp phát; chọn lô khác.
-UL	**SC-E-BHYT-RATE — Tỷ lệ thanh toán ngoài [0..100]:** nhập lại tỷ lệ trong khoảng 0 đến 100.
-UL	**SC-E-BHYT-OVERLAP — Cấu hình trùng phạm vi và thời hạn:** đóng bản cũ (đặt Hết hiệu lực) trước khi tạo bản mới.
-UL	**Mẹo —** nếu cảnh báo "Mã BHYT có thay đổi quy định" hiện lên khi lưu phiếu bệnh nhân, hãy kiểm tra lại cấu hình BHYT của vật tư đó trước khi nộp (cờ bhyt_config_changed).
-UL	**Mẹo —** bệnh nhân không có thẻ BHYT hoặc vật tư chưa cấu hình BHYT thì cột BN tự trả sẽ bằng toàn bộ chi phí; muốn BHYT chi trả, cần khai số thẻ cho bệnh nhân và cấu hình Mã BHYT cho vật tư.
-UL	**Mẹo —** dùng **Auto FEFO** thay vì chọn lô thủ công để luôn xuất đúng lô cận hạn trước và tránh tồn hết hạn.
+UL	**BRU-SFC-001 — Hợp đồng khung hết hiệu lực:** gia hạn hợp đồng hoặc lập hợp đồng kỳ mới trước khi nhận đơn.
+UL	**BRU-SFC-002 — Không sửa được đơn giá:** giá khóa theo hợp đồng khung; muốn đổi giá phải sửa hợp đồng, không sửa trên đơn hay hóa đơn.
+UL	**BRU-SO-001 — Vượt SL trần hợp đồng:** giảm số lượng đặt, hoặc bổ sung SL vào hợp đồng khung. Hệ thống cộng dồn mọi đơn đã đặt nên số còn lại có thể ít hơn bạn tưởng.
+UL	**BRU-INV-002 — Tồn khả dụng không đủ:** nhập thêm hàng, hoặc giảm số lượng. Tồn khả dụng đã trừ các lô đang chờ QC, bị từ chối và lô bị khóa.
+UL	**BRU-AR-001 — Vượt hạn mức tín dụng:** thu bớt công nợ hoặc nâng hạn mức trên hồ sơ khách rồi duyệt lại.
+UL	**BRU-SO-002 — Đơn chưa được duyệt:** duyệt đơn trước khi tạo phiếu giao.
+UL	**SC-E-DN-NOT-SCANNED — Còn dòng chưa quét:** thông báo nêu rõ còn bao nhiêu dòng và vật tư nào; quét nốt rồi nộp lại.
+UL	**SC-E-PICK-ITEM — Lô quét thuộc vật tư khác:** bạn đang cầm nhầm hàng; kiểm tra lại thùng.
+UL	**SC-E-PICK-EXPIRED / SC-E-PICK-QC / SC-E-PICK-BLOCKED — Lô hết hạn, chưa đạt QC, hoặc bị khóa:** không lấy lô này; chọn lô khác theo hướng dẫn lấy hàng.
+UL	**SC-E-PICK-STOCK — Lô không đủ tồn:** lấy thêm từ lô khác cho đủ số, hoặc báo lại để điều chỉnh đơn.
+UL	**SC-E-PICK-BIN-WH — Vị trí thuộc kho khác:** bạn đang quét ở sai kho; kiểm tra lại kho xuất trên phiếu.
+UL	**SC-E-DN-CANCEL-REASON — Thiếu lý do hủy:** hủy phiếu giao bắt buộc ghi lý do; lý do được lưu vào phiếu để đối chiếu về sau.
+UL	**BRU-DEL-001 — Chưa nghiệm thu:** lập Biên bản nghiệm thu trước, rồi mới xuất hóa đơn.
+UL	**BRU-INVC-001 — Hóa đơn lệch phiếu giao:** vật tư, số lượng và khách trên hóa đơn phải khớp chính xác phiếu giao; đừng thêm hoặc bớt dòng.
+UL	**Mẹo —** khi khách gọi đặt hàng, chọn hợp đồng khung trước rồi mới nhập số lượng: danh mục và giá tự nạp, đỡ gõ và không sai giá.
+UL	**Mẹo —** hủy phiếu giao đã nộp sẽ hoàn tồn kho về đúng lô cũ; không cần nhập kho tay.
 H3	3.7.7	Liên quan
-UL	Xem 3.5 — M5 Tồn kho & FEFO (cơ chế gợi ý lô cận hạn xuất trước).
-UL	Xem 3.4 — M4 Xuất kho / Stock Entry (phiếu Material Issue sinh ra khi cấp phát).
-UL	Xem 3.3 — M3 Tiếp nhận & Kiểm tra chất lượng (tồn khả dụng loại trừ lô QC Pending/Rejected).
-UL	Xem 3.9 — M9 Thu hồi (lô bị khóa không được cấp phát).
-UL	Xem chương Dữ liệu nền — khai báo SC Item (đơn vị kép, BHYT), SC Patient, SC Department (hạn mức cấp phát tháng).
+UL	Xem 3.5 — M5 Lô vật tư & FEFO (cách hệ thống gợi ý lô cận hạn xuất trước).
+UL	Xem 3.3 — M3 Tiếp nhận & Kiểm tra chất lượng (lô chưa đạt QC không được giao cho khách).
+UL	Xem 3.8 — M8 Kế toán (bút toán doanh thu, giá vốn, công nợ phải thu).
+UL	Xem 3.10 — M10 Truy xuất & Thu hồi (truy lô đã bán tới từng khách).
+UL	Xem 3.12 — M12 Cổng khách hàng (khách tự đặt hàng và tự nghiệm thu).
+UL	Xem Chương 2 — khai báo Khách hàng, Vật tư (đơn vị kép, giá bán), Kho.

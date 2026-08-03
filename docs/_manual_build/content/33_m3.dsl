@@ -21,7 +21,7 @@ OL	Nếu **SL nhận** vượt **SL PO**, hệ thống bật cảnh báo cam và
 WARN	Mỗi dòng phải có **Hạn dùng** để hệ thống sinh lô; nếu thiếu sẽ bị chặn khi nộp (SC-E-PR-MISSING-EXPIRY). Hàng đã hết hạn (hạn dùng đã qua) bị từ chối ngay với mã SC-E003 EXPIRY_TOO_CLOSE. Hàng còn hạn nhưng dưới ngưỡng tồn kho tối thiểu (mặc định 30 ngày, cấu hình tại SupplyCore Settings) chỉ cảnh báo, vẫn cho nhập sau khi xác nhận.
 H4	3.3.3.3	Nộp Phiếu nhập
 OL	Bấm **Lưu** rồi **Nộp** phiếu. Khi nộp, hệ thống tự động: sinh **SC Batch** cho mỗi dòng có hạn dùng (mã lô dạng [mã VT]-[YYYYMM]-[số thứ tự]), ghi **Sổ kho (Stock Ledger)** tăng tồn tại Kho nhập, và tạo **Kiểm tra QC** cho từng dòng nếu **Yêu cầu QC** đang bật.
-OL	Sau khi nộp, **QC Status** của phiếu là **Pending** (Chờ QC). Hàng chưa được FEFO/cấp phát chọn cho tới khi QC đạt.
+OL	Sau khi nộp, **QC Status** của phiếu là **Pending** (Chờ QC). Hàng chưa được FEFO chọn để xuất bán cho tới khi QC đạt.
 IMG	Phiếu nhập sau khi nộp: cờ QC Status = Pending và danh sách lô vừa sinh.
 H4	3.3.3.4	Kiểm tra chất lượng (QC)
 OL	Mở thẻ **Kiểm tra QC** trong M3 (mã SC-QI-…). Mỗi phiếu QI gắn với một dòng vật tư của Phiếu nhập, mang sẵn **NCC**, **Lô**, **SL nhận** và **Mẫu checklist** tương ứng nhóm vật tư.
@@ -29,7 +29,7 @@ OL	Trong bảng **Tiêu chí kiểm tra**, đặt **Kết quả** cho từng ti�
 OL	Nếu tất cả tiêu chí Accepted, hệ thống tự đặt **Kết quả tổng** = **Accepted**. Bấm **Lưu** rồi **Nộp**.
 OL	Thiếu thiết bị đo: tick **Thiếu thiết bị kiểm tra** và nhập **Ghi chú thiết bị**; phiếu chuyển **Kết quả tổng** = **On Hold** và không cập nhật trạng thái QC của Phiếu nhập cho tới khi kiểm lại.
 IMG	Màn hình Kiểm tra QC với bảng tiêu chí và ô Kết quả tổng / Hành động.
-BODY	**Khi QC đạt:** lô được đặt qc_status = Accepted, Phiếu nhập chuyển **QC Status** = Pass và ghi mốc **Đã nhập kho chính thức lúc** (officially_received_at). Từ thời điểm này lô mới được FEFO/cấp phát chọn.
+BODY	**Khi QC đạt:** lô được đặt qc_status = Accepted, Phiếu nhập chuyển **QC Status** = Pass và ghi mốc **Đã nhập kho chính thức lúc** (officially_received_at). Từ thời điểm này lô mới được FEFO chọn để xuất bán.
 H4	3.3.3.5	Xử lý hàng không đạt & trả nhà cung cấp
 OL	Khi có tiêu chí Rejected, đặt **Hành động** phù hợp: **Return to Supplier** (trả NCC), **Request Replacement** (yêu cầu đổi hàng) hoặc **Conditional Accept** (chấp nhận có điều kiện). Nhập **Lý do không đạt**, rồi **Nộp** phiếu QI.
 OL	Với **Return to Supplier**: hệ thống chặn lô (blocked) và tự tạo một **Phiếu nhập trả hàng** ở dạng nháp (is_return = 1) để Kế toán rà soát. Với **Request Replacement**: lô bị chặn và ghi lý do. Với **Conditional Accept**: lô đặt qc_status = Conditional và vẫn được phép xuất dùng.
@@ -43,7 +43,7 @@ NOTE	Khi nhận đủ 100% theo PO, hệ thống tự cập nhật trạng thái
 H3	3.3.4	Trạng thái & phê duyệt
 BODY	**QC Status của Phiếu nhập** (tự cập nhật theo kết quả các phiếu QI, không sửa tay):
 TABLE	Trạng thái|Ý nghĩa
-ROW	Pending|Chờ QC — chưa kiểm xong mọi dòng; hàng chưa được FEFO/cấp phát chọn
+ROW	Pending|Chờ QC — chưa kiểm xong mọi dòng; hàng chưa được FEFO chọn để xuất bán
 ROW	Pass|Tất cả dòng QC đạt — ghi mốc Đã nhập kho chính thức, hàng được dùng
 ROW	Partial Pass|Một số dòng đạt, một số không đạt
 ROW	Fail|Tất cả dòng không đạt
@@ -67,7 +67,7 @@ UL	Tạo **Phiếu nhập** mã **SC-PR-YYYY-#####**; phiếu trả hàng cũng 
 UL	Mỗi dòng vật tư sinh một **Lô (SC Batch)** mã [mã VT]-[YYYYMM]-[số thứ tự], mang ngày SX, hạn dùng, số lô NCC, nhà sản xuất, xuất xứ.
 UL	Ghi **Sổ kho (Stock Ledger Entry)** tăng tồn tại Kho nhập khi nộp; phiếu trả hàng ghi giảm tồn.
 UL	Tạo **Kiểm tra QC** mã **SC-QI-YYYY-#####** cho từng dòng (khi Yêu cầu QC bật); kết quả cập nhật qc_status của lô (Accepted/Conditional/Rejected) và QC Status của Phiếu nhập.
-UL	QC đạt ghi mốc **Đã nhập kho chính thức lúc** trên Phiếu nhập — điều kiện để lô được FEFO/cấp phát chọn.
+UL	QC đạt ghi mốc **Đã nhập kho chính thức lúc** trên Phiếu nhập — điều kiện để lô được FEFO chọn khi xuất bán.
 UL	Trả hàng tạo **Debit Note** (và **Credit Note** khi hoàn tiền) là SC Purchase Invoice; cập nhật **received_qty** và trạng thái của PO liên quan.
 UL	Mẫu checklist dùng **QC Checklist Template** mã **SC-QCT-#####** (theo nhóm vật tư hoặc mặc định toàn cục).
 H3	3.3.6	Lỗi thường gặp & mẹo

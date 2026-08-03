@@ -26,12 +26,13 @@ ROW	Xếp hàng lên kệ|Sidebar → Xếp hàng lên kệ|3.4
 ROW	Xem bản đồ kho|Sidebar → Bản đồ kho|3.4
 ROW	Xem lô & hạn dùng|M5 → Lô vật tư|3.5
 ROW	Xem vật tư sắp hết hạn|Sidebar → Cảnh báo|3.5, 3.11
-H3	4.1.5	Chuyển kho & Cấp phát
+H3	4.1.5	Chuyển kho & Bán hàng
 TABLE	Tôi muốn…|Vào đâu|Mục
 ROW	Chuyển kho nội bộ|M6 → Yêu cầu chuyển kho|3.6
-ROW	Nhập phiếu chuyển kho từ HIS (PDF)|Sidebar → Nhập phiếu HIS|3.6
-ROW	Tạo yêu cầu vật tư cho khoa|M7 → Yêu cầu cấp phát|3.7
-ROW	Cấp phát theo người bệnh (BHYT)|M7 → Cấp phát người bệnh|3.7
+ROW	Tạo đơn hàng cho khách|M7 → Đơn hàng bán|3.7
+ROW	Soạn hàng & quét xác nhận trước khi giao|Đơn đã duyệt → Tạo phiếu giao|3.7
+ROW	Xuất hóa đơn bán & thu tiền|Phiếu giao đã nghiệm thu → Hóa đơn bán|3.7
+ROW	Cấp tài khoản để khách tự đặt hàng|Hồ sơ Khách hàng → Tài khoản Portal|3.12
 H3	4.1.6	Tài chính, Kiểm kê, Truy xuất
 TABLE	Tôi muốn…|Vào đâu|Mục
 ROW	Nhập hóa đơn & đối chiếu 3 bên|M8 → Hóa đơn mua|3.8
@@ -44,19 +45,23 @@ H2	4.2	Câu hỏi thường gặp (FAQ)
 BODY	**Hỏi: Tại sao tôi không thấy module/nút mà đồng nghiệp thấy?**
 BODY	Đáp: Giao diện hiển thị theo vai trò. Vai trò của bạn chưa được cấp quyền đó. Liên hệ quản trị viên để bổ sung (xem 1.3.3 và 2.1).
 BODY	**Hỏi: FEFO là gì và vì sao hệ thống tự chọn lô khi tôi xuất?**
-BODY	Đáp: FEFO = "lô hết hạn trước, xuất trước". Khi cấp phát/chuyển kho, hệ thống tự gợi ý/chọn lô có hạn dùng gần nhất để hạn chế vật tư hết hạn (xem 3.5).
+BODY	Đáp: FEFO = "lô hết hạn trước, xuất trước". Khi soạn hàng giao khách hoặc chuyển kho, hệ thống tự gợi ý lô có hạn dùng gần nhất để hạn chế hàng hết hạn (xem 3.5).
 BODY	**Hỏi: Vì sao tôi không xuất được một lô nhất định?**
-BODY	Đáp: Lô đó có thể đã bị khóa do thu hồi/quarantine hoặc đã hết hạn. Hệ thống chặn để bảo đảm an toàn (mã SC-E008). Kiểm tra trạng thái lô trong M5.
+BODY	Đáp: Lô đó có thể đã bị khóa do thu hồi/cách ly, chưa đạt kiểm định, hoặc đã hết hạn. Hệ thống chặn để bảo đảm an toàn (mã SC-E008). Kiểm tra trạng thái lô trong M5.
 BODY	**Hỏi: Đối chiếu 3 bên là gì?**
 BODY	Đáp: Hệ thống so khớp Đơn hàng (PO) – Phiếu nhập (PR) – Hóa đơn (PI). Lệch quá ±1% sẽ yêu cầu giải trình và giữ thanh toán cho tới khi được duyệt (xem 3.8).
 BODY	**Hỏi: Vì sao đơn hàng của tôi phải qua nhiều cấp duyệt?**
 BODY	Đáp: Đơn vượt ngưỡng (mặc định 50 triệu) cần thêm cấp duyệt; hợp đồng vượt ngưỡng (mặc định 100 triệu) cần cấp cao hơn. Ngưỡng do quản trị viên đặt (xem 2.3).
-BODY	**Hỏi: Phần chi trả BHYT được tính thế nào?**
-BODY	Đáp: Dựa trên cấu hình mã BHYT N01–N09 (tỷ lệ chi trả, giá trần) áp cho vật tư/nhóm vật tư tại thời điểm cấp phát (xem 2.4 và 3.7).
+BODY	**Hỏi: Vì sao tôi không sửa được đơn giá trên đơn hàng bán?**
+BODY	Đáp: Giá khóa theo hợp đồng khung bán và được máy chủ ghi đè lại mỗi lần lưu. Muốn đổi giá phải sửa hợp đồng khung, không sửa trên đơn hay hóa đơn (xem 3.7).
 BODY	**Hỏi: Trung tâm cảnh báo trống có phải lỗi không?**
 BODY	Đáp: Không. Trống nghĩa là hiện không có vấn đề cần xử lý — đó là dấu hiệu tốt.
-BODY	**Hỏi: Nhập phiếu chuyển kho từ HIS bằng PDF hoạt động ra sao?**
-BODY	Đáp: Tải PDF phiếu xuất điều chuyển; hệ thống đọc nội dung (AI hoặc OCR), khớp vật tư/kho và tạo phiếu chuyển kho. Nếu khớp 100% có thể tự nộp; nếu chưa, hệ thống để bản nháp cho bạn rà soát (xem 3.6).
+BODY	**Hỏi: Vì sao phiếu giao hàng không nộp được?**
+BODY	Đáp: Phiếu cần soạn hàng chỉ nộp được khi **mọi dòng đã quét xác nhận** (mã lỗi SC-E-DN-NOT-SCANNED). Thông báo nêu rõ còn dòng nào; quét nốt lô và số lượng thực lấy rồi nộp lại (xem 3.7).
+BODY	**Hỏi: Khách hàng có nhìn thấy đơn hàng của khách khác không?**
+BODY	Đáp: Không. Cổng khách hàng cô lập dữ liệu theo tài khoản đăng nhập và không tin tham số do trình duyệt gửi lên. Mỗi tài khoản Portal chỉ gắn đúng một khách hàng (xem 3.12).
+BODY	**Hỏi: Tôi lấy lô khác lô hệ thống gợi ý có được không?**
+BODY	Đáp: Được. Cứ quét lô thực lấy — hệ thống kiểm tra lô đó có đúng vật tư, còn hạn, đạt QC, không bị khóa và đủ tồn hay không, rồi ghi nhận đúng lô bạn lấy (xem 3.7).
 BODY	**Hỏi: Tôi sửa được Sổ kho (Stock Ledger) không?**
 BODY	Đáp: Không. Sổ kho được sinh tự động và chỉ-đọc; mọi điều chỉnh tồn phải qua phiếu (nhập, xuất, chuyển, đối chiếu kiểm kê) để bảo đảm truy vết.
 H2	4.3	Thuật ngữ
@@ -69,9 +74,11 @@ ROW	PO — Đơn đặt hàng|Đơn mua gửi nhà cung cấp (SC-PO-…)
 ROW	MR — Yêu cầu mua|Đề nghị mua nội bộ (SC-MR-…)
 ROW	QC — Kiểm tra chất lượng|Kiểm tra lô hàng trước khi cho phép sử dụng (SC-QI-…)
 ROW	Đối chiếu 3 bên|So khớp PO – PR – Hóa đơn trước khi thanh toán
-ROW	BHYT|Bảo hiểm y tế; mã nhóm N01–N09 quyết định phần chi trả
+ROW	Soạn hàng (picking)|Lấy hàng theo phiếu giao và quét xác nhận từng dòng trước khi xuất kho
 ROW	Quarantine|Trạng thái cách ly lô chờ xử lý chất lượng/thu hồi
-ROW	Quota khoa|Hạn mức cấp phát theo tháng cho một khoa
+ROW	Hạn mức tín dụng|Mức công nợ tối đa cho phép của một khách hàng
+ROW	Nghiệm thu|Biên bản khách xác nhận đã nhận đủ hàng; bắt buộc trước khi xuất hóa đơn
+ROW	Đơn vị tồn kho|Đơn vị gốc duy nhất mà sổ kho ghi nhận; đơn vị khác quy đổi về nó
 ROW	Persona / Vai trò|Bộ quyền và giao diện theo công việc người dùng
 H2	4.4	Xử lý sự cố thường gặp
 H3	4.4.1	Không đăng nhập được
@@ -100,4 +107,4 @@ H3	4.4.8	Khi nào báo quản trị viên / kỹ thuật
 UL	Nghi ngờ sai quyền hoặc cần thêm vai trò.
 UL	Lỗi lặp lại nhiều lần dù đã làm đúng hướng dẫn.
 UL	Số liệu bất thường nghi do dữ liệu bị can thiệp.
-UL	Cần thay đổi tham số hệ thống, cấu hình BHYT, hoặc luật cảnh báo.
+UL	Cần thay đổi tham số hệ thống hoặc luật cảnh báo.

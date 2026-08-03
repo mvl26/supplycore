@@ -2,10 +2,10 @@ H2	3.4	M4 · Quản lý kho
 H3	3.4.1	Mục đích & khi nào dùng
 FIRST	Module M4 (WMS — Quản lý kho) giúp Thủ kho biết chính xác hàng nào, lô nào, còn bao nhiêu và đang nằm ở đâu trong kho — theo thời gian thực. Bạn dùng module này hằng ngày để: tra cứu tồn kho và giá trị tồn, xem nhanh tổng quan các kho, khai báo vị trí lưu trữ (bin), xếp hàng vừa nhận lên kệ, và xem bản đồ chỉ đường tới đúng kho / đúng vị trí lấy hàng.
 BODY	Khác với module nhập–xuất (tạo phiếu làm thay đổi tồn), M4 chủ yếu là lớp "tổ chức không gian kho": nó không tự cộng/trừ tồn, mà gắn mỗi lượng tồn vào một vị trí cụ thể (bin) và trình bày dữ liệu tồn cho dễ tra cứu. Số liệu tồn được tính trực tiếp từ Sổ kho (Stock Ledger) nên luôn khớp với phiếu nhập–xuất–chuyển.
-BODY	Bạn vào M4 khi: cần kiểm tra còn bao nhiêu một vật tư trước khi cấp phát; vừa nhận hàng từ phiếu nhập (PR) và cần xếp lên kệ; muốn thiết lập sơ đồ kho lần đầu; hoặc cần chỉ đường cho nhân viên mới tới đúng kho/đúng kệ.
+BODY	Bạn vào M4 khi: cần kiểm tra còn bao nhiêu một vật tư trước khi nhận đơn của khách; vừa nhận hàng từ phiếu nhập (PR) và cần xếp lên kệ; muốn thiết lập sơ đồ kho lần đầu; hoặc cần chỉ đường cho nhân viên mới tới đúng kho/đúng kệ.
 H3	3.4.2	Ai làm được & cần chuẩn bị gì
-BODY	**Vai trò:** Thủ kho (SupplyCore Storekeeper / Warehouse Officer) là người dùng chính — xem tồn, khai báo bin, đặt quy tắc xếp hàng, xếp hàng lên kệ. Trưởng phòng Vật tư và Quản trị Hệ thống có toàn quyền. Điều dưỡng/NV Khoa và Kiểm soát Chất lượng chỉ xem (read-only) tồn kho và vị trí. Riêng màn hình **Thiết kế bản đồ** (`/map-editor`) chỉ Quản trị Hệ thống hoặc Trưởng phòng Vật tư mới lưu được.
-BODY	**Cần có trước:** Kho (SC Warehouse) đã khai báo theo cây 3 cấp (kho tổng → kho con → kho khoa phòng) trong Dữ liệu nền; Vật tư (SC Item) và Lô (SC Batch) đã tồn tại; đã có phát sinh nhập kho (Sổ kho có dòng) thì tồn kho mới hiển thị. Để xếp hàng lên kệ cần có ít nhất một Vị trí lưu trữ (Bin Location) thuộc kho đó.
+BODY	**Vai trò:** Thủ kho (SupplyCore Storekeeper / Warehouse Officer) là người dùng chính — xem tồn, khai báo bin, đặt quy tắc xếp hàng, xếp hàng lên kệ. Trưởng phòng Vật tư và Quản trị Hệ thống có toàn quyền. NV Mua & Bán hàng và Kiểm định chỉ xem (read-only) tồn kho và vị trí. Riêng màn hình **Thiết kế bản đồ** (`/map-editor`) chỉ Quản trị Hệ thống hoặc Trưởng phòng mới lưu được.
+BODY	**Cần có trước:** Kho (SC Warehouse) đã khai báo theo cây 3 cấp (kho tổng → kho con → kho phân phối) trong Dữ liệu nền; Vật tư (SC Item) và Lô (SC Batch) đã tồn tại; đã có phát sinh nhập kho (Sổ kho có dòng) thì tồn kho mới hiển thị. Để xếp hàng lên kệ cần có ít nhất một Vị trí lưu trữ (Bin Location) thuộc kho đó.
 NOTE	Tồn kho trong M4 đọc từ Sổ kho (SC Stock Ledger Entry). Nếu một kho chưa có phát sinh nào thì sẽ hiện "Không có tồn kho khớp với bộ lọc" — đó là bình thường, không phải lỗi.
 H3	3.4.3	Các bước thực hiện
 H4	3.4.3.1	Xem tồn kho thời gian thực (Tồn kho — /stock-balance)
@@ -59,27 +59,27 @@ NOTE	Nếu một dòng hiện "Kho chưa khai vị trí", nghĩa là kho đó ch
 H4	3.4.3.6	Xem bản đồ kho (Bản đồ kho — /warehouse-map)
 FIRST	Màn hình **Bản đồ kho** (`/warehouse-map`) có 2 tab giúp định hướng trực quan: chỉ đường tới kho và tìm đúng vị trí lưu trữ bên trong kho.
 OL	Mở **Bản đồ kho** từ Sidebar (`/warehouse-map`).
-OL	Tab **Bản đồ khuôn viên**: xem sơ đồ khuôn viên bệnh viện với vị trí các kho. Chọn "Chỉ đường tới kho" để hệ thống vẽ tuyến từ cổng chính tới kho đó.
+OL	Tab **Bản đồ khuôn viên**: xem sơ đồ mặt bằng với vị trí các kho. Chọn "Chỉ đường tới kho" để hệ thống vẽ tuyến từ cổng chính tới kho đó.
 OL	Bấm vào một kho trên bản đồ khuôn viên để chuyển sang tab **Sơ đồ trong kho** của đúng kho đó.
 OL	Tab **Sơ đồ trong kho**: chọn kho ở ô "Chọn kho" để xem lưới các vị trí lưu trữ (bin) bên trong; hệ thống có thể vẽ lối đi tới một bin đích.
 OL	Bấm vào một ô bin để mở **chi tiết Vị trí lưu trữ** (Bin Location) tương ứng.
 IMG	Bản đồ kho — tab Bản đồ khuôn viên với tuyến chỉ đường từ cổng tới kho.
 NOTE	Chỉ những kho đã được đặt toạ độ trên bản đồ (qua màn hình Thiết kế bản đồ) mới hiển thị. Kho chưa gán toạ độ sẽ không xuất hiện trên sơ đồ.
 H4	3.4.3.7	Thiết kế bản đồ kho (Thiết kế bản đồ — /map-editor)
-FIRST	Màn hình **Thiết kế bản đồ** (`/map-editor`) dành cho quản trị: tùy chỉnh sơ đồ khuôn viên theo từng bệnh viện — đặt cổng, sắp xếp các kho lên lưới và lưu cấu hình. Đây là việc làm một lần khi triển khai, hoặc khi kho thay đổi bố trí.
+FIRST	Màn hình **Thiết kế bản đồ** (`/map-editor`) dành cho quản trị: tùy chỉnh sơ đồ mặt bằng theo từng cơ sở — đặt cổng, sắp xếp các kho lên lưới và lưu cấu hình. Đây là việc làm một lần khi triển khai, hoặc khi kho thay đổi bố trí.
 OL	Mở **Thiết kế bản đồ** (`/map-editor`).
-OL	Ở mục "Thông tin bệnh viện", nhập **Tên bệnh viện**, **Địa chỉ**, **Nhãn cổng**, và số **Hàng** × **Cột** của lưới bản đồ.
+OL	Ở mục "Thông tin cơ sở", nhập **Tên cơ sở**, **Địa chỉ**, **Nhãn cổng**, và số **Hàng** × **Cột** của lưới bản đồ.
 OL	Bấm **Đặt vị trí cổng** rồi click một ô trên lưới để đặt cổng chính.
-OL	Click ô trống trên lưới → chọn một kho từ danh sách "Kho chưa đặt" để đưa vào ô; click ô đã có kho để đổi loại kho (Kho tổng / Kho con / Kho khoa / Cách ly / Trung chuyển) hoặc **Gỡ khỏi bản đồ**.
+OL	Click ô trống trên lưới → chọn một kho từ danh sách "Kho chưa đặt" để đưa vào ô; click ô đã có kho để đổi loại kho (Kho tổng / Kho con / Kho phân phối / Cách ly / Trung chuyển) hoặc **Gỡ khỏi bản đồ**.
 OL	Bấm **Lưu cấu hình** để ghi lại. Hệ thống báo số kho đã cập nhật (và số lỗi nếu trùng ô / thiếu toạ độ).
 IMG	Màn hình Thiết kế bản đồ với lưới ô, danh sách Kho chưa đặt và nút Lưu cấu hình.
 WARN	Chỉ Quản trị Hệ thống hoặc Trưởng phòng Vật tư mới lưu được bản đồ; người khác mở vào sẽ bị chặn quyền. Mỗi ô chỉ đặt được một kho — đặt trùng ô sẽ bị bỏ qua và báo lỗi khi lưu.
 H4	3.4.3.8	Quét mã vạch / PDA khi xếp hàng (barcode)
-FIRST	Hệ thống có sẵn các điểm kết nối (API) cho thiết bị quét mã vạch / ứng dụng PDA để hỗ trợ xếp hàng và tra cứu nhanh, dùng khi bệnh viện trang bị máy quét.
+FIRST	Hệ thống có sẵn các điểm kết nối (API) cho thiết bị quét mã vạch / ứng dụng PDA để hỗ trợ xếp hàng và tra cứu nhanh, dùng khi doanh nghiệp trang bị máy quét.
 UL	**Quét mã** nhận dạng mã vạch thành Vật tư, Lô, hoặc Vị trí lưu trữ (theo barcode hoặc mã bin); nếu mã không nhận dạng được sẽ báo lỗi để quét lại.
 UL	**Gợi ý bin** theo vật tư + kho (bin mặc định → quy tắc xếp hàng → bin trống đầu tiên), và **xác nhận xếp hàng** tạo phiếu nhập kho nháp gắn đúng bin/lô.
 UL	Mỗi vị trí lưu trữ có **Barcode bin** (tự sinh từ mã bin) để in nhãn dán lên kệ, quét là ra ngay vị trí.
-NOTE	Bệnh viện hiện tại chủ yếu thao tác trên web (nhập/chọn tay) như mục 3.4.3.5; phần quét mã vạch là tùy chọn, sẵn sàng khi có thiết bị PDA.
+NOTE	Ngoài thao tác trên web, máy quét cầm tay (PDA) dùng được ngay trên trình duyệt: quét xong máy gõ mã vào ô đang chọn rồi Enter. Xem mục 3.7 — soạn hàng có quét xác nhận.
 H3	3.4.4	Trạng thái & phê duyệt
 FIRST	M4 không có quy trình nộp/phê duyệt như phiếu nghiệp vụ. "Trạng thái" ở đây là trạng thái chiếm dụng của từng Vị trí lưu trữ, được hệ thống tự tính từ Sổ kho.
 TABLE	Trạng thái bin|Ý nghĩa
@@ -105,4 +105,4 @@ H3	3.4.7	Liên quan
 UL	Xem 3.3 — Tiếp nhận & Kiểm tra chất lượng (hàng nhận từ PR là nguồn của danh sách xếp hàng lên kệ).
 UL	Xem 3.5 — Quản lý FEFO & hạn dùng (lấy hàng theo lô hết hạn trước, cảnh báo hạn dùng).
 UL	Xem 3.6 — Chuyển kho (di chuyển hàng giữa các kho/bin; bản đồ chỉ đường tuyến chuyển).
-UL	Xem 3.7 — Cấp phát & BHYT (xuất hàng từ tồn kho cho khoa/bệnh nhân).
+UL	Xem 3.7 — Bán hàng & Bàn giao (soạn hàng, quét xác nhận và xuất kho cho khách).

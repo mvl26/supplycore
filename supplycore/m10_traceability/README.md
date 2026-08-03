@@ -97,7 +97,7 @@ GET /api/method/supplycore.api.trace.get_audit_trail?item=X&warehouse=Y&from_dat
 
 **Outgoing events (module này trigger / cung cấp data cho):**
 - Recall.on_submit → Batch.blocked=1 (chặn M5/M6/M7 issue → SC-E008)
-- API `get_batch_trace` → trace lifecycle batch (source PR + movements + patients)
+- API `get_batch_trace` → trace lifecycle batch (source PR + movements + sold_to customers)
 - API `get_audit_trail` → SLE history cho UC-31 thất thoát
 - Daily scheduler quét recall_outstanding → M11 Alert
 

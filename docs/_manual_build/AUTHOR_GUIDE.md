@@ -1,10 +1,10 @@
 # SupplyCore — Hướng dẫn viết nội dung (cho người soạn từng chương)
 
 Bạn đang soạn **một mục module** trong Chương 3 "Tác vụ nghiệp vụ" của tài liệu Hướng dẫn sử dụng SupplyCore.
-Văn bản đầu ra phải là **DSL** (xem cuối file) ghi vào đúng file được giao. Toàn bộ nội dung bằng **tiếng Việt**, giọng văn hướng người dùng cuối (điều dưỡng, thủ kho, kế toán… ở bệnh viện), rõ ràng, ngắn gọn, đúng thực tế phần mềm.
+Văn bản đầu ra phải là **DSL** (xem cuối file) ghi vào đúng file được giao. Toàn bộ nội dung bằng **tiếng Việt**, giọng văn hướng người dùng cuối (thủ kho, nhân viên bán hàng, kế toán… ở doanh nghiệp phân phối), rõ ràng, ngắn gọn, đúng thực tế phần mềm.
 
 ## Nguyên tắc tối quan trọng
-- **Tuyệt đối chính xác với phần mềm thật.** Chỉ mô tả những gì có trong code bạn đọc (doctype JSON/PY, FLOW.md, trang Vue). KHÔNG bịa nút, màn hình, hay tính năng không tồn tại.
+- **Tuyệt đối chính xác với phần mềm thật.** Chỉ mô tả những gì có trong code bạn đọc (doctype JSON/PY, trang Vue) và trong tài liệu BA `docs/ba-miyano/SupplyCore_MVL_BA.html`. KHÔNG bịa nút, màn hình, hay tính năng không tồn tại.
 - Trích **nhãn tiếng Việt đúng nguyên văn** khi có (tên nút, trạng thái, menu). Bọc nhãn/nút trong `**...**` để in đậm.
 - Nếu một bước không chắc có UI riêng, mô tả theo **mô hình điều hướng chung** bên dưới (đa số DocType dùng màn hình Danh sách + Chi tiết dùng chung).
 
@@ -13,20 +13,23 @@ Văn bản đầu ra phải là **DSL** (xem cuối file) ghi vào đúng file �
 - Mỗi module mở qua **Trang module (ModuleHub)**: hiển thị các **thẻ DocType** (mỗi thẻ có biểu tượng, tên, số bản ghi). Bấm thẻ → xem 10 bản ghi gần nhất, nút **Tạo mới**, link **Danh sách**.
 - **Danh sách** (`/list/<doctype>`): bảng có tìm kiếm, lọc, sắp xếp, phân trang, nút **Tạo mới**, **Nhập** (CSV/Excel), **Xuất**.
 - **Chi tiết** (`/doc/<doctype>/<tên>`): xem/sửa bản ghi. Bản nháp có nút **Sửa**, **Lưu**, **Nộp** (Submit nếu doctype submittable), **Hủy**, **Xóa**; có panel bản ghi liên quan; một số doctype có panel chuyên biệt (FEFO, tồn kho, QC…).
-- Các màn hình chuyên biệt có route riêng: Tồn kho `/stock-balance`, Xếp hàng lên kệ `/putaway`, Bản đồ kho `/warehouse-map`, Thiết kế bản đồ `/map-editor`, Truy xuất lô `/batch-trace`, Báo cáo tài chính `/financial-reports`, Nhập phiếu HIS `/his-import`, Cảnh báo `/alerts`, Người dùng `/users`.
+- Các màn hình chuyên biệt có route riêng: Tồn kho `/stock-balance`, Xếp hàng lên kệ `/putaway`, Bản đồ kho `/warehouse-map`, Thiết kế bản đồ `/map-editor`, Truy xuất lô `/batch-trace`, Báo cáo tài chính `/financial-reports`, Cảnh báo `/alerts`, Người dùng `/users`. Cổng khách hàng là trang riêng `/portal` (khách dùng, không phải nhân viên).
 - Quy ước: "Không có phận sự thì không thấy" — nếu thiếu quyền, menu ẩn / route chặn (trang **Không có quyền** /403) / nút biến mất.
 
-## 7 nhân vật (persona) — gọi tên đúng khi nói "Ai làm được"
-- **Quản trị Hệ thống** (System Manager / SupplyCore Executive) — toàn quyền.
-- **Trưởng phòng Vật tư** (SupplyCore Manager) — duyệt PO/Thanh toán/Hợp đồng.
-- **NV Mua sắm** (SupplyCore Manager, lens mua sắm) — tạo & theo dõi PO, quản lý NCC.
-- **Thủ kho** (SupplyCore Storekeeper / Warehouse Officer) — nhập–xuất–tồn, FEFO, kiểm kê.
-- **Điều dưỡng / NV Khoa** (SupplyCore Ward Staff) — yêu cầu vật tư cho khoa.
-- **Kế toán** (SupplyCore Accountant) — hóa đơn, đối chiếu 3 bên, thanh toán.
-- **Kiểm soát Chất lượng** (Pharmacy/QC Officer) — QC lô, quarantine, truy xuất, thu hồi.
+## Vai trò — gọi tên đúng khi nói "Ai làm được"
+- **Quản trị Hệ thống** (System Manager) — toàn quyền cấu hình.
+- **Trưởng phòng** (SupplyCore Manager) — duyệt PO/Thanh toán/Hợp đồng, duyệt hàng loạt HĐ khung, kết luận QC.
+- **Lãnh đạo** (SupplyCore Executive) — phê duyệt cấp cao giá trị lớn, duyệt phát hành thu hồi.
+- **NV Mua & Bán hàng** (SupplyCore Purchaser) — đơn mua, NCC; khách hàng, HĐ khung bán, đơn hàng.
+- **Thủ kho** (SupplyCore Storekeeper) — nhập–xuất–tồn, FEFO, soạn hàng giao khách, kiểm kê.
+- **NV Kho vận hành** (Warehouse Officer) — vị trí kệ, xếp hàng, hỗ trợ nhập/chuyển kho.
+- **Kế toán** (SupplyCore Accountant) — hóa đơn mua và bán, đối chiếu 3 bên, thanh toán, thu tiền.
+- **Kiểm định** (QC Officer) — kết luận QC lô, khóa lô/cách ly, truy xuất, thu hồi.
+- **Kiểm toán** (SupplyCore Auditor) — chỉ đọc toàn bộ dữ liệu.
+- **Khách hàng** (SC Customer Portal) — chỉ dùng Cổng khách hàng `/portal`, không vào giao diện nội bộ.
 
 ## Cấu trúc BẮT BUỘC của mỗi mục module (giống AssetCore) — dùng đúng số mục được giao (ví dụ 3.7)
-- `H2  3.x  <Tên module>` (ví dụ: `M7 · Cấp phát & BHYT`)
+- `H2  3.x  <Tên module>` (ví dụ: `M7 · Bán hàng & Bàn giao`)
 - `H3  3.x.1  Mục đích & khi nào dùng` → 1 đoạn FIRST mô tả module dùng để làm gì, khi nào dùng.
 - `H3  3.x.2  Ai làm được & cần chuẩn bị gì` → dòng "Vai trò: …" (BODY, in đậm "Vai trò:") và "Cần có trước: …".
 - `H3  3.x.3  Các bước thực hiện` → chia nhiều `H4 3.x.3.1 …` cho từng tác vụ con; mỗi tác vụ dùng danh sách **OL** (các bước đánh số) và **IMG** placeholder ở chỗ cần ảnh.

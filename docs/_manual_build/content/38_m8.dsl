@@ -2,7 +2,7 @@
 # DSL (mỗi block 1 dòng, phân tách bằng TAB). Sinh từ code thật M8 Accounting.
 H2	3.8	M8 · Kế toán
 H3	3.8.1	Mục đích & khi nào dùng
-FIRST	Module Kế toán (M8) là nơi xử lý phần tiền của chuỗi mua sắm: ghi nhận **Hóa đơn mua** (Purchase Invoice) do nhà cung cấp xuất, đối chiếu 3 bên giữa Đơn mua (PO) — Phiếu nhập (PR) — Hóa đơn (PI), lập **Phiếu thanh toán** (Payment Entry) chi tiền cho nhà cung cấp, và tự động sinh **Bút toán sổ cái** (GL Entry). Module cũng cung cấp màn hình **Báo cáo tài chính** với 4 báo cáo: giá trị tồn kho, công nợ nhà cung cấp, chi phí vật tư theo kỳ và quyết toán BHYT.
+FIRST	Module Kế toán (M8) là nơi xử lý phần tiền của chuỗi mua sắm: ghi nhận **Hóa đơn mua** (Purchase Invoice) do nhà cung cấp xuất, đối chiếu 3 bên giữa Đơn mua (PO) — Phiếu nhập (PR) — Hóa đơn (PI), lập **Phiếu thanh toán** (Payment Entry) chi tiền cho nhà cung cấp, và tự động sinh **Bút toán sổ cái** (GL Entry). Module cũng xử lý phần tiền của chuỗi bán hàng (hóa đơn bán, phiếu thu, công nợ phải thu — xem 3.7) và cung cấp màn hình **Báo cáo tài chính**: giá trị tồn kho, công nợ nhà cung cấp, công nợ phải thu và chi phí vật tư theo kỳ.
 BODY	Bạn dùng M8 khi: đã có hàng về kho (đã nộp Phiếu nhập ở M3) và nhận được hóa đơn giấy của nhà cung cấp; khi đến hạn trả tiền cho nhà cung cấp; hoặc khi cần xem số liệu công nợ, chi phí, giá trị tồn để báo cáo và quyết toán.
 H3	3.8.2	Ai làm được & cần chuẩn bị gì
 BODY	**Vai trò:** Kế toán (SupplyCore Accountant) tạo và nộp Hóa đơn mua, lập Phiếu thanh toán, xem báo cáo. Trưởng phòng Vật tư (SupplyCore Manager) duyệt hóa đơn/thanh toán dưới ngưỡng; Lãnh đạo (SupplyCore Executive) duyệt khi giá trị từ 50 triệu trở lên hoặc khi đối chiếu 3 bên lệch. Thủ kho và Kiểm toán chỉ được xem (read/report).
@@ -53,9 +53,8 @@ BODY	Mở màn hình **Báo cáo tài chính M8** tại đường dẫn **/finan
 OL	Thẻ **Tồn kho — giá trị**: lọc theo **Kho**, **Nhóm vật tư**, **Tại ngày**. Kết quả gồm thẻ tổng (Số dòng, Tổng SL, Giá trị tồn) và bảng chi tiết theo từng vật tư/kho/lô; bấm vào dòng để mở vật tư.
 OL	Thẻ **Công nợ NCC (Aging)**: lọc theo **Nhà cung cấp**, **Tại ngày**. Công nợ được chia nhóm tuổi nợ: Chưa đến hạn, 0–30, 31–60, 61–90, > 90 ngày. Bấm mã PI trong bảng để xem nhanh chi tiết chứng từ.
 OL	Thẻ **Chi phí vật tư kỳ**: bắt buộc nhập **Từ ngày** và **Đến ngày**; lọc thêm theo **Nhóm vật tư**, **Kho**. Kết quả là tổng chi phí trong kỳ và phân tích theo nhóm vật tư.
-OL	Thẻ **Quyết toán BHYT**: bắt buộc nhập **Từ ngày** và **Đến ngày**; lọc thêm **Khoa phòng**, **Nhóm BHYT (N01-N09)**. Kết quả gồm các thẻ tổng (Tổng chi phí, BHYT chi trả, BN tự trả, Vượt trần) và bảng theo nhóm BHYT × khoa.
 IMG	Màn hình Báo cáo tài chính với 4 thẻ và bộ lọc theo kỳ.
-NOTE	Nếu trong kỳ vẫn còn chứng từ ở trạng thái nháp (hóa đơn, thanh toán, cấp phát), báo cáo hiển thị dải vàng **Kỳ chưa khóa sổ** kèm số lượng chứng từ nháp còn lại — số liệu lúc này là tạm thời và có thể thay đổi.
+NOTE	Nếu trong kỳ vẫn còn chứng từ ở trạng thái nháp (hóa đơn, thanh toán, phiếu giao), báo cáo hiển thị dải vàng **Kỳ chưa khóa sổ** kèm số lượng chứng từ nháp còn lại — số liệu lúc này là tạm thời và có thể thay đổi.
 H3	3.8.4	Trạng thái & phê duyệt
 BODY	Hóa đơn mua (SC Purchase Invoice) đi qua các trạng thái sau:
 TABLE	Trạng thái|Ý nghĩa|Ai duyệt
@@ -73,7 +72,7 @@ UL	Hóa đơn mua: tạo bản ghi mã **SC-PI-YYYY-#####**, cập nhật **Còn
 UL	Khi nộp hóa đơn: sinh **Bút toán sổ cái** (SC GL Entry, mã **SC-GL-YYYY-########**) theo định khoản Nợ 152 (hàng tồn kho) + Nợ 1331 (thuế GTGT được khấu trừ, nếu có VAT) / Có 331 (phải trả nhà cung cấp).
 UL	Phiếu thanh toán: tạo bản ghi mã **SC-PE-YYYY-#####**, sinh bút toán Nợ 331 / Có 1121 (chuyển khoản) hoặc 1111 (tiền mặt), và cập nhật hóa đơn về **Partly Paid** hoặc **Paid**.
 UL	Bút toán sổ cái là **chỉ đọc**, sinh tự động từ hóa đơn/thanh toán; khi hủy chứng từ gốc, bút toán bị đánh dấu Cancelled (đảo sổ) chứ không xóa.
-UL	Các báo cáo ở /financial-reports tổng hợp số liệu từ Sổ kho (SLE), Hóa đơn, Thanh toán và Phiếu cấp phát BHYT; có cờ "Kỳ chưa khóa sổ" để cảnh báo số liệu tạm thời.
+UL	Các báo cáo ở /financial-reports tổng hợp số liệu từ Sổ kho (SLE), Hóa đơn mua và bán, Thanh toán và Phiếu thu; có cờ "Kỳ chưa khóa sổ" để cảnh báo số liệu tạm thời.
 H3	3.8.6	Lỗi thường gặp & mẹo
 UL	**SC-E-PI-DUPLICATE — Trùng số hóa đơn NCC:** một nhà cung cấp không được có 2 hóa đơn cùng **Số HĐ NCC**. Kiểm tra lại số hóa đơn giấy hoặc tìm hóa đơn đã nhập trước đó.
 UL	**SC-E007 PI_DUPLICATE — Đã có hóa đơn cho phiếu nhập này:** mỗi Phiếu nhập chỉ tạo được một hóa đơn; mở hóa đơn đã có thay vì tạo mới.
@@ -88,4 +87,4 @@ UL	**Mẹo —** dùng thẻ **Công nợ NCC (Aging)** đầu kỳ để biết
 H3	3.8.7	Liên quan
 UL	Xem 3.2 — Mua sắm (Đơn mua / PO làm cơ sở đối chiếu 3 bên).
 UL	Xem 3.3 — Tiếp nhận & Kiểm tra chất lượng (Phiếu nhập / PR là nguồn tạo hóa đơn).
-UL	Xem 3.7 — Cấp phát & BHYT (số liệu cho báo cáo Quyết toán BHYT).
+UL	Xem 3.7 — Bán hàng & Bàn giao (hóa đơn bán, phiếu thu và công nợ phải thu).

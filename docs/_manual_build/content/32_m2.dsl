@@ -1,6 +1,6 @@
 H2	3.2	M2 · Kế hoạch & Mua sắm
 H3	3.2.1	Mục đích & khi nào dùng
-FIRST	Module M2 (thẻ **Kế hoạch & Mua** trên màn hình chính) giúp bạn chủ động quản lý việc bổ sung vật tư: đặt sẵn ngưỡng tồn kho cho từng vật tư, lập kế hoạch mua sắm định kỳ dựa trên lịch sử tiêu thụ, tạo Yêu cầu mua khi khoa phòng hoặc kho cần hàng, và lập Đơn mua hàng gửi nhà cung cấp. Bạn vào đây khi cần: cấu hình mức tái đặt hàng / tồn an toàn, dự trù mua hàng cho tháng/quý/năm, đề nghị mua một danh mục vật tư, hoặc chuyển một đề nghị đã duyệt thành đơn đặt hàng chính thức.
+FIRST	Module M2 (thẻ **Kế hoạch & Mua** trên màn hình chính) giúp bạn chủ động quản lý việc bổ sung vật tư: đặt sẵn ngưỡng tồn kho cho từng vật tư, lập kế hoạch mua sắm định kỳ dựa trên lịch sử tiêu thụ, tạo Yêu cầu mua khi kho cần bổ sung hàng, và lập Đơn mua hàng gửi nhà cung cấp. Bạn vào đây khi cần: cấu hình mức tái đặt hàng / tồn an toàn, dự trù mua hàng cho tháng/quý/năm, đề nghị mua một danh mục vật tư, hoặc chuyển một đề nghị đã duyệt thành đơn đặt hàng chính thức.
 BODY	Bốn nghiệp vụ trong M2 nối tiếp nhau thành một chuỗi: **Ngưỡng tái đặt hàng → Kế hoạch mua sắm → Yêu cầu mua (MR) → Đơn mua hàng (PO)**. Mỗi bước có thể đứng riêng, nhưng khi đi liền mạch, hệ thống tự gợi ý số lượng và đơn giá nên bạn ít phải nhập tay.
 H3	3.2.2	Ai làm được & cần chuẩn bị gì
 BODY	**Vai trò:** NV Mua sắm và Thủ kho tạo Kế hoạch mua sắm, Yêu cầu mua, Đơn mua hàng. Trưởng phòng Vật tư phê duyệt Yêu cầu mua và Đơn mua hàng. Với đơn giá trị lớn (từ ngưỡng phê duyệt trở lên), Lãnh đạo / Quản trị Hệ thống duyệt cấp hai. Kế toán xem được nhưng không sửa Kế hoạch / Yêu cầu mua.
@@ -28,7 +28,7 @@ NOTE	Nếu kho chưa có dữ liệu tiêu thụ trong khoảng tháng đã ch�
 H4	3.2.3.3	Tạo Yêu cầu mua (Material Request) & phê duyệt
 OL	Mở **M2**, bấm thẻ **Yêu cầu mua** (SC Material Request) rồi **Tạo mới**. Hoặc để hệ thống tự sinh phiếu từ Kế hoạch mua sắm / từ cảnh báo tồn dưới mức tái đặt.
 OL	Chọn **Loại yêu cầu**: **Purchase** (mua hàng), **Internal Transfer** (điều chuyển nội bộ) hoặc **Urgent** (đột xuất). Nhập **Ngày yêu cầu** và **Ngày cần**.
-OL	Chọn **Khoa phòng yêu cầu**, **Kho đích** và **Người yêu cầu** khi cần.
+OL	Chọn **Phòng ban yêu cầu**, **Kho đích** và **Người yêu cầu** khi cần.
 OL	Thêm dòng vật tư: chọn vật tư, nhập **SL** và **UOM**. Nếu mua theo Hợp đồng khung, chọn **HĐ khung** trên dòng — hệ thống tự lấy đơn giá hợp đồng làm **Đơn giá ước tính**.
 OL	Nhập **Lý do đề nghị** nếu cần, kiểm tra **Tổng ước tính**, rồi **Lưu** và **Nộp**. Khi nộp, phiếu chuyển sang trạng thái **Pending** (Chờ duyệt) và hệ thống gửi email báo Trưởng phòng Vật tư.
 OL	Trưởng phòng Vật tư mở phiếu, bấm **Duyệt** (chuyển sang Approved) hoặc **Từ chối** (phải nhập lý do, chuyển sang Rejected).
@@ -60,7 +60,7 @@ ROW	Generated (Đã sinh MR)|Đã tạo Yêu cầu mua từ kế hoạch|—
 ROW	Cancelled (Đã hủy)|Kế hoạch bị hủy|—
 BODY	**Yêu cầu mua (SC Material Request):**
 TABLE	Trạng thái|Ý nghĩa|Ai duyệt
-ROW	Draft (Nháp)|Đang soạn|NV Mua sắm / Thủ kho / NV Khoa
+ROW	Draft (Nháp)|Đang soạn|NV Mua & Bán hàng / Thủ kho
 ROW	Pending (Chờ duyệt)|Đã nộp, chờ phê duyệt|—
 ROW	Approved (Đã duyệt)|Được duyệt, cho phép tạo PO|Trưởng phòng Vật tư
 ROW	Rejected (Từ chối)|Bị từ chối kèm lý do|Trưởng phòng Vật tư
@@ -77,7 +77,7 @@ ROW	Partially Received / Received|Đã nhận một phần / nhận đủ|Tự c
 ROW	Closed / Cancelled|Đã đóng / đã hủy|—
 H3	3.2.5	Kết quả & truy vết
 UL	Kế hoạch mua sắm tạo bản ghi mã **SC-PP-YYYY-#####**, lưu tổng chi phí ước tính và link tới Yêu cầu mua đã sinh.
-UL	Yêu cầu mua tạo bản ghi mã **SC-MR-YYYY-#####**, ghi người yêu cầu, khoa phòng, lý do, và link ngược về Procurement Plan nếu sinh tự động.
+UL	Yêu cầu mua tạo bản ghi mã **SC-MR-YYYY-#####**, ghi người yêu cầu, phòng ban, lý do, và link ngược về Procurement Plan nếu sinh tự động.
 UL	Đơn mua hàng tạo bản ghi mã **SC-PO-YYYY-#####**, lưu người duyệt từng cấp, thời điểm gửi NCC và cờ lệch giá so với hợp đồng khung.
 UL	PO có liên kết Hợp đồng khung sẽ cập nhật giá trị đã dùng / còn lại của hợp đồng; Release Order liên quan chuyển sang Converted.
 UL	Mọi thay đổi đều được ghi nhật ký (track changes) phục vụ kiểm toán; email gửi NCC, nhắc nhở và thông báo duyệt đều lưu vết.
