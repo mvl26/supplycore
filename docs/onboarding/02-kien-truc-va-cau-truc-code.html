@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Kiến trúc &amp; Cấu trúc code — SupplyCore MVL</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px;
+    line-height: 1.65; color: #222; background: #fff;
+  }
+
+  /* ===== Thanh điều hướng dính (sticky) — DÙNG CHUNG mọi trang ===== */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: #14243A; border-bottom: 3px solid #1F4E79;
+    padding: 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  }
+  nav.topnav a {
+    color: #E8EEF6; text-decoration: none; font-size: 13px; font-weight: bold;
+    padding: 11px 13px; display: block; border-bottom: 3px solid transparent;
+  }
+  nav.topnav a:hover { background: #1F4E79; color: #fff; }
+  nav.topnav a.active { background: #2E75B6; color: #fff; border-bottom-color: #9CC3E8; }
+
+  header.pagehead {
+    background: #1F4E79; color: #fff; padding: 34px 28px 26px;
+  }
+  header.pagehead h1 { margin: 0 0 8px; font-size: 27px; }
+  header.pagehead p { margin: 0; font-size: 15px; color: #D6E4F2; max-width: 90ch; }
+  header.pagehead .kicker {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: #9CC3E8; margin-bottom: 10px; font-weight: bold;
+  }
+
+  main { padding: 0 28px 60px; max-width: 1180px; }
+
+  h2 {
+    font-size: 21px; color: #1F4E79; margin: 38px 0 12px; padding-bottom: 7px;
+    border-bottom: 2px solid #1F4E79;
+  }
+  h3 { font-size: 17px; color: #173A5C; margin: 26px 0 8px; }
+  h4 { font-size: 15px; color: #2E75B6; margin: 20px 0 6px; }
+  p  { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  table {
+    border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14px;
+  }
+  th, td { border: 1px solid #C8D2DE; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #1F4E79; color: #fff; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #F2F5F9; }
+
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: 13px;
+    background: #EEF2F7; padding: 1px 5px; border-radius: 3px; color: #123A6B;
+  }
+  pre {
+    background: #14243A; color: #E8EEF6; padding: 13px 15px; border-radius: 5px;
+    overflow-x: auto; font-family: Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 1.55; margin: 12px 0;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+
+  .box { border-left: 5px solid #2E75B6; background: #EAF2FB; padding: 11px 16px; margin: 15px 0; }
+  .box.warn { border-left-color: #B8860B; background: #FBF3E0; }
+  .box.crit { border-left-color: #B03030; background: #FBEAEA; }
+  .box.ok   { border-left-color: #1B7A4E; background: #E6F3EC; }
+  .box b.lbl { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+
+  .ascii {
+    background: #14243A; color: #C6E0FF; padding: 16px; border-radius: 5px;
+    font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+    line-height: 1.45; overflow-x: auto; white-space: pre; margin: 14px 0;
+  }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px;
+    border-radius: 3px; background: #E3E9F0; color: #123A6B; border: 1px solid #C8D2DE;
+  }
+  .tag.no  { background: #FBEAEA; color: #8B2020; border-color: #E0BABA; }
+  .tag.yes { background: #E6F3EC; color: #15603E; border-color: #B3D9C4; }
+
+  footer.pagefoot {
+    background: #14243A; color: #A9BBD0; padding: 20px 28px; font-size: 13px;
+    border-top: 3px solid #1F4E79;
+  }
+  footer.pagefoot b { color: #E8EEF6; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html">Trang chủ</a>
+  <a href="01-moi-truong-va-cong-cu.html">01 · Môi trường &amp; Công cụ</a>
+  <a href="02-kien-truc-va-cau-truc-code.html" class="active">02 · Kiến trúc &amp; Cấu trúc code</a>
+  <a href="03-tai-lieu-nghiep-vu-BA.html">03 · Nghiệp vụ (BA)</a>
+  <a href="04-quy-trinh-lap-trinh-voi-claude-code.html">04 · Lập trình với Claude Code</a>
+  <a href="05-lo-trinh-hoc-va-bat-chuoc.html">05 · Lộ trình học</a>
+</nav>
+
+<header class="pagehead">
+  <div class="kicker">Tài liệu nhập môn · Tập 02</div>
+  <h1>Kiến trúc &amp; Cấu trúc code</h1>
+  <p>Mã nguồn được tổ chức thế nào, một chứng từ đi qua những lớp nào từ lúc bạn bấm nút đến lúc dữ liệu nằm trong sổ, và vì sao lại thiết kế như vậy. Mọi đường dẫn và đoạn code đều trích từ repo thật.</p>
+</header>
+
+<main>
+
+<div class="box">
+  <b class="lbl">Đọc trang này thế nào</b>
+  Bạn nên đọc xong <b>Tập 01</b> và cài chạy được hệ thống trước. Trang này trả lời câu hỏi <i>"code nằm ở đâu, và khi tôi bấm nút thì chuyện gì xảy ra?"</i>.
+  Đừng cố nhớ hết — hãy dùng nó như <b>bản đồ để tra khi cần</b>.
+</div>
+
+<!-- ══════════════════════════════ 1 ══════════════════════════════ -->
+<h2>1. Ý tưởng kiến trúc lớn nhất: tự xây, không mượn</h2>
+
+<p>Trước khi xem thư mục, cần hiểu <b>một quyết định</b> chi phối toàn bộ phần còn lại.</p>
+
+<p>Frappe có sẵn ERPNext với đủ Item, Warehouse, Purchase Order… Nhưng SupplyCore <b>không dùng chúng</b>. Nhóm tự xây lại mọi loại dữ liệu nghiệp vụ với tiền tố <code>SC&nbsp;</code>. Điều này ghi rõ ngay dòng đầu <code>supplycore/hooks.py</code>:</p>
+
+<pre><code>app_name = "supplycore"
+app_description = "Medical supply distribution management — Frappe-only custom app (no ERPNext dependency)"
+required_apps = ["frappe/frappe"]  # ERPNext không còn bắt buộc kể từ v0.2</code></pre>
+
+<table>
+  <thead><tr><th>Được gì</th><th>Mất gì</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Kiểm soát <b>hoàn toàn</b> logic nghiệp vụ — muốn chặn gì, tính gì, tùy nhóm quyết.</td>
+      <td>Không tra được tài liệu ERPNext để hiểu code này. <b>Tài liệu của nhóm là nguồn duy nhất.</b></td>
+    </tr>
+    <tr>
+      <td>Không bị ERPNext nâng cấp làm vỡ.</td>
+      <td>Phải tự viết và tự bảo trì mọi thứ, kể cả những phần ERPNext đã làm sẵn.</td>
+    </tr>
+    <tr>
+      <td>Chỉ giữ đúng thứ cần — nhẹ và dễ hiểu hơn.</td>
+      <td>Người quen ERPNext sẽ thấy lạ vì tên và hành vi khác.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Một mâu thuẫn chưa gỡ</b>
+  <code>hooks.py</code> nói không cần ERPNext, nhưng <code>pyproject.toml</code> vẫn khai <code>erpnext = "&gt;=15.0.0"</code>, và bench vẫn có app <code>erpnext</code> (đang ở nhánh <code>develop</code>).
+  Xem Tập 01 mục 2.3 — đây là câu cần hỏi nhóm.
+</div>
+
+<!-- ══════════════════════════════ 2 ══════════════════════════════ -->
+<h2>2. Bản đồ thư mục</h2>
+
+<h3>2.1 Nhìn từ trên xuống</h3>
+
+<div class="ascii">
+apps/supplycore/
+├── supplycore/              ← MÃ NGUỒN PYTHON (backend)
+│   ├── hooks.py             ← "bảng điều khiển" — nối app vào Frappe
+│   ├── patches.txt          ← danh sách 35 bản vá dữ liệu chạy khi migrate
+│   ├── install.py           ← chạy khi cài app (tạo 10 vai trò)
+│   ├── boot.py              ← nạp dữ liệu vào phiên đăng nhập
+│   │
+│   ├── supplycore/doctype/  ← M0 · dữ liệu nền + sổ kho + mua hàng (26 DocType)
+│   ├── m1_contract/         ← M1 · hợp đồng khung NCC
+│   ├── m2_planning/         ← M2 · kế hoạch &amp; mua
+│   ├── m3_receiving/        ← M3 · tiếp nhận &amp; kiểm định
+│   ├── m4_wms/              ← M4 · vị trí kệ, xếp hàng
+│   ├── m5_fefo/             ← M5 · lô &amp; hạn dùng (FEFO)
+│   ├── m6_transfer/         ← M6 · chuyển kho
+│   ├── m7_sales/            ← M7 · bán hàng (11 DocType)
+│   ├── m8_accounting/       ← M8 · kế toán
+│   ├── m9_stocktake/        ← M9 · kiểm kê
+│   ├── m10_traceability/    ← M10 · truy xuất &amp; thu hồi
+│   ├── m11_dashboard/       ← M11 · chỉ số &amp; cảnh báo
+│   │
+│   ├── api/                 ← 17 file, 103 hàm mở cho giao diện gọi
+│   ├── utils/               ← 10 file tiện ích dùng chung
+│   ├── www/                 ← trang web ngoài SPA: /portal, /pda
+│   ├── patches/             ← mã các bản vá, chia theo v0_1 … v0_12
+│   ├── setup/               ← 9 script nạp dữ liệu mẫu
+│   ├── fixtures/            ← vai trò &amp; quyền, xuất/nhập tự động
+│   ├── tests/               ← 68 file kiểm thử
+│   └── overrides/           ← DI SẢN, xem mục 8
+│
+├── frontend/                ← MÃ NGUỒN VUE (giao diện nội bộ)
+├── deploy/ · docker/        ← triển khai (xem Tập 01)
+├── guest/ · installer/      ← đóng gói bản .exe (xem Tập 01)
+└── docs/                    ← tài liệu, gồm cả trang bạn đang đọc
+</div>
+
+<h3>2.2 Vì sao chia theo M1–M11 mà không chia theo loại file?</h3>
+
+<p>Nhiều dự án chia <code>models/</code>, <code>views/</code>, <code>controllers/</code>. SupplyCore chia theo <b>phân hệ nghiệp vụ</b>. Lợi ích cho người mới: muốn sửa việc bán hàng thì vào <code>m7_sales/</code>, mọi thứ liên quan nằm cùng chỗ — không phải nhảy qua 4 thư mục.</p>
+
+<p>Danh sách phân hệ nằm ở <code>supplycore/modules.txt</code>:</p>
+<pre><code>Supplycore
+M1 Contract
+M2 Planning
+...
+M11 Dashboard</code></pre>
+
+<div class="box warn">
+  <b class="lbl">Không có thư mục <code>m12_portal/</code></b>
+  Cổng khách hàng (M12) <b>không phải một phân hệ riêng</b>. Nó được ghép từ ba mảnh nằm rải rác:
+  <code>www/portal/</code> (giao diện) + <code>api/portal.py</code> (16 hàm) + vai trò <code>SC Customer Portal</code> + tầng cô lập trong <code>utils/permissions.py</code>.
+  Đây là điểm dễ nhầm khi đi tìm code.
+</div>
+
+<h3>2.3 Bên trong một phân hệ</h3>
+<pre><code>supplycore/m7_sales/
+├── __init__.py
+├── doctype/                       ← các loại dữ liệu của phân hệ
+│   ├── sc_sales_order/
+│   │   ├── __init__.py
+│   │   ├── sc_sales_order.json    ← ĐỊNH NGHĨA: trường, quyền, cách đánh mã
+│   │   └── sc_sales_order.py      ← LOGIC: kiểm tra, tính toán, ghi sổ
+│   ├── so_item/                   ← bảng con (dòng hàng của đơn)
+│   └── … 10 doctype khác
+└── README.md                      ← ghi chú kỹ thuật của phân hệ</code></pre>
+
+<!-- ══════════════════════════════ 3 ══════════════════════════════ -->
+<h2>3. DocType — khái niệm quan trọng nhất phải hiểu</h2>
+
+<h3>3.1 DocType là gì</h3>
+
+<p>Trong Frappe, <b>DocType</b> vừa là <b>bảng trong cơ sở dữ liệu</b>, vừa là <b>màn hình nhập liệu</b>, vừa là <b>nơi gắn logic</b>. Khai báo một lần, được cả ba.</p>
+
+<p>Ví dụ đời thường: <code>SC Sales Order</code> (Đơn hàng bán) tạo ra bảng <code>tabSC Sales Order</code> trong MariaDB, sinh màn hình nhập đơn, và chạy các quy tắc kiểm tra khi lưu.</p>
+
+<table>
+  <thead><tr><th>File</th><th>Chứa gì</th><th>Ai sửa</th></tr></thead>
+  <tbody>
+    <tr><td><code>sc_sales_order.json</code></td><td>Danh sách trường, kiểu dữ liệu, quyền theo vai trò, cách đánh mã</td><td>Sửa bằng tay, hoặc qua giao diện Desk rồi export</td></tr>
+    <tr><td><code>sc_sales_order.py</code></td><td>Logic: kiểm tra hợp lệ, tính tổng, ghi sổ kho/sổ cái</td><td>Sửa bằng tay</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 Bảng cha &mdash; bảng con</h3>
+<p>Một đơn hàng có nhiều dòng hàng. Frappe gọi bảng con là <b>child table</b>, đánh dấu bằng <code>"istable": 1</code> trong JSON.</p>
+<table>
+  <thead><tr><th>Cha</th><th>Con</th><th>Nghĩa</th></tr></thead>
+  <tbody>
+    <tr><td><code>SC Sales Order</code></td><td><code>SO Item</code></td><td>Đơn hàng &rarr; các dòng vật tư</td></tr>
+    <tr><td><code>SC Delivery Note</code></td><td><code>DN Item</code></td><td>Phiếu giao &rarr; các dòng hàng giao</td></tr>
+    <tr><td><code>SC Item</code></td><td><code>SC Item UOM Conversion</code></td><td>Vật tư &rarr; bảng quy đổi đơn vị</td></tr>
+    <tr><td><code>Framework Contract</code></td><td><code>FC Item</code></td><td>Hợp đồng &rarr; danh mục vật tư</td></tr>
+  </tbody>
+</table>
+<p><b>Tổng cộng:</b> 40 DocType chính + 25 bảng con = 65.</p>
+
+<div class="box crit">
+  <b class="lbl">Bảng con là điểm yếu bảo mật — nhớ kỹ</b>
+  Frappe kiểm tra quyền theo <b>doctype của truy vấn</b>, <b>không</b> tự kế thừa từ bảng cha. Nghĩa là ai đó có thể truy vấn thẳng <code>SO Item</code> và đọc dòng hàng của khách khác dù không đọc được <code>SC Sales Order</code>.
+  Dự án phải đăng ký lọc quyền <b>riêng cho 4 bảng con</b> — xem mục 7.
+</div>
+
+<h3>3.3 Cách đánh mã chứng từ (naming series)</h3>
+<p>Mỗi chứng từ có mã tự sinh, khai ở trường <code>autoname</code> trong JSON. Đây là danh sách thật:</p>
+
+<table>
+  <thead><tr><th>DocType</th><th>Mẫu mã</th><th>Ví dụ</th></tr></thead>
+  <tbody>
+    <tr><td>Framework Contract</td><td><code>format:SC-FC-{YYYY}-{#####}</code></td><td><code>SC-FC-2026-00042</code></td></tr>
+    <tr><td>Release Order</td><td><code>format:SC-RO-{YYYY}-{#####}</code></td><td><code>SC-RO-2026-00007</code></td></tr>
+    <tr><td>Procurement Plan</td><td><code>format:SC-PP-{YYYY}-{#####}</code></td><td><code>SC-PP-2026-00003</code></td></tr>
+    <tr><td>SC Purchase Receipt</td><td><code>format:SC-PR-{YYYY}-{#####}</code></td><td><code>SC-PR-2026-00120</code></td></tr>
+    <tr><td>SC Quality Inspection</td><td><code>format:SC-QI-{YYYY}-{#####}</code></td><td><code>SC-QI-2026-00118</code></td></tr>
+    <tr><td>SC Transfer Request</td><td><code>format:SC-TR-{YYYY}-{#####}</code></td><td><code>SC-TR-2026-00031</code></td></tr>
+    <tr><td>SC Customer</td><td><code>format:SC-CUS-{#####}</code></td><td><code>SC-CUS-00015</code></td></tr>
+    <tr><td>SC Sales Framework Contract</td><td><code>format:SC-SFC-{YYYY}-{#####}</code></td><td><code>SC-SFC-2026-00009</code></td></tr>
+    <tr><td>SC Sales Order</td><td><code>format:SC-SO-{YYYY}-{#####}</code></td><td><code>SC-SO-2026-00204</code></td></tr>
+    <tr><td>SC Delivery Note</td><td><code>format:SC-DN-{YYYY}-{#####}</code></td><td><code>SC-DN-2026-00198</code></td></tr>
+    <tr><td>SC Acceptance Record</td><td><code>format:SC-ACC-{YYYY}-{#####}</code></td><td><code>SC-ACC-2026-00190</code></td></tr>
+    <tr><td>SC Sales Invoice</td><td><code>format:SC-SI-{YYYY}-{#####}</code></td><td><code>SC-SI-2026-00187</code></td></tr>
+    <tr><td>SC Sales Receipt</td><td><code>format:SC-RCPT-{YYYY}-{#####}</code></td><td><code>SC-RCPT-2026-00150</code></td></tr>
+    <tr><td>SC GL Entry</td><td><code>format:SC-GL-{YYYY}-{########}</code></td><td><code>SC-GL-2026-00004521</code></td></tr>
+    <tr><td>Batch Expiry Alert</td><td><code>format:SC-EXP-{YYYY}-{#####}</code></td><td><code>SC-EXP-2026-00044</code></td></tr>
+  </tbody>
+</table>
+
+<p>Một số master không dùng số chạy mà lấy thẳng tên làm mã — <code>field:&lt;tên trường&gt;</code>:</p>
+<pre><code>sc_warehouse   : field:warehouse_name     → tên kho CHÍNH LÀ mã
+sc_department  : field:department_name
+sc_gl_account  : field:account_code
+sc_batch       : field:batch_id</code></pre>
+
+<div class="box warn">
+  <b class="lbl">Hệ quả cần biết</b>
+  Với các master dùng <code>field:</code>, <b>đổi tên là đổi mã</b> — mọi chứng từ đang trỏ tới sẽ phải đổi theo (Frappe có cơ chế rename nhưng vẫn là thao tác nặng). Hãy đặt tên kho/phòng ban cho chuẩn ngay từ đầu.
+</div>
+
+<!-- ══════════════════════════════ 4 ══════════════════════════════ -->
+<h2>4. Vòng đời một chứng từ — chuyện gì xảy ra khi bạn bấm nút</h2>
+
+<h3>4.1 Ba trạng thái của mọi chứng từ</h3>
+<table>
+  <thead><tr><th><code>docstatus</code></th><th>Tên</th><th>Ý nghĩa</th></tr></thead>
+  <tbody>
+    <tr><td><b>0</b></td><td>Nháp</td><td>Đang soạn. Sửa thoải mái, xóa được. <b>Chưa động tới sổ kho hay sổ cái.</b></td></tr>
+    <tr><td><b>1</b></td><td>Đã nộp (submit)</td><td>Chốt. Hầu hết trường khóa lại. <b>Sổ kho/sổ cái đã được ghi.</b></td></tr>
+    <tr><td><b>2</b></td><td>Đã hủy</td><td>Vô hiệu. Sổ được ghi <b>dòng đối ứng</b>, không xóa dòng cũ.</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 Các "móc" (hook) chạy theo thứ tự</h3>
+<p>Frappe gọi các hàm có tên cố định trong file <code>.py</code> của DocType. Đây là ví dụ thật, đầy đủ, từ <code>sc_delivery_note.py</code>:</p>
+
+<pre><code>class SCDeliveryNote(Document):
+
+    def validate(self):        # mỗi lần LƯU (cả nháp)
+    def before_submit(self):   # ngay TRƯỚC khi nộp — nơi chặn cuối cùng
+    def on_submit(self):       # SAU khi nộp — ghi sổ kho, đổi trạng thái đơn
+    def before_cancel(self):   # trước khi hủy — bắt buộc nhập lý do
+    def on_cancel(self):       # sau khi hủy — hoàn tồn kho
+    def on_trash(self):        # khi XÓA phiếu nháp — trả đơn về "Đã duyệt"</code></pre>
+
+<div class="ascii">
+NGƯỜI DÙNG BẤM "LƯU"
+      │
+      ▼
+   validate()          ← kiểm tra dữ liệu, tính tổng, tự điền giá theo hợp đồng
+      │                  nếu sai → frappe.throw(...) → DỪNG, hiện lỗi đỏ
+      ▼
+   ghi vào bảng (docstatus vẫn = 0)
+
+NGƯỜI DÙNG BẤM "NỘP"
+      │
+      ▼
+   validate()          ← chạy LẠI lần nữa
+      ▼
+   before_submit()     ← chốt chặn cuối: "còn dòng chưa quét?" → chặn
+      ▼
+   docstatus = 1
+      ▼
+   on_submit()         ← GHI SỔ KHO (trừ tồn theo lô)
+                       ← đổi trạng thái Đơn hàng sang "Đã bàn giao"
+
+NGƯỜI DÙNG BẤM "HỦY"
+      │
+      ▼
+   before_cancel()     ← bắt buộc có lý do hủy, không có thì chặn
+      ▼
+   docstatus = 2
+      ▼
+   on_cancel()         ← ghi DÒNG ĐỐI ỨNG vào sổ kho (hoàn tồn)
+</div>
+
+<h3>4.3 Ví dụ thật: chốt chặn trước khi nộp</h3>
+<p>Trích <code>supplycore/m7_sales/doctype/sc_delivery_note/sc_delivery_note.py</code>:</p>
+<pre><code>def _check_scan_confirmed(self):
+    if not self.picking_required:
+        return   # phiếu tạo tự động (không qua soạn hàng) — giữ hành vi cũ
+    chua = [r for r in self.items if not r.scan_confirmed]
+    if chua:
+        ten = ", ".join(sorted({(r.item or "?") for r in chua}))
+        frappe.throw(_(
+            "SC-E-DN-NOT-SCANNED: Còn {0} dòng chưa quét xác nhận ({1}). "
+            "Phải quét đủ lô &amp; số lượng mới được submit."
+        ).format(len(chua), ten), title="Chưa quét xác nhận")</code></pre>
+
+<p><b>Ba điều đáng học từ đoạn này:</b></p>
+<ol>
+  <li><b>Mã lỗi có tiền tố</b> (<code>SC-E-DN-NOT-SCANNED</code>) — tra được, viết test được, người dùng báo lỗi thì biết ngay chỗ nào.</li>
+  <li><b>Thông báo nói rõ phải làm gì</b> — nêu còn bao nhiêu dòng, vật tư nào; không phải "Lỗi!" chung chung.</li>
+  <li><b>Có đường thoát cho luồng cũ</b> — <code>if not self.picking_required: return</code> giữ cho seed/test chạy được.</li>
+</ol>
+
+<h3>4.4 Guard xóa — áp cho toàn bộ 21 chứng từ</h3>
+<p>Thay vì viết <code>on_trash</code> ở 21 chỗ, <code>hooks.py</code> gắn một lần bằng vòng lặp:</p>
+<pre><code>_SUBMITTABLE_DOCTYPES = [
+    "Framework Contract", "Release Order", "Procurement Plan",
+    "SC Material Request", "SC Purchase Order", "SC Purchase Receipt",
+    ... 21 doctype ...
+]
+for _dt in _SUBMITTABLE_DOCTYPES:
+    doc_events.setdefault(_dt, {})["before_delete"] = \
+        "supplycore.utils.validators.block_non_draft_delete"</code></pre>
+<p>Nguyên tắc tách bạch, ghi ngay trong chú thích: <i>"Ai được xóa" do JSON delete-perm quyết định; "xóa cái gì" do guard này quyết định.</i></p>
+
+<!-- ══════════════════════════════ 5 ══════════════════════════════ -->
+<h2>5. Hai cuốn sổ — xương sống của toàn hệ thống</h2>
+
+<div class="box">
+  <b class="lbl">Nếu chỉ nhớ một điều từ tập này</b>
+  Hệ thống <b>không lưu "số tồn kho"</b> ở đâu cả. Tồn kho luôn được <b>tính lại</b> bằng cách cộng dồn mọi dòng phát sinh. Tương tự với công nợ.
+</div>
+
+<h3>5.1 Sổ kho — <code>SC Stock Ledger Entry</code> (SLE)</h3>
+
+<p>Mỗi lần hàng vào hay ra, hệ thống ghi <b>một dòng mới</b>. Không sửa, không xóa. Muốn biết tồn thì cộng lại.</p>
+
+<pre><code>-- Tồn kho = TỔNG các dòng phát sinh
+SELECT item, warehouse, SUM(qty_change) AS ton
+FROM `tabSC Stock Ledger Entry`
+WHERE is_cancelled = 0
+GROUP BY item, warehouse;</code></pre>
+
+<p><b>Sổ được bảo vệ ở tầng code</b> — trích <code>sc_stock_ledger_entry.py</code>:</p>
+<pre><code>class SCStockLedgerEntry(Document):
+
+    def on_change(self):
+        """Block sửa SLE — chỉ admin được phép qua flag.allow_sle_edit."""
+        if not self.flags.allow_sle_edit and not self.is_new():
+            frappe.throw(_("SC Stock Ledger Entry là immutable — không được sửa trực tiếp"))</code></pre>
+
+<h4>Hai hàm tính tồn — dùng nhầm là sai nghiệp vụ</h4>
+<table>
+  <thead><tr><th>Hàm</th><th>Trả về</th><th>Dùng khi</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>get_qty()</code></td>
+      <td>Tồn <b>tổng</b> — tính cả lô đang chờ QC</td>
+      <td>Kiểm kê, kế toán — vì hàng vẫn nằm trong kho dù chưa được phép bán</td>
+    </tr>
+    <tr>
+      <td><code>get_available_qty()</code></td>
+      <td>Tồn <b>khả dụng</b> — loại lô QC Pending/Rejected và lô bị khóa</td>
+      <td><b>Mọi nghiệp vụ xuất kho</b> — bán, giao, chuyển kho</td>
+    </tr>
+  </tbody>
+</table>
+<p>Chú thích trong code giải thích rõ ý đồ:</p>
+<pre><code>"""BUG-002: tồn kho KHẢ DỤNG — loại trừ batch QC Pending/Rejected.
+Dùng cho mọi nghiệp vụ xuất kho (Material Issue/Transfer).
+Lô chưa qua QC (Pending) hoặc fail QC (Rejected) KHÔNG được xuất kho.
+`warehouse=None` → tổng tồn khả dụng của item trên TẤT CẢ kho (dùng cho
+chốt chặn sớm lúc khách gọi hàng — BRU-INV-002, chưa biết kho xuất)."""</code></pre>
+
+<h4>Ghi sổ bằng <code>SLE.post()</code></h4>
+<p>Không ai tạo dòng sổ bằng tay. Mọi controller gọi cùng một hàm tĩnh:</p>
+<pre><code>previous = frappe.db.sql("""
+    SELECT COALESCE(SUM(qty_change), 0)
+    FROM `tabSC Stock Ledger Entry`
+    WHERE item = %s AND warehouse = %s
+      AND COALESCE(batch, '') = COALESCE(%s, '')
+      AND is_cancelled = 0
+""", (item, warehouse, batch))[0][0]
+new_balance = flt(previous) + flt(qty_change)
+...
+sle.flags.allow_sle_edit = True
+sle.insert(ignore_permissions=True)
+if bin_location:
+    _refresh_bin_status(bin_location)   # cập nhật sức chứa của ô kệ</code></pre>
+
+<div class="box crit">
+  <b class="lbl">Hủy phiếu: chèn dòng đối ứng, KHÔNG đánh dấu dòng cũ</b>
+  Cả dòng gốc và dòng đối ứng đều giữ <code>is_cancelled = 0</code> để chúng <b>tự triệt tiêu</b> khi cộng lại.
+  Nếu vừa đánh dấu hủy dòng cũ vừa chèn dòng đối ứng thì tồn bị trừ <b>hai lần</b> — lỗi này đã từng xảy ra thật và được sửa ở commit <code>1fddee5</code>, có test hồi quy che (<code>sle_cancel_reversal_test.py</code>).
+</div>
+
+<h3>5.2 Sổ cái — <code>SC GL Entry</code></h3>
+<p>Nguyên tắc y hệt, nhưng cho tiền. Các hàm chính:</p>
+<table>
+  <thead><tr><th>Hàm</th><th>Làm gì</th></tr></thead>
+  <tbody>
+    <tr><td><code>post()</code></td><td>Ghi một vế nợ hoặc có</td></tr>
+    <tr><td><code>post_journal()</code></td><td>Ghi trọn một bút toán nhiều vế (đảm bảo cân)</td></tr>
+    <tr><td><code>cancel_voucher()</code></td><td>Đảo bút toán khi hủy chứng từ</td></tr>
+    <tr><td><code>get_balance()</code></td><td>Tính số dư tài khoản (cộng dồn, không cache)</td></tr>
+  </tbody>
+</table>
+
+<p><b>Điểm tinh tế:</b> khi hủy, bút toán đảo được ghi vào <b>đúng ngày của chứng từ gốc</b>, không phải ngày hôm nay. Đó là lý do quy tắc khóa sổ (<code>BRU-PAY-001</code>) phải kiểm cả ở <code>before_cancel</code>, không chỉ ở <code>before_submit</code> — nếu không, hủy một chứng từ cũ sẽ ghi vào kỳ đã chốt.</p>
+
+<h3>5.3 Sơ đồ: mọi thứ đổ về hai cuốn sổ</h3>
+<div class="ascii">
+  CHỨNG TỪ KHO                          CHỨNG TỪ TIỀN
+  ─────────────                         ─────────────
+  Phiếu nhập (PR)      ┐                Hóa đơn mua (PI)   ┐
+  Chứng từ kho (SE)    ├──┐             Thanh toán (PE)    ├──┐
+  Phiếu giao (DN)      ┘  │             Hóa đơn bán (SI)   ┘  │
+  Đối soát kiểm kê (SR)───┤             Phiếu thu (SR)  ──────┤
+                          │             Đối soát kiểm kê ─────┤
+                          ▼                                   ▼
+              ┌───────────────────────┐        ┌──────────────────────┐
+              │ SC Stock Ledger Entry │        │    SC GL Entry       │
+              │  chỉ GHI THÊM         │        │   chỉ GHI THÊM       │
+              └───────────┬───────────┘        └──────────┬───────────┘
+                          │                                │
+      ┌───────────────────┼──────────────┐        ┌────────┴────────┐
+      ▼                   ▼              ▼        ▼                 ▼
+   Tồn kho            Thuật toán      Truy xuất  Công nợ        Doanh thu
+   thời gian thực       FEFO           nguồn gốc  phải thu/trả   &amp; giá vốn
+</div>
+
+<!-- ══════════════════════════════ 6 ══════════════════════════════ -->
+<h2>6. Tầng API — cầu nối giao diện và backend</h2>
+
+<h3>6.1 Nguyên tắc <code>@frappe.whitelist()</code></h3>
+<p>Mặc định trình duyệt <b>không</b> gọi được hàm Python. Muốn cho gọi, phải đánh dấu:</p>
+<pre><code>@frappe.whitelist()
+def sales_framework_items(framework_contract: str) -&gt; list:
+    """Danh mục vật tư của 1 HĐ khung bán — dùng cho màn Đơn bán."""
+    block_portal()                                    # ① chặn vai trò khách
+    if not frappe.has_permission("SC Sales Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung bán"), frappe.PermissionError)   # ② kiểm quyền
+    ...</code></pre>
+
+<div class="box crit">
+  <b class="lbl">Quy tắc vàng khi thêm API mới</b>
+  <code>@frappe.whitelist()</code> mở cửa cho <b>bất kỳ ai đã đăng nhập</b>, kể cả tài khoản khách hàng.
+  Vì vậy <b>mọi</b> hàm nội bộ phải tự kiểm hai lớp: gọi <code>block_portal()</code> và kiểm <code>frappe.has_permission(...)</code>.
+  Bỏ sót là tạo lỗ rò rỉ dữ liệu — dự án đã phải làm hẳn một đợt rà soát toàn bộ (các commit <code>fix(mvl-sweep)</code>, <code>fix(mvl-portal)</code>).
+</div>
+
+<h3>6.2 17 file API, chia theo việc</h3>
+<table>
+  <thead><tr><th>File</th><th>Số hàm</th><th>Phục vụ</th></tr></thead>
+  <tbody>
+    <tr><td><code>api/frontend.py</code></td><td>25</td><td>Việc chung của SPA: tìm kiếm, chứng từ liên quan, tồn kho, in nhãn</td></tr>
+    <tr><td><code>api/portal.py</code></td><td>16</td><td><b>Chỉ dành cho khách</b> — tự lọc theo khách đăng nhập</td></tr>
+    <tr><td><code>api/sales.py</code></td><td>9</td><td>Bán hàng: tạo phiếu giao, nghiệm thu, thu tiền</td></tr>
+    <tr><td><code>api/data_io.py</code></td><td>8</td><td>Nhập/xuất dữ liệu hàng loạt</td></tr>
+    <tr><td><code>api/users.py</code></td><td>8</td><td>Quản lý người dùng &amp; phân quyền</td></tr>
+    <tr><td><code>api/warehouse_map.py</code></td><td>7</td><td>Bản đồ mặt bằng kho</td></tr>
+    <tr><td><code>api/voucher_io.py</code></td><td>6</td><td>Xuất/nhập phiếu bằng Excel 2 sheet</td></tr>
+    <tr><td><code>api/wms.py</code></td><td>5</td><td>Xếp hàng lên kệ, quét mã</td></tr>
+    <tr><td><code>api/kpi.py</code></td><td>5</td><td>Chỉ số điều hành</td></tr>
+    <tr><td><code>api/fefo.py</code></td><td>4</td><td>Gợi ý lô theo hạn dùng</td></tr>
+    <tr><td><code>api/fetch_upstream.py</code></td><td>3</td><td>Tính năng "Lấy từ" — kéo dữ liệu từ chứng từ trước</td></tr>
+    <tr><td><code>api/accounting.py</code> · <code>trace.py</code> · <code>mobile.py</code></td><td>2 mỗi file</td><td>Kế toán · truy xuất lô · thiết bị di động</td></tr>
+    <tr><td><code>api/access.py</code></td><td>1</td><td><b>Quan trọng</b> — trả toàn bộ quyền cho SPA lúc đăng nhập</td></tr>
+    <tr><td><code>api/wipe.py</code></td><td>0</td><td>Tiện ích dọn dữ liệu, không mở API</td></tr>
+  </tbody>
+</table>
+<p><b>Tổng: 103 hàm trong <code>api/</code>.</b> Tính cả hàm nằm trong controller từng DocType thì toàn app có <b>217</b> hàm whitelisted.</p>
+
+<h3>6.3 Thư mục <code>utils/</code> — tiện ích dùng chung</h3>
+<table>
+  <thead><tr><th>File</th><th>Vai trò</th></tr></thead>
+  <tbody>
+    <tr><td><code>permissions.py</code></td><td><b>Quan trọng nhất</b> — 17 hàm cô lập dữ liệu khách (mục 7)</td></tr>
+    <tr><td><code>emailer.py</code></td><td>Mẫu email thống nhất toàn hệ thống</td></tr>
+    <tr><td><code>validators.py</code></td><td>6 hàm kiểm tra dùng chung, gồm guard chặn xóa</td></tr>
+    <tr><td><code>receivables.py</code></td><td>7 hàm tính công nợ phải thu &amp; hạn mức tín dụng</td></tr>
+    <tr><td><code>money.py</code></td><td>Làm tròn VND (precision 0) nhất quán giữa dòng và tổng</td></tr>
+    <tr><td><code>fiscal.py</code></td><td>Kiểm tra khóa sổ (<code>BRU-PAY-001</code>)</td></tr>
+    <tr><td><code>print_helpers.py</code></td><td>Hỗ trợ in hóa đơn TT99 — số tiền bằng chữ, thông tin bên bán</td></tr>
+    <tr><td><code>barcode.py</code> · <code>notifications.py</code></td><td>Sinh mã vạch · gửi thông báo</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 7 ══════════════════════════════ -->
+<h2>7. Tầng bảo mật — cô lập dữ liệu khách (RSK-01)</h2>
+
+<div class="box crit">
+  <b class="lbl">Rủi ro nghiêm trọng nhất của cả hệ thống</b>
+  Khách hàng A <b>không được</b> nhìn thấy đơn hàng, hóa đơn, giá hay công nợ của khách hàng B.
+  Một lần rò rỉ là mất uy tín và vi phạm Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.
+</div>
+
+<h3>7.1 Trục cô lập</h3>
+<p>Toàn bộ cơ chế xoay quanh <b>một điều kiện duy nhất</b>:</p>
+<pre><code>SC Customer.portal_user == frappe.session.user</code></pre>
+<p>Nghĩa là: hồ sơ khách hàng nào có trường <code>portal_user</code> trùng tài khoản đang đăng nhập, thì đó là khách của phiên này. <b>Không bao giờ</b> tin tham số <code>customer</code> do trình duyệt gửi lên.</p>
+
+<h3>7.2 Năm lớp phòng thủ độc lập</h3>
+<table>
+  <thead><tr><th>#</th><th>Lớp</th><th>Chặn gì</th><th>Khai ở đâu</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>1</td><td><code>permission_query_conditions</code></td>
+      <td>Lọc mọi truy vấn danh sách trên <b>6 doctype bán</b> + <b>4 bảng con</b></td>
+      <td><code>hooks.py</code> → <code>utils/permissions.py</code></td>
+    </tr>
+    <tr>
+      <td>2</td><td><code>has_permission</code> → <code>portal_doc_permission</code></td>
+      <td>Chặn mở từng chứng từ của khách khác; chặn mọi thao tác ghi</td>
+      <td><code>hooks.py</code></td>
+    </tr>
+    <tr>
+      <td>3</td><td><code>guarded_client_get</code></td>
+      <td>Ghi đè <code>frappe.client.get</code> — bịt lỗ đọc dòng con đơn lẻ</td>
+      <td><code>override_whitelisted_methods</code></td>
+    </tr>
+    <tr>
+      <td>4</td><td><code>portal_block_rest_child</code></td>
+      <td>Chặn ở tầng đường dẫn HTTP: <code>/api/resource</code>, <code>/api/v2/document</code></td>
+      <td><code>before_request</code></td>
+    </tr>
+    <tr>
+      <td>5</td><td><code>block_portal()</code></td>
+      <td>Danh sách chặn vai trò khách khỏi <b>mọi API nội bộ</b></td>
+      <td>Gọi thủ công trong từng hàm API</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>7.3 Vì sao cần tới 5 lớp — một bài học kỹ thuật thật</h3>
+<p><code>hooks.py</code> có một khối chú thích dài giải thích lớp 3. Đây là loại tri thức không đọc được ở đâu khác:</p>
+<pre><code># `frappe.client.get` đi qua `doc.check_permission()` trên CHÍNH dòng con vừa
+# load đơn lẻ (không nằm trong parent doc đầy đủ) — `has_child_permission()`
+# của Frappe resolve `doc=getattr(child_doc, "parent_doc", child_doc.parent)`,
+# và child doc độc lập luôn có sẵn thuộc tính `parent_doc` (property, mặc định
+# None) nên `getattr` trả về None thay vì fallback về `child_doc.parent` như
+# tưởng — `has_permission(parent_doctype, doc=None, ...)` chỉ còn kiểm tra
+# doctype-level (luôn True với role Portal đã có read=1), bỏ qua hoàn toàn
+# `portal_doc_permission`.</code></pre>
+<p><b>Dịch sang tiếng người:</b> Frappe <i>tưởng</i> là kiểm quyền theo chứng từ cha, nhưng vì một chi tiết cài đặt nên nó nhận nhầm giá trị <code>None</code> và bỏ qua bước kiểm. Bug này chỉ lộ ra ở đúng một đường gọi. Vì vậy phải bịt riêng.</p>
+
+<div class="box ok">
+  <b class="lbl">Bài học cho bạn</b>
+  Khi làm phần bảo mật, <b>đừng tin một lớp duy nhất</b>. Và khi phát hiện một hành vi lạ của framework, <b>hãy ghi lại lý do ngay trong code</b> — người sau (kể cả chính bạn 6 tháng nữa) sẽ không tự suy ra được.
+</div>
+
+<h3>7.4 Chặn leo thang đặc quyền</h3>
+<p>Ngoài rò rỉ đọc, hệ thống còn chặn khách <b>tự duyệt đơn của mình</b> qua đường gọi hàm gián tiếp <code>run_doc_method</code>. Xem các commit <code>9ffa862</code>, <code>3e9bc03</code>.</p>
+
+<!-- ══════════════════════════════ 8 ══════════════════════════════ -->
+<h2>8. Bản vá dữ liệu (patch) và di sản</h2>
+
+<h3>8.1 Patch là gì và vì sao cần</h3>
+<p>Khi đổi cấu trúc dữ liệu, dữ liệu <b>đã có</b> phải được chuyển theo. Patch là đoạn mã chạy <b>đúng một lần</b> lúc <code>bench migrate</code>.</p>
+<p>Ví dụ đời thường: thêm trường "số lô nhà cung cấp" vào 10.000 lô hàng cũ — patch sẽ điền giá trị mặc định cho chúng.</p>
+
+<pre><code># supplycore/patches.txt — 35 dòng, chạy theo thứ tự từ trên xuống
+supplycore.patches.v0_1.create_supplycore_roles
+supplycore.patches.v0_2.seed_master_data
+...
+supplycore.patches.v0_6.remove_hospital_domain      ← xóa DocType bệnh viện
+supplycore.patches.v0_7.remove_hospital_roles       ← xóa vai trò mồ côi
+supplycore.patches.v0_8.seed_sales_gl_accounts      ← tạo tài khoản kế toán bán hàng
+supplycore.patches.v0_9.create_portal_role          ← tạo vai trò khách
+supplycore.patches.v0_10.rebrand_miyano
+supplycore.patches.v0_11.create_tt99_print_formats  ← mẫu hóa đơn TT99
+supplycore.patches.v0_12.create_pr_print_formats</code></pre>
+
+<p><b>Đọc <code>patches.txt</code> như đọc nhật ký dự án</b> — nó kể lại quá trình chuyển từ bản bệnh viện sang bản phân phối.</p>
+
+<h3>8.2 Thư mục <code>overrides/</code> — di sản, đừng nhầm</h3>
+<div class="box warn">
+  <b class="lbl">Code chết nhưng chưa xóa</b>
+  Thư mục <code>supplycore/overrides/</code> có 7 file (<code>batch.py</code>, <code>purchase_order.py</code>, <code>stock_entry.py</code>…) từ thời app còn gắn vào ERPNext.
+  <p style="margin:6px 0"><b>Bằng chứng chúng không còn chạy:</b> phần <code>doc_events</code> trong <code>hooks.py</code> giờ chỉ trỏ tới <b>một</b> hàm duy nhất:</p>
+  <pre style="margin:6px 0"><code>doc_events = {
+    "SC Purchase Receipt": {
+        # Logic auto QI + SLE đã nằm trong sc_purchase_receipt.py controller
+    },
+    "SC Batch": {
+        "after_insert": "supplycore.m5_fefo.api.fefo_picker.register_batch",
+    },
+    ...
+}</code></pre>
+  <p style="margin:6px 0">Các mục khác <b>rỗng, chỉ còn chú thích</b>. <code>README.md</code> cũng đánh dấu <code>overrides/</code> là <i>(DEPRECATED v0.2)</i>.</p>
+  <p style="margin:6px 0"><b>Ngoại lệ:</b> <code>overrides/purchase_receipt.py</code> vẫn được gọi cho phần tra bộ tiêu chí QC — nên <b>đừng xóa cả thư mục</b> mà chưa kiểm.</p>
+</div>
+
+<h3>8.3 Những thư mục rỗng — cẩn thận khi đi tìm code</h3>
+<p>Vài thư mục DocType chỉ có <code>__init__.py</code>, <b>không có schema</b>. Chúng là chỗ đặt trước cho tính năng chưa làm:</p>
+<table>
+  <thead><tr><th>Thư mục</th><th>Thực trạng</th></tr></thead>
+  <tbody>
+    <tr><td><code>m4_wms/doctype/pda_session/</code></td><td>Rỗng — nghiệp vụ PDA hiện làm qua trình duyệt</td></tr>
+    <tr><td><code>m4_wms/doctype/pick_list_supplycore/</code></td><td>Rỗng — soạn hàng làm thẳng trên Phiếu giao hàng</td></tr>
+    <tr><td><code>m2_planning/doctype/demand_forecast/</code></td><td>Rỗng — dự báo mua còn là placeholder</td></tr>
+    <tr><td><code>m3_receiving/doctype/goods_receipt_discrepancy/</code></td><td>Rỗng — lệch nhận hàng xử lý bằng <code>over_received_qty</code></td></tr>
+    <tr><td><code>supplycore/doctype/audit_log/</code>, <code>alert_rule/</code></td><td>Rỗng — nhật ký dùng bản ghi Version sẵn có của Frappe</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 9 ══════════════════════════════ -->
+<h2>9. Giao diện Vue — kiến trúc "cấu hình thay vì viết code"</h2>
+
+<h3>9.1 Ý tưởng cốt lõi</h3>
+<p>Hệ thống có 40 DocType. Nếu mỗi cái viết một trang danh sách + một trang chi tiết thì là 80 file, sửa một kiểu hiển thị phải sửa 80 chỗ.</p>
+<p>Thay vào đó, SupplyCore chỉ có <b>hai trang dùng chung</b> — <code>DocList.vue</code> và <code>DocView.vue</code> — và <b>mô tả</b> từng DocType bằng dữ liệu trong 4 file cấu hình.</p>
+
+<div class="ascii">
+   4 FILE CẤU HÌNH                    2 TRANG DÙNG CHUNG
+   ───────────────                    ──────────────────
+   modules.js       ──┐
+   (cột danh sách)     │
+                       ├──────────►   DocList.vue    (mọi trang danh sách)
+   schemas.js       ──┤
+   (trường biểu mẫu)   │
+                       ├──────────►   DocView.vue    (mọi trang chi tiết)
+   detail-configs.js ─┤
+   (bố cục chi tiết)   │
+                       │              + panel chuyên biệt gắn thêm:
+   actions.js       ──┘                 PickingPanel, FefoPickGuide,
+   (nút hành động)                      WarehouseStockPanel, RelatedDocs…
+</div>
+
+<h3>9.2 Bốn file cấu hình</h3>
+<table>
+  <thead><tr><th>File</th><th>Số dòng</th><th>Khai báo gì</th></tr></thead>
+  <tbody>
+    <tr><td><code>modules.js</code></td><td>683</td><td>Cột hiển thị ở danh sách, nhãn trạng thái, doctype nào submit được</td></tr>
+    <tr><td><code>schemas.js</code></td><td>1246</td><td>Trường của biểu mẫu: kiểu, bắt buộc, gợi ý, quy tắc liên kết</td></tr>
+    <tr><td><code>detail-configs.js</code></td><td>1167</td><td>Bố cục trang chi tiết: nhóm trường, panel nào hiện</td></tr>
+    <tr><td><code>actions.js</code></td><td>370</td><td>Nút hành động: nhãn, khi nào hiện, gọi API nào</td></tr>
+  </tbody>
+</table>
+
+<h4>Ví dụ thật — khai báo cột danh sách (<code>modules.js</code>)</h4>
+<pre><code>'SC Sales Order': {
+  module: 'm7', label: 'Đơn bán hàng', icon: 'clipboard-list',
+  listColumns: [
+    { key: 'customer', displayKey: 'customer_name', label: 'Khách hàng' },
+    { key: 'name', label: 'Mã SO', type: 'code' },
+    { key: 'order_date', label: 'Ngày đặt', type: 'date' },
+    { key: 'total_amount', label: 'Tổng', type: 'currency', align: 'right' },
+    { key: 'status', label: 'Trạng thái', type: 'badge', badgeMap: STATUS_BADGE },
+  ],
+  listFields: ['name', 'customer', 'customer_name', 'order_date', 'total_amount',
+                'credit_hold', 'status', 'docstatus'],
+},</code></pre>
+<p><b>Chú ý <code>displayKey</code>:</b> cột lưu mã khách (<code>customer</code>) nhưng <b>hiển thị tên khách</b> (<code>customer_name</code>). Đây là nguyên tắc xuyên suốt của dự án — <i>người dùng thấy TÊN, mã chỉ là phụ</i>.</p>
+
+<h4>Ví dụ thật — khai báo biểu mẫu (<code>schemas.js</code>)</h4>
+<pre><code>{ name: 'framework_contract', label: 'HĐ khung', type: 'Link',
+  linkTo: 'SC Sales Framework Contract',
+  scope: { customerField: 'customer' },          // chỉ hiện HĐ của khách đã chọn
+  fetchFrom: { target_doctype: 'SC Sales Framework Contract',
+               target_field: 'customer' },        // tự điền khách
+  loadItemsFrom: {                                // tự nạp danh mục vật tư
+    api: 'supplycore.api.sales.sales_framework_items',
+    arg: 'framework_contract',
+    map: { item: 'item', uom: 'uom', unit_price: 'unit_price', qty: 'remaining_qty' },
+  },
+  hint: 'Chọn HĐ khung sẽ tự điền khách + nạp vật tư &amp; khoá — giá theo HĐ khung (BRU-SFC-002).' },</code></pre>
+<p>Toàn bộ hành vi phức tạp này là <b>dữ liệu</b>, không phải code. Muốn áp cho DocType khác chỉ cần chép và sửa vài dòng.</p>
+
+<h4>Ví dụ thật — khai báo nút (<code>actions.js</code>)</h4>
+<pre><code>{ apiMethod: 'supplycore.api.sales.make_delivery',
+  apiNameArg: 'sales_order',
+  label: 'Tạo phiếu giao (soạn hàng)', icon: 'truck', variant: 'primary',
+  when: (d) =&gt; d.docstatus === 1 &amp;&amp; d.status === 'Đã duyệt',   // ĐIỀU KIỆN HIỆN NÚT
+  fixedArgs: { submit: 0 },                                     // ép chế độ soạn hàng
+  navigateOnSuccess: { type: 'doc', dt: 'SC Delivery Note', from: 'name' } },</code></pre>
+
+<h3>9.3 Các trang chuyên biệt</h3>
+<p>Tổng cộng <code>frontend/src/pages/</code> có 17 file. Ngoài hai trang dùng chung, còn lại là trang riêng cho nghiệp vụ không nhét vừa khuôn mẫu:</p>
+<table>
+  <thead><tr><th>Trang</th><th>Đường dẫn</th><th>Việc</th></tr></thead>
+  <tbody>
+    <tr><td><code>Dashboard.vue</code></td><td><code>/</code></td><td>Chỉ số + lối tắt theo vai trò</td></tr>
+    <tr><td><code>ModuleHub.vue</code></td><td><code>/m:n</code></td><td>Trang từng phân hệ, hiện thẻ DocType</td></tr>
+    <tr><td><code>DocList.vue</code> / <code>DocView.vue</code></td><td><code>/list/:dt</code> · <code>/doc/:dt/:name</code></td><td><b>Dùng chung mọi DocType</b></td></tr>
+    <tr><td><code>StockBalance.vue</code></td><td><code>/stock-balance</code></td><td>Tồn kho theo vật tư/kho/lô</td></tr>
+    <tr><td><code>BatchTrace.vue</code></td><td><code>/batch-trace</code></td><td>Truy xuất lô</td></tr>
+    <tr><td><code>Putaway.vue</code></td><td><code>/putaway</code></td><td>Xếp hàng lên kệ</td></tr>
+    <tr><td><code>WarehouseMapPage.vue</code> · <code>MapEditor.vue</code></td><td><code>/warehouse-map</code> · <code>/map-editor</code></td><td>Bản đồ mặt bằng</td></tr>
+    <tr><td><code>FinancialReports.vue</code></td><td><code>/financial-reports</code></td><td>Báo cáo tài chính</td></tr>
+    <tr><td><code>AlertCenter.vue</code></td><td><code>/alerts</code></td><td>Trung tâm cảnh báo</td></tr>
+    <tr><td><code>Users.vue</code></td><td><code>/users</code></td><td>Người dùng &amp; phân quyền</td></tr>
+    <tr><td><code>Login.vue</code> · <code>ResetPassword.vue</code></td><td><code>/login</code> · <code>/reset-password</code></td><td>Đăng nhập</td></tr>
+    <tr><td><code>Forbidden.vue</code> · <code>NotFound.vue</code></td><td><code>/403</code> · <code>*</code></td><td>Chặn quyền · 404</td></tr>
+  </tbody>
+</table>
+
+<h3>9.4 Phân quyền phía giao diện — 3 lớp</h3>
+<p>Lúc đăng nhập, SPA gọi <b>một lần</b> hàm <code>supplycore.api.access.menu</code> để lấy toàn bộ quyền, lưu vào kho trạng thái <code>stores/access.js</code>. Sau đó chặn ở 3 chỗ:</p>
+
+<pre><code>// ① Chặn điều hướng — router.js
+router.beforeEach(async (to, from, next) =&gt; {
+  if (to.meta.requireFeature &amp;&amp; !access.canFeature(to.meta.requireFeature)) {
+    return next({ name: 'forbidden', query: {
+      from: to.fullPath,
+      r: `Tính năng "${to.meta.title}" không nằm trong phạm vi quyền của bạn`,
+    }})
+  }
+  ...</code></pre>
+<p>② Ẩn mục menu nếu thiếu quyền &nbsp;·&nbsp; ③ Ẩn nút hành động nếu thiếu quyền.</p>
+
+<div class="box crit">
+  <b class="lbl">Quyền ở giao diện chỉ là tiện dụng, KHÔNG phải bảo mật</b>
+  Ẩn nút chỉ giúp màn hình gọn và tránh bấm nhầm. Người dùng vẫn có thể gọi thẳng API bằng công cụ khác.
+  <b>Bảo mật thật nằm ở backend</b> (mục 7). Khi thêm tính năng, đừng bao giờ chỉ ẩn nút mà quên kiểm quyền phía server.
+</div>
+
+<h3>9.5 Giao diện được build riêng</h3>
+<pre><code>// frontend/vite.config.js — build vào thư mục Frappe phục vụ được
+// Build vào supplycore/public/frontend/ để Frappe serve qua /assets/supplycore/frontend/</code></pre>
+<p>Nhắc lại từ Tập 01: <b><code>bench build</code> KHÔNG build phần này</b>. Phải chạy <code>yarn build</code> riêng, rồi hard refresh (Ctrl+Shift+R) vì service worker giữ bản cũ.</p>
+
+<!-- ══════════════════════════════ 10 ══════════════════════════════ -->
+<h2>10. Ba giao diện, một backend</h2>
+
+<table>
+  <thead><tr><th>Giao diện</th><th>Ai dùng</th><th>Code ở đâu</th><th>Gọi API nào</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>SPA nội bộ</b><br><code>/supplycore</code></td>
+      <td>Nhân viên công ty</td>
+      <td><code>frontend/</code> (Vue 3)</td>
+      <td>Toàn bộ <code>api/*</code> trừ <code>portal.py</code></td>
+    </tr>
+    <tr>
+      <td><b>Cổng khách</b><br><code>/portal</code></td>
+      <td>Khách hàng</td>
+      <td><code>www/portal/</code> (HTML thuần)</td>
+      <td><b>Chỉ</b> <code>api/portal.py</code></td>
+    </tr>
+    <tr>
+      <td><b>Trang PDA</b><br><code>/pda</code></td>
+      <td>Máy quét cầm tay trong kho</td>
+      <td><code>www/pda/index.html</code></td>
+      <td><code>api/wms.py</code>, <code>api/mobile.py</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>10.1 Cổng khách được canh cửa thế nào</h3>
+<p>Trích docstring <code>www/portal/index.py</code> — mô tả chính xác 3 bước gác cửa:</p>
+<pre><code>"""Cổng khách hàng SupplyCore MVL — trang web độc lập cho khách hàng
+(role "SC Customer Portal"), TÁCH khỏi SPA nội bộ /supplycore.
+
+Guard (`get_context`), theo đúng thứ tự:
+  1. Guest -&gt; redirect `/login?redirect-to=/portal`
+  2. Đăng nhập nhưng KHÔNG có role "SC Customer Portal" -&gt; render thông báo
+     từ chối truy cập tối giản (không lộ menu/dữ liệu nội bộ nào).
+  3. Có role -&gt; context chỉ gồm csrf_token (KHÔNG fetch dữ liệu khách ở
+     server) — toàn bộ dữ liệu do trang tải qua `fetch()` client-side tới
+     các hàm whitelist trong `supplycore.api.portal`."""</code></pre>
+
+<div class="box ok">
+  <b class="lbl">Vì sao tách hẳn hai giao diện thay vì dùng chung</b>
+  Nếu khách và nhân viên dùng chung một SPA, chỉ cần một lỗi ẩn/hiện menu là khách thấy dữ liệu nội bộ.
+  Tách hẳn thì khách <b>không có đường nào</b> chạm tới code nội bộ — an toàn theo thiết kế, không phụ thuộc vào việc lập trình viên có nhớ ẩn nút hay không.
+</div>
+
+<!-- ══════════════════════════════ 11 ══════════════════════════════ -->
+<h2>11. Đi theo một nghiệp vụ từ đầu đến cuối</h2>
+
+<p>Để ráp mọi thứ lại, hãy theo dõi <b>một lần bấm nút</b>: thủ kho quét xác nhận một dòng hàng khi soạn phiếu giao.</p>
+
+<div class="ascii">
+① NGƯỜI DÙNG          Thủ kho quét mã vạch lô vào ô nhập trên màn hình soạn hàng
+                       │
+                       ▼
+② GIAO DIỆN           frontend/src/components/PickingPanel.vue
+                       gọi confirmPickLine() trong frontend/src/api.js
+                       │  POST /api/method/supplycore.m7_sales.doctype.
+                       │        sc_delivery_note.sc_delivery_note.confirm_pick_line
+                       ▼
+③ TẦNG API            @frappe.whitelist() confirm_pick_line(...)
+                       ├─ frappe.has_permission("SC Delivery Note", "write")  ← kiểm quyền
+                       └─ doc.docstatus != 0 ?  → chặn
+                       │
+                       ▼
+④ KIỂM TRA NGHIỆP VỤ   8 lớp, TẤT CẢ ở phía server:
+                       · tra lô theo barcode hoặc mã lô     → SC-E-PICK-BATCH
+                       · lô đúng vật tư của dòng?           → SC-E-PICK-ITEM
+                       · lô có bị khóa (thu hồi)?           → SC-E-PICK-BLOCKED
+                       · lô đã đạt QC?                      → SC-E-PICK-QC
+                       · lô còn hạn dùng?                   → SC-E-PICK-EXPIRED
+                       · số lượng &gt; 0?                      → SC-E-PICK-QTY
+                       · tồn KHẢ DỤNG đủ?                   → SC-E-PICK-STOCK
+                       │   └─► gọi SLE.get_available_qty()  ← đọc SỔ KHO
+                       · vị trí thuộc đúng kho xuất?        → SC-E-PICK-BIN-WH
+                       │
+                       ▼
+⑤ GHI DỮ LIỆU          line.batch / qty / warehouse / bin_location = giá trị THỰC quét
+                       line.scan_confirmed = 1
+                       doc.save(ignore_permissions=True)
+                       │
+                       ▼
+⑥ TRẢ VỀ               { ok, batch, qty, remaining_unconfirmed, all_confirmed }
+                       giao diện cập nhật tiến độ; đủ hết mới bật nút Nộp
+
+⑦ KHI BẤM NỘP          before_submit() → _check_scan_confirmed()  ← chặn nếu còn sót
+                       on_submit()     → ghi SỔ KHO, trừ tồn theo ĐÚNG lô đã quét
+                                       → đổi trạng thái Đơn hàng sang "Đã bàn giao"
+</div>
+
+<p><b>Ba nguyên tắc thiết kế lộ ra từ luồng này:</b></p>
+<ol>
+  <li><b>Không tin client.</b> Giao diện chỉ gửi "tôi vừa quét chuỗi này". Mọi kết luận do server rút ra.</li>
+  <li><b>Chặn sớm, chặn nhiều lần.</b> Kiểm lúc quét (⑤) <i>và</i> kiểm lại lúc nộp (⑦) — vì giữa hai thời điểm, hàng có thể bị người khác lấy mất.</li>
+  <li><b>Ghi sự thật, không ghi kỳ vọng.</b> Lưu lô <i>thực tế lấy</i>, không lưu lô FEFO gợi ý. Nhờ vậy truy xuất nguồn gốc sau này mới đúng.</li>
+</ol>
+
+<!-- ══════════════════════════════ 12 ══════════════════════════════ -->
+<h2>12. Tra cứu nhanh: "tôi muốn sửa X thì vào đâu?"</h2>
+
+<table>
+  <thead><tr><th>Muốn làm gì</th><th>Sửa file nào</th><th>Nhớ làm gì sau đó</th></tr></thead>
+  <tbody>
+    <tr><td>Thêm/bớt trường của một chứng từ</td><td><code>&lt;module&gt;/doctype/&lt;dt&gt;/&lt;dt&gt;.json</code></td><td><code>bench migrate</code></td></tr>
+    <tr><td>Đổi quy tắc kiểm tra khi lưu/nộp</td><td><code>&lt;module&gt;/doctype/&lt;dt&gt;/&lt;dt&gt;.py</code></td><td><code>supervisorctl restart all</code></td></tr>
+    <tr><td>Đổi cột hiện ở trang danh sách</td><td><code>frontend/src/modules.js</code></td><td><code>yarn build</code> + Ctrl+Shift+R</td></tr>
+    <tr><td>Đổi trường trên biểu mẫu</td><td><code>frontend/src/schemas.js</code></td><td><code>yarn build</code> + Ctrl+Shift+R</td></tr>
+    <tr><td>Đổi bố cục trang chi tiết</td><td><code>frontend/src/detail-configs.js</code></td><td><code>yarn build</code> + Ctrl+Shift+R</td></tr>
+    <tr><td>Thêm nút hành động</td><td><code>frontend/src/actions.js</code></td><td><code>yarn build</code> + Ctrl+Shift+R</td></tr>
+    <tr><td>Đổi nhãn tiếng Việt của trường/trạng thái</td><td><code>frontend/src/i18n.js</code> · <code>modules.js</code></td><td><code>yarn build</code></td></tr>
+    <tr><td>Thêm API mới</td><td><code>supplycore/api/&lt;file&gt;.py</code></td><td><b>Nhớ <code>block_portal()</code> + kiểm quyền</b></td></tr>
+    <tr><td>Đổi lịch chạy tác vụ tự động</td><td><code>supplycore/hooks.py</code> (<code>scheduler_events</code>)</td><td><code>supervisorctl restart all</code></td></tr>
+    <tr><td>Chuyển đổi dữ liệu cũ</td><td>Thêm patch vào <code>supplycore/patches/</code> + <code>patches.txt</code></td><td><code>bench migrate</code></td></tr>
+    <tr><td>Đổi mẫu in hóa đơn</td><td><code>supplycore/patches/v0_11/create_tt99_print_formats.py</code></td><td><code>bench migrate</code></td></tr>
+    <tr><td>Đổi mẫu email</td><td><code>supplycore/utils/emailer.py</code></td><td><code>supervisorctl restart all</code></td></tr>
+    <tr><td>Sửa quy tắc cô lập dữ liệu khách</td><td><code>supplycore/utils/permissions.py</code></td><td><b>Chạy <code>portal_isolation_test.py</code></b></td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Quy tắc vàng khi sửa code</b>
+  <ul style="margin:6px 0">
+    <li>Sửa <b>Python</b> → phải khởi động lại tiến trình (<code>sudo supervisorctl restart all</code>)</li>
+    <li>Sửa <b>file .json của DocType</b> → phải <code>bench migrate</code></li>
+    <li>Sửa <b>Vue/JS</b> → phải <code>yarn build</code> + hard refresh</li>
+  </ul>
+  Quên một trong ba là ngồi debug một thay đổi <i>chưa hề được áp dụng</i>.
+</div>
+
+<!-- ══════════════════════════════ 13 ══════════════════════════════ -->
+<h2>13. Bảy nguyên tắc thiết kế rút ra từ code</h2>
+
+<ol>
+  <li><b>Sổ chỉ ghi thêm, không sửa.</b> Tồn kho và công nợ luôn tính lại từ sổ. Đổi lại là truy vết được mọi thứ và không bao giờ có "số tồn sai mà không biết vì sao".</li>
+  <li><b>Server là nguồn sự thật.</b> Giá, hạn mức, tồn — client gửi gì cũng tính lại. Giao diện chỉ để tiện dùng.</li>
+  <li><b>Cấu hình thay vì viết code.</b> 40 DocType dùng chung 2 trang, mô tả bằng 4 file dữ liệu.</li>
+  <li><b>Mã lỗi có tiền tố tra được.</b> <code>BRU-*</code> cho quy tắc nghiệp vụ, <code>SC-E*</code> cho lỗi kỹ thuật — viết test được, người dùng báo lỗi thì tìm ra ngay.</li>
+  <li><b>Phòng thủ nhiều lớp.</b> Bảo mật cổng khách có 5 lớp độc lập, vì một lớp có thể có lỗ mà không ai biết.</li>
+  <li><b>Chú thích ghi LÝ DO, không mô tả code.</b> Code nói <i>cái gì</i>, chú thích nói <i>vì sao</i> — nhất là ở những chỗ trông có vẻ thừa.</li>
+  <li><b>Thừa nhận giới hạn.</b> Thư mục rỗng được liệt kê là "chưa có", code di sản được đánh dấu DEPRECATED, workflow ghi rõ runner nào sẽ fail. Không tô hồng.</li>
+</ol>
+
+<div class="box ok">
+  <b class="lbl">Điểm mạnh rõ nhất của dự án này</b>
+  Chất lượng <b>chú thích</b>. Ví dụ khối chú thích ở <code>hooks.py</code> giải thích lỗ hổng của <code>frappe.client.get</code> (mục 7.3) dài hơn cả đoạn code nó bảo vệ —
+  và đó chính là thứ giúp người sau hiểu được vì sao phải viết như vậy. Hãy giữ thói quen này khi bạn viết code.
+</div>
+
+<!-- ══════════════════════════════ 14 ══════════════════════════════ -->
+<h2>14. Đọc gì tiếp theo</h2>
+
+<table>
+  <thead><tr><th>Bạn muốn</th><th>Đọc</th></tr></thead>
+  <tbody>
+    <tr><td>Hiểu <b>nghiệp vụ</b> phía sau code này</td><td><code>docs/ba-miyano/SupplyCore_MVL_BA.html</code> — tài liệu BA đầy đủ, 26 mục</td></tr>
+    <tr><td>Xem một phân hệ cụ thể</td><td><code>supplycore/m&lt;N&gt;_&lt;tên&gt;/README.md</code></td></tr>
+    <tr><td>Hiểu quy trình xuất/nhập Excel</td><td><code>supplycore/api/VOUCHER_IO_FLOW.md</code></td></tr>
+    <tr><td>Biết hệ thống <b>chưa</b> làm được gì</td><td>Tài liệu BA, mục 24 "Trạng thái hoàn thiện"</td></tr>
+    <tr><td>Dựng lại môi trường</td><td>Tập 01 của bộ tài liệu này</td></tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <b class="lbl">Bài tập đề nghị cho tuần đầu</b>
+  Chọn <b>một</b> chứng từ đơn giản — gợi ý <code>SC Customer</code> — rồi tự tìm cho ra <b>đủ 5 nơi</b> nó xuất hiện:
+  <ol style="margin:6px 0">
+    <li>Định nghĩa: <code>m7_sales/doctype/sc_customer/sc_customer.json</code></li>
+    <li>Logic: <code>sc_customer.py</code></li>
+    <li>Cột danh sách: tìm <code>'SC Customer'</code> trong <code>frontend/src/modules.js</code></li>
+    <li>Biểu mẫu: tìm trong <code>frontend/src/schemas.js</code></li>
+    <li>Kiểm thử: <code>supplycore/tests/sc_customer_test.py</code></li>
+  </ol>
+  Làm được bài này là bạn đã nắm bản đồ. Sau đó thử sửa một nhãn tiếng Việt và chạy <code>yarn build</code> để thấy nó đổi trên màn hình.
+</div>
+
+</main>
+
+<footer class="pagefoot">
+  <b>SupplyCore MVL — Tài liệu nhập môn · Tập 02: Kiến trúc &amp; Cấu trúc code</b><br>
+  Ngày tạo: <b>05/08/2026</b> · Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.<br>
+  Mọi mật khẩu, khóa mã hóa, token và IP nội bộ đã được thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
+  Khi mã nguồn thay đổi, code sống là chuẩn — hãy cập nhật tài liệu này theo.
+</footer>
+
+</body>
+</html>
