@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Lộ trình học &amp; bắt chước — SupplyCore MVL</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px;
+    line-height: 1.65; color: #222; background: #fff;
+  }
+
+  /* ===== Thanh điều hướng dính (sticky) — DÙNG CHUNG mọi trang ===== */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: #14243A; border-bottom: 3px solid #1F4E79;
+    padding: 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  }
+  nav.topnav a {
+    color: #E8EEF6; text-decoration: none; font-size: 13px; font-weight: bold;
+    padding: 11px 13px; display: block; border-bottom: 3px solid transparent;
+  }
+  nav.topnav a:hover { background: #1F4E79; color: #fff; }
+  nav.topnav a.active { background: #2E75B6; color: #fff; border-bottom-color: #9CC3E8; }
+
+  header.pagehead { background: #1F4E79; color: #fff; padding: 34px 28px 26px; }
+  header.pagehead h1 { margin: 0 0 8px; font-size: 27px; }
+  header.pagehead p { margin: 0; font-size: 15px; color: #D6E4F2; max-width: 90ch; }
+  header.pagehead .kicker {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: #9CC3E8; margin-bottom: 10px; font-weight: bold;
+  }
+
+  main { padding: 0 28px 60px; max-width: 1180px; }
+
+  h2 {
+    font-size: 21px; color: #1F4E79; margin: 38px 0 12px; padding-bottom: 7px;
+    border-bottom: 2px solid #1F4E79;
+  }
+  h3 { font-size: 17px; color: #173A5C; margin: 26px 0 8px; }
+  h4 { font-size: 15px; color: #2E75B6; margin: 20px 0 6px; }
+  p  { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13.5px; }
+  th, td { border: 1px solid #C8D2DE; padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #1F4E79; color: #fff; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #F2F5F9; }
+  table.compact { font-size: 12.5px; }
+  table.compact th, table.compact td { padding: 5px 7px; }
+  .ctr { text-align: center; }
+
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: 13px;
+    background: #EEF2F7; padding: 1px 5px; border-radius: 3px; color: #123A6B;
+  }
+  td code, th code { font-size: 12px; }
+  pre {
+    background: #14243A; color: #E8EEF6; padding: 13px 15px; border-radius: 5px;
+    overflow-x: auto; font-family: Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 1.55; margin: 12px 0;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  pre.prompt {
+    background: #1B3A2E; border-left: 5px solid #2FA36B; color: #E4F5EC;
+    white-space: pre-wrap; font-size: 13px;
+  }
+
+  .box { border-left: 5px solid #2E75B6; background: #EAF2FB; padding: 11px 16px; margin: 15px 0; }
+  .box.warn { border-left-color: #B8860B; background: #FBF3E0; }
+  .box.crit { border-left-color: #B03030; background: #FBEAEA; }
+  .box.ok   { border-left-color: #1B7A4E; background: #E6F3EC; }
+  .box b.lbl { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+
+  .ascii {
+    background: #14243A; color: #C6E0FF; padding: 16px; border-radius: 5px;
+    font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+    line-height: 1.45; overflow-x: auto; white-space: pre; margin: 14px 0;
+  }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px;
+    border-radius: 3px; background: #E3E9F0; color: #123A6B; border: 1px solid #C8D2DE;
+  }
+  .tag.no  { background: #FBEAEA; color: #8B2020; border-color: #E0BABA; }
+  .tag.yes { background: #E6F3EC; color: #15603E; border-color: #B3D9C4; }
+
+  .week {
+    background: #1F4E79; color: #fff; display: inline-block;
+    padding: 3px 12px; border-radius: 4px; font-size: 13px; font-weight: bold;
+    margin-right: 8px;
+  }
+  .pri { display:inline-block; width:22px; height:22px; line-height:22px; text-align:center;
+         border-radius:50%; background:#2E75B6; color:#fff; font-size:12px; font-weight:bold; }
+  .sub { display:block; font-size:12px; font-weight:bold; color:#2E75B6;
+         text-transform:uppercase; letter-spacing:.6px; margin:14px 0 4px; }
+
+  footer.pagefoot {
+    background: #14243A; color: #A9BBD0; padding: 20px 28px; font-size: 13px;
+    border-top: 3px solid #1F4E79;
+  }
+  footer.pagefoot b { color: #E8EEF6; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html">Trang chủ</a>
+  <a href="01-moi-truong-va-cong-cu.html">01 · Môi trường &amp; Công cụ</a>
+  <a href="02-kien-truc-va-cau-truc-code.html">02 · Kiến trúc &amp; Cấu trúc code</a>
+  <a href="03-tai-lieu-nghiep-vu-BA.html">03 · Nghiệp vụ (BA)</a>
+  <a href="04-quy-trinh-lap-trinh-voi-claude-code.html">04 · Lập trình với Claude Code</a>
+  <a href="05-lo-trinh-hoc-va-bat-chuoc.html" class="active">05 · Lộ trình học</a>
+</nav>
+
+<header class="pagehead">
+  <div class="kicker">Tài liệu nhập môn · Tập 05</div>
+  <h1>Lộ trình học &amp; bắt chước</h1>
+  <p>Từ một app Google Apps Script mức "hello world" đến làm được app Frappe hoàn chỉnh trên đúng stack của nhóm. Sáu tuần, có bài tập cụ thể và prompt mẫu cho từng bước.</p>
+</header>
+
+<main>
+
+<div class="box ok">
+  <b class="lbl">Lời đầu tiên — bạn gần đích hơn bạn tưởng</b>
+  Bạn đã biết <b>biến, vòng lặp, hàm</b> và đã tự làm xong một app Google Apps Script. Đó không phải "chưa biết gì" — đó là <b>đã qua được rào cản khó nhất</b>: hiểu rằng máy tính làm đúng những gì mình bảo, không hơn không kém.
+  <p style="margin:6px 0">Frappe khác GAS chủ yếu ở <b>quy mô và tổ chức</b>, không phải ở độ khó tư duy. Và bạn có hai lợi thế mà người học 5 năm trước không có: <b>một codebase thật để bắt chước</b> (hơn 340 commit, 40 DocType) và <b>một trợ lý AI</b> đọc được toàn bộ code đó.</p>
+  <b>Mục tiêu thực tế:</b> sau 6 tuần bạn tự làm được một app Frappe nhỏ end-to-end và đọc hiểu được phần lớn code của nhóm. Chưa phải chuyên gia — nhưng đủ để đóng góp thật.
+</div>
+
+<!-- ══════════════════════════════ 1 ══════════════════════════════ -->
+<h2>1. Đánh giá khoảng cách: bạn đang ở đâu, cần gì thêm</h2>
+
+<h3>1.1 Cái bạn đã có (đừng học lại)</h3>
+<table class="compact">
+  <thead><tr><th>Kỹ năng từ GAS</th><th>Dùng lại được ở Frappe thế nào</th></tr></thead>
+  <tbody>
+    <tr><td>Biến, vòng lặp, hàm, điều kiện</td><td><b>Y hệt</b>. Python chỉ khác cú pháp, không khác tư duy</td></tr>
+    <tr><td>Gọi hàm có sẵn của nền tảng</td><td>Frappe cũng vậy: <code>frappe.get_doc()</code>, <code>frappe.db.get_all()</code></td></tr>
+    <tr><td>Xử lý dữ liệu dạng bảng</td><td>DocType chính là bảng — bạn đã quen khái niệm hàng/cột</td></tr>
+    <tr><td>Debug bằng cách in ra xem</td><td>Vẫn dùng: <code>frappe.log_error()</code>, <code>print()</code> trong <code>bench console</code></td></tr>
+  </tbody>
+</table>
+
+<h3>1.2 Tám thứ cần bổ sung — xếp theo thứ tự ưu tiên</h3>
+<p>Học <b>đúng thứ tự này</b>. Mỗi mục xây trên mục trước.</p>
+
+<table>
+  <thead><tr><th class="ctr">Ưu tiên</th><th>Cần học gì</th><th>Vì sao cần</th><th>Học ở đâu</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="ctr"><span class="pri">1</span></td>
+      <td><b>Dòng lệnh Linux cơ bản</b><br><small>~4 giờ</small></td>
+      <td>Frappe điều khiển hoàn toàn bằng lệnh. Không có nút bấm để "chạy app"</td>
+      <td><b>Nội bộ:</b> Tập 01 mục 3 (10 bước cài đặt) — mọi lệnh đều có giải thích<br><b>Ngoài:</b> tra <code>cd</code>, <code>ls</code>, <code>cat</code>, <code>grep</code>, <code>sudo</code></td>
+    </tr>
+    <tr>
+      <td class="ctr"><span class="pri">2</span></td>
+      <td><b>Python cơ bản</b><br><small>~1 tuần</small></td>
+      <td>Toàn bộ logic nghiệp vụ viết bằng Python</td>
+      <td><b>Nội bộ:</b> đọc <code>supplycore/supplycore/doctype/sc_uom/sc_uom.py</code> (2 dòng) rồi <code>sc_item/sc_item.py</code><br><b>Ngoài:</b> docs.python.org/3/tutorial — chỉ cần chương 3–5, 9</td>
+    </tr>
+    <tr>
+      <td class="ctr"><span class="pri">3</span></td>
+      <td><b>Git cơ bản</b><br><small>~3 giờ</small></td>
+      <td>Không biết Git thì không lưu được việc, không quay lui được khi hỏng</td>
+      <td><b>Nội bộ:</b> Tập 01 mục 4c (quy ước nhánh &amp; commit của nhóm)<br><b>Ngoài:</b> git-scm.com/book — chương 2 và 3</td>
+    </tr>
+    <tr>
+      <td class="ctr"><span class="pri">4</span></td>
+      <td><b>Khái niệm DocType</b><br><small>~1 ngày</small></td>
+      <td><b>Đây là trái tim của Frappe.</b> Hiểu DocType là hiểu 60% Frappe</td>
+      <td><b>Nội bộ:</b> Tập 02 mục 2 và 3<br><b>Ngoài:</b> frappeframework.com/docs — mục "DocTypes"</td>
+    </tr>
+    <tr>
+      <td class="ctr"><span class="pri">5</span></td>
+      <td><b>Vòng đời chứng từ</b><br><small>~1 ngày</small></td>
+      <td>Biết code của mình chạy lúc nào: khi lưu? khi nộp? khi hủy?</td>
+      <td><b>Nội bộ:</b> Tập 02 mục 6.1 · đọc <code>supplycore/m7_sales/doctype/sc_delivery_note/sc_delivery_note.py</code><br><b>Ngoài:</b> Frappe docs — "Controllers" / "Document Lifecycle"</td>
+    </tr>
+    <tr>
+      <td class="ctr"><span class="pri">6</span></td>
+      <td><b>SQL đọc hiểu</b><br><small>~4 giờ</small></td>
+      <td>Để tra dữ liệu khi debug. Chỉ cần <b>đọc</b>, chưa cần viết giỏi</td>
+      <td><b>Nội bộ:</b> Tập 01 mục 4j có sẵn câu truy vấn mẫu<br><b>Ngoài:</b> chỉ cần <code>SELECT ... FROM ... WHERE ... GROUP BY</code></td>
+    </tr>
+    <tr>
+      <td class="ctr"><span class="pri">7</span></td>
+      <td><b>Nghiệp vụ kho vận</b><br><small>~2 ngày</small></td>
+      <td>Code đúng cú pháp nhưng sai nghiệp vụ thì vô dụng. Phải hiểu <i>vì sao</i> có quy tắc</td>
+      <td><b>Nội bộ:</b> Tập 03 toàn bộ · <code>docs/ba-miyano/SupplyCore_MVL_BA.html</code></td>
+    </tr>
+    <tr>
+      <td class="ctr"><span class="pri">8</span></td>
+      <td><b>Vue/JavaScript</b><br><small>để sau</small></td>
+      <td><b>Ưu tiên thấp nhất.</b> Phần lớn việc giao diện ở dự án này chỉ là <b>sửa file cấu hình</b>, không viết component</td>
+      <td><b>Nội bộ:</b> Tập 02 mục 7.2 — cơ chế "cấu hình thay vì viết code"</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Ba thứ bạn KHÔNG cần học lúc này</b>
+  <ul style="margin:6px 0">
+    <li><b>Docker</b> — chỉ cần khi triển khai cho khách. Học ở tháng thứ 2–3.</li>
+    <li><b>Vue nâng cao</b> — dự án dùng cơ chế cấu hình, hiếm khi viết component mới.</li>
+    <li><b>ERPNext</b> — SupplyCore <b>không dùng</b> ERPNext. Học ERPNext lúc này là lãng phí thời gian.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════ 2 ══════════════════════════════ -->
+<h2>2. Cài đặt tối thiểu — checklist</h2>
+
+<p>Bám đúng môi trường thật ở <b>Tập 01 mục 3</b>. Tick từng dòng, đừng nhảy cóc.</p>
+
+<table class="compact">
+  <thead><tr><th class="ctr">☐</th><th>Việc</th><th>Lệnh kiểm chứng</th><th>Kết quả đúng</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">☐</td><td>Máy Ubuntu 22.04 hoặc 24.04, có tài khoản <code>sudo</code></td><td><code>lsb_release -ds &amp;&amp; sudo -v</code></td><td>Hiện tên Ubuntu, không báo lỗi quyền</td></tr>
+    <tr><td class="ctr">☐</td><td>Cài gói hệ thống (Tập 01 Bước 1)</td><td><code>which git python3 redis-server wkhtmltopdf</code></td><td>Ra đủ 4 đường dẫn</td></tr>
+    <tr><td class="ctr">☐</td><td>MariaDB chạy + đặt <code>utf8mb4</code></td><td><code>systemctl is-active mariadb</code></td><td><code>active</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Node 18 qua nvm + yarn</td><td><code>node -v &amp;&amp; yarn -v</code></td><td><code>v18.x</code> và <code>1.22.x</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Cài bench</td><td><code>bench --version</code></td><td><code>5.29.x</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Tạo thư mục bench</td><td><code>ls ~/frappe-bench-yhct</code></td><td>Thấy <code>apps sites env config logs</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Tạo site học tập <b>riêng</b></td><td><code>ls ~/frappe-bench-yhct/sites/</code></td><td>Thấy site của bạn</td></tr>
+    <tr><td class="ctr">☐</td><td>Lấy code SupplyCore về <b>để đọc</b></td><td><code>ls ~/frappe-bench-yhct/apps/supplycore</code></td><td>Thấy <code>supplycore/ frontend/ docs/</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Cài Claude Code</td><td><code>claude --version</code></td><td>Ra số phiên bản</td></tr>
+    <tr><td class="ctr">☐</td><td>Xin thư mục <code>.claude/skills/</code> từ đồng nghiệp</td><td><code>ls apps/supplycore/.claude/skills/</code></td><td>Thấy 7 thư mục skill</td></tr>
+    <tr><td class="ctr">☐</td><td>Mở được trang đăng nhập</td><td><code>bench start</code> rồi mở trình duyệt</td><td>Thấy màn hình đăng nhập</td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <b class="lbl">Tạo SITE RIÊNG để học — đừng học trên site của nhóm</b>
+  <pre style="margin:6px 0"><code>cd ~/frappe-bench-yhct
+bench new-site hoctap.local \
+    --db-root-username root \
+    --db-root-password '&lt;ĐÃ_ẨN&gt;' \
+    --admin-password '&lt;ĐÃ_ẨN&gt;'</code></pre>
+  <b>Vì sao:</b> bạn sẽ thử nghiệm, xóa nhầm, làm hỏng dữ liệu. Site riêng thì hỏng cũng không sao — xóa đi tạo lại.
+  <b>Tuyệt đối không</b> thực hành trên <code>supplycore-miyano.local</code> hay site của khách.
+</div>
+
+<div class="box warn">
+  <b class="lbl">Cái bẫy đầu tiên bạn sẽ gặp</b>
+  Trên máy đang dùng, <b>MariaDB đang ở trạng thái <code>failed</code></b>. Nếu gặp lỗi <code>ConnectionRefusedError: [Errno 111]</code> thì đó là nguyên nhân:
+  <pre style="margin:6px 0"><code>sudo systemctl start mariadb
+sudo systemctl status mariadb --no-pager</code></pre>
+</div>
+
+<!-- ══════════════════════════════ 3 ══════════════════════════════ -->
+<h2>3. Lộ trình 6 tuần</h2>
+
+<p>Giả định <b>2–3 giờ/ngày</b>. Nhanh hơn thì rút ngắn, chậm hơn thì kéo dài — quan trọng là <b>làm đủ phần thực hành</b>, không phải đọc cho hết.</p>
+
+<div class="ascii">
+ Tuần 1     Tuần 2      Tuần 3        Tuần 4        Tuần 5         Tuần 6
+ ──────     ──────      ──────        ──────        ──────         ──────
+ Dựng       Đọc hiểu    APP ĐẦU       Thêm logic    Workflow,      Đóng góp
+ môi        code của    TIÊN          + kiểm thử    quyền, report  thật vào
+ trường     nhóm        (2 DocType)   + commit      + API + CI     SupplyCore
+   │           │            │              │             │              │
+   ▼           ▼            ▼              ▼             ▼              ▼
+ Chạy được  Đọc được    Có app       Có test      App gần như    Sửa 1 lỗi
+ hệ thống   1 DocType   chạy được    XANH         hoàn chỉnh     nhỏ thật
+</div>
+
+<h3><span class="week">Tuần 1</span>Dựng môi trường &amp; làm quen</h3>
+<p class="sub">Mục tiêu</p>
+<p>Chạy được hệ thống trên máy mình. <b>Chưa cần hiểu code.</b></p>
+<p class="sub">Việc đọc</p>
+<ul>
+  <li><b>Tập 01</b> toàn bộ — đọc lướt một lượt trước, rồi làm theo mục 3</li>
+  <li><b>Tập 01 mục 7.1</b> — 9 điều dễ vấp nhất. Đọc kỹ, sẽ gặp lại</li>
+</ul>
+<p class="sub">Việc thực hành</p>
+<ol>
+  <li>Cài đủ checklist mục 2 ở trên</li>
+  <li>Nạp dữ liệu mẫu: <code>bash apps/supplycore/scripts/setup_test_env.sh</code></li>
+  <li>Đăng nhập, <b>bấm thử khắp giao diện</b> — chưa sửa gì cả</li>
+  <li>Tự tạo thử: 1 nhà cung cấp → 1 vật tư → 1 đơn mua. Xem hệ thống chặn gì</li>
+  <li>Mở <code>bench --site &lt;site&gt; mariadb</code> và chạy thử:
+    <pre><code>SELECT name, item_name, uom FROM `tabSC Item` LIMIT 5;</code></pre>
+  </li>
+</ol>
+<p class="sub">Xong tuần 1 khi</p>
+<p class="tag yes">Bạn tự khởi động lại được hệ thống sau khi tắt máy, và tự tạo được một chứng từ trên giao diện.</p>
+
+<h3><span class="week">Tuần 2</span>Đọc hiểu code của nhóm</h3>
+<p class="sub">Mục tiêu</p>
+<p>Đọc được một DocType từ đầu đến cuối. <b>Vẫn chưa viết code.</b></p>
+<p class="sub">Việc đọc</p>
+<ul>
+  <li><b>Tập 02</b> mục 1–3 (bản đồ thư mục, DocType, quan hệ)</li>
+  <li><b>Tập 02 mục 11</b> — "5 khu vực nên đọc đầu tiên", làm theo đúng thứ tự</li>
+  <li>Python cơ bản song song (ưu tiên 2 ở mục 1.2)</li>
+</ul>
+<p class="sub">Việc thực hành — đọc theo thứ tự từ dễ đến khó</p>
+<ol>
+  <li><b>DocType đơn giản nhất</b> — <code>supplycore/supplycore/doctype/sc_uom/</code>. Chỉ 4 trường, controller có <b>2 dòng</b>:
+    <pre><code>from frappe.model.document import Document
+class SCUOM(Document): pass</code></pre>
+  </li>
+  <li><b>DocType có logic</b> — <code>sc_item/sc_item.py</code>. Xem hàm <code>validate()</code> làm gì</li>
+  <li><b>Controller đầy đủ</b> — <code>m7_sales/doctype/sc_delivery_note/sc_delivery_note.py</code>. Có đủ 6 hàm vòng đời</li>
+  <li><b>Bài tập "tìm 5 nơi"</b>: chọn <code>SC Customer</code>, tự tìm đủ 5 chỗ nó xuất hiện (định nghĩa, logic, cột danh sách, biểu mẫu, test) — xem Tập 02 cuối mục 11</li>
+</ol>
+<p class="sub">Prompt mẫu để nhờ AI giảng bài</p>
+<pre class="prompt">Tôi đang học Frappe, nền tảng lập trình cơ bản.
+
+Đọc file supplycore/m7_sales/doctype/sc_delivery_note/sc_delivery_note.py
+rồi giải thích cho tôi như giải thích cho người mới:
+- Mỗi hàm validate/before_submit/on_submit/before_cancel chạy LÚC NÀO
+- Hàm _check_scan_confirmed() đang chặn điều gì, và VÌ SAO nghiệp vụ cần chặn
+- Chỉ cho tôi 1 dòng code mà nếu xóa đi thì hệ thống sẽ sai nghiệp vụ
+
+ĐỪNG sửa gì cả, chỉ giải thích.</pre>
+<p class="sub">Xong tuần 2 khi</p>
+<p class="tag yes">Bạn nhìn một file <code>.py</code> của DocType và nói được: hàm nào chạy lúc nào, đang chặn cái gì.</p>
+
+<h3><span class="week">Tuần 3</span>App đầu tiên của bạn</h3>
+<p class="sub">Mục tiêu</p>
+<p>Tự tạo một app Frappe nhỏ chạy được. Chi tiết ở <b>mục 4</b> bên dưới.</p>
+<p class="sub">Việc đọc</p>
+<ul>
+  <li><b>Tập 04</b> mục 0–3 (quy trình 4 nhịp, spec, plan)</li>
+</ul>
+<p class="sub">Việc thực hành</p>
+<p>Làm trọn bài tập <b>"App đầu tiên"</b> ở mục 4 — app quản lý công việc với 2 DocType.</p>
+<p class="sub">Xong tuần 3 khi</p>
+<p class="tag yes">App của bạn cài được lên site, tạo được bản ghi, và hiện trong giao diện Desk.</p>
+
+<h3><span class="week">Tuần 4</span>Thêm logic &amp; kiểm thử</h3>
+<p class="sub">Mục tiêu</p>
+<p>App của bạn có <b>quy tắc nghiệp vụ</b> và <b>test tự động</b>.</p>
+<p class="sub">Việc đọc</p>
+<ul>
+  <li><b>Tập 04</b> mục 4 và 6 (viết logic Python theo TDD, kiểm thử)</li>
+  <li>Đọc khuôn mẫu test: <code>supplycore/tests/sc_customer_test.py</code></li>
+</ul>
+<p class="sub">Việc thực hành</p>
+<ol>
+  <li>Thêm quy tắc: không cho đặt hạn hoàn thành ở quá khứ</li>
+  <li>Viết test cho quy tắc đó — <b>test đỏ trước</b></li>
+  <li>Commit đúng quy ước của nhóm</li>
+</ol>
+<p class="sub">Xong tuần 4 khi</p>
+<p class="tag yes">Chạy <code>bench --site &lt;site&gt; execute &lt;app&gt;.tests.&lt;file&gt;.run</code> ra <code>passed: N/N</code>.</p>
+
+<h3><span class="week">Tuần 5</span>Nâng cấp: duyệt, quyền, báo cáo, API</h3>
+<p class="sub">Mục tiêu</p>
+<p>App có đủ các thành phần của một app thật. Chi tiết ở <b>mục 5</b>.</p>
+<p class="sub">Việc đọc</p>
+<ul>
+  <li><b>Tập 02</b> mục 4 (máy trạng thái) và mục 8 (phân quyền)</li>
+  <li><b>Tập 03</b> mục 6 (cách viết quy tắc nghiệp vụ)</li>
+</ul>
+<p class="sub">Việc thực hành</p>
+<p>Làm 5 bài nâng dần ở mục 5: luồng duyệt · phân quyền · báo cáo · API · CI.</p>
+
+<h3><span class="week">Tuần 6</span>Đóng góp thật vào SupplyCore</h3>
+<p class="sub">Mục tiêu</p>
+<p>Sửa một thứ nhỏ nhưng <b>thật</b> trong dự án của nhóm.</p>
+<p class="sub">Việc thực hành — chọn một</p>
+<table class="compact">
+  <thead><tr><th>Việc</th><th>Độ khó</th><th>Vì sao hợp người mới</th></tr></thead>
+  <tbody>
+    <tr><td>Sửa một nhãn tiếng Việt sai/khó hiểu trong <code>frontend/src/i18n.js</code></td><td>Rất dễ</td><td>Chạm được vào quy trình đủ (sửa → build → hard refresh → commit) mà rủi ro gần bằng 0</td></tr>
+    <tr><td>Thêm một cột vào danh sách trong <code>frontend/src/modules.js</code></td><td>Dễ</td><td>Học cơ chế "cấu hình thay vì viết code"</td></tr>
+    <tr><td>Viết thêm test cho một quy tắc <code>BRU-*</code> chưa có test</td><td>Vừa</td><td>Đóng góp giá trị thật; buộc phải đọc kỹ code</td></tr>
+    <tr><td><b>Cherry-pick <code>faeea1f</code></b> — sửa ô đăng nhập Cổng khách hàng</td><td>Vừa</td><td><b>Việc thật đang treo</b>. Xem "Còn treo" ở cuối tài liệu</td></tr>
+  </tbody>
+</table>
+<p class="sub">Xong tuần 6 khi</p>
+<p class="tag yes">Bạn có một commit của mình trên nhánh của nhóm, đã chạy test và không làm hỏng gì.</p>
+
+<!-- ══════════════════════════════ 4 ══════════════════════════════ -->
+<h2>4. Bài tập lớn: app đầu tiên của bạn</h2>
+
+<div class="box">
+  <b class="lbl">Đề bài</b>
+  Làm một app Frappe tên <b><code>mytasks</code></b> — quản lý công việc cá nhân, gồm <b>2 DocType</b>:
+  <ul style="margin:6px 0">
+    <li><b>Task Category</b> (Nhóm công việc) — danh mục đơn giản, không có luồng duyệt</li>
+    <li><b>My Task</b> (Công việc) — chứng từ có luồng duyệt (submittable)</li>
+  </ul>
+  Làm <b>end-to-end đúng quy trình nhóm</b>: spec → plan → TDD → commit → PR.
+</div>
+
+<div class="box warn">
+  <b class="lbl">Vì sao làm app RIÊNG chứ không thêm vào supplycore</b>
+  App riêng thì bạn <b>sai thoải mái</b> — xóa đi làm lại không ảnh hưởng ai. Đồng thời bạn học được cách <b>tạo app từ số 0</b>, thứ mà thêm code vào app có sẵn không dạy được.
+</div>
+
+<h3>Bước 1 — Viết spec</h3>
+<p class="sub">Lệnh</p>
+<pre><code>cd ~/frappe-bench-yhct/apps
+mkdir -p mytasks-docs   # tạm để chứa spec trước khi có app
+claude</code></pre>
+<p class="sub">Prompt mẫu</p>
+<pre class="prompt">Tôi đang học Frappe. Giúp tôi viết spec cho app học tập tên "mytasks":
+
+Yêu cầu gốc: "Tôi muốn một app quản lý công việc cá nhân. Mỗi công việc thuộc
+một nhóm, có tiêu đề, hạn hoàn thành, mức ưu tiên, và trạng thái. Công việc
+phải được duyệt trước khi coi là chốt."
+
+Hãy viết spec theo ĐÚNG cấu trúc nhóm SupplyCore đang dùng (xem
+docs/onboarding/04-quy-trinh-lap-trinh-voi-claude-code.html mục 1):
+- Yêu cầu gốc (chép nguyên văn)
+- Bối cảnh
+- Quyết định thiết kế — HỎI TÔI những chỗ chưa rõ trước khi tự quyết
+- Kiến trúc: 2 DocType, trường, quan hệ, quyền
+
+Tôi là người mới nên giải thích thêm vì sao chọn từng kiểu trường.
+ĐỪNG code gì cả ở bước này.</pre>
+<p class="sub">Kết quả mong đợi</p>
+<p>File <code>spec.md</code> có 4 phần. AI phải <b>hỏi bạn</b> ít nhất 2–3 câu (ví dụ: trạng thái gồm những gì? ai được duyệt?).</p>
+
+<h3>Bước 2 — Tạo app</h3>
+<p class="sub">Lệnh thật</p>
+<pre><code>cd ~/frappe-bench-yhct
+bench new-app mytasks
+# Trả lời các câu hỏi: tên hiển thị, mô tả, tác giả, email, license (MIT)
+
+# Cài lên site học tập
+bench --site hoctap.local install-app mytasks
+
+# Kiểm tra
+bench --site hoctap.local list-apps       # phải thấy mytasks</code></pre>
+<p class="sub">Kết quả mong đợi</p>
+<pre><code>apps/mytasks/
+├── mytasks/
+│   ├── hooks.py          ← bảng điều khiển (Tập 02 mục 5)
+│   ├── modules.txt
+│   ├── patches.txt
+│   └── mytasks/doctype/  ← nơi đặt DocType
+├── pyproject.toml
+└── README.md</code></pre>
+<div class="box warn">
+  <b class="lbl">Khác biệt với SupplyCore — biết để không nhầm</b>
+  <code>bench new-app</code> sinh sẵn khung app. Nhưng nhóm <b>không dùng</b> <code>bench make-doctype</code> để tạo DocType — họ <b>viết file JSON bằng tay</b> vì file sinh tự động có nhiều trường thừa, khó review qua Git (Tập 04 mục 3).
+</div>
+
+<h3>Bước 3 — Viết plan</h3>
+<pre class="prompt">Từ spec vừa viết, hãy viết kế hoạch thực thi vào apps/mytasks/plan.md.
+
+Theo đúng khuôn mẫu của nhóm SupplyCore:
+- Có mục "Global Constraints" ghi: bench dir, site hoctap.local, quy ước
+  đặt tên, và ràng buộc bất biến (migrate sạch + frappe.ping → pong)
+- Chia thành các Task ĐỘC LẬP, mỗi Task = 1 commit
+- Mỗi Task có: Files (create/modify), rồi Steps dạng checkbox
+- BẮT BUỘC TDD: Step 1 viết test ĐỎ, Step 2 code cho XANH
+- Có mục "Điểm MIRROR": chỉ cho tôi file nào trong apps/supplycore để
+  bắt chước (ví dụ sc_uom cho DocType đơn giản)
+
+Chia khoảng 4 Task thôi, tôi là người mới.</pre>
+
+<h3>Bước 4 — Task 1: DocType đơn giản (Task Category)</h3>
+<p class="sub">Prompt mẫu</p>
+<pre class="prompt">Thực thi Task 1: tạo DocType "Task Category".
+
+Yêu cầu:
+- Mirror ĐÚNG cấu trúc apps/supplycore/supplycore/supplycore/doctype/sc_uom/
+  (đó là DocType đơn giản nhất trong dự án nhóm)
+- Trường: category_name (Data, reqd, unique), description (Small Text),
+  color (Data), disabled (Check)
+- autoname: field:category_name
+- Quyền: System Manager full; All đọc
+
+Làm theo TDD:
+1. RED: viết apps/mytasks/mytasks/tests/task_category_test.py theo ĐÚNG khuôn
+   mẫu apps/supplycore/supplycore/tests/sc_customer_test.py — mỗi test trả
+   {"pass": bool, "msg": str}, cuối test gọi frappe.db.rollback(), có hàm run().
+   Chạy: bench --site hoctap.local execute mytasks.tests.task_category_test.run
+   CHO TÔI XEM output FAIL.
+2. GREEN: tạo .json + .py, chạy bench migrate, chạy lại test, CHO TÔI XEM PASS.
+3. Chạy bench --site hoctap.local execute frappe.ping → pong
+
+Giải thích cho tôi từng dòng trong file .json, tôi là người mới.</pre>
+<p class="sub">Kết quả mong đợi</p>
+<p>File JSON trông giống bản mẫu thật của nhóm:</p>
+<pre><code>{
+ "doctype": "DocType", "engine": "InnoDB",
+ "autoname": "field:category_name", "track_changes": 1,
+ "field_order": ["category_name", "description", "color", "disabled"],
+ "fields": [
+  {"fieldname": "category_name", "fieldtype": "Data", "label": "Tên nhóm",
+   "reqd": 1, "unique": 1, "in_list_view": 1},
+  …
+ ],
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1}
+ ],
+ "module": "Mytasks", "name": "Task Category", "title_field": "category_name"
+}</code></pre>
+
+<h3>Bước 5 — Task 2: DocType có luồng duyệt (My Task)</h3>
+<pre class="prompt">Thực thi Task 2: tạo DocType "My Task" — có luồng duyệt (is_submittable).
+
+Trường:
+- title (Data, reqd)
+- category (Link → Task Category, reqd)
+- due_date (Date)
+- priority (Select: Thấp/Trung bình/Cao, default Trung bình)
+- status (Select: Nháp/Đang làm/Hoàn thành, default Nháp, read_only)
+- notes (Text)
+- amended_from (Link → My Task, read_only)   ← Frappe cần trường này cho doctype submittable
+autoname: format:TASK-{YYYY}-{#####}
+
+TDD như Task 1. Sau khi xong, giải thích cho tôi:
+- "is_submittable" nghĩa là gì, docstatus 0/1/2 khác nhau ra sao
+- Vì sao status để read_only
+- Vì sao cần amended_from</pre>
+<div class="box ok">
+  <b class="lbl">Điều quan trọng nhất học được ở bước này</b>
+  Trường <code>status</code> để <b><code>read_only</code></b> — người dùng không tự đặt trạng thái, nó là <b>hệ quả</b> của hành động. Đây là nguyên tắc xuyên suốt SupplyCore (Tập 03 mục 4.3): <i>trạng thái không bao giờ nói dối về thực tế dữ liệu</i>.
+</div>
+
+<h3>Bước 6 — Task 3: thêm quy tắc nghiệp vụ</h3>
+<pre class="prompt">Thực thi Task 3: thêm 2 quy tắc nghiệp vụ vào My Task.
+
+BR-01: Không cho đặt due_date ở quá khứ khi tạo mới.
+       Mã lỗi: MT-E-DUE-PAST
+BR-02: Khi nộp (submit), status tự chuyển "Đang làm".
+       Khi hủy (cancel), status về "Nháp".
+
+Yêu cầu:
+- Mã lỗi có tiền tố tra được, giống cách SupplyCore dùng SC-E* / BRU-*
+- Thông báo lỗi nói rõ NGƯỜI DÙNG PHẢI LÀM GÌ, không chỉ báo "Lỗi"
+- Chú thích tiếng Việt giải thích LÝ DO, không mô tả lại code
+
+TDD: viết test cho cả 2 quy tắc TRƯỚC. Cho tôi xem output FAIL rồi mới code.</pre>
+<p class="sub">Kết quả mong đợi — bắt chước đúng phong cách nhóm</p>
+<pre><code>def validate(self):
+    self._check_due_date()
+
+def _check_due_date(self):
+    # Chặn hạn quá khứ NGAY khi tạo mới. Cho phép sửa việc cũ đã trễ hạn
+    # (is_new() = chỉ áp cho bản ghi mới), tránh khoá cứng dữ liệu lịch sử.
+    if self.is_new() and self.due_date and getdate(self.due_date) &lt; getdate(today()):
+        frappe.throw(_(
+            "MT-E-DUE-PAST: Hạn hoàn thành ({0}) đã qua. "
+            "Hãy chọn ngày từ hôm nay trở đi."
+        ).format(self.due_date), title="Hạn không hợp lệ")</code></pre>
+
+<h3>Bước 7 — Commit đúng quy ước</h3>
+<pre><code>cd ~/frappe-bench-yhct/apps/mytasks
+git init                       # app mới cần khởi tạo Git
+git add -A
+git commit -F - &lt;&lt;'EOF'
+feat(mytasks): DocType My Task + 2 quy tắc nghiệp vụ (MT-E-DUE-PAST)
+
+Thêm My Task (submittable) với luồng Nháp → Đang làm → Hoàn thành.
+status để read_only vì là hệ quả của hành động, không phải do người dùng đặt.
+
+BR-01 chỉ chặn khi tạo MỚI (is_new) để không khoá cứng dữ liệu lịch sử.
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;
+EOF</code></pre>
+<pre class="prompt">Trước khi tôi commit, hãy:
+1. Cho tôi xem `git status` và `git diff --stat`
+2. Kiểm giúp có file rác nào lọt vào không (__pycache__, .pyc, node_modules)
+3. Kiểm có bí mật nào không (mật khẩu, token)
+4. Đề xuất commit message theo quy ước loại(phạm-vi): mô tả tiếng Việt,
+   phần thân giải thích LÝ DO</pre>
+
+<h3>Bước 8 — Đẩy lên GitHub &amp; mở Pull Request</h3>
+<pre><code># Tạo repo trên GitHub rồi:
+git remote add origin https://github.com/&lt;tên-bạn&gt;/mytasks.git
+git branch -M main
+git push -u origin main
+
+# Làm tính năng mới trên nhánh riêng
+git checkout -b feat/them-nhac-han
+# … code, test, commit …
+git push -u origin feat/them-nhac-han
+
+# Mở Pull Request bằng GitHub CLI (đã cài sẵn tại /usr/bin/gh)
+gh pr create --base main --head feat/them-nhac-han \
+  --title "feat(mytasks): nhắc việc sắp đến hạn" \
+  --body "Thêm tác vụ chạy hằng ngày quét việc đến hạn trong 3 ngày tới."
+
+gh pr view</code></pre>
+
+<h3>Bước 9 — Tự chấm bằng "Định nghĩa Hoàn thành"</h3>
+<p>Dùng checklist 12 mục ở <b>Tập 04 mục 9</b>. Rút gọn cho app học tập:</p>
+<table class="compact">
+  <thead><tr><th class="ctr">☐</th><th>Tiêu chí</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">☐</td><td>Có test và test XANH — <b>xem được output thật</b></td></tr>
+    <tr><td class="ctr">☐</td><td><code>bench migrate</code> sạch, <code>frappe.ping</code> → <code>pong</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Tạo/sửa/nộp/hủy được bản ghi trên giao diện Desk</td></tr>
+    <tr><td class="ctr">☐</td><td>Quy tắc nghiệp vụ có mã lỗi tra được</td></tr>
+    <tr><td class="ctr">☐</td><td>Chú thích giải thích <b>lý do</b></td></tr>
+    <tr><td class="ctr">☐</td><td>Commit message có phần thân</td></tr>
+    <tr><td class="ctr">☐</td><td>Không có file rác / bí mật lọt vào</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 5 ══════════════════════════════ -->
+<h2>5. Bài tập nâng dần</h2>
+
+<p>Làm sau khi app đầu tiên chạy được. Mỗi bài thêm <b>một thành phần</b> mà app thật đều có.</p>
+
+<h3>5.1 Luồng duyệt theo vai trò</h3>
+<p><b>Mục tiêu:</b> việc quan trọng (ưu tiên Cao) phải có người duyệt mới nộp được.</p>
+<pre class="prompt">Thêm luồng duyệt cho My Task, học theo cách SupplyCore làm (Tập 02 mục 4.2):
+
+- Thêm trường approval_stage (Select: Draft / Manager Review / Approved / Rejected,
+  read_only)
+- Thêm 3 method @frappe.whitelist(): submit_for_review(), approve(), reject(reason)
+- Chỉ việc priority = "Cao" mới cần duyệt; Thấp/Trung bình nộp thẳng
+- reject BẮT BUỘC nhập lý do
+- before_submit chặn nếu cần duyệt mà chưa Approved, mã lỗi MT-E-NOT-APPROVED
+
+QUAN TRỌNG: dùng máy trạng thái bằng Python trong controller, KHÔNG dùng
+Frappe Workflow engine — nhất quán với cách nhóm làm.
+
+Viết test cho: nộp thẳng khi ưu tiên thấp · bị chặn khi ưu tiên cao chưa duyệt ·
+reject không lý do bị chặn.</pre>
+
+<h3>5.2 Phân quyền theo vai trò</h3>
+<pre class="prompt">Thêm phân quyền cho app mytasks:
+
+1. Tạo 2 vai trò trong mytasks/install.py theo mẫu
+   apps/supplycore/supplycore/install.py (DEFAULT_ROLES):
+   - "Task User"     — tạo/sửa việc của mình
+   - "Task Manager"  — duyệt việc
+
+2. Cập nhật mục "permissions" trong 2 file .json:
+   - Task User: read/write/create trên My Task, read trên Task Category
+   - Task Manager: thêm submit/cancel
+   Mirror cách khai trong sc_uom.json
+
+3. Method approve() phải kiểm vai trò:
+   if "Task Manager" not in frappe.get_roles(frappe.session.user): throw
+
+Viết test tạo user chỉ có 1 vai trò rồi kiểm quyền — học theo
+apps/supplycore/supplycore/tests/qi_permission_test.py</pre>
+<div class="box ok">
+  <b class="lbl">Bài học quan trọng</b>
+  Quyền có <b>hai tầng</b>: <b>DocPerm</b> trong file JSON (ai vào được màn hình nào) và <b>kiểm tra trong code</b> (ai gọi được hàm nào). Phải làm <b>cả hai</b> — Tập 02 mục 8.
+</div>
+
+<h3>5.3 Một báo cáo</h3>
+<pre class="prompt">Thêm báo cáo "Task Summary" cho app mytasks.
+
+Mirror cấu trúc apps/supplycore/supplycore/supplycore/report/supplier_performance/
+(gồm 3 file: .json khai báo, .py truy vấn, .js bộ lọc)
+
+Báo cáo hiện: nhóm công việc · tổng số việc · số hoàn thành · số quá hạn · tỷ lệ %
+Bộ lọc: khoảng ngày, nhóm công việc
+
+Giải thích cho tôi vì sao SupplyCore hầu như KHÔNG dùng Report của Frappe
+mà làm bằng trang Vue riêng — và khi nào thì nên dùng cái nào.</pre>
+
+<h3>5.4 Một API</h3>
+<pre class="prompt">Thêm API cho app mytasks trong mytasks/api.py:
+
+@frappe.whitelist()
+def my_open_tasks(limit=20) -> list
+    → trả việc CHƯA hoàn thành của chính người đang đăng nhập
+
+BẮT BUỘC theo chuẩn nhóm (Tập 04 mục 4):
+- Có kiểm quyền: frappe.has_permission("My Task", "read")
+- KHÔNG tin tham số client — lấy user từ frappe.session.user, không nhận
+  tham số "user" từ ngoài
+- Docstring tiếng Việt giải thích DÙNG ĐỂ LÀM GÌ
+
+Rồi thử gọi bằng:
+bench --site hoctap.local execute mytasks.api.my_open_tasks
+
+Viết test: (1) trả đúng việc của mình, (2) KHÔNG trả việc của người khác.</pre>
+<div class="box crit">
+  <b class="lbl">Đây là bài học đắt giá nhất</b>
+  Nhóm SupplyCore đã phải làm <b>hẳn một đợt rà soát toàn bộ</b> vì các API quên kiểm quyền (các commit <code>fix(mvl-sweep)</code>, <code>fix(mvl-portal)</code>).
+  <code>@frappe.whitelist()</code> mở cửa cho <b>bất kỳ ai đã đăng nhập</b>. Tập thói quen kiểm quyền <b>ngay dòng đầu</b> mỗi hàm.
+</div>
+
+<h3>5.5 Cho chạy qua CI</h3>
+<pre class="prompt">Thêm GitHub Actions cho app mytasks: chạy test tự động mỗi khi push hoặc mở PR.
+
+Tạo .github/workflows/test.yml:
+- Kích hoạt: push và pull_request lên nhánh main
+- Dựng MariaDB + Redis bằng service container
+- Cài bench, tạo site test, cài app mytasks
+- Chạy: bench --site test.local execute mytasks.tests.&lt;file&gt;.run
+- FAIL job nếu test không pass
+
+Lưu ý: đây là điều dự án SupplyCore CHƯA có (workflow của họ chỉ chạy khi
+đẩy thẻ phiên bản, không chạy khi mở PR — xem Tập 04 mục 6).
+Giải thích cho tôi vì sao có CI khi mở PR lại quan trọng.</pre>
+<div class="box warn">
+  <b class="lbl">Bài này bạn làm TỐT HƠN dự án thật</b>
+  SupplyCore <b>không có CI khi mở PR</b>. Nếu bạn làm được cho app học tập, bạn đã hiểu một thứ mà dự án chính đang thiếu — và có thể đề xuất bổ sung.
+</div>
+
+<!-- ══════════════════════════════ 6 ══════════════════════════════ -->
+<h2>6. Mười điều tối quan trọng về setup của nhóm</h2>
+
+<p>Không biết những điều này, bạn sẽ vấp <b>ngay trong tuần đầu</b>.</p>
+
+<table>
+  <thead><tr><th class="ctr">#</th><th>Điều phải biết</th><th>Không biết thì sao</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr"><b>1</b></td><td><b>Ba loại thay đổi, ba cách áp dụng:</b><br>Python → <code>supervisorctl restart all</code><br>DocType JSON → <code>bench migrate</code><br>Vue/JS → <code>yarn build</code> + Ctrl+Shift+R</td><td>Ngồi debug một thay đổi <b>chưa hề được áp dụng</b>. Đây là lỗi số 1</td></tr>
+    <tr><td class="ctr"><b>2</b></td><td><b><code>bench build</code> KHÔNG build giao diện Vue.</b> Phải <code>cd frontend &amp;&amp; yarn build</code> riêng</td><td>Sửa giao diện mãi không thấy đổi</td></tr>
+    <tr><td class="ctr"><b>3</b></td><td><b>Luôn Ctrl+Shift+R sau khi build</b> — service worker của PWA giữ bản cũ</td><td>Tưởng build hỏng, đi sửa lung tung</td></tr>
+    <tr><td class="ctr"><b>4</b></td><td><b>MariaDB trên máy đang <code>failed</code></b> → <code>sudo systemctl start mariadb</code></td><td>Mọi lệnh <code>bench</code> báo <code>ConnectionRefusedError [Errno 111]</code></td></tr>
+    <tr><td class="ctr"><b>5</b></td><td><b>Dùng <code>yarn</code>, KHÔNG dùng <code>npm</code></b> ở <code>frontend/</code></td><td>Sinh lockfile thứ hai, phiên bản lệch, "chạy được trên máy tôi"</td></tr>
+    <tr><td class="ctr"><b>6</b></td><td><b>Clone repo về sẽ KHÔNG có <code>.claude/</code></b> — <code>.gitignore</code> loại trừ. Phải xin 7 skill từ đồng nghiệp</td><td>Thiếu skill mà không biết vì sao</td></tr>
+    <tr><td class="ctr"><b>7</b></td><td><b>KHÔNG có CI khi mở PR.</b> Bạn phải tự chạy test</td><td>Đẩy code lỗi lên nhánh chính, không ai chặn</td></tr>
+    <tr><td class="ctr"><b>8</b></td><td><b>Repo CHÍNH là <code>mvl26/supplycore-miyano</code></b> nhánh <code>main</code>. <code>mvl26/supplycore</code> là repo gốc, <code>origin/main</code> đã cũ từ 26/05</td><td>Clone nhầm repo cũ, làm trên code lỗi thời</td></tr>
+    <tr><td class="ctr"><b>9</b></td><td><b>Token GitHub phải có quyền <code>workflow</code></b> mới push được lên repo chính (vì có file CI)</td><td>Push bị từ chối. <b>Đừng lách bằng cách xóa file CI</b> — đã có người làm vậy và gây rắc rối nhiều tuần</td></tr>
+    <tr><td class="ctr"><b>10</b></td><td><b>Sổ kho &amp; sổ cái KHÔNG sửa được.</b> Tồn kho luôn tính lại bằng <code>SUM(qty_change)</code>. Ghi kho chỉ qua <code>SLE.post()</code></td><td>Viết đường ghi sổ riêng → số liệu lệch, không ai biết vì sao</td></tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <b class="lbl">Điều thứ 11 — quan trọng không kém</b>
+  <b>KHÔNG sửa tay trên máy khách (production).</b> Sửa DocType qua giao diện Desk trên máy khách sẽ tạo bản ghi chỉ có ở máy đó; lần migrate sau sẽ xung đột hoặc ghi đè mất.
+  <b>Mọi thay đổi phải đi qua Git → migrate.</b>
+</div>
+
+<!-- ══════════════════════════════ 7 ══════════════════════════════ -->
+<h2>7. Nguồn tham khảo</h2>
+
+<h3>7.1 Trong repo — đọc theo thứ tự này</h3>
+<table class="compact">
+  <thead><tr><th class="ctr">#</th><th>File</th><th>Đọc để biết</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">1</td><td><code>docs/onboarding/01-moi-truong-va-cong-cu.html</code></td><td>Dựng môi trường, toàn bộ công cụ nhóm dùng</td></tr>
+    <tr><td class="ctr">2</td><td><code>docs/onboarding/02-kien-truc-va-cau-truc-code.html</code></td><td>Code nằm ở đâu, DocType, vòng đời, bảo mật</td></tr>
+    <tr><td class="ctr">3</td><td><code>docs/onboarding/03-tai-lieu-nghiep-vu-BA.html</code></td><td>Phần mềm làm gì và vì sao — 48 quy tắc nghiệp vụ</td></tr>
+    <tr><td class="ctr">4</td><td><code>docs/onboarding/04-quy-trinh-lap-trinh-voi-claude-code.html</code></td><td>Quy trình 9 giai đoạn + prompt mẫu + bản nháp <code>CLAUDE.md</code></td></tr>
+    <tr><td class="ctr">5</td><td><code>supplycore/hooks.py</code></td><td><b>Bảng điều khiển của app</b> — đọc đầu tiên khi tiếp cận code</td></tr>
+    <tr><td class="ctr">6</td><td><code>supplycore/supplycore/doctype/sc_uom/</code></td><td>DocType đơn giản nhất — mẫu để bắt chước</td></tr>
+    <tr><td class="ctr">7</td><td><code>supplycore/m7_sales/doctype/sc_delivery_note/sc_delivery_note.py</code></td><td>Controller mẫu mực nhất — đủ 6 hàm vòng đời</td></tr>
+    <tr><td class="ctr">8</td><td><code>supplycore/tests/sc_customer_test.py</code></td><td>Khuôn mẫu viết test của nhóm</td></tr>
+    <tr><td class="ctr">9</td><td><code>supplycore/utils/permissions.py</code></td><td>Nơi rủi ro lớn nhất được xử lý — 5 lớp cô lập dữ liệu</td></tr>
+    <tr><td class="ctr">10</td><td><code>supplycore/patches.txt</code></td><td>Đọc như <b>nhật ký dự án</b> — 35 dòng kể lịch sử</td></tr>
+    <tr><td class="ctr">11</td><td><code>docs/ba-miyano/SupplyCore_MVL_BA.html</code></td><td>Tài liệu BA gốc đầy đủ (26 mục)</td></tr>
+    <tr><td class="ctr">12</td><td><code>docs/SupplyCore_HuongDanSuDung_v1.0.docx</code></td><td>Hướng dẫn cho người dùng cuối — hiểu góc nhìn người dùng</td></tr>
+    <tr><td class="ctr">13</td><td><code>supplycore/m&lt;N&gt;_&lt;tên&gt;/README.md</code></td><td>Ghi chú kỹ thuật từng phân hệ</td></tr>
+    <tr><td class="ctr">14</td><td><code>deploy/README.md</code> · <code>installer/README.md</code></td><td>Triển khai Docker · đóng gói bản cài Windows</td></tr>
+  </tbody>
+</table>
+
+<div class="box ok">
+  <b class="lbl">Nguồn quý nhất mà ít ai nghĩ tới: lịch sử Git</b>
+  22 file spec/plan của nhóm <b>đã dọn khỏi repo nhưng vẫn đọc được</b>:
+  <pre style="margin:6px 0"><code># Xem kế hoạch thật của phân hệ Bán hàng
+git show 0d61f58:docs/superpowers/plans/2026-07-06-gd2-m7-sales.md
+
+# Xem toàn bộ file spec/plan từng có
+git log --all --diff-filter=A --name-only --format="" -- 'docs/superpowers/**' | sort -u
+
+# Đọc lý do một thay đổi
+git log --format='%s%n%n%b' -1 &lt;mã-commit&gt;</code></pre>
+  Commit message của nhóm có phần thân dài giải thích <b>lý do</b> — đây là tài liệu thiết kế ẩn.
+</div>
+
+<h3>7.2 Tài liệu Frappe chính thức — theo chủ đề</h3>
+<table class="compact">
+  <thead><tr><th>Chủ đề</th><th>Nguồn</th><th>Lưu ý khi đọc</th></tr></thead>
+  <tbody>
+    <tr><td>Tổng quan Frappe</td><td><code>frappeframework.com/docs</code></td><td>Đọc mục "Basics" trước</td></tr>
+    <tr><td>DocType</td><td>Frappe docs → "DocTypes"</td><td>Phần quan trọng nhất</td></tr>
+    <tr><td>Controller &amp; vòng đời</td><td>Frappe docs → "Controllers"</td><td>Giải thích <code>validate</code>, <code>on_submit</code>…</td></tr>
+    <tr><td>API server-side</td><td>Frappe docs → "Server Side API"</td><td><code>frappe.get_doc</code>, <code>frappe.db.*</code></td></tr>
+    <tr><td>Quyền</td><td>Frappe docs → "Permissions"</td><td><b>Bỏ qua</b> phần User Permission — dự án không dùng</td></tr>
+    <tr><td>Lệnh bench</td><td><code>frappeframework.com/docs/user/en/bench</code></td><td>Hoặc <code>bench --help</code></td></tr>
+    <tr><td>Python cơ bản</td><td><code>docs.python.org/3/tutorial</code></td><td>Chỉ cần chương 3–5 và 9</td></tr>
+    <tr><td>Git</td><td><code>git-scm.com/book/vi</code></td><td>Có bản tiếng Việt. Chương 2–3 là đủ</td></tr>
+    <tr><td>Claude Code</td><td><code>docs.claude.com/claude-code</code></td><td>Đọc phần slash command và skill</td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Cảnh báo khi đọc tài liệu Frappe/ERPNext</b>
+  Rất nhiều ví dụ trên mạng dùng <b>DocType của ERPNext</b> (<code>Item</code>, <code>Sales Order</code>, <code>Warehouse</code>).
+  SupplyCore <b>không dùng ERPNext</b> — nó tự xây lại với tiền tố <code>SC </code>. Khi thấy ví dụ nhắc <code>Item</code>, hãy hiểu là ứng với <code>SC Item</code> của dự án, và <b>đừng chép nguyên xi</b>.
+</div>
+
+<!-- ══════════════════════════════ 8 ══════════════════════════════ -->
+<h2>8. Mười sai lầm người mới hay mắc</h2>
+
+<table>
+  <thead><tr><th class="ctr">#</th><th>Sai lầm</th><th>Hậu quả</th><th>Cách tránh</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="ctr"><b>1</b></td>
+      <td><b>Học lý thuyết quá lâu trước khi làm</b></td>
+      <td>Đọc 3 tuần vẫn không tự tin gõ dòng đầu</td>
+      <td>Tuần 1 phải chạy được hệ thống. Học <b>đủ để làm bước tiếp theo</b>, không học cho hết</td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>2</b></td>
+      <td><b>Thực hành trên site của nhóm</b></td>
+      <td>Làm hỏng dữ liệu người khác đang dùng</td>
+      <td>Tạo site riêng <code>hoctap.local</code>. Hỏng thì xóa tạo lại</td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>3</b></td>
+      <td><b>Bảo AI "làm giúp tôi" rồi copy không đọc</b></td>
+      <td>Code chạy nhưng bạn không hiểu; hỏng là bó tay</td>
+      <td>Luôn yêu cầu <i>"giải thích cho tôi vì sao viết như vậy"</i>. Không hiểu thì hỏi lại</td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>4</b></td>
+      <td><b>Tin lời AI nói "đã pass" mà không xem output</b></td>
+      <td>Tưởng xong, thực ra test chưa từng chạy</td>
+      <td>Yêu cầu <b>"cho tôi xem output thật, không tóm tắt"</b></td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>5</b></td>
+      <td><b>Sửa test cho pass khi test đỏ</b></td>
+      <td>Mất luôn lớp bảo vệ; lỗi lọt ra production</td>
+      <td>Test đỏ = có thứ cần sửa. Phân tích <b>code sai hay test sai</b> trước</td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>6</b></td>
+      <td><b>Quên <code>block_portal()</code> / kiểm quyền ở API mới</b></td>
+      <td><b>Rò rỉ dữ liệu khách hàng</b> — lỗi nghiêm trọng nhất</td>
+      <td>Tập thói quen: dòng đầu mỗi hàm API là kiểm quyền. Nhóm đã phải rà soát cả đợt vì lỗi này</td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>7</b></td>
+      <td><b>Viết lại hàm đã có</b></td>
+      <td>Hai đường ghi sổ kho khác nhau → số liệu lệch</td>
+      <td>Trước khi viết, hỏi AI: <i>"dự án đã có hàm nào làm việc này chưa?"</i></td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>8</b></td>
+      <td><b>Commit một lần cả trăm file</b></td>
+      <td>Không review được, không quay lui từng phần được</td>
+      <td>Một Task = một commit. Kế hoạch M7 của nhóm chia 10 Task = 10 commit</td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>9</b></td>
+      <td><b>Commit bí mật</b> (<code>.env</code>, mật khẩu, token)</td>
+      <td>Lộ vĩnh viễn — xóa commit <b>không đủ</b></td>
+      <td>Trước commit: <code>git diff --cached | grep -iE 'password|token|secret'</code>. Lỡ đẩy rồi thì <b>đổi ngay</b> token đó</td>
+    </tr>
+    <tr>
+      <td class="ctr"><b>10</b></td>
+      <td><b>Sợ hỏi vì nghĩ câu hỏi ngớ ngẩn</b></td>
+      <td>Mắc kẹt 2 ngày với thứ người khác giải trong 2 phút</td>
+      <td>Quy tắc <b>30 phút</b>: kẹt quá 30 phút thì hỏi. Kèm theo: bạn đã thử gì, lỗi hiện ra sao</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box crit">
+  <b class="lbl">Sai lầm thứ 11 — đặc thù khi làm với AI</b>
+  <b>Để AI tự quyết những chỗ chưa rõ.</b> AI sẽ chọn một cách hiểu rồi im lặng làm luôn — và bạn chỉ phát hiện khi đã làm xong.
+  <p style="margin:6px 0">Cách tránh: mở đầu mọi việc lớn bằng <i>"Đừng code vội. Khảo sát hiện trạng, nêu những chỗ CHƯA RÕ và hỏi tôi trước."</i> Đây chính là cách nhóm viết spec (Tập 04 mục 1).</p>
+</div>
+
+<!-- ══════════════════════════════ 9 ══════════════════════════════ -->
+<h2>9. Sau 6 tuần thì học gì tiếp</h2>
+
+<table class="compact">
+  <thead><tr><th>Giai đoạn</th><th>Học gì</th><th>Vì sao lúc này mới học</th></tr></thead>
+  <tbody>
+    <tr><td><b>Tháng 2</b></td><td>Vue &amp; giao diện SPA — <code>frontend/src/</code></td><td>Đã hiểu backend, giờ hiểu được dữ liệu chảy lên màn hình thế nào</td></tr>
+    <tr><td><b>Tháng 2–3</b></td><td>Docker &amp; triển khai — <code>deploy/compose.yml</code></td><td>Chỉ cần khi đưa sản phẩm cho khách</td></tr>
+    <tr><td><b>Tháng 3</b></td><td>Kiểm thử giao diện bằng Playwright — <code>ui_tests/</code></td><td>Sau khi đã quen viết test backend</td></tr>
+    <tr><td><b>Tháng 3+</b></td><td>Tối ưu hiệu năng, chỉ mục cơ sở dữ liệu</td><td>Chỉ có ý nghĩa khi dữ liệu đã lớn</td></tr>
+    <tr><td><b>Khi cần</b></td><td>Đóng gói bản cài Windows — <code>installer/</code>, Packer, Inno Setup</td><td>Phần phức tạp nhất dự án. Để sau cùng</td></tr>
+  </tbody>
+</table>
+
+<div class="box ok">
+  <b class="lbl">Lời cuối</b>
+  Dự án này có <b>hơn 340 commit</b> và hơn <b>70 quy tắc nghiệp vụ</b>. Người viết ra nó cũng mất nhiều tháng.
+  Đừng so mình với kết quả cuối — hãy so với <b>chính bạn tuần trước</b>.
+  <p style="margin:6px 0">Và hãy dùng thứ mà người học 5 năm trước không có: một <b>codebase thật để bắt chước</b> và một <b>trợ lý đọc được toàn bộ nó</b>. Cách học nhanh nhất trên stack này không phải đọc tài liệu — mà là <b>mở một file code của nhóm ra và hỏi AI "cái này làm gì, vì sao viết vậy"</b>.</p>
+</div>
+
+<h3>Ba việc thật đang treo — cơ hội đóng góp đầu tiên</h3>
+<table class="compact">
+  <thead><tr><th>Việc</th><th>Độ khó</th><th>Mô tả</th></tr></thead>
+  <tbody>
+    <tr><td><b>Khởi động lại MariaDB</b></td><td>Rất dễ</td><td>Dịch vụ đang <code>failed</code> → chưa chạy được test nào. <code>sudo systemctl start mariadb</code></td></tr>
+    <tr><td><b>Cherry-pick <code>faeea1f</code></b></td><td>Vừa</td><td>Bản sửa ô đăng nhập Cổng khách hàng nằm trên <code>origin/fix/m7-bugs</code> chưa về nhánh chính. Hiện Cổng vẫn nhảy ra <code>/portal/login</code> vỡ giao diện</td></tr>
+    <tr><td><b>Tạo <code>CLAUDE.md</code></b></td><td>Dễ</td><td>Repo chưa có. Bản nháp sẵn ở <b>Tập 04 mục 11</b> — chỉ cần lưu vào thư mục gốc và điều chỉnh</td></tr>
+  </tbody>
+</table>
+
+</main>
+
+<footer class="pagefoot">
+  <b>SupplyCore MVL — Tài liệu nhập môn · Tập 05: Lộ trình học &amp; bắt chước</b><br>
+  Ngày tạo: <b>05/08/2026</b> · Bám môi trường và quy trình thật của nhóm (tham chiếu Tập 01–04).<br>
+  Mọi mật khẩu, khóa, token và IP nội bộ đã được thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
+  Lộ trình là gợi ý — hãy điều chỉnh theo tốc độ của bạn.
+</footer>
+
+</body>
+</html>
