@@ -665,23 +665,47 @@ miyano    https://github.com/mvl26/supplycore-miyano.git (fetch/push)
 origin    https://github.com/mvl26/supplycore.git         (fetch/push)
 upstream  /home/hoangvietyeuem/frappe-bench/apps/supplycore (fetch/push)</code></pre>
 <table>
-  <thead><tr><th>Remote</th><th>Là gì</th></tr></thead>
+  <thead><tr><th>Remote</th><th>Là gì</th><th>Vai trò</th></tr></thead>
   <tbody>
-    <tr><td><code>origin</code></td><td>Kho chính trên GitHub: <code>mvl26/supplycore</code></td></tr>
-    <tr><td><code>miyano</code></td><td>Kho thứ hai: <code>mvl26/supplycore-miyano</code> — <b>repo không giải thích khác nhau thế nào</b>. Hãy hỏi nhóm trước khi push vào đây.</td></tr>
-    <tr><td><code>upstream</code></td><td><b>Không phải GitHub</b> — trỏ vào một thư mục khác <i>trên cùng máy này</i> (bench <code>frappe-bench</code> kia). Dùng để đồng bộ giữa hai bench nội bộ.</td></tr>
+    <tr><td><code>miyano</code></td><td><code>mvl26/supplycore-miyano</code></td><td><b>REPO CHÍNH của app</b> — nhánh <code>main</code> ở đây là nhánh chính. Đẩy code lên đây.</td></tr>
+    <tr><td><code>origin</code></td><td><code>mvl26/supplycore</code></td><td>Repo gốc, nơi dự án khởi nguồn. Còn giữ nhiều nhánh lịch sử (<code>vienyhctbca</code>, <code>ui2</code>…<code>ui6-*</code>). Dùng làm bản sao dự phòng.</td></tr>
+    <tr><td><code>upstream</code></td><td>đường dẫn thư mục</td><td><b>Không phải GitHub</b> — trỏ vào bench <code>frappe-bench</code> khác <i>trên cùng máy này</i>. Đồng bộ nội bộ.</td></tr>
   </tbody>
 </table>
 
-<h4>Nhánh</h4>
-<pre><code>$ git branch -a
-* feat/mvl-distributor            ← đang làm việc ở đây
-+ fix/m7-bugs                     ← đang mở trong worktree .claude/worktrees/m7-bugfix
-  vienyhctbca
-  remotes/miyano/main
-  remotes/origin/fix/m7-bugs
-  remotes/upstream/vienyhctbca</code></pre>
-<p><b>Quy ước đặt tên nhánh quan sát được:</b> <code>&lt;loại&gt;/&lt;mô-tả-gạch-ngang&gt;</code> — ví dụ <code>feat/mvl-distributor</code> (tính năng), <code>fix/m7-bugs</code> (sửa lỗi). Nhánh <code>vienyhctbca</code> là nhánh cũ thời bản bệnh viện.</p>
+<div class="box crit">
+  <b class="lbl">Cái bẫy chắc chắn bạn sẽ vấp: quyền <code>workflow</code> của token</b>
+  <p style="margin:6px 0">Push lên <code>miyano</code> mà đụng tới <code>.github/workflows/</code> sẽ bị GitHub từ chối nếu token thiếu quyền:</p>
+  <pre style="margin:6px 0"><code>! [remote rejected] feat/mvl-distributor -&gt; feat/mvl-distributor
+  (refusing to allow a Personal Access Token to create or update workflow
+   `.github/workflows/build-image.yml` without `workflow` scope)</code></pre>
+  <p style="margin:6px 0"><b>Cách sửa:</b> GitHub → Settings → Developer settings → Personal access tokens → tick thêm scope <b><code>workflow</code></b> (token fine-grained thì cấp <b>Workflows: Read and write</b> cho repo đó).</p>
+  <p style="margin:6px 0"><b>Đừng xử lý bằng cách xóa 2 file workflow rồi push.</b> Đó chính là điều đã xảy ra ngày 15/07/2026 và nó tạo ra một commit gốc mồ côi không có CI, gây rắc rối nhiều tuần sau (xem mục dưới).</p>
+</div>
+
+<h4>Nhánh — trạng thái thật ngày 05/08/2026</h4>
+<table>
+  <thead><tr><th>Repo · Nhánh</th><th>Commit</th><th>Ý nghĩa</th></tr></thead>
+  <tbody>
+    <tr><td><b><code>miyano</code> · <code>main</code></b></td><td><code>61d88d6</code></td><td><b>Nhánh chính của app.</b> Chứa toàn bộ code hiện tại + CI.</td></tr>
+    <tr><td><code>miyano</code> · <code>feat/mvl-distributor</code></td><td><code>61d88d6</code></td><td>Nhánh phát triển, đồng bộ với main</td></tr>
+    <tr><td><code>miyano</code> · <code>archive/main-snapshot-20260715</code></td><td><code>e93dd18</code></td><td>Sao lưu bản <code>main</code> cũ trước khi hợp nhất</td></tr>
+    <tr><td><code>origin</code> · <code>feat/mvl-distributor</code></td><td><code>61d88d6</code></td><td>Bản sao dự phòng</td></tr>
+    <tr><td><code>origin</code> · <code>main</code></td><td><code>fb4c200</code></td><td>Dừng ở 26/05/2026 — <b>đã cũ</b>, đừng lấy làm chuẩn</td></tr>
+    <tr><td>Local · <code>feat/mvl-distributor</code></td><td><code>61d88d6</code></td><td>Nhánh bạn đang làm việc, đã gắn upstream <code>origin</code></td></tr>
+  </tbody>
+</table>
+<p><b>Quy ước đặt tên nhánh quan sát được:</b> <code>&lt;loại&gt;/&lt;mô-tả-gạch-ngang&gt;</code> — ví dụ <code>feat/mvl-distributor</code> (tính năng), <code>fix/m7-bugs</code> (sửa lỗi), <code>archive/…</code> (lưu trữ). Nhánh <code>vienyhctbca</code> và <code>ui2</code>…<code>ui6-*</code> trên <code>origin</code> là di sản thời bản bệnh viện.</p>
+
+<h4>Một bài học lịch sử đáng đọc: vì sao <code>miyano/main</code> từng là commit mồ côi</h4>
+<div class="box warn">
+  <p style="margin:6px 0">Ngày 15/07/2026, code được đẩy sang repo Miyano bằng <b>một commit gốc không có cha</b> (<code>e93dd18</code>) — tức bản squash toàn bộ, mất sạch lịch sử, và <b>thiếu 2 file CI</b> vì token khi đó không có quyền <code>workflow</code>.</p>
+  <p style="margin:6px 0">Hệ quả: repo Miyano <b>không chung lịch sử</b> với nhánh phát triển, nên không merge/rebase thông thường được. Muốn cập nhật thì phải <code>--force</code> — thao tác phá clone của mọi người.</p>
+  <p style="margin:6px 0"><b>Cách gỡ (đã dùng ngày 05/08):</b> tạo commit hợp nhất nhận cả hai làm cha nhưng giữ nguyên cây thư mục hiện tại:</p>
+  <pre style="margin:6px 0"><code>git merge -s ours --allow-unrelated-histories miyano/main -m "…"
+git push miyano HEAD:refs/heads/main     # fast-forward, KHÔNG cần force</code></pre>
+  <p style="margin:6px 0">Nhờ vậy <code>main</code> cũ trở thành tổ tiên → push bình thường, không phá clone ai, lịch sử cũ vẫn tra cứu được qua cha thứ hai. <b>Bài học: đừng bao giờ push kiểu squash-orphan sang một repo khác.</b> Hãy push nhánh thật với đầy đủ lịch sử.</p>
+</div>
 <p>Dấu <code>+</code> trước <code>fix/m7-bugs</code> nghĩa là nhánh đó đang được mở ở một <b>git worktree</b> — kỹ thuật cho phép mở hai nhánh ở hai thư mục cùng lúc, khỏi phải <code>git stash</code> qua lại.</p>
 
 <h4>Quy ước commit — quan sát được rõ ràng</h4>
@@ -1337,9 +1361,11 @@ docker compose logs create-site      # xem vì sao tạo site thất bại</code
 <!-- ══════════════════════════════ 7 ══════════════════════════════ -->
 <h2>7. Tóm tắt: điều nên nhớ và điều cần hỏi</h2>
 
-<h3>7.1 Bảy điều dễ vấp nhất</h3>
+<h3>7.1 Chín điều dễ vấp nhất</h3>
 <ol>
   <li><b>MariaDB đang failed</b> trên máy này → khởi động trước khi làm bất cứ gì (mục 1.2).</li>
+  <li><b>Clone về thì lấy từ <code>miyano</code>, không phải <code>origin</code></b> — <code>origin/main</code> dừng ở 26/05/2026, đã cũ (mục 4c).</li>
+  <li><b>Token phải có quyền <code>workflow</code></b> mới push được lên <code>miyano</code>, vì repo có 2 file CI (mục 4c).</li>
   <li><b><code>yarn build</code> là bước riêng</b>, <code>bench build</code> không build giao diện Vue (mục 3, Bước 8).</li>
   <li><b>Hard refresh (Ctrl+Shift+R)</b> sau mỗi lần build, vì service worker giữ bản cũ.</li>
   <li><b>Clone repo về sẽ không có <code>.claude/</code></b> — mất hết skill, phải xin chép tay (mục 4b).</li>
@@ -1348,14 +1374,22 @@ docker compose logs create-site      # xem vì sao tạo site thất bại</code
   <li><b>Dùng yarn, không dùng npm</b> ở <code>frontend/</code> dù có cả hai lockfile (mục 4f).</li>
 </ol>
 
-<h3>7.2 Sáu câu nên hỏi người trong nhóm ngay ngày đầu</h3>
+<h3>7.2 Câu đã có lời giải &mdash; và câu còn phải hỏi</h3>
+
+<div class="box ok">
+  <b class="lbl">Đã có lời giải (cập nhật 05/08/2026)</b>
+  <ul style="margin:6px 0">
+    <li><b>Repo nào là chính?</b> → <code>mvl26/supplycore-miyano</code>, nhánh <code>main</code>. <code>mvl26/supplycore</code> là repo gốc, giữ làm dự phòng.</li>
+    <li><b>Push vào đâu?</b> → <code>miyano</code>. Nhớ cấp quyền <code>workflow</code> cho token trước.</li>
+  </ul>
+</div>
+
+<p><b>Bốn câu vẫn nên hỏi người trong nhóm ngay ngày đầu:</b></p>
 <ol>
-  <li><b>erpnext</b> đang ở nhánh <code>develop</code> — cố ý hay nhầm? Site có thực sự cài erpnext không?</li>
-  <li>App <b><code>miyano_portal</code></b> quan hệ thế nào với SupplyCore? Có đang dùng không?</li>
-  <li>Remote <b><code>miyano</code></b> khác <b><code>origin</code></b> ở điểm nào? Push vào đâu?</li>
-  <li>Quy trình <b>Pull Request &amp; review</b> cụ thể ra sao? Ai duyệt? Nhánh nào được bảo vệ?</li>
-  <li>Tôi lấy <b>thư mục <code>.claude/skills/</code></b> ở đâu để có bộ skill giống mọi người?</li>
-  <li>Có nên bổ sung <b>CLAUDE.md</b> và <b>pre-commit</b> không? Ai quyết?</li>
+  <li><b>erpnext</b> đang ở nhánh <code>develop</code> — cố ý hay nhầm? Site có thực sự cài erpnext không? (mục 2.2, 2.3)</li>
+  <li>App <b><code>miyano_portal</code></b> quan hệ thế nào với SupplyCore? Có đang dùng không? (mục 2.2)</li>
+  <li>Quy trình <b>Pull Request &amp; review</b> cụ thể ra sao? Ai duyệt? Nhánh nào được bảo vệ? (mục 4c — không đọc được từ repo)</li>
+  <li>Tôi lấy <b>thư mục <code>.claude/skills/</code></b> ở đâu để có bộ skill giống mọi người? Và có nên bổ sung <b>CLAUDE.md</b> + <b>pre-commit</b> không? (mục 4b, 4h)</li>
 </ol>
 
 <div class="box ok">
@@ -1372,7 +1406,7 @@ docker compose logs create-site      # xem vì sao tạo site thất bại</code
 
 <footer class="pagefoot">
   <b>SupplyCore MVL — Tài liệu nhập môn · Tập 01: Môi trường &amp; Bộ công cụ</b><br>
-  Ngày tạo: <b>03/08/2026</b> · Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.<br>
+  Ngày tạo: <b>03/08/2026</b> · Cập nhật: <b>05/08/2026</b> · Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code> (<code>61d88d6</code>).<br>
   Mọi mật khẩu, khóa mã hóa, token và IP nội bộ đã được thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
   Khi môi trường thay đổi, mã nguồn là chuẩn — hãy cập nhật tài liệu này theo.
 </footer>

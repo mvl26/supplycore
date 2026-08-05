@@ -153,6 +153,7 @@
     <tr><td>API mở cho giao diện gọi</td><td>103 trong <code>api/</code> · 217 toàn app</td></tr>
     <tr><td>Tác vụ tự động theo lịch</td><td>11</td></tr>
     <tr><td>File kiểm thử nghiệp vụ</td><td>68</td></tr>
+    <tr><td>Repo chính</td><td><code>mvl26/supplycore-miyano</code> · nhánh <code>main</code></td></tr>
   </tbody>
 </table>
 
@@ -249,7 +250,7 @@
   <tbody>
     <tr>
       <td><b>Ngày 1<br>buổi sáng</b></td>
-      <td>Đọc trang này, rồi đọc hết Tập 01 một lượt <b>không cần hiểu hết</b> — chỉ để biết có những gì.</td>
+      <td>Đọc trang này, rồi đọc hết Tập 01 một lượt <b>không cần hiểu hết</b> — chỉ để biết có những gì. Clone code từ <b>repo chính</b>:<br><code>git clone https://github.com/mvl26/supplycore-miyano.git</code></td>
       <td>Trang chủ + Tập 01</td>
     </tr>
     <tr>
@@ -303,13 +304,14 @@
   <li><b>Không commit bí mật.</b> Mật khẩu, khóa mã hóa, token — không bao giờ vào git, không vào chat, không vào tài liệu. Chi tiết ở Tập 01 mục 4k.</li>
   <li><b>Không chạy lệnh xóa trên dữ liệu thật.</b> Mọi thử nghiệm làm trên site test <code>supplycore-miyano.local</code>. Lệnh <code>docker compose down -v</code> và <code>bench drop-site</code> xóa sạch không hoàn tác được.</li>
   <li><b>Chạy test trước khi mở Pull Request.</b> Dự án <b>không có kiểm thử tự động khi mở PR</b> — nếu bạn không chạy, sẽ không ai chạy hộ.</li>
+  <li><b>Token GitHub phải có quyền <code>workflow</code></b> mới push được lên repo chính. Nếu bị từ chối, <b>đừng xóa file CI để lách</b> — hãy cấp quyền cho token. Lý do đầy đủ ở Tập 01 mục 4c.</li>
 </ol>
 
 </main>
 
 <footer class="pagefoot">
   <b>SupplyCore MVL — Bộ tài liệu nhập môn</b><br>
-  Ngày tạo: <b>03/08/2026</b> · Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code>.<br>
+  Ngày tạo: <b>03/08/2026</b> · Cập nhật: <b>05/08/2026</b> · Trích xuất trực tiếp từ mã nguồn nhánh <code>feat/mvl-distributor</code> (<code>61d88d6</code>).<br>
   Mọi mật khẩu, khóa mã hóa, token và IP nội bộ đã được thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
   Hiện có: Trang chủ + Tập 01. Tập 02–05 sẽ được bổ sung.
 </footer>
