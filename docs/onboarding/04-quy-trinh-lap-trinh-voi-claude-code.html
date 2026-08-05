@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Quy trình lập trình với Claude Code — SupplyCore MVL</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px;
+    line-height: 1.65; color: #222; background: #fff;
+  }
+
+  /* ===== Thanh điều hướng dính (sticky) — DÙNG CHUNG mọi trang ===== */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: #14243A; border-bottom: 3px solid #1F4E79;
+    padding: 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  }
+  nav.topnav a {
+    color: #E8EEF6; text-decoration: none; font-size: 13px; font-weight: bold;
+    padding: 11px 13px; display: block; border-bottom: 3px solid transparent;
+  }
+  nav.topnav a:hover { background: #1F4E79; color: #fff; }
+  nav.topnav a.active { background: #2E75B6; color: #fff; border-bottom-color: #9CC3E8; }
+
+  header.pagehead { background: #1F4E79; color: #fff; padding: 34px 28px 26px; }
+  header.pagehead h1 { margin: 0 0 8px; font-size: 27px; }
+  header.pagehead p { margin: 0; font-size: 15px; color: #D6E4F2; max-width: 90ch; }
+  header.pagehead .kicker {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: #9CC3E8; margin-bottom: 10px; font-weight: bold;
+  }
+
+  main { padding: 0 28px 60px; max-width: 1180px; }
+
+  h2 {
+    font-size: 21px; color: #1F4E79; margin: 38px 0 12px; padding-bottom: 7px;
+    border-bottom: 2px solid #1F4E79;
+  }
+  h3 { font-size: 17px; color: #173A5C; margin: 26px 0 8px; }
+  h4 { font-size: 15px; color: #2E75B6; margin: 20px 0 6px; }
+  p  { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13.5px; }
+  th, td { border: 1px solid #C8D2DE; padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #1F4E79; color: #fff; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #F2F5F9; }
+  table.compact { font-size: 12.5px; }
+  table.compact th, table.compact td { padding: 5px 7px; }
+  .ctr { text-align: center; }
+
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: 13px;
+    background: #EEF2F7; padding: 1px 5px; border-radius: 3px; color: #123A6B;
+  }
+  td code, th code { font-size: 12px; }
+  pre {
+    background: #14243A; color: #E8EEF6; padding: 13px 15px; border-radius: 5px;
+    overflow-x: auto; font-family: Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 1.55; margin: 12px 0;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  pre.prompt {
+    background: #1B3A2E; border-left: 5px solid #2FA36B; color: #E4F5EC;
+    white-space: pre-wrap; font-size: 13px;
+  }
+
+  .box { border-left: 5px solid #2E75B6; background: #EAF2FB; padding: 11px 16px; margin: 15px 0; }
+  .box.warn { border-left-color: #B8860B; background: #FBF3E0; }
+  .box.crit { border-left-color: #B03030; background: #FBEAEA; }
+  .box.ok   { border-left-color: #1B7A4E; background: #E6F3EC; }
+  .box b.lbl { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+
+  .ascii {
+    background: #14243A; color: #C6E0FF; padding: 16px; border-radius: 5px;
+    font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+    line-height: 1.45; overflow-x: auto; white-space: pre; margin: 14px 0;
+  }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px;
+    border-radius: 3px; background: #E3E9F0; color: #123A6B; border: 1px solid #C8D2DE;
+  }
+  .tag.no  { background: #FBEAEA; color: #8B2020; border-color: #E0BABA; }
+  .tag.yes { background: #E6F3EC; color: #15603E; border-color: #B3D9C4; }
+
+  .stage {
+    background: #1F4E79; color: #fff; display: inline-block;
+    padding: 3px 12px; border-radius: 4px; font-size: 13px; font-weight: bold;
+    margin-right: 8px;
+  }
+  .sub { display:block; font-size:12px; font-weight:bold; color:#2E75B6;
+         text-transform:uppercase; letter-spacing:.6px; margin:14px 0 4px; }
+
+  footer.pagefoot {
+    background: #14243A; color: #A9BBD0; padding: 20px 28px; font-size: 13px;
+    border-top: 3px solid #1F4E79;
+  }
+  footer.pagefoot b { color: #E8EEF6; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html">Trang chủ</a>
+  <a href="01-moi-truong-va-cong-cu.html">01 · Môi trường &amp; Công cụ</a>
+  <a href="02-kien-truc-va-cau-truc-code.html">02 · Kiến trúc &amp; Cấu trúc code</a>
+  <a href="03-tai-lieu-nghiep-vu-BA.html">03 · Nghiệp vụ (BA)</a>
+  <a href="04-quy-trinh-lap-trinh-voi-claude-code.html" class="active">04 · Lập trình với Claude Code</a>
+  <a href="05-lo-trinh-hoc-va-bat-chuoc.html">05 · Lộ trình học</a>
+</nav>
+
+<header class="pagehead">
+  <div class="kicker">Tài liệu nhập môn · Tập 04</div>
+  <h1>Quy trình lập trình với Claude Code</h1>
+  <p>Cách nhóm thật sự làm ra một tính năng — từ câu nói của người dùng đến code chạy trên máy khách. Suy ra từ lịch sử Git, các file kế hoạch đã lưu, và 5 Pull Request thật.</p>
+</header>
+
+<main>
+
+<div class="box">
+  <b class="lbl">Tài liệu này dựa trên bằng chứng nào</b>
+  Nhóm <b>không viết sẵn</b> tài liệu quy trình. Nội dung dưới đây được tái dựng từ dữ liệu thật:
+  <ul style="margin:6px 0">
+    <li><b>341 commit</b> trong lịch sử Git, trong đó <b>306 commit</b> có chữ ký đồng tác giả Claude</li>
+    <li><b>22 file spec &amp; plan</b> từng nằm ở <code>docs/superpowers/</code> — nay đã dọn khỏi repo nhưng <b>vẫn đọc được từ lịch sử Git</b></li>
+    <li><b>5 Pull Request</b> trên GitHub (<code>gh pr list --state all</code>)</li>
+    <li>Cấu trúc <code>.claude/</code>, <code>.github/workflows/</code>, và các quy ước commit quan sát được</li>
+  </ul>
+  Mọi lệnh trong tài liệu đều là lệnh thật chạy được. Chỗ nào dự án không có, ghi rõ <span class="tag no">Không có trong repo</span>.
+</div>
+
+<!-- ══════════════════════════════ 0 ══════════════════════════════ -->
+<h2>0. Toàn cảnh: quy trình 4 nhịp</h2>
+
+<p>Nhóm làm theo một khuôn mẫu <b>rất nhất quán</b>, lặp lại ở mọi tính năng lớn. Đây là bằng chứng — chuỗi commit thật của phân hệ Bán hàng:</p>
+
+<pre><code>$ git log --oneline --reverse 0d61f58..1c5a1f6
+
+0d61f58  docs(mvl): spec + plan GĐ2 M7 Bán hàng (Order-to-Cash, 10 task TDD)   ← ① SPEC + PLAN
+c7d2c33  feat(mvl-sales): nền tảng M7 Sales — module, GL 511, Settings sổ bán hàng
+637021d  feat(mvl-sales): SC Customer master (BRU-CUS-002)
+64b38eb  feat(mvl-sales): SC Sales Framework Contract + SFC Item
+a93608c  feat(mvl-sales): SC Sales Order + SO Item (BRU-SFC/SO/AR)               ← ② THỰC THI
+2fb6e11  feat(mvl-sales): SC Delivery Note — xuất kho FEFO + SLE âm                 mỗi Task = 1 commit
+d32ec1a  feat(mvl-sales): SC Acceptance Record (nghiệm thu → mở khóa xuất HĐ)
+44994ef  feat(mvl-sales): SC Sales Invoice — GL phải thu + COGS
+d7dc29a  feat(mvl-sales): SC Sales Receipt — thu tiền tất toán phải thu
+93eb4e3  feat(mvl-sales): API scm.* bán hàng + role-guide M7 Sales
+1c5a1f6  test(mvl-sales): E2E Order-to-Cash + seed demo + regression GĐ2        ← ③ KIỂM THỬ TỔNG</code></pre>
+
+<p>Sau đó là nhịp thứ tư — rà soát và sửa:</p>
+<pre><code>187c83b  fix(mvl-m7): 5 bug bán hàng O2C từ audit BA (SFC ngày hiệu lực, tồn âm DN, …)
+9ffa862  fix(mvl-sales): chặn portal tự-duyệt đơn hàng qua approve()/reject()        ← ④ RÀ SOÁT
+d61b081  fix(mvl-sweep): gate 5 module-level whitelisted function còn sót                 &amp; SỬA
+300ee8b  fix(mvl-ui): sửa lỗi form/badge/detail/actions SPA từ audit UI</code></pre>
+
+<div class="ascii">
+   ①  SPEC          ②  PLAN           ③  THỰC THI            ④  RÀ SOÁT
+   ─────────        ────────          ───────────            ─────────
+   Hỏi cho rõ   →   Chia thành    →   Từng Task:         →   Rà lại toàn bộ
+   Khảo sát         Task 1..N         RED (test đỏ)          Tìm lỗ hổng
+   hiện trạng       Mỗi Task có       GREEN (code)           Sửa từng cái
+   Chốt quyết       Files + Steps     migrate + ping         Chạy hồi quy
+   định thiết kế    + câu commit      COMMIT
+        │                │                  │                     │
+        ▼                ▼                  ▼                     ▼
+   docs/…/specs/    docs/…/plans/     1 commit / Task      commit fix(...)
+   &lt;ngày&gt;-…-        &lt;ngày&gt;-….md
+   design.md
+</div>
+
+<div class="box ok">
+  <b class="lbl">Vì sao khuôn mẫu này hiệu quả</b>
+  <b>Spec</b> buộc phải hiểu rõ trước khi gõ phím — tránh làm xong mới biết hiểu sai.
+  <b>Plan</b> chia nhỏ để mỗi bước kiểm chứng được — tránh làm 3 ngày rồi không biết sai ở đâu.
+  <b>Một commit mỗi Task</b> để quay lui được chính xác.
+  <b>Rà soát cuối</b> vì AI làm nhanh nên dễ bỏ sót — phải có nhịp kiểm lại.
+</div>
+
+<!-- ══════════════════════════════ 1 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 1</span>Tiếp nhận yêu cầu &amp; viết Spec</h2>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Biến một câu nói mơ hồ của người dùng thành <b>bản mô tả rõ ràng, đã chốt</b>, để không phải làm lại. Kết quả là một file spec.</p>
+
+<p class="sub">(b) Công cụ dùng</p>
+<ul>
+  <li><b>Claude Code</b> ở chế độ hỏi đáp (brainstorming) — có sẵn kỹ năng <code>superpowers:brainstorming</code></li>
+  <li>Đọc code hiện có để khảo sát hiện trạng</li>
+  <li>Tài liệu BA: <code>docs/ba-miyano/SupplyCore_MVL_BA.html</code></li>
+</ul>
+
+<p class="sub">(c) Thao tác thật</p>
+<pre><code>cd ~/frappe-bench-yhct/apps/supplycore
+claude</code></pre>
+<p>Kết quả lưu vào: <code>docs/superpowers/specs/&lt;YYYY-MM-DD&gt;-&lt;tên-tính-năng&gt;-design.md</code></p>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<p><b>Prompt mẫu 1 — bắt đầu từ một câu yêu cầu mơ hồ:</b></p>
+<pre class="prompt">Người dùng yêu cầu: "Phiếu nào đang là trạng thái nháp thì có thể xóa được —
+check lại tất cả các module."
+
+Đừng code vội. Trước hết hãy:
+1. Khảo sát hiện trạng: hiện có nút xóa nào chưa? quyền delete đang cấp cho
+   role nào? Frappe đã tự chặn gì sẵn?
+2. Nêu những chỗ CHƯA RÕ và hỏi tôi để chốt.
+3. Sau khi tôi trả lời, viết spec vào
+   docs/superpowers/specs/2026-07-20-delete-draft-vouchers-design.md</pre>
+
+<p><b>Prompt mẫu 2 — tính năng lớn, dựa trên tài liệu BA:</b></p>
+<pre class="prompt">Đọc docs/ba-miyano/SupplyCore_MVL_BA.html mục 12 (M7 Bán hàng) và
+supplycore/m1_contract/ (chuỗi MUA đã có).
+
+Tôi muốn dựng chuỗi BÁN backend: Khách hàng → HĐ khung bán → Đơn hàng →
+Phiếu giao → Nghiệm thu → Hóa đơn → Thu tiền.
+
+Viết spec thiết kế, trong đó nêu rõ:
+- Mirror những gì từ chuỗi MUA sẵn có (đừng phát minh lại)
+- DocType mới, trường, quan hệ
+- Business rule nào phải chặn
+- Cái gì KHÔNG làm ở đợt này
+Lưu vào docs/superpowers/specs/2026-07-06-gd2-m7-sales-design.md</pre>
+
+<p class="sub">(e) Kết quả mong đợi</p>
+<p>File spec có <b>4 phần</b> — đây là cấu trúc thật của nhóm (trích <code>2026-07-20-delete-draft-vouchers-design.md</code>):</p>
+<pre><code># Thiết kế: Xóa phiếu nháp (draft) toàn hệ thống
+
+**Ngày:** 2026-07-20
+**Yêu cầu gốc:** "Phiếu nào đang là trạng thái nháp thì có thể xóa được…"
+
+## Bối cảnh
+- SPA Vue đã có helper `deleteDoc()` nhưng **chưa được gọi ở đâu**
+- 21 doctype submittable ở backend **khớp chính xác** với set hardcode
+  trong frontend/src/modules.js (0 lệch)
+- Frappe `delete_doc` **đã tự chặn** xóa phiếu Submit, nhưng **cho phép**
+  xóa phiếu đã Hủy — vi phạm "chỉ nháp"
+
+## Quyết định thiết kế (đã chốt với người dùng)
+1. **Phạm vi:** chỉ doctype submittable ở `docstatus == 0`
+2. **Chính sách role:** role nào có `create` → được `delete`, TRỪ Portal và Auditor
+3. **Vị trí nút:** cả DocView và DocList
+
+## Kiến trúc — 3 lớp tách bạch
+| Lớp | Câu hỏi | Cơ chế | File |
+|-----|---------|--------|------|
+| 1. JSON permissions | *Ai* được xóa | Bật delete:1 | 15 file */doctype/*/*.json
+| 2. before_delete guard | Xóa *cái gì* | Chặn nếu docstatus != 0 | utils/validators.py
+| 3. Frontend | Nút hiện *ở đâu* | Gate theo draft + quyền | DocView.vue, DocList.vue</code></pre>
+
+<div class="box ok">
+  <b class="lbl">Ba điều đáng học từ cấu trúc spec này</b>
+  <ol style="margin:6px 0">
+    <li><b>"Yêu cầu gốc" chép nguyên văn</b> câu người dùng nói — để sau này đối chiếu xem có làm đúng ý không.</li>
+    <li><b>"Bối cảnh" là kết quả KHẢO SÁT</b>, không phải phỏng đoán — nêu rõ cái gì đã có, cái gì Frappe tự làm sẵn, số liệu cụ thể ("0 lệch").</li>
+    <li><b>"Đã chốt với người dùng"</b> — ghi rõ đây là quyết định đã hỏi và được duyệt, không phải AI tự quyết.</li>
+  </ol>
+</div>
+
+<p class="sub">(f) Lỗi hay gặp &amp; cách xử lý</p>
+<table class="compact">
+  <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td><b>Cho AI code ngay</b></td><td>Làm xong mới phát hiện hiểu sai yêu cầu, phải bỏ hết</td><td>Luôn bắt đầu bằng "Đừng code vội. Khảo sát trước rồi hỏi tôi."</td></tr>
+    <tr><td><b>AI tự đoán chỗ chưa rõ</b></td><td>Nó chọn một cách hiểu rồi im lặng làm luôn</td><td>Yêu cầu thẳng: "Nêu những chỗ CHƯA RÕ và hỏi tôi trước khi làm."</td></tr>
+    <tr><td><b>Spec quá chung chung</b></td><td>Đến lúc code lại phải hỏi lại từ đầu</td><td>Bắt spec phải có <b>tên file cụ thể</b> sẽ sửa, không chỉ nói "sửa frontend"</td></tr>
+    <tr><td><b>Không nêu cái KHÔNG làm</b></td><td>Phạm vi phình ra, làm mãi không xong</td><td>Spec phải có câu kiểu: <i>"KHÔNG làm Portal/M12, KHÔNG làm UI Vue (phase sau)"</i></td></tr>
+  </tbody>
+</table>
+
+<div class="box warn">
+  <b class="lbl">Về "issue" và "plan mode"</b>
+  <b>Không có issue trên GitHub</b> — <code>gh issue list --state all</code> trả về rỗng. Nhóm quản lý công việc bằng chính file spec/plan trong repo.
+  <p style="margin:6px 0"><b>Plan mode</b> của Claude Code (chế độ chỉ lập kế hoạch, chưa sửa file) rất hợp giai đoạn này. Không có dấu vết trong repo cho biết nhóm có dùng hay không, nhưng cấu trúc spec/plan cho thấy tinh thần y hệt.</p>
+</div>
+
+<!-- ══════════════════════════════ 2 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 2</span>Thiết kế dữ liệu trước khi code</h2>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Chốt <b>cấu trúc dữ liệu</b> (DocType, trường, kiểu, quan hệ) trước khi viết dòng code nào. Đổi cấu trúc dữ liệu sau khi đã có dữ liệu thật là việc rất tốn kém.</p>
+
+<p class="sub">(b) Công cụ dùng</p>
+<p>Claude Code + file spec ở giai đoạn 1 + đọc DocType tương tự đã có.</p>
+
+<p class="sub">(c) Thao tác thật</p>
+<pre><code># Xem một DocType tương tự để làm mẫu
+cat supplycore/supplycore/doctype/sc_purchase_order/sc_purchase_order.json | head -50
+
+# Liệt kê mọi DocType đang có để tránh trùng tên
+ls supplycore/*/doctype/ | grep -v __pycache__</code></pre>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<pre class="prompt">Dựa trên spec 2026-07-06-gd2-m7-sales-design.md, hãy chốt thiết kế dữ liệu:
+
+Với MỖI DocType mới, liệt kê:
+- Tên (prefix "SC "), autoname theo mẫu format:SC-XX-{YYYY}-{#####}
+- Có submittable không
+- Từng trường: tên, kiểu, bắt buộc?, read_only?, Link tới đâu
+- Bảng con nào
+- Quyền của từng role
+
+QUAN TRỌNG: mirror đúng cấu trúc SC Purchase Order đã có, đừng phát minh
+kiểu đặt tên mới. Chỉ ra chỗ nào KHÁC và giải thích vì sao khác.</pre>
+
+<p class="sub">(e) Kết quả mong đợi</p>
+<p>Trong plan thật, phần thiết kế dữ liệu được ghi <b>ngay trong mô tả Task</b> — trích Task 2 của kế hoạch M7:</p>
+<pre><code>### Task 2: SC Customer (master)
+**Files:** Create `supplycore/m7_sales/doctype/sc_customer/{sc_customer.json,
+           sc_customer.py,__init__.py}`; Create `supplycore/tests/sc_customer_test.py`
+**Interfaces:** Produces DocType `SC Customer` (module "M7 Sales"),
+                autoname `format:SC-CUS-{#####}`.
+Fields: `customer_name`(reqd), `tax_code`(Data, unique=1),
+        `credit_limit`(Currency, default 0), `status`(Select "Hoạt động\nTạm ngưng"),
+        `portal_user`(Link User).
+Permissions: System Manager, SupplyCore Manager, SupplyCore Purchaser (full CRUD);
+             Accountant, Storekeeper, Auditor read.
+Controller `validate()`: nếu `portal_user` set → đảm bảo không customer khác
+                         dùng cùng user (BRU-CUS-002).</code></pre>
+
+<div class="box ok">
+  <b class="lbl">Mục "Điểm MIRROR" — thói quen rất tốt của nhóm</b>
+  Mỗi kế hoạch có một mục <b>"Điểm MIRROR (đọc trước khi code)"</b> liệt kê những hàm/mẫu sẵn có phải tái dùng. Trích thật:
+  <pre style="margin:6px 0"><code>- SLE: `SCStockLedgerEntry.post(item, warehouse, qty_change, voucher_type,
+  voucher_no, *, batch, ...)` — file `supplycore/doctype/sc_stock_ledger_entry/…`
+  Xuất kho = `qty_change` ÂM.
+- GL: `SCGLEntry.post()`, `post_journal()`, `cancel_voucher()`, `get_balance()`
+  Mirror `SC Purchase Invoice._post_gl_entries()`
+- Controller submittable: mirror `sc_purchase_order.py`
+- FEFO: `supplycore.api.fefo.auto_pick_fefo(item_code, warehouse, qty)`</code></pre>
+  <b>Vì sao quan trọng:</b> AI rất hay <i>viết lại</i> thứ đã có. Chỉ đích danh hàm phải dùng sẽ tránh được điều đó.
+</div>
+
+<p class="sub">(f) Lỗi hay gặp</p>
+<table class="compact">
+  <thead><tr><th>Lỗi</th><th>Cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td>AI đặt tên trường theo kiểu riêng, không khớp quy ước dự án</td><td>Trong prompt nêu rõ: "mirror <code>sc_purchase_order.json</code>"</td></tr>
+    <tr><td>Quên <code>"is_submittable": 1</code> cho chứng từ</td><td>Sửa JSON rồi <code>bench migrate</code> lại. Đổi được nhưng phiền khi đã có dữ liệu</td></tr>
+    <tr><td>Đặt <code>autoname</code> sai mẫu</td><td>Đổi <code>autoname</code> <b>không</b> đổi mã bản ghi đã tạo — phải quyết đúng từ đầu</td></tr>
+    <tr><td>Quên khai quyền cho role</td><td>DocType mới mặc định chỉ System Manager thấy → người khác báo "không thấy menu"</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 3 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 3</span>Dựng khung &amp; lập kế hoạch thực thi</h2>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Biến spec thành <b>danh sách công việc chia nhỏ</b>, mỗi việc kiểm chứng được và kết thúc bằng một commit.</p>
+
+<p class="sub">(b) Công cụ dùng</p>
+<p>Claude Code (kỹ năng <code>superpowers:writing-plans</code>) · <code>bench</code> · trình soạn thảo.</p>
+
+<p class="sub">(c) Thao tác thật — tạo khung bằng tay</p>
+<div class="box warn">
+  <b class="lbl">Nhóm KHÔNG dùng lệnh sinh mã tự động của bench</b>
+  Frappe có lệnh <code>bench new-app</code>, <code>bench make-doctype</code>. Nhóm <b>không dùng</b> để tạo DocType — mà <b>tạo file JSON bằng tay</b> (hoặc để Claude tạo).
+  <p style="margin:6px 0"><b>Vì sao:</b> tạo qua giao diện Desk rồi export sẽ sinh JSON có nhiều trường thừa và thứ tự lộn xộn, khó review qua Git. Viết tay thì file gọn, diff sạch, dễ đối chiếu.</p>
+</div>
+
+<pre><code># Tạo thư mục module mới (làm bằng tay)
+mkdir -p supplycore/m7_sales/doctype
+touch supplycore/m7_sales/__init__.py supplycore/m7_sales/doctype/__init__.py
+
+# Khai module cho Frappe biết
+echo "M7 Sales" &gt;&gt; supplycore/modules.txt
+
+# Tạo thư mục cho một DocType
+mkdir -p supplycore/m7_sales/doctype/sc_customer
+touch supplycore/m7_sales/doctype/sc_customer/__init__.py
+# rồi tạo sc_customer.json + sc_customer.py
+
+# Đồng bộ vào cơ sở dữ liệu
+cd ~/frappe-bench-yhct
+bench --site supplycore-miyano.local migrate
+
+# Kiểm tra hệ thống còn sống
+bench --site supplycore-miyano.local execute frappe.ping     # kỳ vọng: pong</code></pre>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<pre class="prompt">Từ spec 2026-07-06-gd2-m7-sales-design.md, viết kế hoạch thực thi vào
+docs/superpowers/plans/2026-07-06-gd2-m7-sales.md
+
+Yêu cầu về kế hoạch:
+- Chia thành các Task ĐỘC LẬP, mỗi Task kết thúc bằng 1 commit
+- Mỗi Task ghi rõ: Files (create/modify từng file), Interfaces (sản phẩm),
+  và các Step dạng checkbox
+- BẮT BUỘC theo TDD: Step 1 viết test ĐỎ trước, Step 2 code cho XANH
+- Sau mỗi Task phải chạy được: bench migrate sạch + frappe.ping → pong
+- Có mục "Global Constraints" ghi: nhánh, site, đường dẫn bench, quy ước
+  prefix DocType, mẫu autoname, cách chạy test
+- Có mục "Điểm MIRROR" liệt kê hàm sẵn có phải tái dùng — đừng viết lại</pre>
+
+<p class="sub">(e) Kết quả mong đợi</p>
+<p>File plan thật mở đầu như sau — <b>đây là khuôn mẫu nên bắt chước</b>:</p>
+<pre><code># GĐ2 — M7 Bán hàng (Order-to-Cash) Implementation Plan
+
+**Goal:** Dựng chuỗi bán hàng backend: Customer → Sales Framework Contract →
+Sales Order → Delivery Note → Acceptance → Sales Invoice → Sales Receipt.
+
+**Architecture:** Mirror chuỗi MUA sẵn có. Ghi kho qua `SCStockLedgerEntry.post()`,
+ghi sổ cái qua `SCGLEntry.post()`. Workflow bằng field `status` + controller
+(KHÔNG dùng Frappe Workflow engine — nhất quán GĐ1).
+
+## Global Constraints
+- Nhánh `feat/mvl-distributor`. Site `supplycore-miyano.local`.
+  Bench dir `/home/hoangvietyeuem/frappe-bench-yhct`.
+- Prefix DocType `SC `. autoname `"format:SC-XX-{YYYY}-{#####}"`,
+  `"is_submittable": 1` cho chứng từ.
+- INVARIANT sau mỗi task: `bench --site … migrate` sạch +
+  `bench --site … execute frappe.ping` → `pong`.
+- TDD bắt buộc: viết test đỏ trước (RED), rồi code (GREEN).
+- cwd reset sau bench — dùng absolute path.
+- Mỗi commit kết bằng: `Co-Authored-By: Claude …`
+- KHÔNG làm Portal/M12, KHÔNG làm UI Vue (phase sau).</code></pre>
+
+<p>Và mỗi Task có dạng:</p>
+<pre><code>### Task 1: Nền tảng — module M7 Sales, GL account 511, Settings fields
+**Files:**
+- Create: `supplycore/m7_sales/__init__.py`, `…/doctype/__init__.py`
+- Modify: `supplycore/modules.txt` (thêm dòng `M7 Sales`)
+- Create: `supplycore/patches/v0_8/seed_sales_gl_accounts.py`
+- Modify: `supplycore/patches.txt` (append …)
+
+- [ ] **Step 1 (RED):** Viết `supplycore/tests/gd2_foundation_test.py` với
+      `test_revenue_account_exists()`… Chạy `run` → FAIL.
+- [ ] **Step 2:** Tạo module scaffold + patch seed GL account 511.
+- [ ] **Step 3 (GREEN):** `bench migrate` → chạy test → PASS. `frappe.ping` → pong.
+- [ ] **Step 4: Commit** `feat(mvl-sales): nền tảng M7 Sales — module, GL 511, …`</code></pre>
+
+<div class="box ok">
+  <b class="lbl">Chi tiết nhỏ nhưng cứu bạn nhiều lần</b>
+  Dòng <code>cwd reset sau bench — dùng absolute path</code> trong Global Constraints là kinh nghiệm đau thương: sau khi chạy lệnh <code>bench</code>, thư mục làm việc bị đặt lại, nên lệnh tiếp theo dùng đường dẫn tương đối sẽ chạy nhầm chỗ.
+  Ghi vào kế hoạch để AI không vấp lại.
+</div>
+
+<p class="sub">(f) Lỗi hay gặp</p>
+<table class="compact">
+  <thead><tr><th>Lỗi</th><th>Cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td>Task quá to (làm cả phân hệ trong 1 commit)</td><td>Chia đến mức <b>mỗi Task ≤ 1 DocType hoặc 1 nhóm hàm</b>. Kế hoạch M7 chia 10 Task</td></tr>
+    <tr><td>Quên thêm dòng vào <code>modules.txt</code></td><td>DocType không hiện trong Desk. Thêm dòng rồi <code>bench migrate</code></td></tr>
+    <tr><td>Quên thêm patch vào <code>patches.txt</code></td><td>Patch không chạy. Phải khai <b>cả hai</b>: file mã + dòng trong <code>patches.txt</code></td></tr>
+    <tr><td><code>bench migrate</code> báo lỗi JSON</td><td>Thường do thiếu dấu phẩy hoặc sai tên <code>fieldtype</code>. Đọc kỹ dòng lỗi</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 4 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 4</span>Viết logic phía máy chủ (Python)</h2>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Viết controller (kiểm tra, tính toán, ghi sổ) và API — theo đúng TDD: <b>test đỏ trước, code sau</b>.</p>
+
+<p class="sub">(b) Công cụ dùng</p>
+<p>Claude Code (kỹ năng <code>superpowers:test-driven-development</code>) · <code>bench execute</code> để chạy test · <code>bench migrate</code>.</p>
+
+<p class="sub">(c) Thao tác thật</p>
+<pre><code>cd ~/frappe-bench-yhct
+
+# 1. Chạy test — kỳ vọng ĐỎ (chưa có code)
+bench --site supplycore-miyano.local execute supplycore.tests.sc_customer_test.run
+
+# 2. (viết code)
+
+# 3. Đồng bộ cấu trúc rồi chạy lại — kỳ vọng XANH
+bench --site supplycore-miyano.local migrate
+bench --site supplycore-miyano.local execute supplycore.tests.sc_customer_test.run
+
+# 4. Kiểm hệ thống còn sống
+bench --site supplycore-miyano.local execute frappe.ping     # pong
+
+# 5. Áp dụng thay đổi Python vào tiến trình đang chạy
+sudo supervisorctl restart all</code></pre>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<p><b>Prompt mẫu 1 — thực thi một Task theo TDD:</b></p>
+<pre class="prompt">Thực thi Task 4 trong docs/superpowers/plans/2026-07-06-gd2-m7-sales.md
+(SC Sales Order + SO Item).
+
+Theo đúng thứ tự:
+1. RED: viết supplycore/tests/sc_sales_order_test.py trước. Chạy
+   `bench --site supplycore-miyano.local execute supplycore.tests.sc_sales_order_test.run`
+   và CHO TÔI XEM output FAIL.
+2. GREEN: viết .json + .py cho tới khi test PASS. Cho tôi xem output PASS.
+3. Chạy `bench --site supplycore-miyano.local migrate` và `frappe.ping`.
+4. Commit đúng câu ghi trong plan.
+
+Ràng buộc:
+- Mirror sc_purchase_order.py, đừng tự nghĩ cấu trúc mới
+- Giá lấy từ SFC Item, server ghi đè lại (BRU-SFC-002)
+- Dùng absolute path, cwd bị reset sau mỗi lệnh bench</pre>
+
+<p><b>Prompt mẫu 2 — thêm một API mới:</b></p>
+<pre class="prompt">Thêm API supplycore.api.sales.sales_framework_items(framework_contract)
+trả danh mục vật tư của 1 HĐ khung bán.
+
+BẮT BUỘC:
+- Có @frappe.whitelist()
+- Gọi block_portal() ngay dòng đầu (chặn tài khoản khách)
+- Kiểm frappe.has_permission("SC Sales Framework Contract", "read")
+- Docstring tiếng Việt giải thích DÙNG ĐỂ LÀM GÌ, không mô tả code
+
+Sau đó viết test kiểm: (1) trả đúng dữ liệu, (2) tài khoản Portal gọi bị chặn.</pre>
+
+<p class="sub">(e) Kết quả mong đợi</p>
+<p>Code theo đúng khuôn mẫu của dự án. Ví dụ thật — API luôn có 2 lớp bảo vệ:</p>
+<pre><code>@frappe.whitelist()
+def sales_framework_items(framework_contract: str) -&gt; list:
+    """Danh mục vật tư của 1 HĐ khung bán — dùng cho màn Đơn bán."""
+    block_portal()                                       # ① chặn vai trò khách
+    if not frappe.has_permission("SC Sales Framework Contract", "read"):
+        frappe.throw(_("Không có quyền đọc HĐ khung bán"),
+                     frappe.PermissionError)              # ② kiểm quyền</code></pre>
+
+<p>Và test theo khuôn mẫu dự án — <b>mỗi file test có hàm <code>run()</code></b> và docstring ghi luôn lệnh chạy:</p>
+<pre><code>"""Test GĐ MVL — Workstream D: rule công nợ + chặn tồn lúc gọi hàng.
+...
+Run: bench --site supplycore-miyano.local execute supplycore.tests.mvl_rule_test.run
+"""</code></pre>
+
+<p class="sub">(f) Lỗi hay gặp</p>
+<table class="compact">
+  <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td><b>Sửa Python xong không thấy đổi</b></td><td>Chạy lại vẫn ra kết quả cũ</td><td><code>sudo supervisorctl restart all</code> — tiến trình cũ vẫn đang giữ code cũ</td></tr>
+    <tr><td><b>AI bỏ qua bước RED</b></td><td>Viết code trước rồi mới viết test cho khớp — test vô nghĩa</td><td>Yêu cầu <b>cho xem output FAIL</b> trước khi cho phép viết code</td></tr>
+    <tr><td><b>AI quên <code>block_portal()</code></b></td><td>Tạo lỗ rò rỉ dữ liệu khách</td><td>Ghi vào prompt như ràng buộc bắt buộc. Nhóm đã phải làm hẳn một đợt rà soát vì lỗi này (<code>fix(mvl-sweep)</code>)</td></tr>
+    <tr><td><b>Test làm bẩn dữ liệu</b></td><td>Chạy test xong site đầy dữ liệu rác</td><td>Theo khuôn mẫu: <code>frappe.db.rollback()</code> cuối mỗi test</td></tr>
+    <tr><td><b>AI viết lại hàm đã có</b></td><td>Có 2 hàm ghi sổ kho khác nhau, lệch nhau</td><td>Nêu "Điểm MIRROR" trong prompt, chỉ đích danh hàm phải dùng</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 5 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 5</span>Viết giao diện (Vue)</h2>
+
+<div class="box crit">
+  <b class="lbl">Điểm khác biệt lớn nhất so với app Frappe thông thường</b>
+  Dự án <b>không dùng client script của Frappe Desk</b>. Thư mục <code>supplycore/public/js/</code> có 5 file nhưng <b>đã chết</b> — <code>hooks.py</code> khai <code>doctype_js = {}</code> rỗng.
+  <p style="margin:6px 0">Toàn bộ giao diện là <b>SPA Vue</b> ở <code>frontend/</code>, và <b>phần lớn công việc là sửa file cấu hình, không phải viết component</b>.</p>
+</div>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Cho tính năng mới hiện lên màn hình: cột ở danh sách, trường trên biểu mẫu, nút hành động.</p>
+
+<p class="sub">(b) Công cụ dùng</p>
+<p>Claude Code · <code>yarn build</code> · trình duyệt (hard refresh).</p>
+
+<p class="sub">(c) Thao tác thật</p>
+<pre><code>cd ~/frappe-bench-yhct/apps/supplycore/frontend
+
+yarn install          # chỉ lần đầu
+yarn build            # BẮT BUỘC — bench build KHÔNG build phần này
+
+# rồi mở trình duyệt và bấm Ctrl+Shift+R (hard refresh)
+
+# Khi cần xem tận mắt test giao diện chạy:
+yarn test:headed</code></pre>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<pre class="prompt">Thêm màn hình cho DocType SC Customer vào SPA.
+
+Sửa 4 file cấu hình, KHÔNG tạo component mới:
+1. frontend/src/modules.js — thêm entry 'SC Customer': cột danh sách.
+   Cột khách hàng phải dùng displayKey để hiện TÊN, không hiện mã.
+2. frontend/src/schemas.js — thêm trường biểu mẫu
+3. frontend/src/detail-configs.js — bố cục trang chi tiết
+4. frontend/src/actions.js — nút hành động (nếu có)
+
+Mirror cách khai của 'SC Sales Order' đã có trong 4 file đó.
+Sau đó chạy `yarn build` và cho tôi xem output.</pre>
+
+<p><b>Prompt mẫu 2 — khi thật sự cần component mới:</b></p>
+<pre class="prompt">Cần màn soạn hàng cho Phiếu giao: nhân viên kho quét mã vạch lô + vị trí +
+số lượng cho từng dòng, đủ hết mới cho bấm Nộp.
+
+Tạo frontend/src/components/PickingPanel.vue và mount trong DocView.vue khi
+phiếu là nháp + picking_required.
+
+Ràng buộc:
+- Máy quét PDA hoạt động như bàn phím (gõ text + Enter vào ô đang focus)
+  → phải dùng được ngay trên trình duyệt, không cần app riêng
+- MỌI kiểm tra làm ở server qua confirm_pick_line, client chỉ gửi chuỗi đã quét
+- Hiện tiến độ còn bao nhiêu dòng chưa quét</pre>
+
+<p class="sub">(e) Kết quả mong đợi</p>
+<p>Với đa số tính năng, kết quả là <b>vài chục dòng cấu hình</b>, không phải component mới. Ví dụ thật (<code>actions.js</code>):</p>
+<pre><code>{ apiMethod: 'supplycore.api.sales.make_delivery',
+  apiNameArg: 'sales_order',
+  label: 'Tạo phiếu giao (soạn hàng)', icon: 'truck', variant: 'primary',
+  when: (d) =&gt; d.docstatus === 1 &amp;&amp; d.status === 'Đã duyệt',   // điều kiện hiện nút
+  fixedArgs: { submit: 0 },                                     // ép chế độ soạn hàng
+  navigateOnSuccess: { type: 'doc', dt: 'SC Delivery Note', from: 'name' } },</code></pre>
+
+<p class="sub">(f) Lỗi hay gặp</p>
+<table class="compact">
+  <thead><tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td><b>Quên <code>yarn build</code></b></td><td>Sửa code mà màn hình không đổi</td><td><code>cd frontend &amp;&amp; yarn build</code>. <b><code>bench build</code> KHÔNG build phần này</b></td></tr>
+    <tr><td><b>Quên hard refresh</b></td><td>Build xong vẫn thấy bản cũ</td><td>Ctrl+Shift+R. Nguyên nhân: service worker của PWA giữ bản cũ</td></tr>
+    <tr><td><b>AI đi sửa <code>public/js/</code></b></td><td>Sửa xong không có tác dụng gì</td><td>Nói rõ trong prompt: "giao diện là SPA Vue ở <code>frontend/</code>, <code>public/js/</code> đã chết"</td></tr>
+    <tr><td><b>AI tạo component mới không cần thiết</b></td><td>Trùng lặp với cơ chế cấu hình sẵn có</td><td>Nêu thẳng: "Sửa 4 file cấu hình, KHÔNG tạo component mới"</td></tr>
+    <tr><td><b>Dùng <code>npm</code> thay <code>yarn</code></b></td><td>Sinh <code>package-lock.json</code>, phiên bản lệch</td><td>Dự án dùng <b>yarn</b> (Containerfile chạy <code>yarn build</code>)</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 6 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 6</span>Kiểm thử</h2>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Chứng minh tính năng chạy đúng <b>và</b> không làm hỏng thứ đang chạy tốt.</p>
+
+<p class="sub">(b) Công cụ dùng — dự án có NĂM hệ kiểm thử</p>
+<table class="compact">
+  <thead><tr><th>Hệ</th><th>Dùng cho</th><th>Số file</th></tr></thead>
+  <tbody>
+    <tr><td><b>Test nghiệp vụ Python</b> qua <code>bench execute</code></td><td>Quy tắc nghiệp vụ, quyền, ghi sổ</td><td>68</td></tr>
+    <tr><td><b><code>frontend/tests/sandbox/</code></b> — bộ chạy Playwright tự viết</td><td>Giao diện SPA, ~20 kịch bản</td><td>gọi qua <code>yarn test:*</code></td></tr>
+    <tr><td><b><code>ui_tests/</code></b> — Playwright chuẩn</td><td>Kiểm thử giao diện đầu-cuối</td><td>có <code>playwright.config.js</code></td></tr>
+    <tr><td><b>Pester</b> (PowerShell)</td><td>Kịch bản bản cài Windows</td><td><code>tests/installer/*.Tests.ps1</code></td></tr>
+    <tr><td><b>bats</b> (shell)</td><td>Kịch bản shell — <b>CI không chạy</b></td><td><code>tests/installer/*.bats</code></td></tr>
+  </tbody>
+</table>
+
+<p class="sub">(c) Thao tác thật</p>
+<pre><code>cd ~/frappe-bench-yhct
+
+# ① Nạp dữ liệu mẫu (chạy lại nhiều lần được, an toàn)
+bash apps/supplycore/scripts/setup_test_env.sh
+
+# ② Test nghiệp vụ — chạy từng file
+bench --site supplycore-miyano.local execute supplycore.tests.mvl_rule_test.run
+bench --site supplycore-miyano.local execute supplycore.tests.mvl_e2e_test.run
+bench --site supplycore-miyano.local execute supplycore.tests.portal_isolation_test.run
+
+# ③ Test giao diện
+cd apps/supplycore/frontend
+yarn test                # tất cả
+yarn test:headed         # HIỆN trình duyệt để xem tận mắt — rất hữu ích khi học
+yarn e2e                 # kịch bản đầu-cuối
+
+# ④ Playwright chuẩn
+cd ../ui_tests
+npm install &amp;&amp; npx playwright install chromium    # lần đầu
+bash run.sh
+npx playwright show-report report                  # xem báo cáo có ảnh + video lỗi</code></pre>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<pre class="prompt">Chạy bộ test hồi quy cho đợt này và báo cáo trung thực:
+
+bench --site supplycore-miyano.local execute supplycore.tests.mvl_rule_test.run
+bench --site supplycore-miyano.local execute supplycore.tests.sc_sales_order_test.run
+bench --site supplycore-miyano.local execute supplycore.tests.portal_isolation_test.run
+
+Với mỗi bộ: cho tôi xem OUTPUT THẬT, không tóm tắt.
+Nếu có test FAIL: đừng sửa test cho pass. Hãy phân tích xem code sai hay
+test sai, giải thích cho tôi, rồi mới đề xuất cách sửa.</pre>
+
+<p class="sub">(e) Kết quả mong đợi</p>
+<p>Mỗi bộ test in ra số pass/tổng. Khuôn mẫu <code>run()</code> của dự án trả về <code>{passed, total, results}</code>.</p>
+<p>Ở cuối mỗi đợt lớn, nhóm có <b>một commit kiểm thử tổng</b> — ví dụ thật:</p>
+<pre><code>1c5a1f6  test(mvl-sales): E2E Order-to-Cash + seed demo + regression GĐ2
+df467f2  test(mvl-portal): 4 cột mốc + E2E portal + regression GĐ3</code></pre>
+
+<p class="sub">(f) Linter, formatter, CI</p>
+<div class="box crit">
+  <b class="lbl">Đây là khoảng trống lớn nhất của dự án — phải biết để tự bù</b>
+  <table style="margin:8px 0">
+    <thead><tr><th>Công cụ</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+      <tr><td>ruff / flake8 / black / isort</td><td><span class="tag no">Không có cấu hình</span></td></tr>
+      <tr><td>eslint / prettier</td><td><span class="tag no">Không có cấu hình</span></td></tr>
+      <tr><td><code>.pre-commit-config.yaml</code></td><td><span class="tag no">Không có trong repo</span></td></tr>
+      <tr><td><b>CI chạy khi mở Pull Request</b></td><td><span class="tag no">KHÔNG CÓ</span></td></tr>
+    </tbody>
+  </table>
+  <p style="margin:6px 0">Hai workflow trong <code>.github/workflows/</code> <b>chỉ chạy khi đẩy thẻ phiên bản</b> (<code>push: tags: v*</code>) để đóng gói bản phát hành — không kiểm gì khi bạn mở PR.</p>
+  <p style="margin:6px 0"><b>Hệ quả:</b> <b>nếu bạn không tự chạy test, sẽ không ai chạy hộ.</b> Bước (c) ở trên là bắt buộc, không phải tùy chọn.</p>
+</div>
+
+<p class="sub">Lỗi hay gặp khi kiểm thử</p>
+<table class="compact">
+  <thead><tr><th>Lỗi</th><th>Cách xử lý</th></tr></thead>
+  <tbody>
+    <tr><td><code>ConnectionRefusedError: [Errno 111]</code></td><td>MariaDB chưa chạy: <code>sudo systemctl start mariadb</code></td></tr>
+    <tr><td>Test pass trên máy mình, hỏng trên máy khác</td><td>Thường do dữ liệu mẫu khác nhau — chạy lại <code>setup_test_env.sh</code></td></tr>
+    <tr><td>AI "sửa test cho pass"</td><td><b>Cấm tuyệt đối.</b> Ghi vào prompt: "đừng sửa test cho pass, phân tích trước"</td></tr>
+    <tr><td>Test giao diện chạy song song bị lỗi lung tung</td><td>Đã cấu hình <code>workers: 1</code> — các kịch bản dùng chung một site nên phải chạy tuần tự</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 7 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 7</span>Quản lý phiên bản: nhánh, commit, Pull Request</h2>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Ghi lại thay đổi sao cho <b>quay lui được</b> và <b>người sau hiểu được vì sao</b>.</p>
+
+<p class="sub">(b) Công cụ dùng</p>
+<p><code>git</code> · <code>gh</code> (GitHub CLI, đã cài sẵn tại <code>/usr/bin/gh</code>) · git worktree.</p>
+
+<p class="sub">(c) Thao tác thật</p>
+<pre><code># ① Tạo nhánh — quy ước &lt;loại&gt;/&lt;mô-tả-gạch-ngang&gt;
+git checkout -b feat/mvl-distributor
+git checkout -b fix/m7-bugs
+
+# ② Xem mình sắp commit gì
+git status
+git diff
+
+# ③ Commit
+git add -A
+git commit -F - &lt;&lt;'EOF'
+feat(mvl-sales): SC Sales Order + SO Item (BRU-SFC/SO/AR)
+
+Phần thân giải thích LÝ DO và các quyết định thiết kế…
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;
+EOF
+
+# ④ Đẩy lên
+git push -u miyano feat/mvl-distributor       # repo CHÍNH
+git push origin feat/mvl-distributor          # bản sao dự phòng
+
+# ⑤ Mở Pull Request
+gh pr create --base main --head feat/mvl-distributor \
+  --title "feat(mvl): chuỗi bán hàng O2C" --body "…"
+
+gh pr list --state all
+gh pr view 4</code></pre>
+
+<h4>Quy ước commit — quan sát được rất rõ</h4>
+<p>Định dạng: <code>loại(phạm-vi): mô tả bằng tiếng Việt</code></p>
+<table class="compact">
+  <thead><tr><th>Loại</th><th>Dùng khi</th><th>Ví dụ thật</th></tr></thead>
+  <tbody>
+    <tr><td><code>feat</code></td><td>Tính năng mới</td><td><code>feat(mvl-sales): SC Sales Invoice — GL phải thu + COGS</code></td></tr>
+    <tr><td><code>fix</code></td><td>Sửa lỗi</td><td><code>fix(mvl-portal): chặn portal tự-duyệt đơn hàng qua approve()/reject()</code></td></tr>
+    <tr><td><code>docs</code></td><td>Tài liệu</td><td><code>docs(mvl): spec + plan GĐ2 M7 Bán hàng (10 task TDD)</code></td></tr>
+    <tr><td><code>test</code></td><td>Thêm/sửa kiểm thử</td><td><code>test(mvl-portal): 4 cột mốc + E2E portal + regression GĐ3</code></td></tr>
+    <tr><td><code>refactor</code></td><td>Dọn code, không đổi hành vi</td><td><code>refactor(mvl): gỡ nghiệp vụ bệnh viện khỏi frontend Vue SPA</code></td></tr>
+    <tr><td><code>chore</code></td><td>Việc vặt</td><td><code>chore(mvl): rebrand Miyano + reseed kho/phòng phân phối</code></td></tr>
+  </tbody>
+</table>
+<ul>
+  <li><b>Phạm vi</b> hay dùng <code>mvl-&lt;module&gt;</code>: <code>mvl-sales</code>, <code>mvl-portal</code>, <code>mvl-accounting</code>, <code>mvl-sweep</code></li>
+  <li><b>Mô tả</b> viết tiếng Việt, thường kèm mã quy tắc (<code>BRU-…</code>) hoặc mã lỗi (<code>SC-E…</code>)</li>
+  <li><b>Phần thân dài</b> cho commit lớn — giải thích <i>vì sao</i>, không chỉ <i>cái gì</i>. Đây là <b>điểm mạnh nhất</b> của nhóm</li>
+  <li><b>306/341 commit</b> có chữ ký <code>Co-Authored-By: Claude …</code></li>
+</ul>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<pre class="prompt">Commit phần vừa làm.
+
+Yêu cầu commit message:
+- Dòng đầu: feat(mvl-sales): &lt;mô tả tiếng Việt, kèm mã BRU nếu có&gt;
+- Phần thân: giải thích LÝ DO và các quyết định, không liệt kê lại file
+- Nếu có ràng buộc/giới hạn chưa xử lý được, ghi thẳng vào thân
+- Kết bằng trailer Co-Authored-By
+
+Trước khi commit, cho tôi xem `git status` và `git diff --stat` để tôi
+kiểm có file nào lọt vào ngoài ý muốn không.</pre>
+
+<p class="sub">(e) Về Pull Request — thực trạng cần biết</p>
+<div class="box warn">
+  <b class="lbl">PR có tồn tại, nhưng KHÔNG dùng để review</b>
+  Repo <code>mvl26/supplycore</code> có <b>5 Pull Request</b>:
+  <pre style="margin:6px 0"><code>$ gh pr list --state all
+5  fix(mvl-m7): 5 bug bán hàng O2C từ audit BA (đang làm)   fix/m7-bugs   DRAFT
+4  QA Reports v1+v2+v3 fixes + Persona UI (supersedes #3)   ui6-qa-v03    MERGED
+3  Bug Report v0.1.0 + QA Report v0.2.0 fixes               ui4-qa-v02    CLOSED
+2  feat(ui-2): FC lifecycle, barcode quét được, …           ui2           MERGED
+1  feat(ui-1): hoàn thiện M8-M11, RBAC, import/export …     feat/ui-1     MERGED</code></pre>
+  Nhưng PR #4 (đã merge, <b>+5216 −121 trên 66 file</b>) có <b>0 review, 0 comment</b>.
+  <p style="margin:6px 0"><b>Nghĩa là:</b> PR ở đây là <i>cơ chế gộp nhánh</i>, không phải <i>diễn đàn review</i>. Dự án chỉ có <b>một tác giả người</b> (<code>vietbuihoang</code>, 340/341 commit).</p>
+</div>
+
+<p><b>Vậy "review" của nhóm diễn ra ở đâu?</b> Ở <b>vòng rà soát sau khi làm xong</b> — dấu vết rất rõ trong lịch sử:</p>
+<pre><code>187c83b  fix(mvl-m7): 5 bug bán hàng O2C từ audit BA
+300ee8b  fix(mvl-ui): sửa lỗi form/badge/detail/actions SPA từ audit UI
+d61b081  fix(mvl-sweep): gate 5 module-level whitelisted function còn sót
+9a39ddf  fix(mobile): Wave 1 audit — 70 finding (1 Critical + 24 Important + …)</code></pre>
+<p>Tức là: làm xong → <b>yêu cầu AI rà soát lại toàn bộ</b> → nhận danh sách phát hiện → sửa từng cái → commit <code>fix(...)</code>.</p>
+
+<pre class="prompt">Rà soát lại toàn bộ phần vừa làm ở đợt này, đóng vai người review khó tính.
+
+Tìm cụ thể:
+- API nào thiếu block_portal() hoặc has_permission → RÒ RỈ DỮ LIỆU
+- Chỗ nào tin dữ liệu client gửi lên mà không kiểm lại phía server
+- Chỗ nào ghi sổ kho/sổ cái mà không qua SLE.post()/GLEntry.post()
+- Quy tắc nghiệp vụ nào trong spec chưa được cài đặt hoặc chưa có test
+- Chỗ nào hủy chứng từ có thể gây đảo kép làm âm tồn
+
+Với mỗi phát hiện: nêu file:dòng, mức nghiêm trọng, và cách sửa đề xuất.
+ĐỪNG sửa gì cả — chỉ báo cáo. Tôi sẽ quyết sửa cái nào.</pre>
+
+<p class="sub">(f) Checklist review — tái dựng từ các đợt rà soát thật</p>
+<div class="box">
+  <b class="lbl">Không có file checklist trong repo</b> — <span class="tag no">Không có <code>PULL_REQUEST_TEMPLATE.md</code>, <code>CODEOWNERS</code>, <code>CONTRIBUTING.md</code></span>.
+  Danh sách dưới đây <b>tái dựng từ nội dung các commit <code>fix(...)</code> sau rà soát</b> — tức là những lỗi nhóm đã thật sự vấp.
+</div>
+<table class="compact">
+  <thead><tr><th class="ctr">☐</th><th>Kiểm gì</th><th>Vì sao</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">☐</td><td>Mọi API mới có <code>block_portal()</code> + <code>has_permission()</code></td><td>Thiếu là rò rỉ dữ liệu khách — đã vấp nhiều lần</td></tr>
+    <tr><td class="ctr">☐</td><td>Không tin tham số client gửi (giá, khách hàng, số lượng)</td><td>Khách có thể sửa giá qua công cụ khác</td></tr>
+    <tr><td class="ctr">☐</td><td>Ghi kho/sổ cái <b>chỉ</b> qua <code>SLE.post()</code> / <code>GLEntry.post()</code></td><td>Viết đường riêng sẽ lệch số dư</td></tr>
+    <tr><td class="ctr">☐</td><td>Hủy chứng từ chèn <b>một</b> dòng đối ứng, không đánh dấu dòng cũ</td><td>Đảo kép làm âm tồn — lỗi thật, sửa ở <code>1fddee5</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Mã lỗi có tiền tố tra được (<code>BRU-*</code> / <code>SC-E*</code>)</td><td>Người dùng báo lỗi thì tìm ra ngay</td></tr>
+    <tr><td class="ctr">☐</td><td>Thông báo lỗi nói rõ <b>phải làm gì</b>, không chỉ "Lỗi!"</td><td>Giảm hỗ trợ</td></tr>
+    <tr><td class="ctr">☐</td><td>Chú thích giải thích <b>LÝ DO</b>, không mô tả lại code</td><td>Người sau (kể cả bạn) sẽ không tự suy ra được</td></tr>
+    <tr><td class="ctr">☐</td><td>Có test cho quy tắc nghiệp vụ mới</td><td>Không có test = không ai bảo vệ khi refactor</td></tr>
+    <tr><td class="ctr">☐</td><td><code>bench migrate</code> sạch + <code>frappe.ping</code> → <code>pong</code></td><td>Ràng buộc bất biến sau mỗi Task</td></tr>
+    <tr><td class="ctr">☐</td><td>Chạy bộ test hồi quy, <b>không</b> chỉ test mới</td><td>Không có CI chặn — bạn là lớp bảo vệ cuối</td></tr>
+    <tr><td class="ctr">☐</td><td>Không có bí mật lọt vào commit</td><td><code>git diff --cached | grep -iE 'password|token|secret'</code></td></tr>
+    <tr><td class="ctr">☐</td><td>Không có <code>__pycache__</code>, <code>node_modules</code>, file build</td><td><code>git diff --cached --name-only | grep -c __pycache__</code> phải = 0</td></tr>
+  </tbody>
+</table>
+
+<h4>Git worktree — kỹ thuật nhóm dùng thật</h4>
+<p>Khi đang làm dở tính năng mà cần sửa gấp lỗi khác, không cần <code>git stash</code>:</p>
+<pre><code>git worktree add .claude/worktrees/m7-bugfix fix/m7-bugs
+# → mở nhánh fix/m7-bugs ở thư mục riêng, nhánh hiện tại giữ nguyên
+git worktree list
+git worktree remove .claude/worktrees/m7-bugfix    # dọn khi xong</code></pre>
+
+<!-- ══════════════════════════════ 8 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 8</span>Migrate &amp; triển khai</h2>
+
+<p class="sub">(a) Mục tiêu</p>
+<p>Đưa thay đổi lên môi trường thật mà không làm mất dữ liệu, và <b>quay lui được</b> nếu hỏng.</p>
+
+<p class="sub">(b) Ba môi trường — khác nhau thật sự</p>
+<table class="compact">
+  <thead><tr><th>Môi trường</th><th>Cách chạy</th><th>Đặc điểm</th></tr></thead>
+  <tbody>
+    <tr><td><b>Dev</b> (máy lập trình)</td><td><code>bench start</code> hoặc supervisor</td><td>Site <code>supplycore-miyano.local</code>. Có <code>bench watch</code> tự build lại</td></tr>
+    <tr><td><b>Staging / thử nghiệm</b></td><td>Docker Compose</td><td><code>deploy/compose.yml</code> — dựng đủ 10 dịch vụ bằng 1 lệnh</td></tr>
+    <tr><td><b>Production</b> (máy khách)</td><td>Docker <b>hoặc</b> bản cài <code>.exe</code></td><td>Bản <code>.exe</code> chứa máy ảo Linux — khách chỉ bấm đúp</td></tr>
+  </tbody>
+</table>
+<div class="box warn">
+  <b class="lbl">Không có môi trường staging riêng trong repo</b>
+  <span class="tag no">Không tìm thấy</span> cấu hình staging tách biệt. Stack Docker trong <code>deploy/</code> dùng cho <b>cả</b> thử nghiệm lẫn triển khai thật, phân biệt bằng file <code>.env</code>.
+</div>
+
+<p class="sub">(c) Thao tác thật</p>
+<pre><code># ══ DEV ══
+cd ~/frappe-bench-yhct
+bench --site supplycore-miyano.local migrate          # đồng bộ cấu trúc + chạy patch
+cd apps/supplycore/frontend &amp;&amp; yarn build             # build giao diện Vue
+cd ~/frappe-bench-yhct &amp;&amp; bench build --app supplycore
+sudo supervisorctl restart all                        # áp dụng code Python mới
+
+# ══ ĐÓNG GÓI BẢN PHÁT HÀNH ══
+git tag v1.2.0
+git push --tags          # ← kích hoạt CI dựng ảnh Docker + file .exe
+
+# ══ TRIỂN KHAI BẰNG DOCKER ══
+cd apps/supplycore/deploy
+cp .env.example .env
+nano .env                # SỬA ADMIN_PASSWORD và DB_PASSWORD trước khi chạy!
+docker compose up -d
+docker compose ps
+docker compose logs -f backend</code></pre>
+
+<p class="sub">(d) Cách ra lệnh cho Claude Code</p>
+<pre class="prompt">Chuẩn bị phát hành phiên bản v1.2.0.
+
+1. Chạy migrate + toàn bộ test hồi quy, cho tôi xem output THẬT
+2. Chạy yarn build, xác nhận không lỗi
+3. Liệt kê các patch MỚI thêm ở đợt này (so patches.txt với thẻ v1.1.0)
+   và giải thích mỗi patch làm gì với dữ liệu ĐANG CÓ
+4. Cảnh báo tôi nếu có patch nào KHÔNG chạy lại được (không idempotent)
+
+ĐỪNG tự tạo thẻ phiên bản hay push — tôi sẽ tự làm sau khi xem báo cáo.</pre>
+
+<p class="sub">(e) Kết quả mong đợi</p>
+<p>Đẩy thẻ phiên bản kích hoạt 2 workflow trong <code>.github/workflows/</code>:</p>
+<ul>
+  <li><b><code>build-image.yml</code></b> — dựng ảnh Docker, <b>chạy thử toàn bộ stack</b> (tạo site, gọi thử trang, kiểm file Vue đã build), rồi đẩy lên GHCR</li>
+  <li><b><code>build-installer.yml</code></b> — dựng đĩa máy ảo bằng Packer, đóng gói <code>.exe</code> bằng Inno Setup, phát hành GitHub Release</li>
+</ul>
+
+<p class="sub">(f) Quay lui khi lỗi</p>
+<table class="compact">
+  <thead><tr><th>Tình huống</th><th>Cách quay lui</th></tr></thead>
+  <tbody>
+    <tr><td>Code lỗi, chưa migrate</td><td><code>git revert &lt;sha&gt;</code> rồi <code>supervisorctl restart all</code></td></tr>
+    <tr><td>Đã migrate, cấu trúc dữ liệu hỏng</td><td><b>Khôi phục từ bản sao lưu</b>: <code>bench --site &lt;site&gt; restore &lt;file.sql.gz&gt;</code></td></tr>
+    <tr><td>Docker: ảnh mới lỗi</td><td>Sửa <code>IMAGE_TAG</code> trong <code>.env</code> về thẻ cũ rồi <code>docker compose up -d</code></td></tr>
+    <tr><td>Cần sao lưu trước khi migrate</td><td><code>bench --site &lt;site&gt; backup --with-files</code></td></tr>
+  </tbody>
+</table>
+<div class="box crit">
+  <b class="lbl">Patch KHÔNG quay lui được — điểm nguy hiểm nhất khi triển khai</b>
+  <code>bench migrate</code> chạy các patch trong <code>patches.txt</code> và <b>ghi nhớ đã chạy</b>. Patch <b>chuyển đổi dữ liệu</b> (ví dụ điền giá trị mặc định cho 10.000 bản ghi cũ) <b>không có nút hoàn tác</b>.
+  <p style="margin:6px 0"><b>Bắt buộc:</b> <code>bench --site &lt;site&gt; backup --with-files</code> <b>trước mỗi lần migrate trên môi trường thật</b>. Và giữ cả file <code>site_config.json</code> — mất <code>encryption_key</code> là mất dữ liệu mã hóa vĩnh viễn.</p>
+</div>
+
+<!-- ══════════════════════════════ 9 ══════════════════════════════ -->
+<h2><span class="stage">Giai đoạn 9</span>Định nghĩa "Hoàn thành"</h2>
+
+<p>Một tính năng chỉ được coi là <b>xong</b> khi đủ <b>cả 12 tiêu chí</b>. Tái dựng từ ràng buộc trong các file plan thật và nội dung commit.</p>
+
+<table class="compact">
+  <thead><tr><th class="ctr">☐</th><th>Tiêu chí</th><th>Cách kiểm</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">☐</td><td><b>Có test và test XANH</b></td><td><code>bench --site … execute supplycore.tests.&lt;mod&gt;.run</code></td></tr>
+    <tr><td class="ctr">☐</td><td><b>Test hồi quy không hỏng</b></td><td>Chạy các bộ test liên quan, đặc biệt <code>portal_isolation_test</code></td></tr>
+    <tr><td class="ctr">☐</td><td><b><code>bench migrate</code> sạch</b></td><td>Không lỗi, không cảnh báo</td></tr>
+    <tr><td class="ctr">☐</td><td><b><code>frappe.ping</code> → <code>pong</code></b></td><td>Ràng buộc bất biến ghi trong mọi plan</td></tr>
+    <tr><td class="ctr">☐</td><td><b>Giao diện đã build và xem tận mắt</b></td><td><code>yarn build</code> + Ctrl+Shift+R + bấm thử</td></tr>
+    <tr><td class="ctr">☐</td><td><b>API mới có <code>block_portal()</code> + kiểm quyền</b></td><td>Đọc lại từng hàm mới</td></tr>
+    <tr><td class="ctr">☐</td><td><b>Quy tắc nghiệp vụ có mã tra được</b></td><td><code>BRU-*</code> hoặc <code>SC-E*</code> trong thông báo lỗi</td></tr>
+    <tr><td class="ctr">☐</td><td><b>Chú thích giải thích LÝ DO</b></td><td>Nhất là chỗ trông có vẻ thừa</td></tr>
+    <tr><td class="ctr">☐</td><td><b>Commit message có phần thân</b></td><td>Giải thích quyết định, không liệt kê file</td></tr>
+    <tr><td class="ctr">☐</td><td><b>Đã qua một vòng rà soát</b></td><td>Yêu cầu AI đóng vai người review khó tính</td></tr>
+    <tr><td class="ctr">☐</td><td><b>Tài liệu đã cập nhật nếu nghiệp vụ đổi</b></td><td>Tài liệu BA · README module</td></tr>
+    <tr><td class="ctr">☐</td><td><b>Không có bí mật / file rác lọt vào</b></td><td><code>git diff --cached</code> rà lại trước khi commit</td></tr>
+  </tbody>
+</table>
+
+<div class="box ok">
+  <b class="lbl">Nguyên tắc quan trọng nhất: bằng chứng trước lời khẳng định</b>
+  Đừng nói "đã xong" khi chưa <b>nhìn thấy output</b>. Nếu AI báo "test đã pass", hãy yêu cầu <b>cho xem output thật</b>.
+  Có kỹ năng <code>superpowers:verification-before-completion</code> chuyên cho việc này.
+</div>
+
+<!-- ══════════════════════════════ 10 ══════════════════════════════ -->
+<h2>10. Mười lăm mẹo &amp; cạm bẫy</h2>
+
+<h3>Nhóm A — Đặc thù Frappe</h3>
+
+<div class="box warn">
+  <b class="lbl">① Ba loại thay đổi, ba cách áp dụng — quên là mất cả buổi</b>
+  <table style="margin:8px 0">
+    <tbody>
+      <tr><td>Sửa <b>Python</b></td><td>→ <code>sudo supervisorctl restart all</code></td></tr>
+      <tr><td>Sửa <b><code>.json</code> của DocType</b></td><td>→ <code>bench migrate</code></td></tr>
+      <tr><td>Sửa <b>Vue/JS</b></td><td>→ <code>yarn build</code> + Ctrl+Shift+R</td></tr>
+    </tbody>
+  </table>
+  Quên một trong ba là ngồi debug một thay đổi <i>chưa hề được áp dụng</i>.
+</div>
+
+<div class="box warn">
+  <b class="lbl">② <code>bench build</code> KHÔNG build giao diện Vue</b>
+  Lý do ghi thẳng trong <code>docker/Containerfile</code>: <i>"no root package.json means <code>bench build</code> alone will NOT build it; we must run <code>yarn build</code>"</i>.
+  Đây là bẫy số một với người mới.
+</div>
+
+<div class="box warn">
+  <b class="lbl">③ Service worker giữ bản cũ — build xong vẫn thấy giao diện cũ</b>
+  Giao diện là PWA. <b>Luôn Ctrl+Shift+R</b> sau khi build. Nhiều người tưởng build hỏng trong khi thực ra trình duyệt đang phục vụ bản đã lưu.
+</div>
+
+<div class="box crit">
+  <b class="lbl">④ Patch phải chạy lại được nhiều lần (idempotent)</b>
+  <code>bench migrate</code> có thể chạy lại. Patch phải kiểm tra trước khi tạo:
+  <pre style="margin:6px 0"><code>if not frappe.db.exists("SC GL Account", "511"):
+    # chỉ tạo khi chưa có</code></pre>
+  Patch không idempotent sẽ tạo dữ liệu trùng khi chạy lại.
+</div>
+
+<div class="box crit">
+  <b class="lbl">⑤ TUYỆT ĐỐI không sửa tay trên production</b>
+  Sửa DocType qua giao diện Desk trên máy khách sẽ tạo bản ghi "Custom Field"/"Property Setter" <b>chỉ có ở máy đó</b>. Lần migrate sau sẽ xung đột hoặc ghi đè mất.
+  <b>Mọi thay đổi phải đi qua Git → migrate.</b>
+</div>
+
+<div class="box warn">
+  <b class="lbl">⑥ Fixtures của dự án đang RỖNG — biết để không nhầm</b>
+  Cả 4 file trong <code>supplycore/fixtures/</code> đều là <code>[]</code>. Vai trò thực tế tạo bằng <b>code</b> trong <code>install.py</code>, không phải fixtures.
+  Nếu muốn dùng fixtures thật: <code>bench --site &lt;site&gt; export-fixtures</code>. <b>Cẩn thận:</b> lệnh này xuất theo bộ lọc trong <code>hooks.py</code>, có thể kéo theo dữ liệu không mong muốn.
+</div>
+
+<div class="box warn">
+  <b class="lbl">⑦ Đổi <code>autoname</code> không đổi mã bản ghi cũ</b>
+  Quyết định mẫu mã (<code>SC-SO-{YYYY}-{#####}</code>) phải đúng <b>ngay từ đầu</b>. Với master dùng <code>field:</code> (kho, phòng ban, vật tư), <b>đổi tên là đổi mã</b> — kéo theo mọi chứng từ đang trỏ tới.
+</div>
+
+<h3>Nhóm B — Làm việc với Claude Code</h3>
+
+<div class="box ok">
+  <b class="lbl">⑧ Luôn Spec → Plan → Code, đừng nhảy thẳng vào code</b>
+  Đây là khuôn mẫu nhất quán của nhóm qua 22 file spec/plan. Nói <i>"đừng code vội, khảo sát rồi hỏi tôi"</i> ở đầu mỗi việc lớn.
+</div>
+
+<div class="box ok">
+  <b class="lbl">⑨ Chỉ đích danh hàm phải tái dùng — mục "Điểm MIRROR"</b>
+  AI rất hay <i>viết lại</i> thứ đã có. Kế hoạch của nhóm luôn có mục liệt kê hàm sẵn có: <code>SCStockLedgerEntry.post()</code>, <code>SCGLEntry.post_journal()</code>, <code>auto_pick_fefo()</code>…
+  Thiếu mục này, bạn sẽ có hai đường ghi sổ kho khác nhau và số liệu lệch.
+</div>
+
+<div class="box crit">
+  <b class="lbl">⑩ Bắt AI cho xem OUTPUT THẬT, đừng tin lời tóm tắt</b>
+  "Test đã pass" là <i>lời khẳng định</i>. Output có dòng <code>passed: 5/5</code> mới là <i>bằng chứng</i>.
+  Với việc quan trọng (migrate, test, build), luôn yêu cầu: <b>"cho tôi xem output thật, không tóm tắt"</b>.
+</div>
+
+<div class="box crit">
+  <b class="lbl">⑪ Cấm "sửa test cho pass"</b>
+  Khi test đỏ, AI có xu hướng sửa test cho khớp code. Ghi vào prompt: <i>"đừng sửa test cho pass — phân tích xem code sai hay test sai, giải thích, rồi mới đề xuất"</i>.
+</div>
+
+<div class="box warn">
+  <b class="lbl">⑫ Nêu rõ cái KHÔNG làm</b>
+  Plan thật luôn có: <i>"KHÔNG làm Portal/M12, KHÔNG làm UI Vue (phase sau)"</i>. Thiếu ràng buộc này, phạm vi phình ra và không bao giờ xong.
+</div>
+
+<div class="box warn">
+  <b class="lbl">⑬ Clone repo về sẽ KHÔNG có <code>.claude/</code></b>
+  <code>.gitignore</code> loại trừ <code>.claude/</code> → <b>7 skill</b> chỉ có trên máy người đã cài. Phải xin chép tay từ đồng nghiệp.
+  Đồng thời repo <b>chưa có <code>CLAUDE.md</code></b> — mỗi phiên AI phải tự dò lại quy ước. Đây là <b>việc đáng làm sớm</b>, xem đề xuất ở mục 11.
+</div>
+
+<div class="box crit">
+  <b class="lbl">⑭ Không có CI khi mở PR — bạn là lớp bảo vệ cuối</b>
+  Hai workflow chỉ chạy khi đẩy thẻ phiên bản. Không có lint, không có test tự động khi mở PR.
+  <b>Nếu bạn không chạy test, sẽ không ai chạy hộ.</b>
+</div>
+
+<div class="box ok">
+  <b class="lbl">⑮ Commit nhỏ, mỗi Task một commit</b>
+  Kế hoạch M7 chia 10 Task = 10 commit. Nhờ vậy quay lui được chính xác một Task mà không mất phần còn lại.
+  Ngược lại, PR #4 gộp <b>66 file trong một lần</b> — gần như không review được.
+</div>
+
+<div class="box warn">
+  <b class="lbl">⑯ Bí mật: lộ một lần là phải đổi, xóa commit không đủ</b>
+  Trước mỗi commit: <code>git diff --cached | grep -iE 'password|token|secret|api[_-]key'</code>.
+  Nếu lỡ đẩy lên rồi, <b>coi như đã lộ</b> — phải đổi ngay mật khẩu/token đó.
+</div>
+
+<!-- ══════════════════════════════ 11 ══════════════════════════════ -->
+<h2>11. Đề xuất: nội dung cho <code>CLAUDE.md</code></h2>
+
+<p>Repo <b>chưa có</b> <code>CLAUDE.md</code> — file dặn dò AI về quy ước dự án, đọc tự động mỗi phiên. Dưới đây là bản nháp <b>rút hoàn toàn từ ràng buộc thật</b> trong các file plan của nhóm. Bạn có thể lưu thành <code>CLAUDE.md</code> ở thư mục gốc:</p>
+
+<pre><code># SupplyCore MVL — hướng dẫn cho AI
+
+## Môi trường
+- Bench: `/home/hoangvietyeuem/frappe-bench-yhct`
+- Site: `supplycore-miyano.local`
+- App: `apps/supplycore` · nhánh làm việc: `feat/mvl-distributor`
+- Repo CHÍNH: `mvl26/supplycore-miyano` (remote `miyano`), nhánh `main`
+
+## Ràng buộc bất biến — kiểm sau MỖI thay đổi
+    cd /home/hoangvietyeuem/frappe-bench-yhct
+    bench --site supplycore-miyano.local migrate          # phải sạch
+    bench --site supplycore-miyano.local execute frappe.ping   # phải ra pong
+
+## Ba loại thay đổi, ba cách áp dụng
+- Sửa Python      -&gt; sudo supervisorctl restart all
+- Sửa DocType JSON -&gt; bench migrate
+- Sửa Vue/JS      -&gt; cd frontend && yarn build  (bench build KHÔNG build phần này)
+                     rồi hard refresh Ctrl+Shift+R
+
+## Quy ước code
+- DocType tiền tố `SC `. autoname `format:SC-XX-{YYYY}-{#####}`
+- Chứng từ có duyệt: `"is_submittable": 1`
+- KHÔNG dùng Frappe Workflow engine — máy trạng thái bằng controller Python
+- Ghi kho CHỈ qua `SCStockLedgerEntry.post()`
+- Ghi sổ cái CHỈ qua `SCGLEntry.post()` / `post_journal()` / `cancel_voucher()`
+- Chọn lô: `supplycore.api.fefo.auto_pick_fefo(item_code, warehouse, qty)`
+- MỌI API `@frappe.whitelist()` phải có `block_portal()` + `frappe.has_permission()`
+- Mã lỗi có tiền tố tra được: `BRU-*` (nghiệp vụ) hoặc `SC-E*` (kỹ thuật)
+- Chú thích tiếng Việt, giải thích LÝ DO chứ không mô tả code
+
+## Kiểm thử
+- Mỗi file test có hàm `run()`, docstring ghi luôn lệnh chạy
+- Cuối mỗi test: `frappe.db.rollback()`
+- Chạy: `bench --site supplycore-miyano.local execute supplycore.tests.&lt;tên&gt;.run`
+- Dữ liệu mẫu: `bash apps/supplycore/scripts/setup_test_env.sh`
+- TDD bắt buộc: viết test ĐỎ trước, code cho XANH, rồi mới commit
+
+## Commit
+- Định dạng: `loại(phạm-vi): mô tả tiếng Việt`
+- Phần thân giải thích LÝ DO, không liệt kê file
+- Kết bằng: `Co-Authored-By: Claude ... &lt;noreply@anthropic.com&gt;`
+
+## Cạm bẫy đã biết
+- cwd bị reset sau mỗi lệnh `bench` — luôn dùng đường dẫn tuyệt đối
+- `supplycore/public/js/` ĐÃ CHẾT (`doctype_js = {}` rỗng) — đừng sửa
+- `supplycore/overrides/` là DI SẢN, trừ `purchase_receipt.py` vẫn dùng
+- 4 file trong `supplycore/fixtures/` đang RỖNG — vai trò tạo bằng `install.py`
+- Hủy chứng từ: chèn MỘT dòng đối ứng, KHÔNG đánh dấu dòng cũ (tránh đảo kép)
+- KHÔNG có CI khi mở PR — phải tự chạy test
+
+## Không được làm
+- Không sửa tay trên production — mọi thay đổi qua Git rồi migrate
+- Không sửa test cho pass — phân tích nguyên nhân trước
+- Không commit bí mật (`.env`, `site_config.json`, khóa, token)
+- Không tự tạo thẻ phiên bản hay push khi chưa được yêu cầu</code></pre>
+
+<div class="box">
+  <b class="lbl">Bài tập cho tuần đầu</b>
+  Chọn <b>một tính năng rất nhỏ</b> — gợi ý: thêm cột "Số lô NCC" vào danh sách Lô hàng — rồi đi trọn 9 giai đoạn:
+  <ol style="margin:6px 0">
+    <li>Viết spec ngắn (nửa trang cũng được)</li>
+    <li>Viết plan có đúng 1 Task</li>
+    <li>Thực thi theo TDD</li>
+    <li>Chạy test hồi quy</li>
+    <li>Commit đúng quy ước</li>
+    <li>Tự chấm theo checklist "Định nghĩa Hoàn thành"</li>
+  </ol>
+  Làm xong một vòng nhỏ sẽ hiểu quy trình hơn đọc mười trang tài liệu.
+</div>
+
+</main>
+
+<footer class="pagefoot">
+  <b>SupplyCore MVL — Tài liệu nhập môn · Tập 04: Quy trình lập trình với Claude Code</b><br>
+  Ngày tạo: <b>05/08/2026</b> · Tái dựng từ 341 commit, 22 file spec/plan trong lịch sử Git, và 5 Pull Request thật.<br>
+  Mọi mật khẩu, khóa, token và IP nội bộ đã được thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
+  Nhóm chưa có tài liệu quy trình chính thức — đây là bản tái dựng, hãy sửa nếu thấy chưa đúng thực tế.
+</footer>
+
+</body>
+</html>
