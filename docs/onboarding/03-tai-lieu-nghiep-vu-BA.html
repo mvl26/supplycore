@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Tài liệu Phân tích Nghiệp vụ (BA) — SupplyCore MVL</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 15px;
+    line-height: 1.65; color: #222; background: #fff;
+  }
+
+  /* ===== Thanh điều hướng dính (sticky) — DÙNG CHUNG mọi trang ===== */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: #14243A; border-bottom: 3px solid #1F4E79;
+    padding: 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  }
+  nav.topnav a {
+    color: #E8EEF6; text-decoration: none; font-size: 13px; font-weight: bold;
+    padding: 11px 13px; display: block; border-bottom: 3px solid transparent;
+  }
+  nav.topnav a:hover { background: #1F4E79; color: #fff; }
+  nav.topnav a.active { background: #2E75B6; color: #fff; border-bottom-color: #9CC3E8; }
+
+  header.pagehead { background: #1F4E79; color: #fff; padding: 34px 28px 26px; }
+  header.pagehead h1 { margin: 0 0 8px; font-size: 27px; }
+  header.pagehead p { margin: 0; font-size: 15px; color: #D6E4F2; max-width: 90ch; }
+  header.pagehead .kicker {
+    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: #9CC3E8; margin-bottom: 10px; font-weight: bold;
+  }
+
+  main { padding: 0 28px 60px; max-width: 1180px; }
+
+  h2 {
+    font-size: 21px; color: #1F4E79; margin: 38px 0 12px; padding-bottom: 7px;
+    border-bottom: 2px solid #1F4E79;
+  }
+  h3 { font-size: 17px; color: #173A5C; margin: 26px 0 8px; }
+  h4 { font-size: 15px; color: #2E75B6; margin: 20px 0 6px; }
+  p  { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13.5px; }
+  th, td { border: 1px solid #C8D2DE; padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #1F4E79; color: #fff; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #F2F5F9; }
+  table.compact { font-size: 12.5px; }
+  table.compact th, table.compact td { padding: 5px 7px; }
+  .ctr { text-align: center; }
+  tr.alt td { background: #FBF3E0 !important; }
+
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: 13px;
+    background: #EEF2F7; padding: 1px 5px; border-radius: 3px; color: #123A6B;
+  }
+  td code, th code { font-size: 12px; }
+  pre {
+    background: #14243A; color: #E8EEF6; padding: 13px 15px; border-radius: 5px;
+    overflow-x: auto; font-family: Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 1.55; margin: 12px 0;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+
+  .box { border-left: 5px solid #2E75B6; background: #EAF2FB; padding: 11px 16px; margin: 15px 0; }
+  .box.warn { border-left-color: #B8860B; background: #FBF3E0; }
+  .box.crit { border-left-color: #B03030; background: #FBEAEA; }
+  .box.ok   { border-left-color: #1B7A4E; background: #E6F3EC; }
+  .box b.lbl { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #555; margin-bottom: 3px; }
+
+  .ascii {
+    background: #14243A; color: #C6E0FF; padding: 16px; border-radius: 5px;
+    font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+    line-height: 1.45; overflow-x: auto; white-space: pre; margin: 14px 0;
+  }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px;
+    border-radius: 3px; background: #E3E9F0; color: #123A6B; border: 1px solid #C8D2DE;
+  }
+  .tag.no  { background: #FBEAEA; color: #8B2020; border-color: #E0BABA; }
+  .tag.yes { background: #E6F3EC; color: #15603E; border-color: #B3D9C4; }
+  .sev { display:inline-block; font-size:11px; font-weight:bold; padding:1px 7px; border-radius:9px; white-space:nowrap; }
+  .sev.blk { background:#FBEAEA; color:#8B2020; border:1px solid #E0BABA; }
+  .sev.cond { background:#FBF3E0; color:#8A6410; border:1px solid #E3CE94; }
+  .sev.info { background:#EAF2FB; color:#1F4E79; border:1px solid #B9CFE8; }
+
+  footer.pagefoot {
+    background: #14243A; color: #A9BBD0; padding: 20px 28px; font-size: 13px;
+    border-top: 3px solid #1F4E79;
+  }
+  footer.pagefoot b { color: #E8EEF6; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html">Trang chủ</a>
+  <a href="01-moi-truong-va-cong-cu.html">01 · Môi trường &amp; Công cụ</a>
+  <a href="02-kien-truc-va-cau-truc-code.html">02 · Kiến trúc &amp; Cấu trúc code</a>
+  <a href="03-tai-lieu-nghiep-vu-BA.html" class="active">03 · Nghiệp vụ (BA)</a>
+  <a href="04-quy-trinh-lap-trinh-voi-claude-code.html">04 · Lập trình với Claude Code</a>
+  <a href="05-lo-trinh-hoc-va-bat-chuoc.html">05 · Lộ trình học</a>
+</nav>
+
+<header class="pagehead">
+  <div class="kicker">Tài liệu nhập môn · Tập 03</div>
+  <h1>Tài liệu Phân tích Nghiệp vụ (BA)</h1>
+  <p>Phần mềm giải quyết bài toán gì, ai dùng, quy trình chạy ra sao, và những quy tắc nào không được phá. Tái dựng từ mã nguồn thật — dùng làm ví dụ mẫu để bạn học cách viết tài liệu BA.</p>
+</header>
+
+<main>
+
+<div class="box">
+  <b class="lbl">Tài liệu này là gì và khác gì tập 02</b>
+  <b>Tập 02</b> trả lời <i>"code nằm ở đâu"</i>. <b>Tập 03</b> trả lời <i>"phần mềm làm gì và vì sao"</i> — viết theo chuẩn một tài liệu <b>Phân tích Nghiệp vụ (Business Analysis)</b>.
+  Bạn <b>không cần biết lập trình</b> để đọc. Nếu bạn là người mới muốn học cách viết tài liệu BA, đây là một ví dụ đầy đủ để bắt chước.
+</div>
+
+<div class="box warn">
+  <b class="lbl">Về nguồn dữ liệu &amp; quan hệ với tài liệu BA gốc</b>
+  Repo đã có sẵn một tài liệu BA đầy đủ tại <code>docs/ba-miyano/SupplyCore_MVL_BA.html</code> (bản v1.1, 26 mục).
+  Tài liệu bạn đang đọc <b>không thay thế</b> nó — đây là bản <b>tái dựng theo cấu trúc BA chuẩn</b> (quy trình dạng bảng, use case có mã, quy tắc đánh số) để dùng làm <b>mẫu học</b>.
+  Mọi nội dung đối chiếu lại với mã nguồn thật; chỗ nào không tìm thấy, tài liệu ghi rõ <span class="tag no">Không có trong repo</span>.
+</div>
+
+<!-- ══════════════════════════════ 1 ══════════════════════════════ -->
+<h2>1. Bối cảnh &amp; mục tiêu</h2>
+
+<h3>1.1 Bài toán của doanh nghiệp</h3>
+<p><b>Khách hàng A</b> là một doanh nghiệp <b>phân phối vật tư và hóa chất y tế</b>: mua hàng từ nhà cung cấp, lưu kho, rồi bán lại cho các khách hàng doanh nghiệp (bệnh viện, phòng khám, đại lý).</p>
+
+<p>Ngành này có <b>bốn đặc thù</b> khiến phần mềm kho thông thường không đủ:</p>
+<table>
+  <thead><tr><th>Đặc thù</th><th>Rủi ro nếu quản lý bằng Excel</th><th>Phần mềm giải quyết thế nào</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Hàng có hạn dùng</b></td>
+      <td>Hàng cận hạn nằm sâu trong kho, hàng mới lấy trước → hàng cũ hết hạn phải hủy, mất tiền</td>
+      <td>Ép xuất theo <b>FEFO</b> (lô hết hạn trước, xuất trước); cảnh báo lô sắp hết hạn hằng ngày</td>
+    </tr>
+    <tr>
+      <td><b>Phải truy được nguồn gốc từng lô</b></td>
+      <td>Nhà sản xuất thu hồi một lô — không biết đã bán cho ai, không thu hồi được</td>
+      <td>Sổ kho ghi lại mọi dịch chuyển theo lô; truy được <b>lô này đã bán cho khách nào</b></td>
+    </tr>
+    <tr>
+      <td><b>Hàng phải kiểm định trước khi bán</b></td>
+      <td>Hàng chưa kiểm định bị bán nhầm ra ngoài</td>
+      <td>Lô chưa đạt QC <b>bị loại khỏi tồn khả dụng</b> — hệ thống không cho xuất</td>
+    </tr>
+    <tr>
+      <td><b>Bán theo hợp đồng khung, có công nợ</b></td>
+      <td>Bán sai giá hợp đồng; bán vượt hạn mức; khách nợ quá nhiều vẫn giao tiếp</td>
+      <td>Giá <b>khóa cứng</b> theo hợp đồng; chặn vượt số lượng trần; chặn vượt hạn mức tín dụng</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>1.2 Mục tiêu hệ thống</h3>
+<ol>
+  <li><b>Kiểm soát mua hàng theo hợp đồng khung</b> — khóa giá và hạn mức, phê duyệt nhiều cấp theo giá trị.</li>
+  <li><b>Bảo đảm chất lượng &amp; an toàn lô hàng</b> — kiểm định bắt buộc, quản lý hạn dùng, ép FEFO.</li>
+  <li><b>Tồn kho chính xác thời gian thực</b> — mọi con số truy ngược được về chứng từ gốc.</li>
+  <li><b>Bán hàng khép kín</b> — từ đơn khách đến thu tiền, hạch toán công nợ tự động.</li>
+  <li><b>Truy xuất &amp; thu hồi</b> — truy một lô đến tận khách hàng đã mua.</li>
+  <li><b>Tự phục vụ cho khách</b> — cổng đặt hàng, theo dõi đơn, với cô lập dữ liệu tuyệt đối.</li>
+  <li><b>Điều hành theo dữ liệu</b> — chỉ số, cảnh báo chủ động.</li>
+</ol>
+
+<h3>1.3 Phạm vi</h3>
+<table>
+  <thead><tr><th class="ctr">Trong phạm vi</th><th class="ctr">Ngoài phạm vi</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul style="margin:4px 0">
+          <li>Hợp đồng khung nhà cung cấp, đơn mua, nhận hàng, kiểm định</li>
+          <li>Quản lý kho theo lô/vị trí kệ, chuyển kho, kiểm kê</li>
+          <li>Bán hàng: hợp đồng khung bán, đơn khách, soạn hàng, giao, nghiệm thu, hóa đơn, thu tiền</li>
+          <li>Kế toán: công nợ phải trả &amp; phải thu, sổ cái, khóa sổ</li>
+          <li>Truy xuất nguồn gốc, thu hồi lô, điều tra thất thoát</li>
+          <li>Cổng khách hàng tự phục vụ</li>
+          <li>Chỉ số điều hành &amp; cảnh báo tự động</li>
+        </ul>
+      </td>
+      <td>
+        <ul style="margin:4px 0">
+          <li><b>Nhân sự, chấm công, lương</b> — không có trong repo</li>
+          <li><b>Sản xuất / gia công</b> — không có</li>
+          <li><b>Vận tải, lộ trình giao hàng</b> — không có</li>
+          <li><b>Kế toán thuế đầy đủ, báo cáo tài chính theo chuẩn</b> — chỉ có sổ cái nội bộ và 4 báo cáo cơ bản</li>
+          <li><b>Tích hợp HIS/BHYT</b> — <span class="tag no">đã gỡ hoàn toàn</span>, thuộc bản bệnh viện cũ</li>
+          <li><b>Đa công ty, đa tiền tệ</b> — không có</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>1.4 Một chi tiết lịch sử quan trọng</h3>
+<div class="box">
+  <b class="lbl">Phần mềm này vốn là bản cho bệnh viện</b>
+  SupplyCore ban đầu làm cho <b>bệnh viện dùng nội bộ</b> — có cấp phát vật tư cho khoa và bệnh nhân, tính chi trả bảo hiểm y tế, tích hợp phần mềm bệnh viện (HIS).
+  Tháng 07/2026 nhóm quyết định <b>chuyển thành bản cho doanh nghiệp phân phối</b>: gỡ hẳn phần cấp phát/BHYT/HIS, thay bằng <b>phân hệ Bán hàng</b> và thêm <b>Cổng khách hàng</b>. Khoảng 80% phần lõi được giữ lại.
+  <p style="margin:6px 0">Dấu vết còn đọc được trong <code>supplycore/patches.txt</code>:</p>
+  <pre style="margin:6px 0"><code>supplycore.patches.v0_6.remove_hospital_domain    ← xóa DocType bệnh viện
+supplycore.patches.v0_7.remove_hospital_roles     ← xóa vai trò mồ côi
+supplycore.patches.v0_8.seed_sales_gl_accounts    ← thêm tài khoản kế toán bán hàng
+supplycore.patches.v0_9.create_portal_role        ← tạo vai trò khách hàng</code></pre>
+  <b>Vì sao bạn cần biết:</b> khi đọc code cũ hoặc tài liệu cũ, gặp chữ "cấp phát", "bệnh nhân", "BHYT" thì đó là <b>di sản</b>, không phải nghiệp vụ hiện tại.
+</div>
+
+<!-- ══════════════════════════════ 2 ══════════════════════════════ -->
+<h2>2. Vai trò &amp; Persona</h2>
+
+<p>Hệ thống có <b>12 vai trò</b>. Trong Frappe, "vai trò" gọi là <b>Role</b> — gán cho tài khoản người dùng, quyết định họ thấy gì và làm được gì.</p>
+
+<h3>2.1 Danh sách vai trò</h3>
+<table class="compact">
+  <thead><tr><th>Persona (đời thường)</th><th>Role trong Frappe</th><th>Là ai</th><th>Quyền hạn chính</th></tr></thead>
+  <tbody>
+    <tr><td><b>Quản trị hệ thống</b></td><td><code>System Manager</code></td><td>Người cài đặt và cấu hình phần mềm</td><td>Toàn quyền, không bị lọc dữ liệu</td></tr>
+    <tr><td><b>Trưởng phòng</b></td><td><code>SupplyCore Manager</code></td><td>Người quản lý toàn bộ chuỗi cung ứng</td><td>Duyệt hợp đồng &amp; đơn mua, duyệt hàng loạt, <b>kết luận kiểm định</b>, cấu hình cảnh báo, xem mọi chỉ số</td></tr>
+    <tr><td><b>Lãnh đạo</b></td><td><code>SupplyCore Executive</code></td><td>Giám đốc / phó giám đốc</td><td><b>Chỉ phê duyệt</b> cấp cao cho giá trị lớn; duyệt phát hành thu hồi. Không tạo phiếu</td></tr>
+    <tr><td><b>NV Mua &amp; Bán hàng</b></td><td><code>SupplyCore Purchaser</code></td><td>Nhân viên kinh doanh kiêm mua hàng</td><td>Tạo yêu cầu mua, đơn mua, nhà cung cấp; tạo khách hàng, hợp đồng khung bán, đơn hàng và <b>duyệt đơn</b></td></tr>
+    <tr><td><b>Thủ kho</b></td><td><code>SupplyCore Storekeeper</code></td><td>Người trực tiếp nhận và xuất hàng</td><td>Nhập hàng, xếp kệ, chuyển kho, <b>soạn hàng &amp; quét xác nhận</b>, giao hàng, nghiệm thu, kiểm kê</td></tr>
+    <tr><td><b>NV Kho vận hành</b></td><td><code>Warehouse Officer</code></td><td>Phụ việc kho</td><td>Quản lý vị trí kệ, xếp hàng, hỗ trợ nhập/chuyển; xem tồn kho</td></tr>
+    <tr><td><b>Kiểm định (KCS)</b></td><td><code>QC Officer</code></td><td>Cán bộ kiểm tra chất lượng</td><td><b>Chỉ một việc nhưng rất quan trọng:</b> kết luận kiểm định Đạt/Không đạt/Có điều kiện</td></tr>
+    <tr><td><b>Kế toán</b></td><td><code>SupplyCore Accountant</code></td><td>Kế toán công nợ</td><td>Hóa đơn mua &amp; bán, đối chiếu 3 bên, thanh toán, thu tiền, sổ cái</td></tr>
+    <tr><td><b>Kiểm toán</b></td><td><code>SupplyCore Auditor</code></td><td>Người rà soát nội bộ</td><td><b>Chỉ đọc</b> toàn bộ dữ liệu lịch sử, không sửa được gì</td></tr>
+    <tr><td><b>Người dùng cơ bản</b></td><td><code>SupplyCore User</code></td><td>Nhân viên thông thường</td><td>Đọc danh mục, tạo/sửa phiếu ở mức Nháp; không duyệt, không nộp</td></tr>
+    <tr><td><b>Khách hàng</b></td><td><code>SC Customer Portal</code></td><td>Người liên hệ bên khách</td><td>Chỉ dùng Cổng khách hàng. <b>Không vào được giao diện nội bộ</b> (<code>desk_access = 0</code>)</td></tr>
+    <tr><td><i>(nhãn)</i></td><td><code>Khách hàng</code></td><td>Nhãn hiển thị, gán kèm vai trò Portal</td><td><b>Không cấp quyền gì cả</b> — cố ý, để tránh rò rỉ</td></tr>
+  </tbody>
+</table>
+
+<p>Mười vai trò đầu được tạo tự động khi cài app — trích <code>supplycore/install.py</code>:</p>
+<pre><code>DEFAULT_ROLES = [
+    "SupplyCore Manager", "SupplyCore User", "SupplyCore Auditor",
+    "Warehouse Officer", "QC Officer",
+    "SupplyCore Storekeeper", "SupplyCore Accountant",
+    "SupplyCore Executive", "SupplyCore Purchaser",
+    "SC Customer Portal",       # M12 Portal khach hang — desk_access=0
+]
+NO_DESK_ACCESS_ROLES = {"SC Customer Portal"}</code></pre>
+
+<h3>2.2 Ba nguyên tắc phân vai đáng chú ý</h3>
+<div class="box ok">
+  <b class="lbl">① Tách người chuẩn bị khỏi người kết luận</b>
+  Thủ kho <b>được</b> tạo và điền phiếu kiểm định, nhưng <b>không được</b> bấm nút kết luận. Chỉ QC Officer (và Trưởng phòng) mới có quyền đó.
+  Đây là nguyên tắc kiểm soát nội bộ cơ bản: <i>người làm không được tự nghiệm thu việc mình làm</i>. Trong code, quy tắc này gọi là <code>BRU-QC-002</code> và được cài bằng phân quyền, không phải cảnh báo mềm.
+</div>
+<div class="box ok">
+  <b class="lbl">② Lãnh đạo chỉ duyệt, không tạo</b>
+  Vai trò <code>SupplyCore Executive</code> trên Phiếu thanh toán chỉ có quyền <b>đọc và nộp</b> — không tạo, không sửa. Đúng vai người phê duyệt: xem xét cái người khác trình lên, không tự dựng phiếu cho mình duyệt.
+</div>
+<div class="box ok">
+  <b class="lbl">③ Sổ kho không ai sửa được</b>
+  Trên Sổ kho, <b>mọi vai trò kể cả Quản trị hệ thống</b> chỉ có quyền đọc. Muốn thay đổi tồn kho phải qua chứng từ — nhờ vậy luôn có dấu vết ai làm, khi nào, vì sao.
+</div>
+
+<!-- ══════════════════════════════ 3 ══════════════════════════════ -->
+<h2>3. Các quy trình nghiệp vụ chính</h2>
+
+<p>Hệ thống có <b>hai dòng chảy lớn</b> gặp nhau tại kho:</p>
+<div class="ascii">
+   ĐẦU VÀO — Mua đến Trả tiền                    ĐẦU RA — Đặt đến Thu tiền
+   ────────────────────────────                  ─────────────────────────
+   Hợp đồng khung NCC                            Hợp đồng khung bán
+        ↓                                             ↓
+   Kế hoạch / Yêu cầu mua                        Đơn hàng của khách
+        ↓                                             ↓
+   Đơn mua  ──► gửi NCC                          Soạn hàng &amp; quét xác nhận
+        ↓                                             ↓
+   Nhận hàng ──► Kiểm định QC                    Giao hàng (trừ tồn theo lô)
+        ↓                                             ↓
+   ┌────────────────── K H O ──────────────────┐  Nghiệm thu
+   │  lô · hạn dùng · vị trí kệ · sổ kho       │      ↓
+   └───────────────────────────────────────────┘  Hóa đơn bán
+        ↓                                             ↓
+   Hóa đơn NCC ──► Thanh toán                    Thu tiền
+</div>
+
+<h3>3.1 Quy trình 1 — Mua hàng theo hợp đồng khung</h3>
+<p><b>Mục đích:</b> chốt trước giá và số lượng trần với nhà cung cấp, để mỗi lần mua không phải đàm phán lại và không bị mua vượt ngân sách.</p>
+<table class="compact">
+  <thead><tr><th class="ctr">Bước</th><th>Đầu vào</th><th>Ai làm</th><th>Làm gì</th><th>Đầu ra</th><th>DocType / Trạng thái</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">1</td><td>Kết quả đàm phán với NCC</td><td>NV Mua hàng</td><td>Lập hợp đồng khung: chọn NCC, kỳ hiệu lực, danh mục vật tư kèm đơn giá và số lượng trần</td><td>Hợp đồng ở trạng thái Nháp</td><td><code>Framework Contract</code><br><code>approval_stage = Draft</code></td></tr>
+    <tr><td class="ctr">2</td><td>HĐ Nháp</td><td>NV Mua hàng</td><td>Bấm <b>Gửi duyệt</b>. Hệ thống gửi email cho mọi Trưởng phòng</td><td>Chờ Quản lý duyệt</td><td><code>submit_for_review()</code><br>→ <code>Manager Review</code></td></tr>
+    <tr><td class="ctr">3</td><td>HĐ chờ duyệt</td><td><b>Trưởng phòng</b></td><td>Xem xét, bấm Duyệt. Hệ thống so giá trị HĐ với ngưỡng (mặc định 100 triệu)</td><td>Nếu <b>dưới</b> ngưỡng → Đã duyệt<br>Nếu <b>từ</b> ngưỡng → chuyển tiếp Lãnh đạo</td><td><code>approve_as_manager()</code><br>→ <code>Approved</code> hoặc <code>Executive Review</code></td></tr>
+    <tr><td class="ctr">4</td><td>HĐ giá trị lớn</td><td><b>Lãnh đạo</b></td><td>Phê duyệt cấp cao</td><td>Đã duyệt</td><td><code>approve_as_executive()</code><br>→ <code>Approved</code></td></tr>
+    <tr><td class="ctr">5</td><td>HĐ đã duyệt</td><td>NV Mua hàng</td><td>Bấm <b>Nộp</b> để kích hoạt. Từ đây HĐ bị khóa sửa</td><td>Hợp đồng có hiệu lực</td><td><code>docstatus = 1</code><br><code>status = Active</code></td></tr>
+    <tr><td class="ctr">6</td><td>HĐ hiệu lực + nhu cầu mua</td><td>NV Mua hàng</td><td>Lập <b>Lệnh gọi hàng</b> theo hợp đồng, hoặc lập thẳng Đơn mua</td><td>Đơn mua</td><td><code>Release Order</code> → <code>SC Purchase Order</code></td></tr>
+    <tr><td class="ctr">7</td><td>Đơn mua đã duyệt</td><td>NV Mua hàng</td><td>Gửi đơn cho nhà cung cấp qua email</td><td>Đơn đã gửi, chờ phản hồi</td><td><code>status = Sent to Supplier</code></td></tr>
+  </tbody>
+  <tbody>
+    <tr class="alt"><td class="ctr">4a</td><td colspan="4"><b>NHÁNH NGOẠI LỆ — Từ chối.</b> Trưởng phòng hoặc Lãnh đạo bấm <b>Từ chối</b> và <b>bắt buộc nhập lý do</b>. Hệ thống gửi email báo người tạo kèm lý do. Hợp đồng quay về để sửa và gửi lại.</td><td><code>reject(reason)</code><br>→ <code>Rejected</code></td></tr>
+    <tr class="alt"><td class="ctr">1a</td><td colspan="4"><b>NGOẠI LỆ — NCC trong danh sách đen.</b> Hệ thống chặn lập hợp đồng, trừ khi có cờ ghi đè của Lãnh đạo.</td><td><code>SC-E-FC-BLACKLIST</code></td></tr>
+    <tr class="alt"><td class="ctr">7a</td><td colspan="4"><b>NGOẠI LỆ — NCC không phản hồi.</b> Tác vụ tự động chạy hằng ngày, nhắc NCC bằng email nếu đơn đã gửi quá số ngày quy định.</td><td><code>check_po_response</code></td></tr>
+    <tr class="alt"><td class="ctr">6a</td><td colspan="4"><b>NGOẠI LỆ — Hết hạn mức.</b> Nếu hạn mức còn lại của hợp đồng ≤ 0, hệ thống chuyển hợp đồng sang "Đã dùng hết" và không cho tạo đơn mua mới.</td><td><code>status = Exhausted</code></td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 Quy trình 2 — Nhận hàng &amp; kiểm định chất lượng</h3>
+<p><b>Mục đích:</b> bảo đảm hàng vào kho đúng số lượng, đúng lô, và <b>chưa được phép bán</b> cho tới khi kiểm định đạt.</p>
+<table class="compact">
+  <thead><tr><th class="ctr">Bước</th><th>Đầu vào</th><th>Ai làm</th><th>Làm gì</th><th>Đầu ra</th><th>DocType / Trạng thái</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">1</td><td>Hàng về kho + Đơn mua</td><td>Thủ kho</td><td>Lập Phiếu nhập từ đơn mua; nhập số lượng thực nhận, <b>số lô của NCC</b>, ngày sản xuất, hạn dùng, xuất xứ</td><td>Phiếu nhập Nháp</td><td><code>SC Purchase Receipt</code></td></tr>
+    <tr><td class="ctr">2</td><td>Phiếu nhập Nháp</td><td>Thủ kho</td><td>Bấm <b>Nộp</b></td><td>Hệ thống tự làm 3 việc: tạo <b>Lô hàng</b>, tạo <b>Phiếu kiểm định</b>, và <b>ghi tăng tồn kho</b></td><td><code>SC Batch</code> + <code>SC Quality Inspection</code> + dòng sổ kho</td></tr>
+    <tr><td class="ctr">3</td><td>Phiếu kiểm định (có sẵn 5 tiêu chí mẫu)</td><td>Thủ kho <i>hoặc</i> KCS</td><td>Điền kết quả từng tiêu chí (thêm/bớt được)</td><td>Phiếu đã điền</td><td><code>SC QI Reading</code> (bảng con)</td></tr>
+    <tr><td class="ctr">4</td><td>Phiếu đã điền</td><td><b>KCS</b> (bắt buộc)</td><td>Kết luận: Đạt / Không đạt / Đạt có điều kiện, rồi bấm <b>Nộp</b></td><td>Lô được đánh dấu kết quả QC</td><td><code>overall_status</code><br>→ <code>SC Batch.qc_status</code></td></tr>
+    <tr><td class="ctr">5</td><td>Lô đạt QC</td><td>Hệ thống</td><td>Ghi mốc "Đã nhập kho chính thức". Từ đây lô mới <b>vào tồn khả dụng</b> và được FEFO chọn</td><td>Hàng sẵn sàng bán</td><td><code>officially_received_at</code></td></tr>
+  </tbody>
+  <tbody>
+    <tr class="alt"><td class="ctr">4a</td><td colspan="4"><b>NGOẠI LỆ — Kiểm định KHÔNG ĐẠT.</b> Hệ thống tự tạo <b>phiếu trả hàng</b> cho nhà cung cấp. Lô bị khóa, không xuất được.</td><td><code>SC Purchase Receipt</code> với <code>is_return = 1</code></td></tr>
+    <tr class="alt"><td class="ctr">4b</td><td colspan="4"><b>NGOẠI LỆ — Thủ kho tự kết luận.</b> Hệ thống <b>chặn</b>: thủ kho không có quyền nộp phiếu kiểm định.</td><td>Quy tắc <code>BR-06</code></td></tr>
+    <tr class="alt"><td class="ctr">1a</td><td colspan="4"><b>NGOẠI LỆ — Nhận vượt số lượng đơn mua.</b> Hệ thống ghi nhận phần vượt vào cột riêng và đánh dấu phiếu, để kế toán đối chiếu sau.</td><td><code>over_received_qty</code></td></tr>
+    <tr class="alt"><td class="ctr">1b</td><td colspan="4"><b>NGOẠI LỆ — Lô hạn dùng ngắn.</b> Lô còn hạn dưới ngưỡng phải có <b>Trưởng phòng xác nhận</b> mới nhập được.</td><td><code>SC-E-BATCH-SHORT-EXPIRY</code></td></tr>
+    <tr class="alt"><td class="ctr">4c</td><td colspan="4"><b>NGOẠI LỆ — Trả hàng do QC nhưng chưa lên hóa đơn.</b> Hệ thống <b>không</b> tự tạo phiếu điều chỉnh công nợ, vì hàng chưa từng được ghi nợ — tạo sẽ trừ khống. Báo kế toán xử lý tay.</td><td>Logic trong <code>sc_purchase_receipt.py</code></td></tr>
+  </tbody>
+</table>
+
+<h3>3.3 Quy trình 3 — Bán hàng (Đặt đến Thu tiền)</h3>
+<p><b>Mục đích:</b> bán đúng giá hợp đồng, giao đúng lô, và chỉ xuất hóa đơn khi khách đã xác nhận nhận đủ hàng.</p>
+<table class="compact">
+  <thead><tr><th class="ctr">Bước</th><th>Đầu vào</th><th>Ai làm</th><th>Làm gì</th><th>Đầu ra</th><th>DocType / Trạng thái</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">1</td><td>Thỏa thuận với khách</td><td>NV Bán hàng</td><td>Lập <b>hợp đồng khung bán</b>: danh mục vật tư, đơn giá, số lượng trần, kỳ hiệu lực</td><td>HĐ khung bán hiệu lực</td><td><code>SC Sales Framework Contract</code></td></tr>
+    <tr><td class="ctr">2</td><td>Khách đặt hàng (điện thoại/email/Cổng)</td><td>NV Bán hàng <i>hoặc</i> <b>chính khách hàng</b></td><td>Lập đơn: chọn khách → chọn HĐ khung (hệ thống <b>tự nạp danh mục và giá</b>) → nhập số lượng</td><td>Đơn hàng chờ duyệt</td><td><code>SC Sales Order</code><br><code>status = Chờ duyệt</code></td></tr>
+    <tr><td class="ctr">3</td><td>Đơn chờ duyệt</td><td>Hệ thống (khi lưu)</td><td><b>Ba lớp kiểm tra tự động:</b> giá đúng hợp đồng · số lượng không vượt trần · công nợ khách không vượt hạn mức · tồn kho đủ</td><td>Đơn hợp lệ hoặc bị chặn</td><td><code>BR-08</code>…<code>BR-12</code></td></tr>
+    <tr><td class="ctr">4</td><td>Đơn hợp lệ</td><td>NV Bán hàng</td><td>Bấm <b>Duyệt</b></td><td>Đơn đã duyệt</td><td><code>status = Đã duyệt</code></td></tr>
+    <tr><td class="ctr">5</td><td>Đơn đã duyệt</td><td>Thủ kho</td><td>Bấm <b>Tạo phiếu giao (soạn hàng)</b>. Hệ thống tạo phiếu <b>Nháp</b> với lô do FEFO gợi ý; đơn chuyển sang "Đang xử lý"</td><td>Phiếu giao Nháp + bảng hướng dẫn lấy hàng</td><td><code>SC Delivery Note</code><br><code>picking_required = 1</code></td></tr>
+    <tr><td class="ctr">6</td><td>Phiếu giao Nháp</td><td>Thủ kho</td><td>Ra kho lấy hàng, <b>quét mã vạch lô</b> + vị trí + nhập SL thực lấy cho <b>từng dòng</b></td><td>Từng dòng được đánh dấu "đã quét"</td><td><code>DN Item.scan_confirmed = 1</code></td></tr>
+    <tr><td class="ctr">7</td><td>Mọi dòng đã quét</td><td>Thủ kho</td><td>Bấm <b>Nộp</b></td><td><b>Trừ tồn kho theo đúng lô đã quét</b>; đơn chuyển "Đã bàn giao"</td><td>Dòng sổ kho (âm)</td></tr>
+    <tr><td class="ctr">8</td><td>Hàng đã giao</td><td>Thủ kho <i>hoặc</i> <b>khách tự làm trên Cổng</b></td><td>Lập <b>Biên bản nghiệm thu</b> xác nhận khách đã nhận đủ</td><td>Mở khóa bước xuất hóa đơn</td><td><code>SC Acceptance Record</code></td></tr>
+    <tr><td class="ctr">9</td><td>Đã nghiệm thu</td><td>Kế toán</td><td>Xuất <b>hóa đơn bán</b>. Hệ thống chép nguyên vật tư &amp; số lượng từ phiếu giao, không sửa được</td><td>Ghi doanh thu + công nợ phải thu</td><td><code>SC Sales Invoice</code><br>bút toán sổ cái</td></tr>
+    <tr><td class="ctr">10</td><td>Khách trả tiền</td><td>Kế toán</td><td>Lập <b>phiếu thu</b>, nhập số tiền và hình thức</td><td>Giảm công nợ; cập nhật trạng thái hóa đơn</td><td><code>SC Sales Receipt</code></td></tr>
+  </tbody>
+  <tbody>
+    <tr class="alt"><td class="ctr">4a</td><td colspan="4"><b>NGOẠI LỆ — Khách vượt hạn mức công nợ.</b> Đơn bị đặt cờ "Giữ do công nợ" và <b>không duyệt được</b>. Phải thu bớt nợ hoặc nâng hạn mức.</td><td><code>credit_hold = 1</code></td></tr>
+    <tr class="alt"><td class="ctr">6a</td><td colspan="4"><b>NGOẠI LỆ — Lô thực tế khác lô gợi ý.</b> <b>Được phép</b> — thủ kho cứ quét lô thật đang cầm. Hệ thống kiểm 8 điều kiện rồi ghi nhận đúng lô đó.</td><td><code>confirm_pick_line()</code></td></tr>
+    <tr class="alt"><td class="ctr">7a</td><td colspan="4"><b>NGOẠI LỆ — Còn dòng chưa quét.</b> Hệ thống chặn nộp, nêu rõ còn bao nhiêu dòng và vật tư nào.</td><td><code>SC-E-DN-NOT-SCANNED</code></td></tr>
+    <tr class="alt"><td class="ctr">7b</td><td colspan="4"><b>NGOẠI LỆ — Hủy phiếu giao.</b> <b>Bắt buộc nhập lý do</b>. Hủy xong tồn kho được hoàn nguyên bằng dòng đối ứng.</td><td><code>SC-E-DN-CANCEL-REASON</code></td></tr>
+    <tr class="alt"><td class="ctr">5a</td><td colspan="4"><b>NGOẠI LỆ — Bỏ phiếu giao nháp.</b> Xóa phiếu → đơn tự quay lại "Đã duyệt" để hiện lại nút tạo phiếu. Tránh đơn kẹt.</td><td><code>on_trash()</code></td></tr>
+    <tr class="alt"><td class="ctr">9a</td><td colspan="4"><b>NGOẠI LỆ — Xuất hóa đơn khi chưa nghiệm thu.</b> Hệ thống chặn.</td><td><code>BR-13</code></td></tr>
+    <tr class="alt"><td class="ctr">2a</td><td colspan="4"><b>NHÁNH — Đơn bị từ chối.</b> Chuỗi dừng lại. Trên Cổng khách hàng, thanh tiến độ hiển thị rõ trạng thái Từ chối, không mốc nào là "đang ở đây".</td><td><code>status = Từ chối</code></td></tr>
+  </tbody>
+</table>
+
+<h3>3.4 Quy trình 4 — Thu hồi lô hàng</h3>
+<p><b>Mục đích:</b> khi phát hiện một lô có vấn đề, phải chặn ngay không cho xuất tiếp và truy được lô đó đã đi đâu.</p>
+<table class="compact">
+  <thead><tr><th class="ctr">Bước</th><th>Đầu vào</th><th>Ai làm</th><th>Làm gì</th><th>Đầu ra</th><th>DocType / Trạng thái</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">1</td><td>Thông báo từ NSX / phát hiện nội bộ</td><td>Trưởng phòng</td><td>Lập lệnh thu hồi: chọn lô, loại thu hồi, mức nghiêm trọng (Class I/II/III), lý do</td><td>Lệnh Nháp</td><td><code>SC Recall Notice</code></td></tr>
+    <tr><td class="ctr">2</td><td>Lệnh Nháp</td><td>Trưởng phòng</td><td>Bấm <b>Nạp phạm vi ảnh hưởng</b>. Hệ thống dò sổ kho và phiếu giao</td><td>Danh sách: còn tồn ở kho nào, <b>đã bán cho khách nào</b>, số lượng bao nhiêu</td><td><code>SC Recall Affected Item</code><br><code>location_type</code> = Warehouse / Department / <b>Customer</b></td></tr>
+    <tr><td class="ctr">3</td><td>Danh sách ảnh hưởng</td><td>Trưởng phòng / Lãnh đạo</td><td>Rà soát rồi bấm <b>Nộp</b></td><td><b>Lô bị khóa ngay</b> — mọi phiếu giao và xuất kho dùng lô này đều bị chặn</td><td><code>SC Batch.blocked = 1</code></td></tr>
+    <tr><td class="ctr">4</td><td>Lệnh đã phát hành</td><td>Trưởng phòng</td><td>Gửi thông báo thu hồi — <b>mỗi khách một thư riêng</b>, nêu đúng lô và số lượng khách đó đã nhận</td><td>Các dòng đánh dấu đã thông báo</td><td><code>BR-19</code></td></tr>
+    <tr><td class="ctr">5</td><td>Hàng thu về</td><td>Thủ kho</td><td>Cập nhật số đã thu hồi / đã hủy cho từng dòng</td><td>% giải quyết tự tính</td><td><code>resolution_pct</code></td></tr>
+    <tr><td class="ctr">6</td><td>Đủ 100%</td><td>Hệ thống</td><td>Đóng lệnh thu hồi</td><td>Hoàn tất</td><td><code>status = Completed</code></td></tr>
+  </tbody>
+  <tbody>
+    <tr class="alt"><td class="ctr">5a</td><td colspan="4"><b>NGOẠI LỆ — Tiêu hủy hàng.</b> Dòng có số lượng hủy &gt; 0 <b>bắt buộc</b> đủ: Lý do hủy + Người chứng kiến + Ngày hủy. Chống gian lận tiêu hủy.</td><td><code>SC-E016</code></td></tr>
+  </tbody>
+</table>
+
+<h3>3.5 Quy trình 5 — Kiểm kê &amp; đối soát tồn</h3>
+<table class="compact">
+  <thead><tr><th class="ctr">Bước</th><th>Đầu vào</th><th>Ai làm</th><th>Làm gì</th><th>Đầu ra</th><th>DocType</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">1</td><td>Kế hoạch kiểm kê</td><td>Thủ kho</td><td>Tạo phiếu kiểm kê, nạp vật tư có tồn &gt; 0. Hệ thống chụp lại số tồn hệ thống</td><td>Phiếu kiểm kê</td><td><code>SC Inventory Count Sheet</code></td></tr>
+    <tr><td class="ctr">2</td><td>Phiếu kiểm kê</td><td>Thủ kho</td><td>In phiếu <b>ẩn số hệ thống</b> rồi đi đếm thực tế</td><td>Số đếm thực</td><td><code>hide_system_qty</code></td></tr>
+    <tr><td class="ctr">3</td><td>Số đếm</td><td>Thủ kho</td><td>Nhập số thực đếm. Chênh lệch vượt ngưỡng → yêu cầu <b>đếm lại</b></td><td>Dòng cần đếm lại</td><td><code>needs_recount</code></td></tr>
+    <tr><td class="ctr">4</td><td>Vẫn lệch sau 2 lần</td><td>Thủ kho + <b>Trưởng phòng</b></td><td>Đếm lần 3, <b>bắt buộc có Trưởng phòng chứng kiến</b></td><td>Số chốt</td><td><code>SC-E-ICS-WITNESS-REQUIRED</code></td></tr>
+    <tr><td class="ctr">5</td><td>Phiếu đã đếm xong</td><td>Kế toán / Trưởng phòng</td><td>Tạo phiếu đối soát <b>chỉ các dòng lệch</b>, ghi lý do (mất cắp / hỏng / lỗi hệ thống…)</td><td>Phiếu đối soát</td><td><code>SC Stock Reconciliation</code></td></tr>
+    <tr><td class="ctr">6</td><td>Phiếu đối soát</td><td>Trưởng phòng</td><td>Duyệt và nộp</td><td>Ghi dòng điều chỉnh vào sổ kho + bút toán sổ cái</td><td>Sổ kho + sổ cái</td></tr>
+  </tbody>
+  <tbody>
+    <tr class="alt"><td class="ctr">5a</td><td colspan="4"><b>NGOẠI LỆ — Lệch giá trị lớn.</b> Vượt ngưỡng (mặc định 10 triệu) thì <b>bắt buộc điền ghi chú điều tra</b> trước khi duyệt.</td><td><code>SC-E-SR-INVESTIGATION-REQUIRED</code></td></tr>
+  </tbody>
+</table>
+
+<h3>3.6 Quy trình 6 — Khách hàng tự phục vụ trên Cổng</h3>
+<table class="compact">
+  <thead><tr><th class="ctr">Bước</th><th>Đầu vào</th><th>Ai làm</th><th>Làm gì</th><th>Đầu ra</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td class="ctr">1</td><td>Khách mới</td><td>NV Bán hàng</td><td>Tạo tài khoản có vai trò <code>SC Customer Portal</code>, gắn vào hồ sơ khách qua trường <b>Tài khoản Portal</b></td><td>Khách đăng nhập được</td><td>Đây là <b>trục cô lập dữ liệu</b></td></tr>
+    <tr><td class="ctr">2</td><td>Đăng nhập</td><td>Khách hàng</td><td>Xem hợp đồng khung của mình + bảng giá + số lượng còn lại</td><td>—</td><td>Chỉ thấy HĐ của chính mình</td></tr>
+    <tr><td class="ctr">3</td><td>Nhu cầu mua</td><td>Khách hàng</td><td>Chọn vật tư, nhập số lượng, gửi đơn</td><td>Đơn hàng ở trạng thái Chờ duyệt trong hệ thống nội bộ</td><td><b>Giá tính lại phía máy chủ</b>, không tin giá client gửi</td></tr>
+    <tr><td class="ctr">4</td><td>Đơn đã gửi</td><td>Khách hàng</td><td>Theo dõi <b>4 cột mốc</b>: Đã đặt → Đã bàn giao &amp; nghiệm thu → Đã cấp hóa đơn → Đã thu tiền</td><td>—</td><td>Mốc 2 và 3 kèm link tải chứng từ</td></tr>
+    <tr><td class="ctr">5</td><td>Hàng đã giao</td><td>Khách hàng</td><td>Bấm <b>Lập nghiệm thu</b> → xác nhận</td><td>Biên bản nghiệm thu được tạo và nộp</td><td>Rút ngắn vòng quay tiền</td></tr>
+  </tbody>
+  <tbody>
+    <tr class="alt"><td class="ctr">3a</td><td colspan="4"><b>NGOẠI LỆ — Bị chặn ngay lúc đặt.</b> Hệ thống chặn nếu: SL ≤ 0 · hợp đồng hết hiệu lực · vượt SL trần · vượt hạn mức tín dụng · kho không đủ tồn. Khách thấy lý do cụ thể.</td><td><code>BR-08</code>…<code>BR-12</code></td></tr>
+    <tr class="alt"><td class="ctr">1a</td><td colspan="4"><b>NHÁNH — Khách vãng lai tự đăng ký.</b> Hệ thống tạo tài khoản + hồ sơ khách đã gắn sẵn, gán vai trò. Nhân viên rà lại thông tin trước khi duyệt đơn đầu tiên.</td><td><code>BR-17</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 4 ══════════════════════════════ -->
+<h2>4. Danh sách Use Case</h2>
+
+<p><b>Use Case</b> là một "tình huống sử dụng" — mô tả <i>ai</i> làm <i>việc gì</i> với hệ thống. Đây là cách chuẩn để liệt kê chức năng mà không sa vào kỹ thuật.</p>
+
+<div class="box warn">
+  <b class="lbl">Nguồn của danh sách này</b>
+  Tài liệu use case gốc (<code>docs/UC_COVERAGE.md</code>) đã bị xóa khỏi repo vì thuộc bản bệnh viện cũ.
+  Danh sách dưới đây được <b>tái dựng từ mã UC còn ghi trong chú thích code và tên file test</b> — ví dụ <code>supplycore/tests/uc11_test.py</code>, hay dòng
+  <code># UC-16 — FEFO picking + override audit.</code> trong <code>m5_fefo/api/fefo_picker.py</code>.
+  <p style="margin:6px 0"><b>Lưu ý:</b> dãy số có <b>khoảng trống</b> (thiếu UC-20, UC-22, UC-23, UC-38–40) — đó là các use case <b>thuộc bản bệnh viện đã bị gỡ</b> (cấp phát, BHYT). Tài liệu giữ nguyên khoảng trống thay vì đánh số lại, để mã UC trong code vẫn tra được.</p>
+</div>
+
+<table class="compact">
+  <thead><tr><th>Mã</th><th>Tên</th><th>Tác nhân chính</th><th>Mô tả ngắn</th></tr></thead>
+  <tbody>
+    <tr><td><b>UC-01</b></td><td>Quản lý danh mục vật tư</td><td>NV Mua hàng, Thủ kho</td><td>Khai báo, tìm kiếm, lọc vật tư trong danh mục</td></tr>
+    <tr><td><b>UC-02</b></td><td>Quản lý nhà cung cấp</td><td>NV Mua hàng</td><td>Hồ sơ NCC, mã số thuế (kiểm trùng), điều khoản thanh toán, danh sách đen</td></tr>
+    <tr><td><b>UC-03</b></td><td>Phê duyệt hợp đồng khung 3 cấp</td><td>NV Mua, Trưởng phòng, Lãnh đạo</td><td>Luồng duyệt theo ngưỡng giá trị; ngoại lệ NCC blacklist cần Lãnh đạo ghi đè</td></tr>
+    <tr><td><b>UC-04</b></td><td>Gia hạn &amp; thanh lý hợp đồng</td><td>NV Mua, Trưởng phòng</td><td>Yêu cầu gia hạn kèm lý do; thanh lý chặn các lệnh gọi hàng đang treo</td></tr>
+    <tr><td><b>UC-05</b></td><td>Thiết lập ngưỡng tồn kho (Min/Max/Reorder)</td><td>NV Mua hàng</td><td>Đặt tồn an toàn, mức tái đặt, tồn tối đa; có thể đặt riêng theo từng kho</td></tr>
+    <tr><td><b>UC-06</b></td><td>Lập kế hoạch mua định kỳ</td><td>NV Mua hàng</td><td>Gợi ý số lượng theo tiêu thụ lịch sử; chặn nếu vượt ngân sách chưa xác nhận</td></tr>
+    <tr><td><b>UC-07</b></td><td>Tự tạo yêu cầu mua khi tồn thấp</td><td>Hệ thống (tự động 8h sáng)</td><td>Quét tồn dưới ngưỡng → tạo Yêu cầu mua Nháp, gắn sẵn hợp đồng khung NCC + email quản lý</td></tr>
+    <tr><td><b>UC-08</b></td><td>Tạo &amp; phê duyệt đơn mua</td><td>NV Mua, Trưởng phòng</td><td>Duyệt 2 cấp theo ngưỡng; gửi email NCC; cảnh báo dòng lệch giá hợp đồng ±1%</td></tr>
+    <tr><td><b>UC-09</b></td><td>Tiếp nhận hàng</td><td>Thủ kho</td><td>Lập phiếu nhập từ đơn mua; đánh dấu phần nhận vượt; tạo phiếu mới cho phần còn thiếu</td></tr>
+    <tr><td><b>UC-10</b></td><td>Kiểm định chất lượng hàng nhập</td><td>KCS</td><td>5 tiêu chí mẫu có sẵn; kết luận Đạt/Không đạt/Có điều kiện/Tạm giữ</td></tr>
+    <tr><td><b>UC-11</b></td><td>Xử lý hàng trả nhà cung cấp</td><td>Thủ kho, Kế toán</td><td>Tạo phiếu trả; tự sinh phiếu điều chỉnh công nợ; escalate nếu NCC không phản hồi quá 7 ngày</td></tr>
+    <tr><td><b>UC-12</b></td><td>Quản lý vị trí kệ &amp; quy tắc xếp hàng</td><td>Thủ kho, NV Kho</td><td>Khai bin, gợi ý bin đích; bin đầy thì tìm bin thay thế; không xóa được bin đang có hàng</td></tr>
+    <tr><td><b>UC-13</b></td><td>Nhập/xuất kho nhanh</td><td>Thủ kho</td><td>Chứng từ kho thủ công không qua đơn mua</td></tr>
+    <tr><td><b>UC-14</b></td><td>Tra cứu tồn kho theo vị trí</td><td>Mọi vai trò kho</td><td>Xem tồn theo vật tư / kho / lô / vị trí; đánh dấu tồn âm bất thường</td></tr>
+    <tr><td><b>UC-15</b></td><td>Quản lý lô hàng</td><td>Thủ kho</td><td>Sinh mã lô, tra lô theo số lô NCC; chặn nhập lô hạn ngắn chưa được xác nhận</td></tr>
+    <tr><td><b>UC-16</b></td><td>Chọn lô theo FEFO &amp; ghi đè có kiểm soát</td><td>Thủ kho, Trưởng phòng</td><td>Tự chọn lô cận hạn trước; muốn xuất khác phải có quyền Trưởng phòng + ghi lý do (lưu vết)</td></tr>
+    <tr><td><b>UC-17</b></td><td>Cảnh báo &amp; xử lý lô sắp hết hạn</td><td>Hệ thống, Thủ kho</td><td>Quét hằng ngày; 4 hành động: ưu tiên xuất / trả NCC / hủy / không xử lý</td></tr>
+    <tr><td><b>UC-18</b></td><td>Chuyển kho nội bộ</td><td>Thủ kho, Trưởng phòng</td><td>Quy trình 2 chứng từ: yêu cầu → chứng từ kho. Chuyển liên tầng cần Trưởng phòng duyệt</td></tr>
+    <tr><td><b>UC-19</b></td><td>Đối soát &amp; điều chỉnh tồn</td><td>Thủ kho, Trưởng phòng</td><td>Từ phiếu kiểm kê sinh phiếu đối soát chỉ dòng lệch; Trưởng phòng có thể từ chối kèm lý do</td></tr>
+    <tr><td><b>UC-21</b></td><td>Hướng dẫn lấy hàng theo FEFO</td><td>Thủ kho</td><td>Bảng chỉ rõ lấy lô nào, ở đâu, bao nhiêu; kèm lô thay thế nếu thiếu</td></tr>
+    <tr><td><b>UC-24</b></td><td>Hóa đơn mua &amp; đối chiếu 3 bên</td><td>Kế toán</td><td>So Đơn mua ↔ Phiếu nhập ↔ Hóa đơn; lệch thì tự giữ thanh toán; chặn trùng số hóa đơn NCC</td></tr>
+    <tr><td><b>UC-25</b></td><td>Thanh toán nhà cung cấp</td><td>Kế toán, Trưởng phòng, Lãnh đạo</td><td>Duyệt theo ngưỡng; chặn nếu hóa đơn đang bị giữ; cảnh báo nếu số dư ngân hàng thấp (không chặn)</td></tr>
+    <tr><td><b>UC-26</b></td><td>Báo cáo tài chính</td><td>Kế toán, Trưởng phòng</td><td>4 báo cáo + xem chi tiết từng chứng từ; cảnh báo nếu kỳ còn chứng từ nháp</td></tr>
+    <tr><td><b>UC-27</b></td><td>Kiểm kê định kỳ</td><td>Thủ kho, Trưởng phòng</td><td>Đếm ẩn số hệ thống; đếm lại khi lệch; đếm lần 3 cần người chứng kiến</td></tr>
+    <tr><td><b>UC-28</b></td><td>Điều tra chênh lệch kho</td><td>Trưởng phòng</td><td>Lệch giá trị lớn buộc lập điều tra</td></tr>
+    <tr><td><b>UC-29</b></td><td>Truy xuất nguồn gốc lô</td><td>KCS, Trưởng phòng</td><td>Từ mã lô dựng lại: nguồn nhập, kết quả QC, mọi dịch chuyển, tồn hiện tại, <b>khách đã mua</b></td></tr>
+    <tr><td><b>UC-30</b></td><td>Thu hồi lô hàng</td><td>Trưởng phòng, Lãnh đạo</td><td>Nạp phạm vi ảnh hưởng, khóa lô, thông báo từng khách, theo dõi % giải quyết</td></tr>
+    <tr><td><b>UC-31</b></td><td>Điều tra thất thoát / gian lận</td><td>Trưởng phòng</td><td>Phát hiện bất thường trên sổ kho; khóa tài khoản nghi vấn; sinh phiếu điều chỉnh cho lỗi hệ thống</td></tr>
+    <tr><td><b>UC-32</b></td><td>Bảng chỉ số điều hành</td><td>Lãnh đạo, Trưởng phòng</td><td>8 chỉ số chính, lọc theo kho/phòng ban/kỳ, xem chi tiết từng chỉ số</td></tr>
+    <tr><td><b>UC-33</b></td><td>Cấu hình quy tắc cảnh báo</td><td>Quản trị, Trưởng phòng</td><td>7 loại cảnh báo, ngưỡng, kênh gửi, người nhận; gửi thử được</td></tr>
+    <tr><td><b>UC-34</b></td><td>Trung tâm cảnh báo</td><td>Mọi vai trò</td><td>Xem, xử lý, tạm ẩn, phân công cảnh báo; hành động nhanh 1 chạm</td></tr>
+    <tr><td><b>UC-35</b></td><td>Bán hàng theo hợp đồng khung</td><td>NV Bán hàng</td><td>Đơn khách khóa giá và số lượng trần theo hợp đồng</td></tr>
+    <tr><td><b>UC-36</b></td><td>Soạn hàng &amp; giao hàng</td><td>Thủ kho</td><td>Quét xác nhận từng dòng trước khi xuất kho</td></tr>
+    <tr><td><b>UC-37</b></td><td>Hóa đơn bán &amp; thu tiền</td><td>Kế toán</td><td>Xuất hóa đơn sau nghiệm thu; theo dõi công nợ phải thu</td></tr>
+    <tr><td><b>UC-41</b></td><td>Cổng khách hàng tự phục vụ</td><td>Khách hàng</td><td>Xem hợp đồng, đặt hàng, theo dõi 4 cột mốc, tự nghiệm thu, tải chứng từ</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 5 ══════════════════════════════ -->
+<h2>5. Mô hình dữ liệu</h2>
+
+<p>"Thực thể" là những <b>đối tượng nghiệp vụ</b> hệ thống lưu trữ. Trong Frappe mỗi thực thể là một <b>DocType</b>. Hệ thống có <b>40 thực thể chính</b> + 25 bảng con.</p>
+
+<h3>5.1 Nhóm dữ liệu nền</h3>
+<table class="compact">
+  <thead><tr><th>Thực thể (DocType)</th><th>Là gì</th><th>Thuộc tính quan trọng</th><th>Quan hệ</th></tr></thead>
+  <tbody>
+    <tr><td><b>Vật tư</b><br><code>SC Item</code></td><td>Danh mục hàng hóa</td><td>Mã VT · Tên · Đơn vị tồn kho · Có quản lý lô? · Tồn an toàn · Mức tái đặt · Giá bán</td><td>Thuộc 1 Nhóm vật tư · có nhiều Mã vạch · có bảng Quy đổi đơn vị · có ngưỡng riêng theo Kho</td></tr>
+    <tr><td><b>Lô hàng</b><br><code>SC Batch</code></td><td>Một lô cụ thể có hạn dùng</td><td>Mã lô · Hạn dùng · Ngày SX · <b>Số lô NCC</b> · Kết quả QC · Bị khóa? · Xuất xứ</td><td>Thuộc 1 Vật tư · từ 1 NCC</td></tr>
+    <tr><td><b>Kho</b><br><code>SC Warehouse</code></td><td>Kho hoặc khu vực</td><td>Tên kho (chính là mã) · Kho cha · Là nhóm? · Loại kho</td><td><b>Cây phân cấp</b>: Kho chính → Kho lẻ → Kho phân phối · chứa nhiều Vị trí kệ</td></tr>
+    <tr><td><b>Vị trí kệ</b><br><code>Bin Location</code></td><td>Ô kệ cụ thể trong kho</td><td>Mã vị trí · Sức chứa · Tồn hiện tại · % lấp đầy · Mã vạch</td><td>Thuộc 1 Kho</td></tr>
+    <tr><td><b>Nhà cung cấp</b><br><code>SC Supplier</code></td><td>Bên bán hàng cho ta</td><td>Tên · Mã số thuế · Email · Điều khoản thanh toán · Danh sách đen?</td><td>Có nhiều Nhóm hàng cung cấp</td></tr>
+    <tr><td><b>Khách hàng</b><br><code>SC Customer</code></td><td>Bên mua hàng của ta</td><td>Tên · Mã số thuế · <b>Hạn mức tín dụng</b> · <b>Tài khoản Portal</b> · Trạng thái</td><td>Gắn 1 tài khoản đăng nhập</td></tr>
+    <tr><td><b>Cấu hình hệ thống</b><br><code>SupplyCore Settings</code></td><td>Tham số toàn hệ thống (chỉ có 1 bản ghi)</td><td>48 tham số: ngưỡng duyệt · chế độ FEFO · ngày khóa sổ · hạn mức tín dụng mặc định · thông tin bên bán trên hóa đơn</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 Nhóm sổ sách — xương sống của hệ thống</h3>
+<table class="compact">
+  <thead><tr><th>Thực thể</th><th>Là gì</th><th>Thuộc tính quan trọng</th><th>Nguyên tắc</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Sổ kho</b><br><code>SC Stock Ledger Entry</code></td>
+      <td>Nhật ký mọi lần hàng vào/ra</td>
+      <td><b>Thay đổi SL</b> (dương = nhập, âm = xuất) · Vật tư · Kho · Lô · Vị trí · <b>Chứng từ nguồn</b> · Giá vốn</td>
+      <td><b>Chỉ ghi thêm, không sửa không xóa.</b> Tồn kho = TỔNG cột thay đổi SL. Hủy chứng từ = chèn dòng đối ứng</td>
+    </tr>
+    <tr>
+      <td><b>Sổ cái</b><br><code>SC GL Entry</code></td>
+      <td>Nhật ký mọi bút toán tiền</td>
+      <td>Tài khoản · Nợ · Có · Ngày hạch toán · Chứng từ nguồn</td>
+      <td>Như trên. Hủy chứng từ = đảo bút toán vào <b>đúng ngày gốc</b></td>
+    </tr>
+  </tbody>
+</table>
+<div class="box crit">
+  <b class="lbl">Đây là điều quan trọng nhất về dữ liệu</b>
+  Hệ thống <b>không lưu "số tồn kho"</b> hay "số dư công nợ" ở bất kỳ đâu. Chúng luôn được <b>tính lại</b> từ sổ mỗi khi cần.
+  <p style="margin:6px 0"><b>Vì sao thiết kế vậy?</b> Vì nếu lưu số tồn cố định, chỉ cần một lần cập nhật sót là số sai vĩnh viễn mà không ai biết vì sao. Tính lại từ sổ thì mọi con số đều <b>truy ngược được về chứng từ gốc</b>.</p>
+  <p style="margin:6px 0"><b>Đánh đổi:</b> truy vấn chậm hơn một chút. Nhóm chấp nhận, và bù bằng cache 5 phút cho các chỉ số.</p>
+</div>
+
+<h3>5.3 Nhóm chứng từ mua hàng</h3>
+<table class="compact">
+  <thead><tr><th>Thực thể</th><th>Là gì</th><th>Thuộc tính quan trọng</th><th>Quan hệ</th></tr></thead>
+  <tbody>
+    <tr><td><b>Hợp đồng khung</b><br><code>Framework Contract</code></td><td>Thỏa thuận dài hạn với NCC</td><td>Giá trị HĐ · Đã dùng · Đã cam kết · <b>Còn lại</b> · Giai đoạn duyệt · Kỳ hiệu lực</td><td>Với 1 NCC · có nhiều Dòng vật tư · có Lịch sử gia hạn</td></tr>
+    <tr><td><b>Lệnh gọi hàng</b><br><code>Release Order</code></td><td>Yêu cầu giao một đợt theo HĐ</td><td>Trạng thái · Giá trị</td><td>Theo 1 Hợp đồng khung → sinh Đơn mua</td></tr>
+    <tr><td><b>Kế hoạch mua</b><br><code>Procurement Plan</code></td><td>Dự trù mua theo kỳ</td><td>Kỳ · Ngân sách · Hệ số tồn an toàn · Tự tạo yêu cầu mua?</td><td>Có nhiều Dòng đề xuất</td></tr>
+    <tr><td><b>Yêu cầu mua</b><br><code>SC Material Request</code></td><td>Đề nghị mua từ bộ phận/kho</td><td>Ngày · Trạng thái · Phòng ban</td><td>Mỗi dòng có thể gắn 1 Hợp đồng khung</td></tr>
+    <tr><td><b>Đơn mua</b><br><code>SC Purchase Order</code></td><td>Đơn đặt chính thức với NCC</td><td>Tổng tiền · Giai đoạn duyệt · Trạng thái</td><td>Với 1 NCC · theo 1 HĐ khung · sinh nhiều Phiếu nhập</td></tr>
+    <tr><td><b>Phiếu nhập</b><br><code>SC Purchase Receipt</code></td><td>Ghi nhận hàng thực về</td><td>Kết quả QC · Là phiếu trả? · Mốc nhập chính thức</td><td>Từ 1 Đơn mua · <b>sinh Lô + Phiếu kiểm định + dòng sổ kho</b></td></tr>
+    <tr><td><b>Phiếu kiểm định</b><br><code>SC Quality Inspection</code></td><td>Kết luận chất lượng</td><td>Kết quả tổng · Ngày kiểm · Lô · Số lô NCC</td><td>Từ 1 Phiếu nhập · cho 1 Lô · có nhiều Chỉ tiêu kiểm</td></tr>
+    <tr><td><b>Hóa đơn mua</b><br><code>SC Purchase Invoice</code></td><td>Hóa đơn NCC xuất cho ta</td><td><b>Kết quả đối chiếu 3 bên</b> · Giữ thanh toán? · Còn phải trả</td><td>Đối chiếu Đơn mua ↔ Phiếu nhập</td></tr>
+    <tr><td><b>Phiếu thanh toán</b><br><code>SC Payment Entry</code></td><td>Chi tiền cho NCC</td><td>Số tiền · Tổng phân bổ · Hình thức · Cấp duyệt</td><td>Phân bổ cho nhiều Hóa đơn mua</td></tr>
+  </tbody>
+</table>
+
+<h3>5.4 Nhóm chứng từ bán hàng</h3>
+<table class="compact">
+  <thead><tr><th>Thực thể</th><th>Là gì</th><th>Thuộc tính quan trọng</th><th>Quan hệ</th></tr></thead>
+  <tbody>
+    <tr><td><b>HĐ khung bán</b><br><code>SC Sales Framework Contract</code></td><td>Thỏa thuận dài hạn với khách</td><td>Kỳ hiệu lực · Giá trị · Còn lại · Trạng thái</td><td>Với 1 Khách · có nhiều Dòng danh mục (giá + SL trần)</td></tr>
+    <tr><td><b>Đơn hàng bán</b><br><code>SC Sales Order</code></td><td>Khách đặt hàng</td><td>Trạng thái · Tổng tiền · <b>Giữ do công nợ?</b> · Người duyệt</td><td>Của 1 Khách · theo 1 HĐ khung · sinh nhiều Phiếu giao</td></tr>
+    <tr><td><b>Phiếu giao hàng</b><br><code>SC Delivery Note</code></td><td>Xuất hàng cho khách</td><td>Kho xuất · Trạng thái · <b>Cần soạn hàng?</b> · Lý do hủy</td><td>Từ 1 Đơn hàng · mỗi dòng có Lô + Vị trí + <b>Đã quét xác nhận?</b></td></tr>
+    <tr><td><b>Biên bản nghiệm thu</b><br><code>SC Acceptance Record</code></td><td>Khách xác nhận nhận đủ</td><td>Ngày nghiệm thu · Người nghiệm thu</td><td>Cho 1 Phiếu giao — <b>mở khóa xuất hóa đơn</b></td></tr>
+    <tr><td><b>Hóa đơn bán</b><br><code>SC Sales Invoice</code></td><td>Hóa đơn ta xuất cho khách</td><td>Tổng tiền · Thuế · <b>Còn phải thu</b> · Trạng thái</td><td>Từ 1 Phiếu giao — phải khớp chính xác</td></tr>
+    <tr><td><b>Phiếu thu</b><br><code>SC Sales Receipt</code></td><td>Nhận tiền từ khách</td><td>Số tiền · Hình thức · Ngày thu</td><td>Cho 1 Hóa đơn bán</td></tr>
+  </tbody>
+</table>
+
+<h3>5.5 Sơ đồ quan hệ (rút gọn)</h3>
+<div class="ascii">
+   NCC ──1:n──► Hợp đồng khung ──1:n──► Lệnh gọi hàng ──► Đơn mua ──1:n──► Phiếu nhập
+                                                                              │
+   Kế hoạch mua ──► Yêu cầu mua ─────────────────┘                            ├──► LÔ HÀNG
+                                                                              ├──► Phiếu kiểm định
+                                                                              └──► SỔ KHO (+)
+   Phiếu nhập ──► Hóa đơn mua ──► Phiếu thanh toán ──► SỔ CÁI
+
+   ═══════════════════════════ K H O ═══════════════════════════
+
+   Khách hàng ──1:n──► HĐ khung bán ──1:n──► Đơn hàng bán
+        │                                          │
+        │                                          ▼
+        │                                  Phiếu giao hàng ──► Biên bản nghiệm thu
+        │                                     │                       │
+        │                                     ▼                       ▼
+        │                                SỔ KHO (−)            Hóa đơn bán ──► Phiếu thu ──► SỔ CÁI
+        │
+   Vật tư ──1:n──► Lô hàng          Kho ──1:n──► Vị trí kệ      Kho ──(cây)──► Kho con
+</div>
+<p><b>Cách đọc:</b> "1:n" nghĩa là một cái bên trái ứng với nhiều cái bên phải. Ví dụ <i>một nhà cung cấp có nhiều hợp đồng khung</i>.</p>
+
+<!-- ══════════════════════════════ 6 ══════════════════════════════ -->
+<h2>6. Quy tắc nghiệp vụ (Business Rules)</h2>
+
+<p><b>Quy tắc nghiệp vụ</b> là những ràng buộc hệ thống <b>bắt buộc tuân thủ</b>, không phụ thuộc người dùng có nhớ hay không. Đây là phần quan trọng nhất của tài liệu BA.</p>
+
+<div class="box">
+  <b class="lbl">Cách đọc bảng</b>
+  Cột <b>Mã BR</b> là số hiệu trong tài liệu này. Cột <b>Mã trong code</b> là mã thật lập trình viên dùng — khi hệ thống báo lỗi, người dùng sẽ thấy mã đó, tra ngược về đây được.
+  <p style="margin:6px 0">Mức độ: <span class="sev blk">Chặn</span> ngăn hẳn hành động · <span class="sev cond">Điều kiện</span> cho làm nếu bổ sung thêm gì đó · <span class="sev info">Ràng buộc</span> hệ thống tự tính/tự ghi đè.</p>
+</div>
+
+<h3>6.1 Mua hàng &amp; hợp đồng</h3>
+<table class="compact">
+  <thead><tr><th>Mã BR</th><th>Mức</th><th>Phát biểu quy tắc</th><th>Mã trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>BR-01</b></td><td><span class="sev blk">Chặn</span></td><td>Hợp đồng khung phải qua đủ các cấp duyệt mới được kích hoạt.</td><td><code>SC-E-FC-NOT-APPROVED</code></td></tr>
+    <tr><td><b>BR-02</b></td><td><span class="sev blk">Chặn</span></td><td>Hợp đồng đã duyệt bị khóa sửa — chỉ còn nộp hoặc từ chối.</td><td><code>SC-E-FC-LOCKED</code></td></tr>
+    <tr><td><b>BR-03</b></td><td><span class="sev cond">Điều kiện</span></td><td>Không lập hợp đồng với NCC trong danh sách đen, trừ khi có cờ ghi đè của Lãnh đạo.</td><td><code>SC-E-FC-BLACKLIST</code></td></tr>
+    <tr><td><b>BR-04</b></td><td><span class="sev blk">Chặn</span></td><td>Lệnh gọi hàng không được vượt số lượng / giá trị còn lại của hợp đồng.</td><td><code>SC-E002</code></td></tr>
+    <tr><td><b>BR-05</b></td><td><span class="sev info">Ràng buộc</span></td><td>Hạn mức còn lại ≤ 0 → hợp đồng tự chuyển "Đã dùng hết", không tạo đơn mua mới được.</td><td><code>status = Exhausted</code></td></tr>
+    <tr><td><b>BR-06</b></td><td><span class="sev blk">Chặn</span></td><td>Kế hoạch mua vượt ngân sách mà chưa tick xác nhận thì không nộp được.</td><td><code>SC-E-BUDGET-EXCEEDED</code></td></tr>
+    <tr><td><b>BR-07</b></td><td><span class="sev cond">Điều kiện</span></td><td>Duyệt &amp; kích hoạt hợp đồng <b>hàng loạt</b> chỉ dành cho Trưởng phòng / Quản trị hệ thống.</td><td><code>SC-E-FC-BULK-ROLE</code></td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 Chất lượng &amp; lô hàng</h3>
+<table class="compact">
+  <thead><tr><th>Mã BR</th><th>Mức</th><th>Phát biểu quy tắc</th><th>Mã trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>BR-08</b></td><td><span class="sev cond">Điều kiện</span></td><td><b>Chỉ KCS và Trưởng phòng</b> được kết luận kiểm định. Thủ kho chuẩn bị được nhưng không kết luận được.</td><td><code>BRU-QC-002</code></td></tr>
+    <tr><td><b>BR-09</b></td><td><span class="sev blk">Chặn</span></td><td>Lô chưa đạt QC (Chờ / Không đạt) <b>không nằm trong tồn khả dụng</b> — không xuất được.</td><td><code>get_available_qty()</code></td></tr>
+    <tr><td><b>BR-10</b></td><td><span class="sev blk">Chặn</span></td><td>Không xuất lô đã hết hạn dùng.</td><td><code>SC-E003</code> · <code>BRU-EXP-001</code></td></tr>
+    <tr><td><b>BR-11</b></td><td><span class="sev blk">Chặn</span></td><td>Lô bị khóa (do thu hồi hoặc lý do khác) không được xuất.</td><td><code>SC-E008</code></td></tr>
+    <tr><td><b>BR-12</b></td><td><span class="sev cond">Điều kiện</span></td><td>Xuất sai thứ tự FEFO ở chế độ nghiêm ngặt phải tick ghi đè + ghi lý do + <b>có quyền Trưởng phòng</b>. Hệ thống lưu vết người ghi đè.</td><td><code>SC-E001</code> · <code>SC-E-FEFO-MANAGER-REQUIRED</code></td></tr>
+    <tr><td><b>BR-13</b></td><td><span class="sev cond">Điều kiện</span></td><td>Nhập lô có hạn dùng ngắn phải được Trưởng phòng xác nhận.</td><td><code>SC-E-BATCH-SHORT-EXPIRY</code></td></tr>
+  </tbody>
+</table>
+
+<h3>6.3 Kho &amp; tồn kho</h3>
+<table class="compact">
+  <thead><tr><th>Mã BR</th><th>Mức</th><th>Phát biểu quy tắc</th><th>Mã trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>BR-14</b></td><td><span class="sev blk">Chặn</span></td><td>Không thao tác nào được làm tồn khả dụng âm.</td><td><code>SC-E010</code></td></tr>
+    <tr><td><b>BR-15</b></td><td><span class="sev blk">Chặn</span></td><td>Kho nguồn phải khác kho đích khi chuyển kho.</td><td><code>SC-E024</code></td></tr>
+    <tr><td><b>BR-16</b></td><td><span class="sev blk">Chặn</span></td><td>Số lượng duyệt chuyển kho không được vượt tồn tại kho nguồn.</td><td><code>SC-E-TRANSFER-INSUFFICIENT</code></td></tr>
+    <tr><td><b>BR-17</b></td><td><span class="sev cond">Điều kiện</span></td><td>Chuyển kho liên tầng (liên quan kho phân phối) phải do Trưởng phòng nộp.</td><td><code>SC-E-TRANSFER-MANAGER-REQUIRED</code></td></tr>
+    <tr><td><b>BR-18</b></td><td><span class="sev cond">Điều kiện</span></td><td>Đếm kiểm kê lần thứ 3 bắt buộc có Trưởng phòng chứng kiến.</td><td><code>SC-E-ICS-WITNESS-REQUIRED</code></td></tr>
+    <tr><td><b>BR-19</b></td><td><span class="sev cond">Điều kiện</span></td><td>Chênh lệch kiểm kê vượt ngưỡng giá trị lớn phải điền ghi chú điều tra.</td><td><code>SC-E-SR-INVESTIGATION-REQUIRED</code></td></tr>
+    <tr><td><b>BR-20</b></td><td><span class="sev info">Ràng buộc</span></td><td>Không can thiệp được số tổng hợp trên phiếu kiểm kê — hệ thống ghi đè lại và ghi nhật ký.</td><td><code>SC-E025</code></td></tr>
+    <tr><td><b>BR-21</b></td><td><span class="sev blk">Chặn</span></td><td>Không xóa được vị trí kệ đang còn hàng.</td><td><code>SC-E-BIN-NOT-EMPTY</code></td></tr>
+  </tbody>
+</table>
+
+<h3>6.4 Bán hàng</h3>
+<table class="compact">
+  <thead><tr><th>Mã BR</th><th>Mức</th><th>Phát biểu quy tắc</th><th>Mã trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>BR-22</b></td><td><span class="sev blk">Chặn</span></td><td>Chỉ đặt đơn trên hợp đồng khung <b>còn hiệu lực theo ngày</b> — hệ thống kiểm ngày, không tin trạng thái hiển thị.</td><td><code>BRU-SFC-001</code></td></tr>
+    <tr><td><b>BR-23</b></td><td><span class="sev info">Ràng buộc</span></td><td><b>Đơn giá luôn lấy từ hợp đồng khung.</b> Người dùng và kế toán không sửa được — máy chủ ghi đè lại mỗi lần lưu, kể cả khi sửa qua giao diện quản trị.</td><td><code>BRU-SFC-002</code></td></tr>
+    <tr><td><b>BR-24</b></td><td><span class="sev blk">Chặn</span></td><td>Tổng số lượng đặt (gộp mọi đơn) không vượt số lượng trần hợp đồng — tính tại thời điểm đặt để chống hai người đặt cùng lúc.</td><td><code>BRU-SO-001</code></td></tr>
+    <tr><td><b>BR-25</b></td><td><span class="sev blk">Chặn</span></td><td>Chỉ lập phiếu giao khi đơn ở trạng thái Đã duyệt (hoặc Đang xử lý — phiếu nháp của chính đơn đó).</td><td><code>BRU-SO-002</code></td></tr>
+    <tr><td><b>BR-26</b></td><td><span class="sev blk">Chặn</span></td><td>Tồn khả dụng phải đủ khi xuất kho.</td><td><code>BRU-INV-001</code></td></tr>
+    <tr><td><b>BR-27</b></td><td><span class="sev blk">Chặn</span></td><td>Chặn <b>ngay lúc đặt hàng</b> nếu tồn khả dụng không đủ (bật/tắt được trong cấu hình).</td><td><code>BRU-INV-002</code></td></tr>
+    <tr><td><b>BR-28</b></td><td><span class="sev blk">Chặn</span></td><td>Nếu (dư nợ + giá trị đơn) vượt hạn mức tín dụng → đơn bị giữ, không duyệt được.</td><td><code>BRU-AR-001</code></td></tr>
+    <tr><td><b>BR-29</b></td><td><span class="sev blk">Chặn</span></td><td>Phiếu giao cần soạn hàng chỉ nộp được khi <b>mọi dòng</b> đã quét xác nhận.</td><td><code>SC-E-DN-NOT-SCANNED</code></td></tr>
+    <tr><td><b>BR-30</b></td><td><span class="sev blk">Chặn</span></td><td>Hủy phiếu giao <b>bắt buộc nhập lý do</b>, lý do được lưu vào phiếu.</td><td><code>SC-E-DN-CANCEL-REASON</code></td></tr>
+    <tr><td><b>BR-31</b></td><td><span class="sev blk">Chặn</span></td><td>Lô quét khi soạn hàng phải: đúng vật tư · còn hạn · đạt QC · không bị khóa · đủ tồn · vị trí thuộc đúng kho xuất. <b>8 điều kiện, kiểm ở máy chủ.</b></td><td><code>SC-E-PICK-*</code> (8 mã)</td></tr>
+    <tr><td><b>BR-32</b></td><td><span class="sev blk">Chặn</span></td><td>Chỉ lập hóa đơn khi phiếu giao <b>đã nghiệm thu</b>.</td><td><code>BRU-DEL-001</code></td></tr>
+    <tr><td><b>BR-33</b></td><td><span class="sev blk">Chặn</span></td><td>Hóa đơn bán phải khớp <b>chính xác</b> vật tư + số lượng + khách hàng của phiếu giao.</td><td><code>BRU-INVC-001</code></td></tr>
+    <tr><td><b>BR-34</b></td><td><span class="sev blk">Chặn</span></td><td>Không thu tiền trên hóa đơn chưa nộp (sẽ tạo công nợ âm).</td><td>Kiểm trong <code>receipt_collect</code></td></tr>
+  </tbody>
+</table>
+
+<h3>6.5 Kế toán</h3>
+<table class="compact">
+  <thead><tr><th>Mã BR</th><th>Mức</th><th>Phát biểu quy tắc</th><th>Mã trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>BR-35</b></td><td><span class="sev blk">Chặn</span></td><td><b>Khóa kỳ tài chính:</b> không được nộp <i>hoặc hủy</i> chứng từ kế toán có ngày ≤ ngày khóa sổ. Áp cho 4 loại chứng từ × 2 hướng.</td><td><code>BRU-PAY-001</code> · <code>SC-E-FISCAL-LOCK</code></td></tr>
+    <tr><td><b>BR-36</b></td><td><span class="sev blk">Chặn</span></td><td>Không lập thanh toán cho hóa đơn mua đang bị giữ do lệch đối chiếu 3 bên.</td><td><code>SC-E-PE-PAYMENT-HOLD</code></td></tr>
+    <tr><td><b>BR-37</b></td><td><span class="sev blk">Chặn</span></td><td>Số hóa đơn của cùng một NCC không được trùng.</td><td><code>SC-E-PI-DUPLICATE</code></td></tr>
+    <tr><td><b>BR-38</b></td><td><span class="sev cond">Điều kiện</span></td><td>Thanh toán vượt ngưỡng phải có cấp duyệt tương ứng (Trưởng phòng / Lãnh đạo).</td><td><code>SC-E-PE-MANAGER-REQUIRED</code> · <code>SC-E-PE-EXECUTIVE-REQUIRED</code></td></tr>
+    <tr><td><b>BR-39</b></td><td><span class="sev cond">Điều kiện</span></td><td>Hóa đơn lệch đối chiếu 3 bên phải có giải trình mới xử lý tiếp.</td><td><code>SC-E-PI-MISMATCH-EXPLANATION</code></td></tr>
+  </tbody>
+</table>
+
+<h3>6.6 Truy xuất, thu hồi &amp; bảo mật</h3>
+<table class="compact">
+  <thead><tr><th>Mã BR</th><th>Mức</th><th>Phát biểu quy tắc</th><th>Mã trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>BR-40</b></td><td><span class="sev info">Ràng buộc</span></td><td>Thu hồi phải truy được toàn bộ nơi lô đã đến, gồm <b>từng khách hàng đã mua</b>, và gửi <b>mỗi khách một thư riêng</b>.</td><td><code>BRU-REC-001</code></td></tr>
+    <tr><td><b>BR-41</b></td><td><span class="sev cond">Điều kiện</span></td><td>Tiêu hủy hàng thu hồi phải đủ: Lý do + Người chứng kiến + Ngày hủy.</td><td><code>SC-E016</code></td></tr>
+    <tr><td><b>BR-42</b></td><td><span class="sev blk">Chặn</span></td><td><b>Tài khoản khách không được thấy dữ liệu của khách khác</b> qua bất kỳ đường nào. Cài đặt bằng 5 lớp phòng thủ độc lập.</td><td><code>BRU-SEC-001</code></td></tr>
+    <tr><td><b>BR-43</b></td><td><span class="sev blk">Chặn</span></td><td>Mỗi tài khoản Portal chỉ gắn đúng <b>một</b> khách hàng.</td><td><code>BRU-CUS-002</code></td></tr>
+    <tr><td><b>BR-44</b></td><td><span class="sev info">Ràng buộc</span></td><td>Tài khoản Portal chỉ hoạt động khi đã gắn đúng một khách hàng đang hoạt động.</td><td><code>BRU-CUS-001</code></td></tr>
+    <tr><td><b>BR-45</b></td><td><span class="sev blk">Chặn</span></td><td>Khách <b>không được tự duyệt đơn hàng của mình</b> qua bất kỳ đường gọi nào.</td><td>Chặn <code>run_doc_method</code></td></tr>
+    <tr><td><b>BR-46</b></td><td><span class="sev blk">Chặn</span></td><td>Chứng từ đã nộp không xóa được — chỉ xóa được phiếu Nháp. Áp cho toàn bộ 21 chứng từ.</td><td><code>block_non_draft_delete</code></td></tr>
+    <tr><td><b>BR-47</b></td><td><span class="sev blk">Chặn</span></td><td>Sổ kho và sổ cái <b>không sửa được</b> bởi bất kỳ ai, kể cả quản trị hệ thống.</td><td><code>on_change()</code> throw</td></tr>
+    <tr><td><b>BR-48</b></td><td><span class="sev cond">Điều kiện</span></td><td>Mọi hành động Từ chối (hợp đồng, đơn mua, đối soát) đều <b>bắt buộc nhập lý do</b>.</td><td><code>SC-E-REJECT-REASON</code> · <code>SC-E-FC-REJECT</code></td></tr>
+  </tbody>
+</table>
+
+<div class="box ok">
+  <b class="lbl">Hệ thống có bao nhiêu quy tắc?</b>
+  Tài liệu này liệt kê <b>48 quy tắc quan trọng nhất</b>. Trong mã nguồn thực tế có <b>16 mã <code>BRU-*</code></b> (quy tắc nghiệp vụ lớn) và <b>hơn 130 mã <code>SC-E*</code></b> (chốt chặn kỹ thuật).
+  Kiểm chứng bằng lệnh:
+  <pre style="margin:6px 0"><code>grep -rhoE 'BRU-[A-Z0-9]+-[0-9]+' supplycore/ --include=*.py | sort -u | wc -l
+grep -rhoE 'SC-E[A-Z0-9-]*' supplycore/ --include=*.py | sort -u | wc -l</code></pre>
+</div>
+
+<!-- ══════════════════════════════ 7 ══════════════════════════════ -->
+<h2>7. Các màn hình chính</h2>
+
+<p>Hệ thống có <b>ba giao diện tách biệt</b> cho ba nhóm người dùng khác nhau.</p>
+
+<h3>7.1 Giao diện nội bộ cho nhân viên — <code>/supplycore</code></h3>
+<table class="compact">
+  <thead><tr><th>Màn hình</th><th>Đường dẫn</th><th>Mục đích</th><th>Ai dùng nhiều nhất</th></tr></thead>
+  <tbody>
+    <tr><td><b>Trang chủ / Tổng quan</b></td><td><code>/</code></td><td>Xem chỉ số quan trọng và lối tắt tới việc thường làm; nội dung đổi theo vai trò</td><td>Mọi vai trò, mở đầu ngày</td></tr>
+    <tr><td><b>Trang phân hệ</b></td><td><code>/m1</code> … <code>/m11</code></td><td>Cổng vào từng phân hệ, hiện thẻ các loại chứng từ kèm số bản ghi</td><td>Mọi vai trò</td></tr>
+    <tr><td><b>Danh sách chứng từ</b></td><td><code>/list/&lt;loại&gt;</code></td><td>Tìm, lọc, sắp xếp, tạo mới, nhập/xuất Excel. <b>Dùng chung cho cả 40 loại chứng từ</b></td><td>Mọi vai trò</td></tr>
+    <tr><td><b>Chi tiết chứng từ</b></td><td><code>/doc/&lt;loại&gt;/&lt;mã&gt;</code></td><td>Xem/sửa một chứng từ, bấm các nút hành động, xem chứng từ liên quan</td><td>Mọi vai trò</td></tr>
+    <tr><td><b>Màn soạn hàng</b></td><td>(trong chi tiết Phiếu giao)</td><td><b>Quét mã vạch lô + vị trí + số lượng</b> cho từng dòng; hiện tiến độ còn bao nhiêu dòng</td><td>Thủ kho</td></tr>
+    <tr><td><b>Tồn kho</b></td><td><code>/stock-balance</code></td><td>Tra tồn theo vật tư / kho / lô, kèm hạn dùng và trạng thái QC</td><td>Thủ kho, NV Bán hàng</td></tr>
+    <tr><td><b>Truy xuất lô</b></td><td><code>/batch-trace</code></td><td>Nhập mã lô → dựng lại toàn bộ vòng đời: nguồn nhập, QC, dịch chuyển, tồn hiện tại, <b>khách đã mua</b></td><td>KCS, Trưởng phòng</td></tr>
+    <tr><td><b>Xếp hàng lên kệ</b></td><td><code>/putaway</code></td><td>Sau khi nhận hàng, hệ thống gợi ý vị trí kệ và ghi nhận</td><td>Thủ kho, NV Kho</td></tr>
+    <tr><td><b>Bản đồ kho</b></td><td><code>/warehouse-map</code></td><td>Xem sơ đồ mặt bằng, chỉ đường tới kho</td><td>Nhân viên mới, khách tham quan</td></tr>
+    <tr><td><b>Thiết kế bản đồ</b></td><td><code>/map-editor</code></td><td>Sắp xếp kho lên lưới bản đồ — làm một lần khi triển khai</td><td>Quản trị, Trưởng phòng</td></tr>
+    <tr><td><b>Báo cáo tài chính</b></td><td><code>/financial-reports</code></td><td>4 báo cáo: giá trị tồn kho, công nợ phải trả, công nợ phải thu, chi phí theo kỳ</td><td>Kế toán, Trưởng phòng</td></tr>
+    <tr><td><b>Trung tâm cảnh báo</b></td><td><code>/alerts</code></td><td>Danh sách cảnh báo đang mở, lọc theo mức độ, xử lý 1 chạm</td><td>Mọi vai trò</td></tr>
+    <tr><td><b>Người dùng &amp; phân quyền</b></td><td><code>/users</code></td><td>Tạo tài khoản, gán vai trò, đặt lại mật khẩu, khóa/mở tài khoản</td><td>Quản trị hệ thống</td></tr>
+  </tbody>
+</table>
+
+<h3>7.2 Cổng khách hàng — <code>/portal</code></h3>
+<table class="compact">
+  <thead><tr><th>Khu vực</th><th>Mục đích</th></tr></thead>
+  <tbody>
+    <tr><td><b>Hồ sơ</b></td><td>Thông tin công ty mình, hạn mức tín dụng, dư nợ hiện tại</td></tr>
+    <tr><td><b>Danh mục &amp; bảng giá</b></td><td>Hợp đồng khung còn hiệu lực <b>của chính mình</b>, giá và số lượng còn lại; kèm danh mục bán lẻ chung nếu có</td></tr>
+    <tr><td><b>Đặt hàng</b></td><td>Chọn vật tư, nhập số lượng, gửi đơn. Giá tính lại phía máy chủ</td></tr>
+    <tr><td><b>Theo dõi đơn</b></td><td>Thanh <b>4 cột mốc</b>: Đã đặt → Bàn giao &amp; nghiệm thu → Cấp hóa đơn → Thu tiền; kèm link tải chứng từ</td></tr>
+    <tr><td><b>Tự nghiệm thu</b></td><td>Khi hàng đã giao, khách bấm xác nhận trên điện thoại → biên bản nghiệm thu được tạo ngay</td></tr>
+    <tr><td><b>Chứng từ</b></td><td>Tải hóa đơn / phiếu giao / biên bản nghiệm thu của chính mình</td></tr>
+  </tbody>
+</table>
+<div class="box crit">
+  <b class="lbl">Vì sao tách hẳn khỏi giao diện nội bộ</b>
+  Nếu khách và nhân viên dùng chung một giao diện, chỉ cần một lỗi ẩn/hiện menu là khách thấy giá mua, nhà cung cấp, hoặc đơn hàng của khách khác.
+  Tách hẳn thì khách <b>không có đường nào</b> chạm tới code nội bộ — an toàn theo <i>thiết kế</i>, không phụ thuộc vào việc lập trình viên có nhớ ẩn nút hay không.
+</div>
+
+<h3>7.3 Trang cho máy quét cầm tay — <code>/pda</code></h3>
+<p>Giao diện tối giản cho thiết bị quét mã vạch trong kho. Máy quét hoạt động như bàn phím: quét xong nó gõ mã vào ô đang chọn rồi Enter — nên dùng được ngay trên trình duyệt của máy PDA, <b>không cần cài ứng dụng riêng</b>.</p>
+
+<!-- ══════════════════════════════ 8 ══════════════════════════════ -->
+<h2>8. Báo cáo &amp; chỉ số (KPI)</h2>
+
+<h3>8.1 Tám chỉ số điều hành</h3>
+<p>Hiển thị trên Trang chủ, tính lại mỗi 5 phút (có bộ nhớ đệm để không làm chậm hệ thống). Lọc được theo <b>kỳ · kho · phòng ban</b>.</p>
+<table class="compact">
+  <thead><tr><th>Chỉ số</th><th>Trả lời câu hỏi</th><th>Tên trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>Giá trị tồn kho</b></td><td>Hiện đang "chôn" bao nhiêu tiền trong kho?</td><td><code>stock_value</code></td></tr>
+    <tr><td><b>Chi phí trong kỳ</b></td><td>Kỳ này đã chi bao nhiêu cho mua hàng?</td><td><code>monthly_cost</code></td></tr>
+    <tr><td><b>Công nợ phải trả</b></td><td>Đang nợ nhà cung cấp bao nhiêu?</td><td><code>ap_outstanding</code></td></tr>
+    <tr><td><b>Đơn mua đang chờ</b></td><td>Có bao nhiêu đơn mua chưa về hàng?</td><td><code>pending_pos</code></td></tr>
+    <tr><td><b>Lô sắp hết hạn</b></td><td>Bao nhiêu lô cần xử lý gấp?</td><td><code>expiring_soon</code></td></tr>
+    <tr><td><b>Vật tư dưới tồn an toàn</b></td><td>Bao nhiêu mặt hàng sắp hết, cần mua bổ sung?</td><td><code>low_stock_items</code></td></tr>
+    <tr><td><b>Hợp đồng sắp hết hạn</b></td><td>Hợp đồng nào cần gia hạn?</td><td>(trong khối cảnh báo)</td></tr>
+    <tr><td><b>Đơn mua trễ hạn</b></td><td>NCC nào giao chậm?</td><td><code>po_overdue_count</code></td></tr>
+  </tbody>
+</table>
+<p>Kèm theo: <b>top vật tư dùng nhiều nhất</b>, <b>thống kê cảnh báo đang mở</b> theo loại, và link xem chi tiết từng chỉ số. Nguồn: <code>supplycore/api/kpi.py</code>.</p>
+
+<p>Dashboard bán hàng bổ sung nhóm <b>công nợ phải thu</b>. Ngoài ra có:</p>
+<ul>
+  <li><code>get_monthly_cost_trend(months=12)</code> — xu hướng chi phí 12 tháng gần nhất</li>
+  <li><code>get_dashboard_for_role(role)</code> — bảng chỉ số riêng theo vai trò</li>
+  <li><code>get_warehouse_dashboard(warehouse)</code> — chỉ số của một kho cụ thể</li>
+  <li><code>get_dashboard_snapshot_pdf_data()</code> — dữ liệu để xuất ảnh chụp chỉ số ra PDF</li>
+</ul>
+
+<h3>8.2 Bốn báo cáo tài chính</h3>
+<table class="compact">
+  <thead><tr><th>Báo cáo</th><th>Nội dung</th><th>Hàm trong code</th></tr></thead>
+  <tbody>
+    <tr><td><b>Giá trị tồn kho</b></td><td>Tồn theo vật tư / kho / nhóm hàng, kèm giá trị</td><td><code>inventory_value_report()</code></td></tr>
+    <tr><td><b>Tuổi nợ phải trả</b></td><td>Nợ nhà cung cấp chia theo khoảng thời gian quá hạn</td><td><code>ap_aging_report()</code></td></tr>
+    <tr><td><b>Tuổi nợ phải thu</b></td><td>Khách nợ ta, chia theo khoảng thời gian</td><td><code>ar_aging_by_customer()</code></td></tr>
+    <tr><td><b>Chi phí theo kỳ</b></td><td>Chi phí vật tư trong khoảng ngày chọn</td><td><code>period_cost_report()</code></td></tr>
+  </tbody>
+</table>
+<div class="box warn">
+  <b class="lbl">Một chi tiết chất lượng đáng học</b>
+  Báo cáo có hàm <code>check_period_finalized()</code> — nếu trong kỳ <b>còn chứng từ ở trạng thái Nháp</b>, báo cáo hiện dải cảnh báo <i>"Kỳ chưa khóa sổ"</i> kèm số lượng chứng từ nháp còn lại.
+  Người đọc biết ngay <b>số liệu là tạm thời</b>, tránh ra quyết định trên số chưa chốt.
+</div>
+
+<h3>8.3 Báo cáo dạng bảng của Frappe</h3>
+<p>Chỉ có <b>một</b>: <b>Supplier Performance</b> (Đánh giá nhà cung cấp) tại <code>supplycore/supplycore/report/supplier_performance/</code>.</p>
+<p>Các báo cáo còn lại làm bằng <b>trang giao diện riêng</b> thay vì công cụ Report của Frappe — để trình bày linh hoạt hơn và xem chi tiết ngay tại chỗ.</p>
+
+<h3>8.4 Bảy loại cảnh báo tự động</h3>
+<table class="compact">
+  <thead><tr><th>Loại cảnh báo</th><th>Kích hoạt khi</th><th>Hành động nhanh</th></tr></thead>
+  <tbody>
+    <tr><td><code>expiring_batch</code></td><td>Lô sắp hết hạn còn tồn</td><td>Chuyển lô vào kho cách ly</td></tr>
+    <tr><td><code>low_stock</code></td><td>Tồn dưới mức an toàn</td><td>Tạo yêu cầu mua</td></tr>
+    <tr><td><code>contract_expiring</code></td><td>Hợp đồng khung sắp hết hạn</td><td>—</td></tr>
+    <tr><td><code>fc_remaining_low</code></td><td>Hợp đồng còn ít hạn mức</td><td>—</td></tr>
+    <tr><td><code>overdue_payment</code></td><td>Hóa đơn NCC quá hạn thanh toán</td><td>Tạo phiếu thanh toán</td></tr>
+    <tr><td><code>qc_pending</code></td><td>Kiểm định treo quá lâu</td><td>Nhắc NCC bằng email</td></tr>
+    <tr><td><code>recall_outstanding</code></td><td>Thu hồi còn dở dang</td><td>—</td></tr>
+  </tbody>
+</table>
+<p><b>Cơ chế chống nhiễu:</b> gộp trùng theo (loại, đối tượng, 7 ngày); tự đóng khi điều kiện hết; nâng mức và báo lên cấp trên nếu cảnh báo nghiêm trọng để quá 48 giờ.</p>
+
+<h3>8.5 Mười một tác vụ chạy tự động</h3>
+<table class="compact">
+  <thead><tr><th>Khi nào</th><th>Làm gì</th></tr></thead>
+  <tbody>
+    <tr><td><b>08:00 hằng ngày</b></td><td>Quét tồn dưới mức tối thiểu → tạo Yêu cầu mua Nháp (gắn sẵn hợp đồng khung NCC) + email quản lý</td></tr>
+    <tr><td>Hằng ngày</td><td>Đánh dấu hợp đồng sắp/đã hết hạn · nhắc NCC chưa phản hồi đơn mua · escalate phiếu trả hàng quá hạn</td></tr>
+    <tr><td>Hằng ngày</td><td>Quét lô sắp hết hạn → tạo cảnh báo + email thủ kho/quản lý</td></tr>
+    <tr><td>Hằng ngày</td><td>Quét toàn bộ quy tắc cảnh báo · gửi ảnh chụp chỉ số cho Lãnh đạo &amp; Trưởng phòng · tự đóng cảnh báo hết điều kiện · nâng mức cảnh báo quá 48h</td></tr>
+    <tr><td>01:00 hằng ngày</td><td>Tạo phiếu kiểm kê định kỳ — <span class="tag no">hiện chưa hoàn thiện</span></td></tr>
+    <tr><td>Hằng tuần</td><td>Dự báo nhu cầu mua — <span class="tag no">hiện chưa hoàn thiện</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════ 9 ══════════════════════════════ -->
+<h2>9. Trạng thái hoàn thiện — những gì hệ thống CHƯA làm được</h2>
+
+<div class="box">
+  <b class="lbl">Vì sao mục này quan trọng trong tài liệu BA</b>
+  Một tài liệu BA tốt phải nói rõ <b>giới hạn</b>, không chỉ nói cái đã làm được. Nếu không, người đọc sẽ kỳ vọng sai và trách phần mềm "thiếu tính năng" trong khi thực ra nó chưa từng được cam kết.
+</div>
+
+<table class="compact">
+  <thead><tr><th>Hạng mục</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+  <tbody>
+    <tr><td>Dự báo nhu cầu mua tự động</td><td><span class="tag no">Chưa hoàn thiện</span></td><td>Tác vụ tuần mới chỉ ghi log; thư mục DocType <code>demand_forecast</code> rỗng</td></tr>
+    <tr><td>Tự tạo phiếu kiểm kê định kỳ</td><td><span class="tag no">Chưa hoàn thiện</span></td><td>Hàm hiện là rỗng (<code>pass</code>)</td></tr>
+    <tr><td>Đồng bộ offline cho máy PDA</td><td><span class="tag no">Một phần</span></td><td>Quét online chạy tốt; lưu tạm khi mất mạng chưa làm</td></tr>
+    <tr><td>Ghi nhận lệch khi nhận hàng (DocType riêng)</td><td><span class="tag no">Chưa có</span></td><td>Thư mục rỗng. Hiện xử lý bằng cột "SL vượt đơn mua" + đối chiếu 3 bên</td></tr>
+    <tr><td>Bộ tiêu chí QC theo mẫu (Template)</td><td><span class="tag no">Đã bỏ</span></td><td>Thay bằng 5 tiêu chí mẫu điền sẵn trên từng phiếu kiểm định</td></tr>
+    <tr><td>Kênh gửi SMS</td><td><span class="tag">Cần cấu hình</span></td><td>Phải khai địa chỉ cổng SMS trong cấu hình hệ thống</td></tr>
+    <tr><td>Nhật ký kiểm toán riêng (DocType)</td><td><span class="tag no">Chưa có</span></td><td>Dùng bản ghi phiên bản sẵn có của Frappe</td></tr>
+  </tbody>
+</table>
+
+<h2>10. Đọc gì tiếp theo</h2>
+<table>
+  <thead><tr><th>Bạn muốn</th><th>Đọc</th></tr></thead>
+  <tbody>
+    <tr><td>Bản BA <b>gốc, đầy đủ nhất</b> (26 mục)</td><td><code>docs/ba-miyano/SupplyCore_MVL_BA.html</code> — cũng có bản Word <code>.docx</code></td></tr>
+    <tr><td>Hướng dẫn cho <b>người dùng cuối</b></td><td><code>docs/SupplyCore_HuongDanSuDung_v1.0.docx</code> — 220 mục, có ảnh chụp màn hình</td></tr>
+    <tr><td>Vì sao chuyển từ bản bệnh viện sang phân phối</td><td><code>docs/ba-miyano/PHAN_TICH_HUONG_THIET_KE_MVL.md</code></td></tr>
+    <tr><td>Code hiện thực các quy tắc này ở đâu</td><td>Tập 02 của bộ tài liệu này</td></tr>
+    <tr><td>Ghi chú kỹ thuật từng phân hệ</td><td><code>supplycore/m&lt;N&gt;_&lt;tên&gt;/README.md</code></td></tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <b class="lbl">Bài tập cho người mới học viết tài liệu BA</b>
+  Chọn <b>một quy tắc</b> trong mục 6 — gợi ý <b>BR-32</b> (chỉ lập hóa đơn khi đã nghiệm thu) — rồi tự trả lời:
+  <ol style="margin:6px 0">
+    <li><b>Vì sao</b> doanh nghiệp cần quy tắc này? (chuyện gì xấu xảy ra nếu không có?)</li>
+    <li>Quy tắc này <b>cài ở đâu</b> trong code? Tìm chuỗi <code>BRU-DEL-001</code> trong <code>supplycore/</code></li>
+    <li>Có <b>test</b> nào bảo vệ nó không? Tìm trong <code>supplycore/tests/</code></li>
+    <li>Nếu nghiệp vụ đổi (ví dụ cho phép xuất hóa đơn trước nghiệm thu với khách VIP), <b>cần sửa những gì</b>?</li>
+  </ol>
+  Trả lời được 4 câu này là bạn đã hiểu cách một quy tắc nghiệp vụ đi từ <i>yêu cầu kinh doanh</i> → <i>tài liệu</i> → <i>code</i> → <i>kiểm thử</i>.
+</div>
+
+</main>
+
+<footer class="pagefoot">
+  <b>SupplyCore MVL — Tài liệu nhập môn · Tập 03: Tài liệu Phân tích Nghiệp vụ (BA)</b><br>
+  Ngày tạo: <b>05/08/2026</b> · Tái dựng từ mã nguồn nhánh <code>feat/mvl-distributor</code> và tài liệu trong repo.<br>
+  Tên khách hàng đã khái quát hóa thành "Khách hàng A"; mọi mật khẩu, khóa, token và IP nội bộ thay bằng <code>&lt;ĐÃ_ẨN&gt;</code>.<br>
+  Bản BA gốc đầy đủ: <code>docs/ba-miyano/SupplyCore_MVL_BA.html</code>.
+</footer>
+
+</body>
+</html>
